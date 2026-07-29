@@ -5,29 +5,35 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>交流会マッチング | 気軽につながれるビジネス交流</title>
   <meta name="description" content="交流会メンバー同士が気軽につながれるマッチングサービス。話してみたい人を見つけて、いいねを送ってみましょう。">
+  <meta property="og:title" content="交流会マッチング">
+  <meta property="og:description" content="尊敬できる仲間になるパートナーが、見つかる。交流会メンバー向けマッチングサービス。">
+  <meta property="og:type" content="website">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%23b5342c'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='%23fffdf7' font-family='sans-serif'>縁</text></svg>">
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=Shippori+Mincho:wght@600;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
   <!-- ヘッダー -->
-  <header class="site-header">
+  <header class="site-header" id="siteHeader">
     <div class="header-inner">
       <a href="#" class="logo">
         <span class="logo-mark">縁</span>
         <span class="logo-text">交流会マッチング</span>
       </a>
       <nav class="global-nav">
-        <a href="#members">メンバーを探す</a>
-        <a href="#pickup">ピックアップ</a>
+        <a href="#recommend">今日のおすすめ</a>
+        <a href="#members">メンバー</a>
         <a href="#events">イベント</a>
         <a href="#categories">カテゴリ</a>
       </nav>
       <div class="header-actions">
-        <button class="btn btn-ghost" id="likedListBtn">
-          ♥ いいねリスト <span class="badge" id="likedCount">0</span>
+        <button class="btn btn-ghost btn-icon" id="messagesBtn" title="メッセージ">
+          💬 <span class="badge badge-hide" id="unreadCount">0</span>
+        </button>
+        <button class="btn btn-ghost btn-icon" id="likedListBtn" title="いいねリスト">
+          ♥ <span class="badge" id="likedCount">0</span>
         </button>
         <button class="btn btn-primary" id="registerBtn">無料で登録</button>
       </div>
@@ -36,8 +42,10 @@
 
   <!-- ヒーロー -->
   <section class="hero">
+    <div class="hero-deco hero-deco-l" aria-hidden="true"></div>
+    <div class="hero-deco hero-deco-r" aria-hidden="true"></div>
     <p class="hero-eyebrow">― Business Community Matching ―</p>
-    <h1 class="hero-title">尊敬できる仲間になるパートナーが、見つかる。</h1>
+    <h1 class="hero-title">尊敬できる仲間になる<br class="sp-only">パートナーが、見つかる。</h1>
     <p class="hero-sub">
       交流会でつながった仲間と、もっと深くつながるためのマッチングサービスです。<br>
       気になるメンバーに「話してみたい」を送って、新しいご縁をはじめましょう。
@@ -71,9 +79,40 @@
     <div class="tag-filters" id="tagFilters"></div>
   </section>
 
+  <!-- 実績 -->
+  <section class="stats-band" id="statsBand">
+    <div class="stat">
+      <div class="stat-num" data-count="216">0</div>
+      <div class="stat-label">登録メンバー</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num" data-count="1024">0</div>
+      <div class="stat-label">マッチング成立</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num" data-count="42">0</div>
+      <div class="stat-label">交流会 開催</div>
+    </div>
+  </section>
+
   <main>
+    <!-- 今日のおすすめ(カードデッキ) -->
+    <section class="section reveal" id="recommend">
+      <div class="section-head">
+        <h2 class="section-title"><span class="title-accent">今日の</span>おすすめ</h2>
+        <p class="section-sub">あなたと相性が良さそうなメンバーを毎日ご紹介。直感で選んでみましょう。</p>
+      </div>
+      <div class="deck-wrap">
+        <div class="deck" id="deck"></div>
+        <div class="deck-actions">
+          <button class="deck-btn deck-skip" id="deckSkip" title="スキップ">✕</button>
+          <button class="deck-btn deck-like" id="deckLike" title="話してみたい">♥</button>
+        </div>
+      </div>
+    </section>
+
     <!-- 新着メンバー -->
-    <section class="section" id="members">
+    <section class="section reveal" id="members">
       <div class="section-head">
         <h2 class="section-title"><span class="title-accent">新着</span>メンバー</h2>
         <p class="section-sub">最近参加したメンバーです。まずは気軽に「話してみたい」を送ってみましょう。</p>
@@ -82,7 +121,7 @@
     </section>
 
     <!-- ピックアップ -->
-    <section class="section section-alt" id="pickup">
+    <section class="section section-alt reveal" id="pickup">
       <div class="section-head">
         <h2 class="section-title"><span class="title-accent">今週の</span>ピックアップ</h2>
         <p class="section-sub">運営が選んだ、いま話を聞いてみたい注目のメンバーをご紹介します。</p>
@@ -91,7 +130,7 @@
     </section>
 
     <!-- イベントカレンダー -->
-    <section class="section" id="events">
+    <section class="section reveal" id="events">
       <div class="section-head">
         <h2 class="section-title"><span class="title-accent">交流会</span>カレンダー</h2>
         <p class="section-sub">今月開催予定の交流会・イベントをチェックして、リアルの場でもつながりましょう。</p>
@@ -108,12 +147,19 @@
     </section>
 
     <!-- カテゴリ別メンバー -->
-    <section class="section section-alt" id="categories">
+    <section class="section section-alt reveal" id="categories">
       <div class="section-head">
         <h2 class="section-title"><span class="title-accent">カテゴリ別</span>に探す</h2>
         <p class="section-sub">業種・職種ごとにメンバーを探せます。タブを切り替えてご覧ください。</p>
       </div>
       <div class="category-tabs" id="categoryTabs"></div>
+      <div class="sort-row">
+        <label for="sortSelect">並び替え:</label>
+        <select id="sortSelect">
+          <option value="score">相性が高い順</option>
+          <option value="new">新着順</option>
+        </select>
+      </div>
       <div class="card-grid" id="categoryGrid"></div>
     </section>
 
@@ -125,7 +171,7 @@
     </section>
 
     <!-- よくある質問 -->
-    <section class="section" id="faq">
+    <section class="section reveal" id="faq">
       <div class="section-head">
         <h2 class="section-title"><span class="title-accent">よくある</span>ご質問</h2>
       </div>
@@ -166,6 +212,8 @@
     </div>
   </footer>
 
+  <button class="back-to-top" id="backToTop" title="ページの先頭へ">↑</button>
+
   <!-- プロフィール詳細モーダル -->
   <div class="modal-overlay" id="profileModal" hidden>
     <div class="modal" role="dialog" aria-modal="true">
@@ -182,7 +230,7 @@
         <div class="match-icon">🎉</div>
         <h3>マッチング成立!</h3>
         <p id="matchText"></p>
-        <button class="btn btn-primary" data-close>メッセージを送る</button>
+        <button class="btn btn-primary" id="matchChatBtn">メッセージを送る</button>
       </div>
     </div>
   </div>
@@ -193,6 +241,14 @@
       <button class="modal-close" data-close>×</button>
       <h3 class="modal-title">♥ いいねしたメンバー</h3>
       <div id="likedListBody"></div>
+    </div>
+  </div>
+
+  <!-- メッセージモーダル -->
+  <div class="modal-overlay" id="chatModal" hidden>
+    <div class="modal modal-chat" role="dialog" aria-modal="true">
+      <button class="modal-close" data-close>×</button>
+      <div id="chatBody"></div>
     </div>
   </div>
 
