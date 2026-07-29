@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>交流会マッチング | 気軽につながれるビジネス交流</title>
+  <meta name="description" content="交流会メンバー同士が気軽につながれるマッチングサービス。話してみたい人を見つけて、いいねを送ってみましょう。">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%23b5342c'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='%23fffdf7' font-family='sans-serif'>縁</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- ヘッダー -->
+  <header class="site-header">
+    <div class="header-inner">
+      <a href="#" class="logo">
+        <span class="logo-mark">縁</span>
+        <span class="logo-text">交流会マッチング</span>
+      </a>
+      <nav class="global-nav">
+        <a href="#members">メンバーを探す</a>
+        <a href="#pickup">ピックアップ</a>
+        <a href="#events">イベント</a>
+        <a href="#categories">カテゴリ</a>
+      </nav>
+      <div class="header-actions">
+        <button class="btn btn-ghost" id="likedListBtn">
+          ♥ いいねリスト <span class="badge" id="likedCount">0</span>
+        </button>
+        <button class="btn btn-primary" id="registerBtn">無料で登録</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ヒーロー -->
+  <section class="hero">
+    <p class="hero-eyebrow">― Business Community Matching ―</p>
+    <h1 class="hero-title">尊敬できる仲間になるパートナーが、見つかる。</h1>
+    <p class="hero-sub">
+      交流会でつながった仲間と、もっと深くつながるためのマッチングサービスです。<br>
+      気になるメンバーに「話してみたい」を送って、新しいご縁をはじめましょう。
+    </p>
+
+    <div class="hero-steps">
+      <div class="step">
+        <div class="step-icon">📝</div>
+        <div class="step-num">STEP 1</div>
+        <p class="step-text">プロフィールを登録</p>
+      </div>
+      <div class="step-arrow">→</div>
+      <div class="step">
+        <div class="step-icon">🔍</div>
+        <div class="step-num">STEP 2</div>
+        <p class="step-text">気になる人を探す</p>
+      </div>
+      <div class="step-arrow">→</div>
+      <div class="step">
+        <div class="step-icon">🤝</div>
+        <div class="step-num">STEP 3</div>
+        <p class="step-text">マッチングして交流</p>
+      </div>
+    </div>
+
+    <!-- 検索バー -->
+    <div class="search-bar">
+      <input type="search" id="searchInput" placeholder="名前・業種・キーワードで検索(例:エンジニア、飲食、マーケ)">
+      <button class="btn btn-primary" id="searchBtn">検索</button>
+    </div>
+    <div class="tag-filters" id="tagFilters"></div>
+  </section>
+
+  <main>
+    <!-- 新着メンバー -->
+    <section class="section" id="members">
+      <div class="section-head">
+        <h2 class="section-title"><span class="title-accent">新着</span>メンバー</h2>
+        <p class="section-sub">最近参加したメンバーです。まずは気軽に「話してみたい」を送ってみましょう。</p>
+      </div>
+      <div class="card-grid" id="newMembersGrid"></div>
+    </section>
+
+    <!-- ピックアップ -->
+    <section class="section section-alt" id="pickup">
+      <div class="section-head">
+        <h2 class="section-title"><span class="title-accent">今週の</span>ピックアップ</h2>
+        <p class="section-sub">運営が選んだ、いま話を聞いてみたい注目のメンバーをご紹介します。</p>
+      </div>
+      <div class="card-grid" id="pickupGrid"></div>
+    </section>
+
+    <!-- イベントカレンダー -->
+    <section class="section" id="events">
+      <div class="section-head">
+        <h2 class="section-title"><span class="title-accent">交流会</span>カレンダー</h2>
+        <p class="section-sub">今月開催予定の交流会・イベントをチェックして、リアルの場でもつながりましょう。</p>
+      </div>
+      <div class="calendar-wrap">
+        <div class="calendar-header">
+          <button class="cal-nav" id="prevMonth">‹</button>
+          <h3 id="calendarTitle"></h3>
+          <button class="cal-nav" id="nextMonth">›</button>
+        </div>
+        <div class="calendar" id="calendar"></div>
+        <div class="event-list" id="eventList"></div>
+      </div>
+    </section>
+
+    <!-- カテゴリ別メンバー -->
+    <section class="section section-alt" id="categories">
+      <div class="section-head">
+        <h2 class="section-title"><span class="title-accent">カテゴリ別</span>に探す</h2>
+        <p class="section-sub">業種・職種ごとにメンバーを探せます。タブを切り替えてご覧ください。</p>
+      </div>
+      <div class="category-tabs" id="categoryTabs"></div>
+      <div class="card-grid" id="categoryGrid"></div>
+    </section>
+
+    <!-- CTA -->
+    <section class="cta-band">
+      <h2>あなたの「話してみたい」が、次のご縁をつくる。</h2>
+      <p>登録は無料。プロフィールを作って、交流会の仲間とつながりましょう。</p>
+      <button class="btn btn-cta" id="registerBtn2">無料でプロフィールを登録する</button>
+    </section>
+
+    <!-- よくある質問 -->
+    <section class="section" id="faq">
+      <div class="section-head">
+        <h2 class="section-title"><span class="title-accent">よくある</span>ご質問</h2>
+      </div>
+      <div class="faq-list">
+        <details class="faq-item">
+          <summary>利用に料金はかかりますか?</summary>
+          <p>登録・利用ともに無料です。交流会の会員であればどなたでもご利用いただけます。</p>
+        </details>
+        <details class="faq-item">
+          <summary>「いいね」を送るとどうなりますか?</summary>
+          <p>相手に通知が届きます。お互いに「いいね」を送り合うとマッチングが成立し、メッセージのやり取りができるようになります。</p>
+        </details>
+        <details class="faq-item">
+          <summary>営業目的での利用はできますか?</summary>
+          <p>一方的な営業・勧誘目的のご利用はご遠慮いただいています。まずはお互いを知ることから始めましょう。</p>
+        </details>
+        <details class="faq-item">
+          <summary>プロフィールは誰に公開されますか?</summary>
+          <p>交流会の会員のみに公開されます。外部の検索エンジンなどには公開されません。</p>
+        </details>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <span class="logo-mark">縁</span> 交流会マッチング
+      </div>
+      <nav class="footer-nav">
+        <a href="#members">メンバーを探す</a>
+        <a href="#events">イベント</a>
+        <a href="#faq">よくある質問</a>
+        <a href="#">利用規約</a>
+        <a href="#">プライバシーポリシー</a>
+      </nav>
+      <p class="copyright">© 2026 交流会マッチング</p>
+    </div>
+  </footer>
+
+  <!-- プロフィール詳細モーダル -->
+  <div class="modal-overlay" id="profileModal" hidden>
+    <div class="modal" role="dialog" aria-modal="true">
+      <button class="modal-close" data-close>×</button>
+      <div class="modal-body" id="profileModalBody"></div>
+    </div>
+  </div>
+
+  <!-- マッチング成立モーダル -->
+  <div class="modal-overlay" id="matchModal" hidden>
+    <div class="modal modal-match" role="dialog" aria-modal="true">
+      <button class="modal-close" data-close>×</button>
+      <div class="match-celebrate">
+        <div class="match-icon">🎉</div>
+        <h3>マッチング成立!</h3>
+        <p id="matchText"></p>
+        <button class="btn btn-primary" data-close>メッセージを送る</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- いいねリストモーダル -->
+  <div class="modal-overlay" id="likedModal" hidden>
+    <div class="modal" role="dialog" aria-modal="true">
+      <button class="modal-close" data-close>×</button>
+      <h3 class="modal-title">♥ いいねしたメンバー</h3>
+      <div id="likedListBody"></div>
+    </div>
+  </div>
+
+  <!-- 登録モーダル -->
+  <div class="modal-overlay" id="registerModal" hidden>
+    <div class="modal" role="dialog" aria-modal="true">
+      <button class="modal-close" data-close>×</button>
+      <h3 class="modal-title">無料会員登録</h3>
+      <form id="registerForm" class="register-form">
+        <label>お名前<input type="text" name="name" required placeholder="山田 太郎"></label>
+        <label>会社名・屋号<input type="text" name="company" placeholder="株式会社サンプル"></label>
+        <label>業種
+          <select name="category" required>
+            <option value="">選択してください</option>
+          </select>
+        </label>
+        <label>ひとことアピール<textarea name="bio" rows="3" placeholder="例:Webの集客が得意です。飲食店の経営者さんとつながりたいです。"></textarea></label>
+        <button type="submit" class="btn btn-primary btn-block">登録する</button>
+        <p class="form-note">※ このデモでは入力内容は端末内(ブラウザ)にのみ保存されます。</p>
+      </form>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" hidden></div>
+
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
