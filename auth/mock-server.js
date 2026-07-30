@@ -243,6 +243,67 @@ const AuthMockServer = (function () {
     return ok({});
   }
 
+  // ---------- register(デモ用の新規会員登録) ----------
+  // パスワードポリシー(§8 参考): 12〜128文字 / 空白のみ禁止 / 同一文字の繰り返しのみ禁止
+  function validatePasswordStrength(password) {
+    if (typeof password !== "string" || password.length < 12) {
+      return "パスワードは12文字以上で入力してください。";
+    }
+    if (password.length > 128) {
+      return "パスワードは128文字以内で入力してください。";
+    }
+    if (!password.trim()) {
+      return "パスワードに空白以外の文字を含めてください。";
+    }
+    if (/^(.)\1+$/.test(password)) {
+      return "同じ文字の繰り返しのみのパスワードは使用できません。";
+    }
+    return null;
+  }
+
+  async function register(body) {
+    const db = await ensureDb();
+    const email = String(body.email || "").trim().toLowerCase();
+    const name = String(body.name || "").trim();
+    const password = String(body.password || "");
+
+    if (!name || !email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return fail("INVALID_REQUEST");
+    }
+    const weak = validatePasswordStrength(password);
+    if (weak) {
+      return { success: false, error: { code: "WEAK_PASSWORD", message: weak } };
+    }
+    if (db.users.some((u) => u.email === email)) {
+      return {
+        success: false,
+        error: { code: "REGISTER_FAILED", message: "このメールアドレスでは登録できません。ログインまたはパスワード再設定をお試しください。" },
+      };
+    }
+
+    const salt = randomSalt();
+    const user = {
+      userId: "usr_" + uuid(),
+      email,
+      name,
+      role: "member",
+      accountStatus: "active",
+      subscriptionStatus: "active",
+      paymentExempt: false,
+      isAdmin: false,
+      salt,
+      passwordHash: await hashPassword(password, salt),
+      failureCount: 0,
+      lockedUntil: 0,
+      passwordChangedAt: 0,
+    };
+    db.users.push(user);
+    saveDb(db);
+
+    // 登録後は自動ログイン(通常セッション12時間)
+    return login({ email, password, remember: false, userAgent: body.userAgent });
+  }
+
   // ---------- requestPasswordReset(常時成功応答:列挙耐性) ----------
   async function requestPasswordReset() {
     await ensureDb();
@@ -251,7 +312,7 @@ const AuthMockServer = (function () {
     });
   }
 
-  const ACTIONS = { login, verifySession, logout, requestPasswordReset };
+  const ACTIONS = { login, verifySession, logout, requestPasswordReset, register };
 
   async function handle(body) {
     try {

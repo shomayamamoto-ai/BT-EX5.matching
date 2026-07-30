@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="referrer" content="no-referrer">
-  <title>マイページ | 交流会マッチング</title>
+  <title>プライバシーポリシー | 交流会マッチング</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%23b5342c'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='%23fffdf7' font-family='sans-serif'>縁</text></svg>">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap" onload="this.onload=null;this.rel='stylesheet'">
@@ -14,39 +14,24 @@
 <body>
   <main class="auth-main">
     <div class="auth-card">
-      <a href="../" class="auth-logo">
+      <a href="../login/" class="auth-logo">
         <span class="auth-logo-mark">縁</span>
         <span>交流会マッチング</span>
       </a>
-
-      <h1>マイページ</h1>
-      <p class="auth-lead" id="portal-status" role="status">ログイン状態を確認しています…</p>
-
-      <div id="portal-content" hidden>
-        <dl class="portal-user">
-          <dt>メールアドレス</dt>
-          <dd id="portal-email"></dd>
-          <dt>会員区分</dt>
-          <dd id="portal-role"></dd>
-          <dt>セッション有効期限</dt>
-          <dd id="portal-expires"></dd>
-        </dl>
-        <p class="auth-lead"><a href="../">メンバーを探しに行く →</a></p>
-        <button type="button" id="logout-button" class="auth-secondary">ログアウト</button>
+      <h1>プライバシーポリシー</h1>
+      <div class="portal-user" style="font-size:13px;">
+        <p>本サービス(デモ環境)における情報の取り扱いについてご案内します。</p>
+        <p>1. 登録情報・いいね・メッセージ等のデータは、お使いのブラウザ内(localStorage)にのみ保存され、外部サーバーへは送信されません。</p>
+        <p>2. ブラウザのサイトデータを削除すると、保存された情報はすべて消去されます。</p>
+        <p>3. 本番環境へ移行する際は、本ポリシーを実際の取り扱いに合わせて改定します。</p>
       </div>
-
-      <div id="portal-message" class="auth-message"></div>
+      <div class="auth-links">
+        <a href="../login/">ログインに戻る</a>
+      </div>
     </div>
   </main>
-
   <footer class="auth-footer">
     <a href="../terms/">利用規約</a><a href="../privacy/">プライバシーポリシー</a>
   </footer>
-
-  <script src="../auth/mock-server.js"></script>
-  <script src="../auth/api.js"></script>
-  <script src="../auth/session.js"></script>
-  <script src="../auth/ui.js"></script>
-  <script src="../auth/portal.js"></script>
 </body>
 </html>

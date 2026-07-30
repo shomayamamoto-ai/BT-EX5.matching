@@ -15,10 +15,11 @@ const AuthApi = (function () {
 
   const NETWORK_MESSAGE = "通信に失敗しました。ネットワーク環境をご確認のうえ、再度お試しください。";
 
-  // 既知のエラーコード(§5.4 / §5.5 / 入口・例外側)
+  // 既知のエラーコード(§5.4 / §5.5 / 入口・例外側 / 登録画面用)
   const KNOWN_CODES = new Set([
     "AUTH_FAILED", "LOCKED", "SESSION_INVALID",
     "INVALID_REQUEST", "INVALID_ACTION", "RATE_LIMITED", "SERVER_ERROR",
+    "WEAK_PASSWORD", "REGISTER_FAILED",
   ]);
 
   // §5.6 フォールバック: message 欠落・未知コード → NETWORK_MESSAGE
@@ -77,6 +78,9 @@ const AuthApi = (function () {
   function requestPasswordReset(email) {
     return post("requestPasswordReset", { email });
   }
+  function register(name, email, password) {
+    return post("register", { name, email, password });
+  }
 
-  return { login, verifySession, logout, requestPasswordReset, NETWORK_MESSAGE };
+  return { login, verifySession, logout, requestPasswordReset, register, NETWORK_MESSAGE };
 })();
