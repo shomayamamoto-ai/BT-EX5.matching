@@ -308,13 +308,64 @@
     openModal("#likedModal");
   }
 
-  // ---------- メッセージ(チャット) ----------
+  // ---------- メッセージ(チャット / LINE風) ----------
   const AUTO_REPLIES = [
-    "メッセージありがとうございます!ぜひ今度お話しましょう。",
-    "こちらこそよろしくお願いします。次回の交流会には参加されますか?",
-    "興味あります!詳しく聞かせてください。",
-    "ありがとうございます。今度ランチでもいかがですか?",
+    { text: "メッセージありがとうございます!ぜひ今度お話しましょう。" },
+    { text: "👍", stamp: true },
+    { text: "こちらこそよろしくお願いします。次回の交流会には参加されますか?" },
+    { text: "興味あります!詳しく聞かせてください。" },
+    { text: "🙏", stamp: true },
+    { text: "ありがとうございます。今度ランチでもいかがですか?" },
+    { text: "いいですね!日程候補をいくつか送ってもらえますか?" },
   ];
+
+  const STAMPS = ["👍", "😊", "🎉", "🙏", "🍻", "❤️"];
+
+  function fmtTime(ms) {
+    const d = new Date(ms);
+    return d.getHours() + ":" + String(d.getMinutes()).padStart(2, "0");
+  }
+  function fmtDate(ms) {
+    const d = new Date(ms);
+    const now = new Date();
+    const yesterday = new Date(now.getTime() - 86400000);
+    if (d.toDateString() === now.toDateString()) return "今日";
+    if (d.toDateString() === yesterday.toDateString()) return "昨日";
+    return `${d.getMonth() + 1}/${d.getDate()}`;
+  }
+
+  function chatOpenId() {
+    const form = $("#chatForm");
+    return !$("#chatModal").hidden && form ? Number(form.dataset.chatId) : null;
+  }
+
+  function renderMessages(id, m) {
+    const log = chats[id] || [];
+    if (!log.length) {
+      return '<p class="chat-empty-note">🎉 マッチング成立!最初のメッセージを送ってみましょう。</p>';
+    }
+    let html = "";
+    let lastDate = "";
+    for (const msg of log) {
+      if (msg.at) {
+        const dstr = fmtDate(msg.at);
+        if (dstr !== lastDate) {
+          html += `<div class="date-chip"><span>${escapeHtml(dstr)}</span></div>`;
+          lastDate = dstr;
+        }
+      }
+      const time = msg.at ? fmtTime(msg.at) : "";
+      const body = msg.stamp
+        ? `<div class="chat-stamp">${escapeHtml(msg.text)}</div>`
+        : `<div class="chat-bubble ${msg.from === "me" ? "me" : "them"}">${escapeHtml(msg.text)}</div>`;
+      if (msg.from === "me") {
+        html += `<div class="msg-row me"><span class="msg-meta">${msg.read ? "既読<br>" : ""}${time}</span>${body}</div>`;
+      } else {
+        html += `<div class="msg-row them"><div class="msg-avatar">${m.avatar}</div>${body}<span class="msg-meta">${time}</span></div>`;
+      }
+    }
+    return html;
+  }
 
   function matchedMembers() {
     return MEMBERS.filter((m) => isMatched(m.id));
@@ -356,7 +407,6 @@
     if (!m || !isMatched(id)) return;
     unread.delete(id);
     renderUnreadBadge();
-    const log = chats[id] || [];
     $("#chatBody").innerHTML = `
       <div class="chat-header">
         <button class="chat-back" data-chat-back title="一覧へ戻る">‹</button>
@@ -366,10 +416,9 @@
           <div class="chat-header-company">${escapeHtml(m.company)}</div>
         </div>
       </div>
-      <div class="chat-messages" id="chatMessages">
-        ${log.length
-          ? log.map((msg) => `<div class="chat-bubble ${msg.from === "me" ? "me" : "them"}">${escapeHtml(msg.text)}</div>`).join("")
-          : '<p class="chat-empty-note">🎉 マッチング成立!最初のメッセージを送ってみましょう。</p>'}
+      <div class="chat-messages" id="chatMessages">${renderMessages(id, m)}</div>
+      <div class="stamp-row">
+        ${STAMPS.map((s) => `<button type="button" class="stamp-btn" data-stamp="${s}" title="スタンプを送る">${s}</button>`).join("")}
       </div>
       <form class="chat-input-row" id="chatForm" data-chat-id="${id}">
         <input type="text" id="chatInput" placeholder="メッセージを入力…" autocomplete="off">
@@ -381,28 +430,48 @@
     $("#chatInput").focus();
   }
 
-  function sendChat(id, text) {
+  function sendChat(id, text, isStamp) {
     if (!text.trim()) return;
     if (!chats[id]) chats[id] = [];
-    chats[id].push({ from: "me", text: text.trim() });
+    chats[id].push({ from: "me", text: text.trim(), at: Date.now(), read: false, stamp: !!isStamp });
     saveChats();
     showChat(id);
+    scheduleReply(id);
+  }
 
-    // デモ用:相手からの自動返信
-    const replyIndex = chats[id].filter((x) => x.from === "them").length % AUTO_REPLIES.length;
+  // デモ用:入力中インジケーター → 自動返信 → 既読付与(LINE風)
+  function scheduleReply(id) {
+    const m = MEMBERS.find((x) => x.id === id);
+
     setTimeout(() => {
-      chats[id].push({ from: "them", text: AUTO_REPLIES[replyIndex] });
+      const box = $("#chatMessages");
+      if (box && chatOpenId() === id && !document.getElementById("typingRow")) {
+        box.insertAdjacentHTML(
+          "beforeend",
+          `<div class="msg-row them" id="typingRow">
+            <div class="msg-avatar">${m.avatar}</div>
+            <div class="chat-bubble them typing"><span></span><span></span><span></span></div>
+          </div>`
+        );
+        box.scrollTop = box.scrollHeight;
+      }
+    }, 600);
+
+    setTimeout(() => {
+      const themCount = chats[id].filter((x) => x.from === "them").length;
+      const reply = AUTO_REPLIES[themCount % AUTO_REPLIES.length];
+      chats[id].push({ from: "them", text: reply.text, stamp: !!reply.stamp, at: Date.now() });
+      // 相手が読んだ扱い: 自分の送信メッセージに既読を付ける
+      chats[id].forEach((x) => { if (x.from === "me") x.read = true; });
       saveChats();
-      const modalOpen = !$("#chatModal").hidden && $("#chatForm") && Number($("#chatForm").dataset.chatId) === id;
-      if (modalOpen) {
+      if (chatOpenId() === id) {
         showChat(id);
       } else {
         unread.add(id);
         renderUnreadBadge();
-        const m = MEMBERS.find((x) => x.id === id);
         showToast(`💬 ${m.name}さんから新着メッセージ`);
       }
-    }, 1200);
+    }, 1500 + Math.floor(Math.random() * 900));
   }
 
   // ---------- カレンダー ----------
@@ -547,6 +616,13 @@
     }
 
     if (e.target.closest("[data-chat-back]")) { showChatList(); return; }
+
+    const stampBtn = e.target.closest("[data-stamp]");
+    if (stampBtn) {
+      const id = chatOpenId();
+      if (id) sendChat(id, stampBtn.dataset.stamp, true);
+      return;
+    }
 
     const likeBtn = e.target.closest("[data-like]");
     if (likeBtn) {
