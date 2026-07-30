@@ -1035,3 +1035,246 @@ img { max-width: 100%; }
   .event-item { flex-wrap: wrap; }
   .event-meta { margin-left: 72px; }
 }
+
+/* ---------- ハンバーガーメニュー(ドロワー) ---------- */
+.menu-btn {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  border: 1.5px solid var(--accent);
+  background: transparent;
+  cursor: pointer;
+  display: inline-flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 5px;
+  padding: 0;
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+.menu-btn:hover { background: rgba(181, 52, 44, 0.06); }
+.menu-btn span {
+  display: block;
+  width: 18px;
+  height: 2px;
+  background: var(--accent);
+  border-radius: 2px;
+  transition: transform 0.22s, opacity 0.22s;
+}
+.menu-btn.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.menu-btn.open span:nth-child(2) { opacity: 0; }
+.menu-btn.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+.drawer-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(61, 46, 33, 0.45);
+  z-index: 180;
+}
+.drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 290px;
+  max-width: 85vw;
+  background: var(--card);
+  border-left: 1px solid var(--gold-light);
+  z-index: 190;
+  transform: translateX(100%);
+  transition: transform 0.25s ease;
+  display: flex;
+  flex-direction: column;
+  padding: 76px 18px 20px;
+  overflow-y: auto;
+  box-shadow: -8px 0 24px rgba(90, 60, 20, 0.15);
+}
+.drawer.open { transform: none; }
+
+.drawer-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  background: var(--white);
+  border: 1px solid var(--gold-light);
+  border-radius: 12px;
+  margin-bottom: 14px;
+}
+.drawer-user-icon { font-size: 24px; }
+.drawer-user-label { font-size: 10px; color: var(--text-light); }
+.drawer-user-email { font-size: 13px; font-weight: 700; word-break: break-all; }
+
+.drawer-link {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 11px 10px;
+  border-radius: 10px;
+  color: var(--text);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  border: none;
+  background: none;
+  font-family: inherit;
+  cursor: pointer;
+}
+.drawer-link:hover { background: var(--bg-alt); color: var(--accent); }
+.drawer-sep { height: 1px; background: var(--gold-light); margin: 10px 0; flex-shrink: 0; }
+.drawer-logout {
+  margin-top: auto;
+  color: var(--accent);
+  font-weight: 700;
+  text-align: center;
+  border: 1.5px solid var(--accent);
+  border-radius: 999px;
+}
+.drawer-logout:hover { background: rgba(181, 52, 44, 0.08); }
+
+/* メニューボタンはヘッダーより手前に */
+.site-header { z-index: 195; }
+
+/* ============================================
+   v3 デザインリファイン(和モダンの磨き込み)
+   ============================================ */
+
+::selection { background: rgba(181, 52, 44, 0.18); }
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ---------- ヘッダー: 金の飾り罫 ---------- */
+.site-header {
+  border-bottom: none;
+  background: rgba(250, 243, 227, 0.92);
+}
+.site-header::after {
+  content: "";
+  display: block;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--gold) 18%, var(--accent) 50%, var(--gold) 82%, transparent);
+  opacity: 0.55;
+}
+
+/* ---------- ヒーロー: 青海波の地紋 ---------- */
+.hero {
+  position: relative;
+}
+.hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='40' viewBox='0 0 80 40'%3E%3Cg fill='none' stroke='%23c9a45c' stroke-width='1'%3E%3Cpath d='M0 40a40 40 0 0 1 80 0M-20 40a40 40 0 0 1 80 0M20 40a40 40 0 0 1 80 0'/%3E%3Cpath d='M0 40a28 28 0 0 1 56 0M12 40a28 28 0 0 1 56 0M-28 40a28 28 0 0 1 56 0'/%3E%3Cpath d='M8 40a16 16 0 0 1 32 0M40 40a16 16 0 0 1 32 0M-24 40a16 16 0 0 1 32 0'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: 80px 40px;
+  opacity: 0.10;
+  pointer-events: none;
+  -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,1), rgba(0,0,0,0) 75%);
+  mask-image: linear-gradient(to bottom, rgba(0,0,0,1), rgba(0,0,0,0) 75%);
+}
+.hero > * { position: relative; }
+
+.hero-eyebrow { letter-spacing: 3px; }
+
+/* ---------- 見出し: 金の飾り下線 ---------- */
+.section-head .section-title { position: relative; padding-bottom: 14px; }
+.section-head .section-title::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+  width: 56px;
+  height: 3px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--gold), var(--accent), var(--gold));
+}
+
+/* ---------- カード: ピックアップの上部飾り ---------- */
+.member-card { overflow: hidden; }
+.member-card.pickup::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--gold), var(--accent));
+}
+
+/* ---------- ステップカードの番号を装飾 ---------- */
+.step { position: relative; overflow: hidden; }
+.step::after {
+  content: "";
+  position: absolute;
+  bottom: -14px;
+  right: -14px;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(201, 164, 92, 0.16), transparent 70%);
+}
+
+/* ---------- CTAバンド: 地紋を重ねる ---------- */
+.cta-band {
+  position: relative;
+  overflow: hidden;
+}
+.cta-band::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='40' viewBox='0 0 80 40'%3E%3Cg fill='none' stroke='%23ffffff' stroke-width='1'%3E%3Cpath d='M0 40a40 40 0 0 1 80 0M-20 40a40 40 0 0 1 80 0M20 40a40 40 0 0 1 80 0'/%3E%3Cpath d='M0 40a28 28 0 0 1 56 0M12 40a28 28 0 0 1 56 0M-28 40a28 28 0 0 1 56 0'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: 80px 40px;
+  opacity: 0.08;
+  pointer-events: none;
+}
+.cta-band > * { position: relative; }
+.cta-band h2 {
+  font-family: "Shippori Mincho", "Hiragino Mincho ProN", serif;
+  letter-spacing: 0.05em;
+}
+
+/* ---------- フッター: 金罫と上品な余白 ---------- */
+.site-footer {
+  position: relative;
+  background: #35281c;
+  padding: 44px 20px 32px;
+}
+.site-footer::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, var(--gold) 30%, var(--accent) 50%, var(--gold) 70%, transparent);
+  opacity: 0.8;
+}
+.footer-brand { letter-spacing: 0.06em; }
+.footer-nav a { opacity: 0.85; transition: opacity 0.15s; }
+.footer-nav a:hover { opacity: 1; }
+
+/* ---------- 検索バーを上質に ---------- */
+.search-bar input {
+  box-shadow: inset 0 1px 3px rgba(90, 60, 20, 0.06);
+}
+
+/* ---------- 実績カードに飾り ---------- */
+.stat { position: relative; overflow: hidden; }
+.stat::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 3px;
+  border-radius: 0 0 3px 3px;
+  background: linear-gradient(90deg, var(--gold), var(--accent));
+  opacity: 0.7;
+}

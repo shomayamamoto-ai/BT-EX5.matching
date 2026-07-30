@@ -37,11 +37,35 @@
         <button class="btn btn-ghost btn-icon" id="likedListBtn" title="いいねリスト">
           ♥ <span class="badge" id="likedCount">0</span>
         </button>
-        <a class="btn btn-ghost" href="portal/" title="マイページ">👤 <span id="loggedInUser"></span></a>
-        <button class="btn btn-primary" id="registerBtn">無料で登録</button>
+        <button class="menu-btn" id="menuBtn" aria-label="メニューを開く" aria-expanded="false" aria-controls="drawer">
+          <span></span><span></span><span></span>
+        </button>
       </div>
     </div>
   </header>
+
+  <!-- ハンバーガーメニュー(ドロワー) -->
+  <div class="drawer-overlay" id="drawerOverlay" hidden></div>
+  <nav class="drawer" id="drawer" aria-label="メニュー">
+    <div class="drawer-user">
+      <div class="drawer-user-icon">👤</div>
+      <div>
+        <div class="drawer-user-label">ログイン中</div>
+        <div class="drawer-user-email" id="loggedInUser"></div>
+      </div>
+    </div>
+    <a href="#recommend" class="drawer-link">✨ 今日のおすすめ</a>
+    <a href="#members" class="drawer-link">🆕 新着メンバー</a>
+    <a href="#pickup" class="drawer-link">⭐ ピックアップ</a>
+    <a href="#events" class="drawer-link">📅 交流会カレンダー</a>
+    <a href="#categories" class="drawer-link">🔍 カテゴリ別に探す</a>
+    <a href="#faq" class="drawer-link">❓ よくある質問</a>
+    <div class="drawer-sep"></div>
+    <button type="button" class="drawer-link" id="drawerLiked">♥ いいねリスト</button>
+    <button type="button" class="drawer-link" id="drawerMessages">💬 メッセージ</button>
+    <a href="portal/" class="drawer-link">👤 マイページ</a>
+    <button type="button" class="drawer-link drawer-logout" id="drawerLogout">ログアウト</button>
+  </nav>
 
   <!-- ヒーロー -->
   <section class="hero">

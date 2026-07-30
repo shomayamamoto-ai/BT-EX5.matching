@@ -635,7 +635,16 @@
   });
 
   document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") closeModals();
+    if (e.key === "Escape") {
+      closeModals();
+      if ($("#drawer").classList.contains("open")) {
+        $("#drawer").classList.remove("open");
+        $("#menuBtn").classList.remove("open");
+        $("#drawerOverlay").hidden = true;
+        $("#menuBtn").setAttribute("aria-expanded", "false");
+        document.body.style.overflow = "";
+      }
+    }
   });
 
   $("#matchChatBtn").addEventListener("click", () => {
@@ -664,8 +673,33 @@
 
   $("#messagesBtn").addEventListener("click", showChatList);
   $("#likedListBtn").addEventListener("click", showLikedList);
-  $("#registerBtn").addEventListener("click", () => openModal("#registerModal"));
   $("#registerBtn2").addEventListener("click", () => openModal("#registerModal"));
+
+  // ---------- ハンバーガーメニュー(ドロワー) ----------
+  const menuBtn = $("#menuBtn");
+  const drawer = $("#drawer");
+  const drawerOverlay = $("#drawerOverlay");
+
+  function setMenu(open) {
+    drawer.classList.toggle("open", open);
+    menuBtn.classList.toggle("open", open);
+    drawerOverlay.hidden = !open;
+    menuBtn.setAttribute("aria-expanded", open ? "true" : "false");
+    menuBtn.setAttribute("aria-label", open ? "メニューを閉じる" : "メニューを開く");
+    document.body.style.overflow = open ? "hidden" : "";
+  }
+
+  menuBtn.addEventListener("click", () => setMenu(!drawer.classList.contains("open")));
+  drawerOverlay.addEventListener("click", () => setMenu(false));
+  drawer.querySelectorAll("a").forEach((a) => a.addEventListener("click", () => setMenu(false)));
+  $("#drawerLiked").addEventListener("click", () => { setMenu(false); showLikedList(); });
+  $("#drawerMessages").addEventListener("click", () => { setMenu(false); showChatList(); });
+  $("#drawerLogout").addEventListener("click", async () => {
+    const token = AuthSession.getToken();
+    if (token) await AuthApi.logout(token);
+    AuthSession.clearToken();
+    location.replace("login/");
+  });
   $("#prevMonth").addEventListener("click", () => changeMonth(-1));
   $("#nextMonth").addEventListener("click", () => changeMonth(1));
   $("#deckSkip").addEventListener("click", () => deckAction(false));
