@@ -16,15 +16,31 @@
 - **無料会員登録フォーム** — デモ用。入力内容は localStorage に保存
 - **レスポンシブ対応** — スマートフォン〜PC まで対応
 
+## ログイン機能
+
+`docs/specs/login-page-detailed-spec-v3.md` を設計仕様として実装しています(適用方針は `docs/specs/README.md` 参照)。
+
+- **ログインページ** (`/login/`) — label 完備・placeholder 不使用・パスワード表示切替(aria 同期)・「ログイン状態を保持」(オフ12時間 / オン30日、`=== true` 厳密判定)・二重送信防止・AUTH_FAILED 時のみパスワード欄へフォーカス
+- **マイページ** (`/portal/`) — `guardPage()` による保護ページ。未ログインは `?next=portal` 付きでログインへ。`?next=` は許可リスト(`['portal']`)照合で不正値を丸め、任意URLは受け取らない
+- **パスワード再設定** (`/password/reset/`) — 登録の有無にかかわらず常に成功応答(アカウント列挙耐性)
+- **セッション** — 保存はトークン文字列のみ(キー `kouryukai-auth-session`)。ログイン成功ごとに新規ランダムトークンを発行(Session fixation 対策)。有効性判断は verifySession のみ
+- **サーバー判定**(デモ実装 `auth/mock-server.js`)— 5回失敗で15分ロック / 失敗理由は AUTH_FAILED・LOCKED に集約 / 未登録アドレスにはダミー照合 / verifySession 失敗は SESSION_INVALID 単一コード
+- **デモアカウント** — `demo@kouryukai.jp` / `kouryukai-demo-2026`(ユーザーDBもブラウザ内 localStorage)
+
+実バックエンド(GAS 等)へ接続する場合は `auth/api.js` の `API_BASE_URL` を設定するだけで、モックの代わりに text/plain POST で同一契約の API を呼びます。
+
 ## 技術構成
 
 ビルド不要の静的サイトです(HTML / CSS / Vanilla JavaScript)。
 
 ```
-index.html      … ページ本体
-css/style.css   … スタイル(クリーム×ゴールド×朱赤の配色)
-js/data.js      … サンプルデータ(メンバー・カテゴリ・イベント)
-js/app.js       … アプリケーションロジック
+index.html            … ページ本体
+css/style.css         … スタイル(クリーム×ゴールド×朱赤の配色)
+js/data.js            … サンプルデータ(メンバー・カテゴリ・イベント)
+js/app.js             … アプリケーションロジック
+login/  portal/  password/reset/ … 認証関連ページ
+auth/                 … 認証共通層(api / session / ui / mock-server / 各画面ロジック)
+docs/specs/           … 仕様書(実装の正)
 ```
 
 ## 動かし方
