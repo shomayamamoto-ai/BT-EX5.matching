@@ -14,13 +14,15 @@ const AuthSession = (function () {
   const SESSION_KEY = "kouryukai-auth-session";
 
   // 許可リスト方式(§6)。任意URL・任意パスは恒久的に受け取らない。
-  // ログイン直後に外部サイトへ遷移させるオープンリダイレクトを構造的に排除する
-  const ALLOWED_NEXT = ["portal"];
-  const DEFAULT_NEXT = "portal";
+  // ログイン直後に外部サイトへ遷移させるオープンリダイレクトを構造的に排除する。
+  // home(トップ=アプリ本体)は §6 の手順(guardPage明示指定+リスト追加)で追加した保護画面
+  const ALLOWED_NEXT = ["portal", "home"];
+  const DEFAULT_NEXT = "home";
 
   // 画面名 → ログインページからの相対パス
   const SCREEN_PATHS = {
     portal: "../portal/",
+    home: "../",
   };
 
   function safeNextName(value) {
@@ -68,7 +70,9 @@ const AuthSession = (function () {
   // 有効ならサーバーが返した user を resolve する(表示は都度この結果を正とする §5.3)
   async function guardPage(options) {
     const next = safeNextName(options && options.next);
-    const loginUrl = "../login/?next=" + encodeURIComponent(next);
+    // loginPath: 呼び出しページからログインページへの相対パス(既定 ../login/)
+    const loginPath = (options && options.loginPath) || "../login/";
+    const loginUrl = loginPath + "?next=" + encodeURIComponent(next);
     const token = getToken();
     if (!token) {
       location.replace(loginUrl);
