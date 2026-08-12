@@ -5,18 +5,19 @@
    ============================================ */
 
 :root {
-  --bg: #faf3e3;
-  --card: #fdf8ec;
-  --gold: #c9a45c;
-  --gold-light: #e2cfa3;
-  --accent: #b5342c;
-  --accent-dark: #93251e;
-  --text: #4a3728;
-  --text-light: #8a7460;
-  --white: #fffdf7;
-  --error: #b5342c;
-  --shadow: 0 2px 10px rgba(90, 60, 20, 0.12);
-  --radius: 14px;
+  --bg: #fff8f1;
+  --card: #ffffff;
+  --gold: #ffb35c;
+  --gold-light: #ffdfc2;
+  --accent: #ff5e7e;
+  --accent-dark: #f04368;
+  --text: #46343c;
+  --text-light: #a3888f;
+  --white: #ffffff;
+  --error: #f04368;
+  --grad: linear-gradient(90deg, #ff5e7e, #ff9f43);
+  --shadow: 0 6px 16px rgba(255, 94, 126, 0.14);
+  --radius: 18px;
   --space-1: 8px;
   --space-2: 14px;
   --space-3: 22px;
@@ -236,4 +237,24 @@ body {
 .auth-field textarea:focus {
   outline: none;
   border-color: var(--accent);
+}
+
+/* ---------- POPリデザイン ---------- */
+body { font-family: "M PLUS Rounded 1c", "Noto Sans JP", "Hiragino Kaku Gothic ProN", sans-serif; }
+.auth-card { border-width: 2px; border-color: #ffe6d6; }
+.auth-card h1 { font-weight: 900; }
+.auth-logo-mark {
+  background: var(--grad);
+  border-radius: 12px;
+  transform: rotate(-6deg);
+  box-shadow: 0 3px 8px rgba(255, 94, 126, 0.35);
+}
+.auth-submit { background: var(--grad); }
+.auth-submit:hover { background: var(--grad); filter: brightness(1.07); }
+.auth-main {
+  background-image:
+    radial-gradient(rgba(255, 94, 126, 0.10) 2.5px, transparent 2.5px),
+    radial-gradient(rgba(46, 196, 182, 0.09) 2px, transparent 2px);
+  background-size: 36px 36px, 28px 28px;
+  background-position: 0 0, 14px 18px;
 }
