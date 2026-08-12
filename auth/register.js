@@ -73,7 +73,9 @@
 
     isBusy = true;
     AuthUI.setBusy(submitButton, true, SUBMIT_BUSY_LABEL, SUBMIT_LABEL);
-    const result = await AuthApi.register(name, email, password);
+    const category = document.getElementById("register-category").value;
+    const bio = document.getElementById("register-bio").value.trim();
+    const result = await AuthApi.register(name, email, password, category, bio);
     isBusy = false;
     AuthUI.setBusy(submitButton, false, SUBMIT_BUSY_LABEL, SUBMIT_LABEL);
 

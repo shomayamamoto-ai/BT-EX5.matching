@@ -1359,3 +1359,19 @@ img { max-width: 100%; }
 }
 .stamp-btn:hover { background: var(--bg-alt); transform: scale(1.18); }
 .chat-input-row { border-top: none; }
+
+/* ---------- 会員ラベル・いいねバッジ ---------- */
+.member-label {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  background: var(--gold);
+}
+.member-card.pickup .member-label { top: 16px; }
+.tag.likes-me {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: rgba(181, 52, 44, 0.06);
+  font-weight: 700;
+}
+.chat-partner-row .badge { flex-shrink: 0; }

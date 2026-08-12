@@ -44,20 +44,30 @@ const AuthSession = (function () {
     }
   }
 
+  // トークンはタブ単位(sessionStorage)を優先し、localStorage を
+  // フォールバックにする。これにより同一ブラウザの別タブで別アカウントに
+  // 同時ログインでき(タブごとに独立したセッション)、新しいタブや
+  // ブラウザ再起動後は直近ログインのトークンを引き継げる。
   function getToken() {
     try {
-      return localStorage.getItem(SESSION_KEY) || "";
+      const tabToken = sessionStorage.getItem(SESSION_KEY);
+      if (tabToken) return tabToken;
+      const shared = localStorage.getItem(SESSION_KEY) || "";
+      if (shared) sessionStorage.setItem(SESSION_KEY, shared);
+      return shared;
     } catch {
       return "";
     }
   }
 
   function saveToken(token) {
+    sessionStorage.setItem(SESSION_KEY, token);
     localStorage.setItem(SESSION_KEY, token);
   }
 
   function clearToken() {
     try {
+      sessionStorage.removeItem(SESSION_KEY);
       localStorage.removeItem(SESSION_KEY);
     } catch {
       /* noop */

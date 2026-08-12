@@ -15,11 +15,11 @@ const AuthApi = (function () {
 
   const NETWORK_MESSAGE = "通信に失敗しました。ネットワーク環境をご確認のうえ、再度お試しください。";
 
-  // 既知のエラーコード(§5.4 / §5.5 / 入口・例外側 / 登録画面用)
+  // 既知のエラーコード(§5.4 / §5.5 / 入口・例外側 / 登録・メッセージ用)
   const KNOWN_CODES = new Set([
     "AUTH_FAILED", "LOCKED", "SESSION_INVALID",
     "INVALID_REQUEST", "INVALID_ACTION", "RATE_LIMITED", "SERVER_ERROR",
-    "WEAK_PASSWORD", "REGISTER_FAILED",
+    "WEAK_PASSWORD", "REGISTER_FAILED", "FORBIDDEN",
   ]);
 
   // §5.6 フォールバック: message 欠落・未知コード → NETWORK_MESSAGE
@@ -78,9 +78,30 @@ const AuthApi = (function () {
   function requestPasswordReset(email) {
     return post("requestPasswordReset", { email });
   }
-  function register(name, email, password) {
-    return post("register", { name, email, password });
+  function register(name, email, password, category, bio) {
+    return post("register", { name, email, password, category, bio });
   }
 
-  return { login, verifySession, logout, requestPasswordReset, register, NETWORK_MESSAGE };
+  // ---------- 会員・いいね・メッセージ(要ログイン) ----------
+  function listMembers(sessionToken) {
+    return post("listMembers", { sessionToken });
+  }
+  function sendLike(sessionToken, toUserId) {
+    return post("sendLike", { sessionToken, toUserId });
+  }
+  function getMatches(sessionToken) {
+    return post("getMatches", { sessionToken });
+  }
+  function sendMessage(sessionToken, toUserId, text, stamp) {
+    return post("sendMessage", { sessionToken, toUserId, text, stamp: stamp === true });
+  }
+  function getMessages(sessionToken, toUserId) {
+    return post("getMessages", { sessionToken, toUserId });
+  }
+
+  return {
+    login, verifySession, logout, requestPasswordReset, register,
+    listMembers, sendLike, getMatches, sendMessage, getMessages,
+    NETWORK_MESSAGE,
+  };
 })();

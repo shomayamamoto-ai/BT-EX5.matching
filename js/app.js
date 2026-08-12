@@ -1,32 +1,40 @@
 // ============================================
 // 交流会マッチング - アプリケーションロジック
+//
+// メンバー・いいね・マッチング・メッセージはすべて AuthApi
+// (auth/api.js)経由で取得・更新する。メッセージの閲覧・送信は
+// サーバー層(mock-server / 実API)がマッチング済みの2者のみに
+// 制限しており、画面側はその結果を表示するだけにする。
+// 別タブ・別アカウントでの更新は BroadcastChannel / storage
+// イベント+ポーリングで即時反映する。
 // ============================================
 
 (function () {
   "use strict";
 
   // ---------- 状態 ----------
-  const STORAGE_KEY = "kouryukai.likes";
-  const PROFILE_KEY = "kouryukai.profile";
-  const CHAT_KEY = "kouryukai.chats";
   const SKIP_KEY = "kouryukai.skips";
   const JOIN_KEY = "kouryukai.joins";
 
-  let likedIds = loadSet(STORAGE_KEY);
+  let roster = [];        // 自分以外のメンバー一覧(サーバー取得)
+  let matches = [];       // マッチ済みの相手(サーバー取得)
+  let knownMatchedIds = null; // マッチ通知用(前回のマッチ集合)
+  let knownUnreadTotal = 0;
   let skippedIds = loadSet(SKIP_KEY);
   let joinedEvents = loadSet(JOIN_KEY);
-  let chats = loadChats();
   let activeTag = null;
   let searchQuery = "";
   let activeCategory = CATEGORIES[0];
   let sortMode = "score";
   let calYear = 2026;
   let calMonth = 7; // 1-12
-  let unread = new Set(); // 未読の相手id
   let deckAnimating = false;
 
-  // お互いいいねでマッチする「相手からのいいね」(デモ用に固定)
-  const INCOMING_LIKES = new Set([2, 4, 5, 8, 11, 15]);
+  let openChatId = null;      // 開いているチャットの相手 userId
+  let chatPollTimer = null;
+  let lastChatRender = "";    // 差分検出用
+
+  const token = () => AuthSession.getToken();
 
   function loadSet(key) {
     try {
@@ -38,16 +46,6 @@
   function saveSet(key, set) {
     localStorage.setItem(key, JSON.stringify([...set]));
   }
-  function loadChats() {
-    try {
-      return JSON.parse(localStorage.getItem(CHAT_KEY) || "{}");
-    } catch {
-      return {};
-    }
-  }
-  function saveChats() {
-    localStorage.setItem(CHAT_KEY, JSON.stringify(chats));
-  }
 
   // ---------- ユーティリティ ----------
   const $ = (sel) => document.querySelector(sel);
@@ -58,13 +56,19 @@
     }[c]));
   }
 
-  // メンバーidから決まる擬似「相性スコア」(72〜98%)
-  function score(id) {
-    return 72 + ((id * 37 + 11) % 27);
+  function strHash(s) {
+    let h = 0;
+    for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+    return h;
   }
 
-  function isMatched(id) {
-    return likedIds.has(id) && INCOMING_LIKES.has(id);
+  // userId から決まる擬似「相性スコア」(72〜98%)
+  function score(userId) {
+    return 72 + (strHash(String(userId)) % 27);
+  }
+
+  function memberById(userId) {
+    return roster.find((m) => m.userId === userId) || matches.find((m) => m.userId === userId);
   }
 
   let toastTimer = null;
@@ -76,13 +80,52 @@
     toastTimer = setTimeout(() => { toast.hidden = true; }, 2600);
   }
 
+  // ---------- サーバーからの読み込み ----------
+  async function loadRoster() {
+    const res = await AuthApi.listMembers(token());
+    if (!res.success) return;
+    roster = res.data.members;
+    renderAll();
+  }
+
+  async function refreshMatches(options) {
+    const res = await AuthApi.getMatches(token());
+    if (!res.success) return;
+    const prevIds = knownMatchedIds;
+    matches = res.data.matches;
+
+    // 新しくマッチした相手を通知(相手側のいいねで成立した場合もここで気付ける)
+    const currentIds = new Set(matches.map((m) => m.userId));
+    if (prevIds) {
+      for (const m of matches) {
+        if (!prevIds.has(m.userId) && !(options && options.silent)) {
+          showToast(`🎉 ${m.name}さんとマッチングしました!`);
+        }
+      }
+    }
+    knownMatchedIds = currentIds;
+
+    // 未読バッジ(開いているチャットの分は除く)
+    const unreadTotal = matches.reduce(
+      (sum, m) => sum + (m.userId === openChatId ? 0 : m.unreadCount), 0
+    );
+    if (unreadTotal > knownUnreadTotal && prevIds && !(options && options.silent)) {
+      const noisy = matches.find((m) => m.unreadCount > 0 && m.userId !== openChatId);
+      if (noisy) showToast(`💬 ${noisy.name}さんから新着メッセージ`);
+    }
+    knownUnreadTotal = unreadTotal;
+    const badge = $("#unreadCount");
+    badge.textContent = unreadTotal;
+    badge.classList.toggle("badge-hide", unreadTotal === 0);
+  }
+
   // ---------- メンバーカード ----------
   function memberCard(m) {
-    const liked = likedIds.has(m.id);
     return `
-      <article class="member-card ${m.isPickup ? "pickup" : ""}" data-id="${m.id}">
-        <span class="card-score">相性 ${score(m.id)}%</span>
+      <article class="member-card ${m.isPickup ? "pickup" : ""}" data-id="${m.userId}">
+        <span class="card-score">相性 ${score(m.userId)}%</span>
         ${m.isPickup ? '<span class="pickup-label">PICK UP</span>' : ""}
+        ${!m.isBot ? '<span class="pickup-label member-label">会員</span>' : ""}
         <div class="card-top">
           <div class="avatar">${m.avatar}</div>
           <div>
@@ -93,13 +136,17 @@
         <div class="member-tags">
           <span class="tag">${escapeHtml(m.category)}</span>
           ${m.tags.map((t) => `<span class="tag">${escapeHtml(t)}</span>`).join("")}
+          ${m.likesMe && !m.matched ? '<span class="tag likes-me">♥ あなたにいいね</span>' : ""}
+          ${m.matched ? '<span class="tag likes-me">🎉 マッチング済み</span>' : ""}
         </div>
         <p class="member-bio">${escapeHtml(m.bio)}</p>
         <div class="card-actions">
-          <button class="like-btn ${liked ? "liked" : ""}" data-like="${m.id}">
-            ${liked ? "♥ いいね済み" : "♡ 話してみたい"}
-          </button>
-          <button class="detail-btn" data-detail="${m.id}">詳細</button>
+          ${m.matched
+            ? `<button class="like-btn liked" data-chat-with="${m.userId}">💬 メッセージ</button>`
+            : `<button class="like-btn ${m.likedByMe ? "liked" : ""}" data-like="${m.userId}">
+                ${m.likedByMe ? "♥ いいね済み" : "♡ 話してみたい"}
+              </button>`}
+          <button class="detail-btn" data-detail="${m.userId}">詳細</button>
         </div>
       </article>`;
   }
@@ -117,9 +164,12 @@
   }
 
   function renderGrids() {
-    const filtered = MEMBERS.filter(matchesFilter);
+    const filtered = roster.filter(matchesFilter);
 
-    const newMembers = filtered.filter((m) => m.isNew);
+    // 新着: 登録会員(新しい順)を先頭に、サンプルの新着メンバーを続ける
+    const newMembers = filtered
+      .filter((m) => m.isNew)
+      .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
     $("#newMembersGrid").innerHTML = newMembers.length
       ? newMembers.map(memberCard).join("")
       : '<p class="empty-note">条件に合う新着メンバーが見つかりませんでした。</p>';
@@ -129,20 +179,19 @@
       ? pickups.map(memberCard).join("")
       : '<p class="empty-note">条件に合うピックアップメンバーが見つかりませんでした。</p>';
 
-    let inCategory = MEMBERS.filter(
+    let inCategory = roster.filter(
       (m) => m.category === activeCategory && matchesFilter(m)
     );
     inCategory = inCategory.slice().sort((a, b) =>
       sortMode === "score"
-        ? score(b.id) - score(a.id)
-        : (b.isNew === a.isNew ? 0 : b.isNew ? 1 : -1) || a.id - b.id
+        ? score(b.userId) - score(a.userId)
+        : (b.createdAt || 0) - (a.createdAt || 0)
     );
     $("#categoryGrid").innerHTML = inCategory.length
       ? inCategory.map(memberCard).join("")
       : '<p class="empty-note">このカテゴリのメンバーが見つかりませんでした。</p>';
 
-    $("#likedCount").textContent = likedIds.size;
-    renderUnreadBadge();
+    $("#likedCount").textContent = roster.filter((m) => m.likedByMe).length;
   }
 
   // ---------- タグフィルタ・カテゴリタブ ----------
@@ -162,9 +211,10 @@
 
   // ---------- 今日のおすすめ(カードデッキ) ----------
   function deckQueue() {
-    return MEMBERS.filter((m) => !likedIds.has(m.id) && !skippedIds.has(m.id))
+    return roster
+      .filter((m) => !m.likedByMe && !m.matched && !skippedIds.has(m.userId))
       .slice()
-      .sort((a, b) => score(b.id) - score(a.id));
+      .sort((a, b) => score(b.userId) - score(a.userId));
   }
 
   function renderDeck() {
@@ -184,8 +234,8 @@
       .map((m, i) => {
         const cls = i === 0 ? "" : ` behind-${i}`;
         return `
-        <div class="deck-card${cls}" data-deck-id="${m.id}" style="z-index:${10 - i}">
-          <span class="score-chip">相性 ${score(m.id)}%</span>
+        <div class="deck-card${cls}" data-deck-id="${m.userId}" style="z-index:${10 - i}">
+          <span class="score-chip">相性 ${score(m.userId)}%</span>
           <div class="avatar">${m.avatar}</div>
           <h3>${escapeHtml(m.name)}</h3>
           <div class="member-company">${escapeHtml(m.company)}</div>
@@ -205,16 +255,16 @@
     const queue = deckQueue();
     if (!queue.length) return;
     const top = queue[0];
-    const el = $(`#deck [data-deck-id="${top.id}"]`);
+    const el = document.querySelector(`#deck [data-deck-id="${top.userId}"]`);
     if (!el) return;
     deckAnimating = true;
     el.classList.add(like ? "fly-right" : "fly-left");
-    setTimeout(() => {
+    setTimeout(async () => {
       deckAnimating = false;
       if (like) {
-        toggleLike(top.id, { silentRender: true });
+        await likeMember(top.userId, { fromDeck: true });
       } else {
-        skippedIds.add(top.id);
+        skippedIds.add(top.userId);
         saveSet(SKIP_KEY, skippedIds);
       }
       renderDeck();
@@ -223,28 +273,32 @@
   }
 
   // ---------- いいね・マッチング ----------
-  function toggleLike(id, opts = {}) {
-    const m = MEMBERS.find((x) => x.id === id);
+  async function likeMember(userId, opts = {}) {
+    const m = memberById(userId);
     if (!m) return;
 
-    if (likedIds.has(id)) {
-      likedIds.delete(id);
-      saveSet(STORAGE_KEY, likedIds);
-      renderAll();
-      showToast(`${m.name}さんへのいいねを取り消しました`);
+    const res = await AuthApi.sendLike(token(), userId);
+    if (!res.success) {
+      showToast(res.error.userMessage);
       return;
     }
 
-    likedIds.add(id);
-    skippedIds.delete(id);
-    saveSet(STORAGE_KEY, likedIds);
+    m.likedByMe = res.data.liked;
+    m.matched = res.data.matched;
+    skippedIds.delete(userId);
     saveSet(SKIP_KEY, skippedIds);
-    if (!opts.silentRender) renderAll();
-    else renderGrids();
+    renderAll();
+    refreshMatches({ silent: true });
 
-    if (INCOMING_LIKES.has(id)) {
-      $("#matchText").textContent = `${m.name}さん(${m.company})とマッチングしました!メッセージを送って交流を始めましょう。`;
-      $("#matchChatBtn").dataset.chatWith = m.id;
+    if (!res.data.liked) {
+      showToast(`${m.name}さんへのいいねを取り消しました`);
+      return;
+    }
+    if (res.data.matched) {
+      knownMatchedIds = knownMatchedIds || new Set();
+      knownMatchedIds.add(userId);
+      $("#matchText").textContent = `${m.name}さん(${m.company || m.category})とマッチングしました!メッセージを送って交流を始めましょう。`;
+      $("#matchChatBtn").dataset.chatWith = userId;
       openModal("#matchModal");
     } else {
       showToast(`${m.name}さんに「話してみたい」を送りました ♥`);
@@ -259,12 +313,12 @@
   function closeModals() {
     document.querySelectorAll(".modal-overlay").forEach((el) => (el.hidden = true));
     document.body.style.overflow = "";
+    stopChat();
   }
 
-  function showProfile(id) {
-    const m = MEMBERS.find((x) => x.id === id);
+  function showProfile(userId) {
+    const m = memberById(userId);
     if (!m) return;
-    const liked = likedIds.has(m.id);
     $("#profileModalBody").innerHTML = `
       <div class="profile-detail">
         <div class="avatar">${m.avatar}</div>
@@ -273,52 +327,40 @@
         <div class="member-tags">
           <span class="tag">${escapeHtml(m.category)}</span>
           ${m.tags.map((t) => `<span class="tag">${escapeHtml(t)}</span>`).join("")}
-          <span class="tag" style="border-color:var(--accent);color:var(--accent)">相性 ${score(m.id)}%</span>
+          <span class="tag" style="border-color:var(--accent);color:var(--accent)">相性 ${score(m.userId)}%</span>
+          ${m.likesMe && !m.matched ? '<span class="tag likes-me">♥ あなたにいいね</span>' : ""}
         </div>
-        <div class="full-bio">${escapeHtml(m.bio)}</div>
-        <p class="interest"><strong>こんな人と話したい:</strong> ${escapeHtml(m.interest)}</p>
-        ${isMatched(m.id)
-          ? `<button class="btn btn-primary btn-block" data-chat-with="${m.id}">💬 メッセージを送る</button>`
-          : `<button class="like-btn ${liked ? "liked" : ""}" data-like="${m.id}" style="width:100%; padding:12px 0; font-size:15px;">
-              ${liked ? "♥ いいね済み" : "♡ 話してみたい"}
+        <div class="full-bio">${escapeHtml(m.bio) || "よろしくお願いします。"}</div>
+        ${m.interest ? `<p class="interest"><strong>こんな人と話したい:</strong> ${escapeHtml(m.interest)}</p>` : ""}
+        ${m.matched
+          ? `<button class="btn btn-primary btn-block" data-chat-with="${m.userId}">💬 メッセージを送る</button>`
+          : `<button class="like-btn ${m.likedByMe ? "liked" : ""}" data-like="${m.userId}" style="width:100%; padding:12px 0; font-size:15px;">
+              ${m.likedByMe ? "♥ いいね済み" : "♡ 話してみたい"}
             </button>`}
       </div>`;
     openModal("#profileModal");
   }
 
   function showLikedList() {
-    const liked = MEMBERS.filter((m) => likedIds.has(m.id));
+    const liked = roster.filter((m) => m.likedByMe || m.matched);
     $("#likedListBody").innerHTML = liked.length
       ? liked
-          .map((m) => {
-            const matched = INCOMING_LIKES.has(m.id);
-            return `
+          .map((m) => `
         <div class="liked-row">
           <div class="avatar">${m.avatar}</div>
           <div class="liked-info">
-            <div class="member-name">${escapeHtml(m.name)} ${matched ? "🎉" : ""}</div>
-            <div class="member-company">${escapeHtml(m.company)}${matched ? " ・マッチング済み" : ""}</div>
+            <div class="member-name">${escapeHtml(m.name)} ${m.matched ? "🎉" : ""}</div>
+            <div class="member-company">${escapeHtml(m.company || m.category)}${m.matched ? " ・マッチング済み" : ""}</div>
           </div>
-          ${matched ? `<button class="join-btn" data-chat-with="${m.id}">💬 話す</button>` : ""}
-          <button class="unlike-btn" data-unlike="${m.id}">取り消す</button>
-        </div>`;
-          })
+          ${m.matched ? `<button class="join-btn" data-chat-with="${m.userId}">💬 話す</button>` : ""}
+          ${m.likedByMe && !m.matched ? `<button class="unlike-btn" data-unlike="${m.userId}">取り消す</button>` : ""}
+        </div>`)
           .join("")
       : '<p class="empty-note">まだ誰にもいいねしていません。気になるメンバーに「話してみたい」を送ってみましょう。</p>';
     openModal("#likedModal");
   }
 
   // ---------- メッセージ(チャット / LINE風) ----------
-  const AUTO_REPLIES = [
-    { text: "メッセージありがとうございます!ぜひ今度お話しましょう。" },
-    { text: "👍", stamp: true },
-    { text: "こちらこそよろしくお願いします。次回の交流会には参加されますか?" },
-    { text: "興味あります!詳しく聞かせてください。" },
-    { text: "🙏", stamp: true },
-    { text: "ありがとうございます。今度ランチでもいかがですか?" },
-    { text: "いいですね!日程候補をいくつか送ってもらえますか?" },
-  ];
-
   const STAMPS = ["👍", "😊", "🎉", "🙏", "🍻", "❤️"];
 
   function fmtTime(ms) {
@@ -334,31 +376,23 @@
     return `${d.getMonth() + 1}/${d.getDate()}`;
   }
 
-  function chatOpenId() {
-    const form = $("#chatForm");
-    return !$("#chatModal").hidden && form ? Number(form.dataset.chatId) : null;
-  }
-
-  function renderMessages(id, m) {
-    const log = chats[id] || [];
-    if (!log.length) {
+  function renderMessagesHtml(m, messages) {
+    if (!messages.length) {
       return '<p class="chat-empty-note">🎉 マッチング成立!最初のメッセージを送ってみましょう。</p>';
     }
     let html = "";
     let lastDate = "";
-    for (const msg of log) {
-      if (msg.at) {
-        const dstr = fmtDate(msg.at);
-        if (dstr !== lastDate) {
-          html += `<div class="date-chip"><span>${escapeHtml(dstr)}</span></div>`;
-          lastDate = dstr;
-        }
+    for (const msg of messages) {
+      const dstr = fmtDate(msg.at);
+      if (dstr !== lastDate) {
+        html += `<div class="date-chip"><span>${escapeHtml(dstr)}</span></div>`;
+        lastDate = dstr;
       }
-      const time = msg.at ? fmtTime(msg.at) : "";
+      const time = fmtTime(msg.at);
       const body = msg.stamp
         ? `<div class="chat-stamp">${escapeHtml(msg.text)}</div>`
-        : `<div class="chat-bubble ${msg.from === "me" ? "me" : "them"}">${escapeHtml(msg.text)}</div>`;
-      if (msg.from === "me") {
+        : `<div class="chat-bubble ${msg.mine ? "me" : "them"}">${escapeHtml(msg.text)}</div>`;
+      if (msg.mine) {
         html += `<div class="msg-row me"><span class="msg-meta">${msg.read ? "既読<br>" : ""}${time}</span>${body}</div>`;
       } else {
         html += `<div class="msg-row them"><div class="msg-avatar">${m.avatar}</div>${body}<span class="msg-meta">${time}</span></div>`;
@@ -367,33 +401,116 @@
     return html;
   }
 
-  function matchedMembers() {
-    return MEMBERS.filter((m) => isMatched(m.id));
+  async function refreshChatMessages() {
+    if (openChatId === null || $("#chatModal").hidden) return;
+    const m = memberById(openChatId);
+    if (!m) return;
+    const res = await AuthApi.getMessages(token(), openChatId);
+    if (!res.success) {
+      if (res.error.code === "FORBIDDEN") {
+        showToast(res.error.userMessage);
+        closeModals();
+      }
+      return;
+    }
+    const html = renderMessagesHtml(m, res.data.messages);
+    if (html !== lastChatRender) {
+      lastChatRender = html;
+      const box = $("#chatMessages");
+      if (box) {
+        box.innerHTML = html;
+        box.scrollTop = box.scrollHeight;
+      }
+    }
   }
 
-  function renderUnreadBadge() {
-    const el = $("#unreadCount");
-    el.textContent = unread.size;
-    el.classList.toggle("badge-hide", unread.size === 0);
+  function stopChat() {
+    openChatId = null;
+    lastChatRender = "";
+    if (chatPollTimer) { clearInterval(chatPollTimer); chatPollTimer = null; }
   }
 
-  function showChatList() {
-    const matched = matchedMembers();
+  async function showChat(userId) {
+    const m = memberById(userId);
+    if (!m || !m.matched) {
+      showToast(AuthMockServer.ERRORS.FORBIDDEN);
+      return;
+    }
+    openChatId = userId;
+    lastChatRender = "";
+    $("#chatBody").innerHTML = `
+      <div class="chat-header">
+        <button class="chat-back" data-chat-back title="一覧へ戻る">‹</button>
+        <div class="avatar">${m.avatar}</div>
+        <div>
+          <div class="chat-header-name">${escapeHtml(m.name)}</div>
+          <div class="chat-header-company">${escapeHtml(m.company || m.category)}</div>
+        </div>
+      </div>
+      <div class="chat-messages" id="chatMessages"></div>
+      <div class="stamp-row">
+        ${STAMPS.map((s) => `<button type="button" class="stamp-btn" data-stamp="${s}" title="スタンプを送る">${s}</button>`).join("")}
+      </div>
+      <form class="chat-input-row" id="chatForm">
+        <input type="text" id="chatInput" placeholder="メッセージを入力…" autocomplete="off">
+        <button type="submit" class="btn btn-primary">送信</button>
+      </form>`;
+    openModal("#chatModal");
+    await refreshChatMessages();
+    refreshMatches({ silent: true });
+    if (chatPollTimer) clearInterval(chatPollTimer);
+    chatPollTimer = setInterval(refreshChatMessages, 2500);
+    $("#chatInput").focus();
+  }
+
+  function showTypingIndicator() {
+    const m = memberById(openChatId);
+    const box = $("#chatMessages");
+    if (!m || !box || document.getElementById("typingRow")) return;
+    box.insertAdjacentHTML(
+      "beforeend",
+      `<div class="msg-row them" id="typingRow">
+        <div class="msg-avatar">${m.avatar}</div>
+        <div class="chat-bubble them typing"><span></span><span></span><span></span></div>
+      </div>`
+    );
+    box.scrollTop = box.scrollHeight;
+  }
+
+  async function sendChat(text, isStamp) {
+    if (openChatId === null || !text.trim()) return;
+    const m = memberById(openChatId);
+    const res = await AuthApi.sendMessage(token(), openChatId, text.trim(), isStamp === true);
+    if (!res.success) {
+      showToast(res.error.userMessage);
+      return;
+    }
+    await refreshChatMessages();
+    if (m && m.isBot) {
+      setTimeout(showTypingIndicator, 500);
+      setTimeout(refreshChatMessages, 1500);
+    }
+  }
+
+  async function showChatList() {
+    await refreshMatches({ silent: true });
     $("#chatBody").innerHTML = `
       <div class="chat-list">
         <h3 class="chat-list-title">💬 メッセージ</h3>
-        ${matched.length
-          ? matched
+        ${matches.length
+          ? matches
               .map((m) => {
-                const log = chats[m.id] || [];
-                const last = log.length ? log[log.length - 1].text : "マッチングしました!メッセージを送ってみましょう";
+                const last = m.lastMessage
+                  ? (m.lastMessage.mine ? "自分: " : "") + m.lastMessage.text
+                  : "マッチングしました!メッセージを送ってみましょう";
                 return `
-            <div class="chat-partner-row" data-chat-with="${m.id}">
+            <div class="chat-partner-row" data-chat-with="${m.userId}">
               <div class="avatar">${m.avatar}</div>
-              <div>
-                <div class="member-name">${escapeHtml(m.name)} ${unread.has(m.id) ? "🔴" : ""}</div>
+              <div style="flex:1; min-width:0;">
+                <div class="member-name">${escapeHtml(m.name)}</div>
                 <div class="last-msg">${escapeHtml(last)}</div>
               </div>
+              ${m.unreadCount ? `<span class="badge">${m.unreadCount}</span>` : ""}
             </div>`;
               })
               .join("")
@@ -402,77 +519,29 @@
     openModal("#chatModal");
   }
 
-  function showChat(id) {
-    const m = MEMBERS.find((x) => x.id === id);
-    if (!m || !isMatched(id)) return;
-    unread.delete(id);
-    renderUnreadBadge();
-    $("#chatBody").innerHTML = `
-      <div class="chat-header">
-        <button class="chat-back" data-chat-back title="一覧へ戻る">‹</button>
-        <div class="avatar">${m.avatar}</div>
-        <div>
-          <div class="chat-header-name">${escapeHtml(m.name)}</div>
-          <div class="chat-header-company">${escapeHtml(m.company)}</div>
-        </div>
-      </div>
-      <div class="chat-messages" id="chatMessages">${renderMessages(id, m)}</div>
-      <div class="stamp-row">
-        ${STAMPS.map((s) => `<button type="button" class="stamp-btn" data-stamp="${s}" title="スタンプを送る">${s}</button>`).join("")}
-      </div>
-      <form class="chat-input-row" id="chatForm" data-chat-id="${id}">
-        <input type="text" id="chatInput" placeholder="メッセージを入力…" autocomplete="off">
-        <button type="submit" class="btn btn-primary">送信</button>
-      </form>`;
-    openModal("#chatModal");
-    const box = $("#chatMessages");
-    box.scrollTop = box.scrollHeight;
-    $("#chatInput").focus();
+  // ---------- リアルタイム同期 ----------
+  let syncTimer = null;
+  function onDbChanged() {
+    clearTimeout(syncTimer);
+    syncTimer = setTimeout(() => {
+      loadRoster();
+      refreshMatches();
+      refreshChatMessages();
+    }, 200);
   }
 
-  function sendChat(id, text, isStamp) {
-    if (!text.trim()) return;
-    if (!chats[id]) chats[id] = [];
-    chats[id].push({ from: "me", text: text.trim(), at: Date.now(), read: false, stamp: !!isStamp });
-    saveChats();
-    showChat(id);
-    scheduleReply(id);
-  }
+  window.addEventListener("storage", (e) => {
+    if (e.key === "kouryukai-auth-db") onDbChanged();
+  });
+  try {
+    const bc = new BroadcastChannel("kouryukai-sync");
+    bc.onmessage = onDbChanged;
+  } catch { /* BroadcastChannel 非対応環境 */ }
 
-  // デモ用:入力中インジケーター → 自動返信 → 既読付与(LINE風)
-  function scheduleReply(id) {
-    const m = MEMBERS.find((x) => x.id === id);
-
-    setTimeout(() => {
-      const box = $("#chatMessages");
-      if (box && chatOpenId() === id && !document.getElementById("typingRow")) {
-        box.insertAdjacentHTML(
-          "beforeend",
-          `<div class="msg-row them" id="typingRow">
-            <div class="msg-avatar">${m.avatar}</div>
-            <div class="chat-bubble them typing"><span></span><span></span><span></span></div>
-          </div>`
-        );
-        box.scrollTop = box.scrollHeight;
-      }
-    }, 600);
-
-    setTimeout(() => {
-      const themCount = chats[id].filter((x) => x.from === "them").length;
-      const reply = AUTO_REPLIES[themCount % AUTO_REPLIES.length];
-      chats[id].push({ from: "them", text: reply.text, stamp: !!reply.stamp, at: Date.now() });
-      // 相手が読んだ扱い: 自分の送信メッセージに既読を付ける
-      chats[id].forEach((x) => { if (x.from === "me") x.read = true; });
-      saveChats();
-      if (chatOpenId() === id) {
-        showChat(id);
-      } else {
-        unread.add(id);
-        renderUnreadBadge();
-        showToast(`💬 ${m.name}さんから新着メッセージ`);
-      }
-    }, 1500 + Math.floor(Math.random() * 900));
-  }
+  // フォールバックの定期同期
+  setInterval(() => {
+    if (document.visibilityState === "visible") refreshMatches({ silent: false });
+  }, 8000);
 
   // ---------- カレンダー ----------
   function eventKey(e) {
@@ -576,27 +645,6 @@
     document.querySelectorAll(".reveal").forEach((el) => io.observe(el));
   }
 
-  // ---------- 登録フォーム ----------
-  function setupRegisterForm() {
-    const select = document.querySelector('#registerForm select[name="category"]');
-    CATEGORIES.forEach((c) => {
-      const opt = document.createElement("option");
-      opt.value = c;
-      opt.textContent = c;
-      select.appendChild(opt);
-    });
-
-    $("#registerForm").addEventListener("submit", (e) => {
-      e.preventDefault();
-      const fd = new FormData(e.target);
-      const profile = Object.fromEntries(fd.entries());
-      localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
-      closeModals();
-      showToast(`${profile.name}さん、登録ありがとうございます!🎉`);
-      e.target.reset();
-    });
-  }
-
   // ---------- 描画まとめ ----------
   function renderAll() {
     renderTagFilters();
@@ -611,16 +659,15 @@
     if (chatWith) {
       e.stopPropagation();
       closeModals();
-      showChat(Number(chatWith.dataset.chatWith));
+      showChat(chatWith.dataset.chatWith);
       return;
     }
 
-    if (e.target.closest("[data-chat-back]")) { showChatList(); return; }
+    if (e.target.closest("[data-chat-back]")) { stopChat(); showChatList(); return; }
 
     const stampBtn = e.target.closest("[data-stamp]");
     if (stampBtn) {
-      const id = chatOpenId();
-      if (id) sendChat(id, stampBtn.dataset.stamp, true);
+      sendChat(stampBtn.dataset.stamp, true);
       return;
     }
 
@@ -628,22 +675,21 @@
     if (likeBtn) {
       e.stopPropagation();
       const inProfile = !!likeBtn.closest("#profileModal");
-      toggleLike(Number(likeBtn.dataset.like));
-      if (inProfile) showProfile(Number(likeBtn.dataset.like));
+      const userId = likeBtn.dataset.like;
+      likeMember(userId).then(() => { if (inProfile) showProfile(userId); });
       return;
     }
 
     const detailBtn = e.target.closest("[data-detail]");
     if (detailBtn) {
       e.stopPropagation();
-      showProfile(Number(detailBtn.dataset.detail));
+      showProfile(detailBtn.dataset.detail);
       return;
     }
 
     const unlikeBtn = e.target.closest("[data-unlike]");
     if (unlikeBtn) {
-      toggleLike(Number(unlikeBtn.dataset.unlike));
-      showLikedList();
+      likeMember(unlikeBtn.dataset.unlike).then(showLikedList);
       return;
     }
 
@@ -671,13 +717,13 @@
 
     const card = e.target.closest(".member-card");
     if (card) {
-      showProfile(Number(card.dataset.id));
+      showProfile(card.dataset.id);
       return;
     }
 
     const deckCard = e.target.closest(".deck-card:not(.behind-1):not(.behind-2)");
     if (deckCard) {
-      showProfile(Number(deckCard.dataset.deckId));
+      showProfile(deckCard.dataset.deckId);
       return;
     }
 
@@ -704,9 +750,10 @@
   document.addEventListener("submit", (e) => {
     if (e.target.id === "chatForm") {
       e.preventDefault();
-      const id = Number(e.target.dataset.chatId);
       const input = $("#chatInput");
-      sendChat(id, input.value);
+      const text = input.value;
+      input.value = "";
+      sendChat(text, false);
     }
   });
 
@@ -724,9 +771,9 @@
   });
 
   $("#matchChatBtn").addEventListener("click", () => {
-    const id = Number($("#matchChatBtn").dataset.chatWith);
+    const userId = $("#matchChatBtn").dataset.chatWith;
     closeModals();
-    if (id) showChat(id);
+    if (userId) showChat(userId);
   });
 
   $("#searchBtn").addEventListener("click", () => {
@@ -749,7 +796,21 @@
 
   $("#messagesBtn").addEventListener("click", showChatList);
   $("#likedListBtn").addEventListener("click", showLikedList);
-  $("#registerBtn2").addEventListener("click", () => openModal("#registerModal"));
+  $("#exploreBtn").addEventListener("click", () => {
+    document.getElementById("recommend").scrollIntoView({ behavior: "smooth" });
+  });
+  $("#prevMonth").addEventListener("click", () => changeMonth(-1));
+  $("#nextMonth").addEventListener("click", () => changeMonth(1));
+  $("#deckSkip").addEventListener("click", () => deckAction(false));
+  $("#deckLike").addEventListener("click", () => deckAction(true));
+
+  // ヘッダー影・ページトップへ戻る
+  window.addEventListener("scroll", () => {
+    const y = window.scrollY;
+    $("#siteHeader").classList.toggle("scrolled", y > 8);
+    $("#backToTop").classList.toggle("show", y > 600);
+  }, { passive: true });
+  $("#backToTop").addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
 
   // ---------- ハンバーガーメニュー(ドロワー) ----------
   const menuBtn = $("#menuBtn");
@@ -771,28 +832,16 @@
   $("#drawerLiked").addEventListener("click", () => { setMenu(false); showLikedList(); });
   $("#drawerMessages").addEventListener("click", () => { setMenu(false); showChatList(); });
   $("#drawerLogout").addEventListener("click", async () => {
-    const token = AuthSession.getToken();
-    if (token) await AuthApi.logout(token);
+    const t = token();
+    if (t) await AuthApi.logout(t);
     AuthSession.clearToken();
     location.replace("login/");
   });
-  $("#prevMonth").addEventListener("click", () => changeMonth(-1));
-  $("#nextMonth").addEventListener("click", () => changeMonth(1));
-  $("#deckSkip").addEventListener("click", () => deckAction(false));
-  $("#deckLike").addEventListener("click", () => deckAction(true));
-
-  // ヘッダー影・ページトップへ戻る
-  window.addEventListener("scroll", () => {
-    const y = window.scrollY;
-    $("#siteHeader").classList.toggle("scrolled", y > 8);
-    $("#backToTop").classList.toggle("show", y > 600);
-  }, { passive: true });
-  $("#backToTop").addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
 
   // ---------- 初期化 ----------
-  setupRegisterForm();
   setupStats();
   setupReveal();
-  renderAll();
   renderCalendar();
+  renderAll();
+  loadRoster().then(() => refreshMatches({ silent: true }));
 })();
