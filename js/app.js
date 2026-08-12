@@ -163,13 +163,24 @@
     return true;
   }
 
+  // いいねをくれた(未マッチの)相手を最優先で上位表示する
+  function likePriority(m) {
+    return m.likesMe && !m.matched ? 1 : 0;
+  }
+
   function renderGrids() {
     const filtered = roster.filter(matchesFilter);
 
-    // 新着: 登録会員(新しい順)を先頭に、サンプルの新着メンバーを続ける
+    // 新着: いいねをくれた相手を最上位に(新着でなくても表示)、
+    // 続いて登録会員(新しい順)、サンプルの新着メンバー
     const newMembers = filtered
-      .filter((m) => m.isNew)
-      .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+      .filter((m) => m.isNew || (m.likesMe && !m.matched))
+      .sort(
+        (a, b) =>
+          likePriority(b) - likePriority(a) ||
+          (b.likesMeAt || 0) - (a.likesMeAt || 0) ||
+          (b.createdAt || 0) - (a.createdAt || 0)
+      );
     $("#newMembersGrid").innerHTML = newMembers.length
       ? newMembers.map(memberCard).join("")
       : '<p class="empty-note">条件に合う新着メンバーが見つかりませんでした。</p>';
@@ -182,10 +193,12 @@
     let inCategory = roster.filter(
       (m) => m.category === activeCategory && matchesFilter(m)
     );
-    inCategory = inCategory.slice().sort((a, b) =>
-      sortMode === "score"
-        ? score(b.userId) - score(a.userId)
-        : (b.createdAt || 0) - (a.createdAt || 0)
+    inCategory = inCategory.slice().sort(
+      (a, b) =>
+        likePriority(b) - likePriority(a) ||
+        (sortMode === "score"
+          ? score(b.userId) - score(a.userId)
+          : (b.createdAt || 0) - (a.createdAt || 0))
     );
     $("#categoryGrid").innerHTML = inCategory.length
       ? inCategory.map(memberCard).join("")
@@ -214,7 +227,11 @@
     return roster
       .filter((m) => !m.likedByMe && !m.matched && !skippedIds.has(m.userId))
       .slice()
-      .sort((a, b) => score(b.userId) - score(a.userId));
+      .sort(
+        (a, b) =>
+          likePriority(b) - likePriority(a) ||
+          score(b.userId) - score(a.userId)
+      );
   }
 
   function renderDeck() {

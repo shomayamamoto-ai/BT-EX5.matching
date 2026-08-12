@@ -430,7 +430,9 @@ const AuthMockServer = (function () {
 
   // 一覧表示用のメンバー情報(パスワード関連・メールは含めない)
   function toMemberView(db, me, u) {
+    const likeFromU = db.likes.find((l) => l.from === u.userId && l.to === me.userId);
     return {
+      likesMeAt: likeFromU ? likeFromU.at : 0,
       userId: u.userId,
       name: u.name || "会員",
       company: u.company || "",
