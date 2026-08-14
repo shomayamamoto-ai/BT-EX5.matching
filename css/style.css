@@ -1,27 +1,29 @@
 /* ============================================
    交流会マッチング - スタイルシート
-   配色: ポップ(ピンク×オレンジのグラデーション+カラフルアクセント)
+   配色: Lumenium ライトテーマ
+   (インディゴ×スカイブルーのグラデーション、星の煌めき、
+    lumenium.net の宇宙的トーンをライト配色に翻訳)
    ============================================ */
 
 :root {
-  --bg: #fff8f1;
-  --bg-alt: #ffeedd;
+  --bg: #f6f8ff;
+  --bg-alt: #edf1fd;
   --card: #ffffff;
-  --card-deep: #fff2e2;
-  --gold: #ffb35c;          /* サブアクセント(オレンジ) */
-  --gold-light: #ffdfc2;    /* ライトボーダー */
-  --accent: #ff5e7e;        /* メインアクセント(ポップピンク) */
-  --accent-dark: #f04368;
-  --text: #46343c;
-  --text-light: #a3888f;
+  --card-deep: #f0f4ff;
+  --gold: #38bdf8;          /* サブアクセント(スカイブルー) */
+  --gold-light: #dfe5f9;    /* ライトボーダー */
+  --accent: #6672f5;        /* メインアクセント(インディゴ) */
+  --accent-dark: #4f5ae8;
+  --text: #232946;
+  --text-light: #7d86a8;
   --white: #ffffff;
-  --teal: #2ec4b6;
-  --yellow: #ffd166;
-  --purple: #a78bfa;
-  --grad: linear-gradient(90deg, #ff5e7e, #ff9f43);
-  --grad-rainbow: linear-gradient(90deg, #ff5e7e, #ff9f43, #ffd166, #2ec4b6, #a78bfa);
-  --shadow: 0 6px 16px rgba(255, 94, 126, 0.14);
-  --radius: 18px;
+  --teal: #38bdf8;
+  --yellow: #8b5cf6;
+  --purple: #8b7bf7;
+  --grad: linear-gradient(100deg, #6672f5, #38bdf8);
+  --grad-rainbow: linear-gradient(90deg, #6672f5, #8b7bf7, #38bdf8);
+  --shadow: 0 8px 24px rgba(80, 92, 220, 0.10);
+  --radius: 16px;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -1381,174 +1383,6 @@ img { max-width: 100%; }
 }
 .chat-partner-row .badge { flex-shrink: 0; }
 
-/* ============================================
-   v5 POPリデザイン(丸ゴシック+グラデーション)
-   ============================================ */
-
-body { font-family: "M PLUS Rounded 1c", "Noto Sans JP", "Hiragino Kaku Gothic ProN", sans-serif; }
-
-.hero-title,
-.section-title,
-.stat-num,
-.cta-band h2,
-.match-celebrate h3 {
-  font-family: "M PLUS Rounded 1c", sans-serif;
-  font-weight: 900;
-}
-
-/* ---------- ヒーロー ---------- */
-.hero-title {
-  background: linear-gradient(100deg, #ff5e7e 15%, #ff9f43 60%, #2ec4b6 105%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  color: #ff5e7e;
-  letter-spacing: 0.02em;
-}
-.hero-eyebrow { color: var(--accent); font-weight: 700; letter-spacing: 3px; }
-.hero::before {
-  background-image:
-    radial-gradient(rgba(255, 94, 126, 0.18) 2.5px, transparent 2.5px),
-    radial-gradient(rgba(46, 196, 182, 0.16) 2px, transparent 2px);
-  background-size: 36px 36px, 28px 28px;
-  background-position: 0 0, 14px 18px;
-  opacity: 1;
-}
-.hero-deco-l { background: radial-gradient(circle at 30% 30%, rgba(255, 159, 67, 0.4), transparent 70%); }
-.hero-deco-r { background: radial-gradient(circle at 60% 40%, rgba(46, 196, 182, 0.32), transparent 70%); }
-
-/* ---------- ヘッダー ---------- */
-.site-header { background: rgba(255, 255, 255, 0.92); }
-.site-header::after { background: var(--grad-rainbow); opacity: 1; height: 3px; }
-.logo-mark {
-  background: var(--grad);
-  border-radius: 13px;
-  transform: rotate(-6deg);
-  box-shadow: 0 3px 8px rgba(255, 94, 126, 0.35);
-}
-.logo:hover .logo-mark { transform: rotate(6deg) scale(1.05); transition: transform 0.2s; }
-
-/* ---------- 見出し ---------- */
-.section-head .section-title::after {
-  background: var(--grad-rainbow);
-  width: 76px;
-  height: 5px;
-  border-radius: 3px;
-}
-
-/* ---------- ボタン・バッジ ---------- */
-.btn-primary { background: var(--grad); }
-.btn-primary:hover { background: var(--grad); filter: brightness(1.07); }
-.badge { background: var(--grad); }
-.pickup-label { background: var(--grad); }
-.member-label { background: var(--teal); }
-.like-btn.liked { background: var(--grad); border-color: transparent; }
-
-/* ---------- カード ---------- */
-.member-card {
-  border: 2px solid #ffe6d6;
-  box-shadow: 0 8px 0 -4px rgba(255, 94, 126, 0.10), 0 12px 26px rgba(70, 52, 60, 0.08);
-}
-.member-card:hover {
-  transform: translateY(-5px) rotate(-0.4deg);
-  box-shadow: 0 10px 0 -4px rgba(255, 94, 126, 0.14), 0 16px 32px rgba(70, 52, 60, 0.12);
-}
-.member-card.pickup {
-  background: linear-gradient(160deg, #fff7ef, #fff0f4);
-  border-color: #ffc9d6;
-}
-.member-card.pickup::before { background: var(--grad); }
-.avatar {
-  background: linear-gradient(145deg, #ffe9dc, #ffd9e2);
-  border-color: #ffffff;
-  box-shadow: 0 0 0 2px #ffd3de;
-}
-.card-score { color: var(--accent); border-color: #ffd3de; background: #fff0f4; }
-.tag { background: #fff6f0; border-color: #ffe1d1; }
-.tag.likes-me { background: #fff0f4; border-color: #ffb3c4; }
-
-/* ---------- ステップ ---------- */
-.step { border: 2px solid #ffe6d6; border-radius: 20px; }
-.step-arrow { color: var(--accent); }
-
-/* ---------- フィルタ・タブ ---------- */
-.tag-filter.active,
-.category-tab.active { background: var(--grad); border-color: transparent; }
-.tag-filter:hover, .category-tab:hover { border-color: var(--accent); }
-
-/* ---------- 実績(3色) ---------- */
-.stats-band .stat { border-width: 2px; }
-.stats-band .stat:nth-child(1) { background: #fff0f4; border-color: #ffc9d6; }
-.stats-band .stat:nth-child(2) { background: #e9faf8; border-color: #b6e8e2; }
-.stats-band .stat:nth-child(3) { background: #fff7e0; border-color: #ffe4a3; }
-.stat::before { background: var(--grad-rainbow); width: 48px; }
-.stats-band .stat:nth-child(1) .stat-num { color: #ff5e7e; }
-.stats-band .stat:nth-child(2) .stat-num { color: #1cab9d; }
-.stats-band .stat:nth-child(3) .stat-num { color: #e8a413; }
-.stat-num::after { color: var(--gold); }
-
-/* ---------- デッキ ---------- */
-.deck-card { border: 2px solid #ffe6d6; border-radius: 26px; }
-.score-chip { background: var(--grad); }
-.deck-like { background: var(--grad); }
-.deck-skip { border: 2px solid #eee2e6; }
-
-/* ---------- カレンダー・イベント ---------- */
-.cal-day.has-event { background: var(--grad); }
-.cal-day.has-event:hover { filter: brightness(1.08); background: var(--grad); }
-.cal-day.today { border-color: var(--accent); }
-.event-date { background: var(--grad); }
-.join-btn.joined { background: var(--grad); border-color: transparent; }
-.calendar-wrap { border-width: 2px; }
-
-/* ---------- CTA ---------- */
-.cta-band { background: linear-gradient(120deg, #ff5e7e, #ff9f43); }
-.cta-band::before {
-  background-image: radial-gradient(rgba(255, 255, 255, 0.4) 2px, transparent 2px);
-  background-size: 26px 26px;
-  opacity: 0.5;
-}
-.cta-band h2 { letter-spacing: 0.02em; }
-.btn-cta { color: #f04368; }
-
-/* ---------- フッター ---------- */
-.site-footer { background: #3b2f35; }
-.site-footer::before { background: var(--grad-rainbow); opacity: 1; }
-
-/* ---------- ドロワー ---------- */
-.drawer { border-left: none; }
-.drawer::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 4px;
-  background: linear-gradient(180deg, #ff5e7e, #ff9f43, #ffd166, #2ec4b6, #a78bfa);
-}
-.menu-btn { border-radius: 14px; border-width: 2px; }
-.drawer-user { border-width: 2px; border-color: #ffd9e2; background: #fff6f8; }
-.drawer-logout { border-width: 2px; }
-
-/* ---------- チャット ---------- */
-.chat-bubble.me { background: var(--grad); }
-.chat-header { background: #fff0f4; border-bottom-color: #ffd9e2; }
-.msg-avatar { background: #ffe9dc; border-color: #ffd3de; }
-.date-chip span { background: #ffeedd; color: #b08a92; }
-.chat-bubble.typing span { background: var(--accent); }
-.stamp-row { border-top-color: #ffe6d6; }
-.cal-dow.sun { color: var(--accent); }
-.cal-dow.sat { color: var(--teal); }
-
-/* ---------- モーダル・その他 ---------- */
-.modal { border-radius: 24px; }
-.faq-item { border-width: 2px; border-radius: 16px; }
-.back-to-top { background: var(--grad); }
-.member-card.pickup .member-label { top: 16px; }
-::selection { background: rgba(255, 94, 126, 0.22); }
-:focus-visible { outline-color: var(--accent); }
-.reveal.visible { transition-duration: 0.5s; }
-
 /* 装飾のはみ出しによる横スクロールを防止 */
 .hero { overflow: clip; }
 @supports not (overflow: clip) {
@@ -1569,3 +1403,193 @@ html, body { overflow-x: clip; }
 /* 装飾円をヒーロー内に収めて、クリップの直線エッジを見せない */
 .hero-deco-l { left: 12px; top: 46px; width: 150px; height: 150px; }
 .hero-deco-r { right: 12px; top: 150px; width: 150px; height: 150px; }
+
+/* ============================================
+   v6 Lumeniumテーマ(ライト)
+   lumenium.net の宇宙的な世界観をライト配色で再現:
+   星の煌めき・インディゴ→スカイブルーのグラデーション・
+   ミニマルで洗練されたUI。CTA/フッターのみ夜空のネイビー
+   ============================================ */
+
+body { font-family: "Inter", "Noto Sans JP", "Hiragino Kaku Gothic ProN", sans-serif; }
+
+.hero-title,
+.section-title,
+.stat-num,
+.cta-band h2,
+.match-celebrate h3 {
+  font-family: "Inter", "Noto Sans JP", sans-serif;
+  font-weight: 800;
+}
+
+/* ---------- ヒーロー: グラデーション見出し+星空(ライト) ---------- */
+.hero-title {
+  background: linear-gradient(100deg, #4f7df9 5%, #38bdf8 50%, #8b7bf7 95%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: #4f7df9;
+  letter-spacing: 0.01em;
+}
+.hero-eyebrow { color: #8b93b8; font-weight: 600; letter-spacing: 4px; }
+.hero::before {
+  background-image:
+    radial-gradient(rgba(102, 114, 245, 0.45) 1px, transparent 1.6px),
+    radial-gradient(rgba(56, 189, 248, 0.4) 1px, transparent 1.6px),
+    radial-gradient(rgba(139, 123, 247, 0.35) 1.4px, transparent 2px);
+  background-size: 90px 90px, 70px 70px, 130px 130px;
+  background-position: 10px 5px, 40px 45px, 70px 20px;
+  opacity: 1;
+}
+.hero-deco-l { background: radial-gradient(circle, rgba(102, 114, 245, 0.16), transparent 70%); }
+.hero-deco-r { background: radial-gradient(circle, rgba(56, 189, 248, 0.15), transparent 70%); }
+
+/* ---------- ヘッダー ---------- */
+.site-header { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(12px); }
+.site-header::after {
+  background: linear-gradient(90deg, transparent, #6672f5 30%, #38bdf8 70%, transparent);
+  opacity: 0.55;
+  height: 2px;
+}
+.logo-mark {
+  background: linear-gradient(135deg, #6672f5, #38bdf8);
+  clip-path: polygon(50% 0%, 93% 25%, 93% 75%, 50% 100%, 7% 75%, 7% 25%);
+  border-radius: 0;
+  width: 38px;
+  height: 40px;
+}
+.logo { filter: drop-shadow(0 2px 6px rgba(102, 114, 245, 0.35)); }
+.logo:hover .logo-mark { transform: rotate(14deg); transition: transform 0.25s; }
+
+/* ---------- 見出し ---------- */
+.section-head .section-title::after {
+  background: linear-gradient(90deg, #6672f5, #38bdf8);
+  width: 64px;
+  height: 3px;
+  border-radius: 2px;
+}
+
+/* ---------- ボタン・バッジ ---------- */
+.btn-primary { background: var(--grad); box-shadow: 0 4px 14px rgba(102, 114, 245, 0.3); }
+.btn-primary:hover { background: var(--grad); filter: brightness(1.07); }
+.badge { background: var(--grad); }
+.pickup-label { background: var(--grad); }
+.member-label { background: #38bdf8; }
+.like-btn.liked { background: var(--grad); border-color: transparent; }
+
+/* ---------- カード ---------- */
+.member-card {
+  border: 1px solid #e5e9fa;
+  box-shadow: 0 2px 6px rgba(35, 41, 70, 0.04), 0 14px 34px rgba(80, 92, 220, 0.08);
+}
+.member-card:hover {
+  transform: translateY(-4px);
+  border-color: #c9d2f8;
+  box-shadow: 0 4px 10px rgba(35, 41, 70, 0.05), 0 20px 44px rgba(80, 92, 220, 0.14);
+}
+.member-card.pickup {
+  background: linear-gradient(160deg, #f6f8ff, #f1f5ff);
+  border-color: #c9d2f8;
+}
+.member-card.pickup::before { background: var(--grad); }
+.avatar {
+  background: linear-gradient(145deg, #e8ecfe, #e0f3fe);
+  border-color: #ffffff;
+  box-shadow: 0 0 0 2px #d5ddfb;
+}
+.card-score { color: #5b67f2; border-color: #d5ddfb; background: #f0f3ff; }
+.tag { background: #f4f6ff; border-color: #e0e5f9; }
+.tag.likes-me { background: #eef2ff; border-color: #98a4f5; color: #5b67f2; }
+
+/* ---------- ステップ ---------- */
+.step { border: 1px solid #e5e9fa; border-radius: 16px; }
+.step-arrow { color: #98a4f5; }
+
+/* ---------- フィルタ・タブ ---------- */
+.tag-filter.active,
+.category-tab.active { background: var(--grad); border-color: transparent; }
+.tag-filter:hover, .category-tab:hover { border-color: var(--accent); }
+
+/* ---------- 実績(インディゴ/スカイ/バイオレット) ---------- */
+.stats-band .stat:nth-child(1) { background: #eef2ff; border-color: #d5ddfb; }
+.stats-band .stat:nth-child(2) { background: #e9f7fe; border-color: #c3e9fb; }
+.stats-band .stat:nth-child(3) { background: #f1eefe; border-color: #ddd4fb; }
+.stat::before { background: linear-gradient(90deg, #6672f5, #38bdf8); width: 44px; }
+.stats-band .stat:nth-child(1) .stat-num { color: #5b67f2; }
+.stats-band .stat:nth-child(2) .stat-num { color: #0ea5e9; }
+.stats-band .stat:nth-child(3) .stat-num { color: #8b5cf6; }
+.stat-num::after { color: #38bdf8; }
+
+/* ---------- デッキ ---------- */
+.deck-card { border: 1px solid #e5e9fa; border-radius: 24px; box-shadow: 0 18px 40px rgba(80, 92, 220, 0.14); }
+.score-chip { background: var(--grad); }
+.deck-like { background: var(--grad); box-shadow: 0 6px 16px rgba(102, 114, 245, 0.35); }
+.deck-skip { border: 1px solid #e2e5f3; color: #8b93b8; }
+
+/* ---------- カレンダー・イベント ---------- */
+.cal-day.has-event { background: var(--grad); }
+.cal-day.has-event:hover { background: var(--grad); filter: brightness(1.08); }
+.cal-day.today { border-color: var(--accent); }
+.event-date { background: var(--grad); }
+.join-btn.joined { background: var(--grad); border-color: transparent; }
+.cal-dow.sun { color: #8b5cf6; }
+.cal-dow.sat { color: #0ea5e9; }
+
+/* ---------- CTA: 夜空のネイビー(Lumeniumの世界観) ---------- */
+.cta-band {
+  background:
+    radial-gradient(ellipse at 25% 15%, rgba(102, 114, 245, 0.35), transparent 55%),
+    radial-gradient(ellipse at 80% 85%, rgba(56, 189, 248, 0.2), transparent 55%),
+    #171a33;
+}
+.cta-band::before {
+  background-image:
+    radial-gradient(rgba(255, 255, 255, 0.6) 1px, transparent 1.5px),
+    radial-gradient(rgba(139, 163, 251, 0.6) 1px, transparent 1.5px);
+  background-size: 90px 90px, 60px 60px;
+  background-position: 10px 10px, 40px 30px;
+  opacity: 0.5;
+}
+.cta-band h2 { letter-spacing: 0.02em; }
+.btn-cta { color: #4f5ae8; background: #ffffff; }
+
+/* ---------- フッター: 夜空 ---------- */
+.site-footer {
+  background:
+    radial-gradient(ellipse at 70% 10%, rgba(102, 114, 245, 0.25), transparent 55%),
+    #14172e;
+}
+.site-footer::before {
+  background: linear-gradient(90deg, transparent, #6672f5 30%, #38bdf8 70%, transparent);
+  opacity: 1;
+}
+.site-footer, .footer-nav a { color: #c7cdea; }
+
+/* ---------- ドロワー ---------- */
+.drawer::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: linear-gradient(180deg, #6672f5, #8b7bf7, #38bdf8);
+}
+.menu-btn { border-radius: 12px; border-width: 1.5px; }
+.drawer-user { border: 1px solid #d5ddfb; background: #f4f6ff; }
+.drawer-logout { border-width: 1.5px; }
+
+/* ---------- チャット ---------- */
+.chat-bubble.me { background: var(--grad); }
+.chat-header { background: #f0f3ff; border-bottom-color: #e0e5f9; }
+.msg-avatar { background: #e8ecfe; border-color: #d5ddfb; }
+.date-chip span { background: #e8ecfe; color: #8b93b8; }
+.chat-bubble.typing span { background: var(--accent); }
+.stamp-row { border-top-color: #e5e9fa; }
+
+/* ---------- モーダル・その他 ---------- */
+.modal { border-radius: 20px; }
+.faq-item { border-radius: 14px; }
+.back-to-top { background: var(--grad); box-shadow: 0 6px 16px rgba(102, 114, 245, 0.35); }
+::selection { background: rgba(102, 114, 245, 0.2); }
+:focus-visible { outline-color: var(--accent); }
