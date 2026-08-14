@@ -1,28 +1,28 @@
 /* ============================================
    交流会マッチング - スタイルシート
    配色: Lumenium ライトテーマ
-   (インディゴ×スカイブルーのグラデーション、星の煌めき、
-    lumenium.net の宇宙的トーンをライト配色に翻訳)
+   (コーラル×アンバーの暖色グラデーション、星の煌めき、
+    lumenium.net の宇宙的トーンを暖色ライト配色に翻訳)
    ============================================ */
 
 :root {
-  --bg: #f6f8ff;
-  --bg-alt: #edf1fd;
+  --bg: #fff8f2;
+  --bg-alt: #fbeee0;
   --card: #ffffff;
-  --card-deep: #f0f4ff;
-  --gold: #38bdf8;          /* サブアクセント(スカイブルー) */
-  --gold-light: #dfe5f9;    /* ライトボーダー */
-  --accent: #6672f5;        /* メインアクセント(インディゴ) */
-  --accent-dark: #4f5ae8;
-  --text: #232946;
-  --text-light: #7d86a8;
+  --card-deep: #fdf1e7;
+  --gold: #f9a03f;          /* サブアクセント(アンバー) */
+  --gold-light: #f6e0cd;    /* ライトボーダー */
+  --accent: #f4694b;        /* メインアクセント(コーラル) */
+  --accent-dark: #e2532f;
+  --text: #3a2b25;
+  --text-light: #a18a7e;
   --white: #ffffff;
-  --teal: #38bdf8;
-  --yellow: #8b5cf6;
-  --purple: #8b7bf7;
-  --grad: linear-gradient(100deg, #6672f5, #38bdf8);
-  --grad-rainbow: linear-gradient(90deg, #6672f5, #8b7bf7, #38bdf8);
-  --shadow: 0 8px 24px rgba(80, 92, 220, 0.10);
+  --teal: #f9a03f;
+  --yellow: #d96c3f;
+  --purple: #f77f4f;
+  --grad: linear-gradient(100deg, #f4694b, #f9a03f);
+  --grad-rainbow: linear-gradient(90deg, #f4694b, #f77f4f, #f9a03f);
+  --shadow: 0 8px 24px rgba(220, 110, 60, 0.10);
   --radius: 16px;
 }
 
@@ -1424,86 +1424,86 @@ body { font-family: "Inter", "Noto Sans JP", "Hiragino Kaku Gothic ProN", sans-s
 
 /* ---------- ヒーロー: グラデーション見出し+星空(ライト) ---------- */
 .hero-title {
-  background: linear-gradient(100deg, #4f7df9 5%, #38bdf8 50%, #8b7bf7 95%);
+  background: linear-gradient(100deg, #ef5d3c 5%, #f9a03f 50%, #f77f4f 95%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
-  color: #4f7df9;
+  color: #ef5d3c;
   letter-spacing: 0.01em;
 }
-.hero-eyebrow { color: #8b93b8; font-weight: 600; letter-spacing: 4px; }
+.hero-eyebrow { color: #b39684; font-weight: 600; letter-spacing: 4px; }
 .hero::before {
   background-image:
-    radial-gradient(rgba(102, 114, 245, 0.45) 1px, transparent 1.6px),
-    radial-gradient(rgba(56, 189, 248, 0.4) 1px, transparent 1.6px),
-    radial-gradient(rgba(139, 123, 247, 0.35) 1.4px, transparent 2px);
+    radial-gradient(rgba(244, 105, 75, 0.45) 1px, transparent 1.6px),
+    radial-gradient(rgba(249, 160, 63, 0.4) 1px, transparent 1.6px),
+    radial-gradient(rgba(247, 127, 79, 0.35) 1.4px, transparent 2px);
   background-size: 90px 90px, 70px 70px, 130px 130px;
   background-position: 10px 5px, 40px 45px, 70px 20px;
   opacity: 1;
 }
-.hero-deco-l { background: radial-gradient(circle, rgba(102, 114, 245, 0.16), transparent 70%); }
-.hero-deco-r { background: radial-gradient(circle, rgba(56, 189, 248, 0.15), transparent 70%); }
+.hero-deco-l { background: radial-gradient(circle, rgba(244, 105, 75, 0.16), transparent 70%); }
+.hero-deco-r { background: radial-gradient(circle, rgba(249, 160, 63, 0.15), transparent 70%); }
 
 /* ---------- ヘッダー ---------- */
 .site-header { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(12px); }
 .site-header::after {
-  background: linear-gradient(90deg, transparent, #6672f5 30%, #38bdf8 70%, transparent);
+  background: linear-gradient(90deg, transparent, #f4694b 30%, #f9a03f 70%, transparent);
   opacity: 0.55;
   height: 2px;
 }
 .logo-mark {
-  background: linear-gradient(135deg, #6672f5, #38bdf8);
+  background: linear-gradient(135deg, #f4694b, #f9a03f);
   clip-path: polygon(50% 0%, 93% 25%, 93% 75%, 50% 100%, 7% 75%, 7% 25%);
   border-radius: 0;
   width: 38px;
   height: 40px;
 }
-.logo { filter: drop-shadow(0 2px 6px rgba(102, 114, 245, 0.35)); }
+.logo { filter: drop-shadow(0 2px 6px rgba(244, 105, 75, 0.35)); }
 .logo:hover .logo-mark { transform: rotate(14deg); transition: transform 0.25s; }
 
 /* ---------- 見出し ---------- */
 .section-head .section-title::after {
-  background: linear-gradient(90deg, #6672f5, #38bdf8);
+  background: linear-gradient(90deg, #f4694b, #f9a03f);
   width: 64px;
   height: 3px;
   border-radius: 2px;
 }
 
 /* ---------- ボタン・バッジ ---------- */
-.btn-primary { background: var(--grad); box-shadow: 0 4px 14px rgba(102, 114, 245, 0.3); }
+.btn-primary { background: var(--grad); box-shadow: 0 4px 14px rgba(244, 105, 75, 0.3); }
 .btn-primary:hover { background: var(--grad); filter: brightness(1.07); }
 .badge { background: var(--grad); }
 .pickup-label { background: var(--grad); }
-.member-label { background: #38bdf8; }
+.member-label { background: #f9a03f; }
 .like-btn.liked { background: var(--grad); border-color: transparent; }
 
 /* ---------- カード ---------- */
 .member-card {
-  border: 1px solid #e5e9fa;
-  box-shadow: 0 2px 6px rgba(35, 41, 70, 0.04), 0 14px 34px rgba(80, 92, 220, 0.08);
+  border: 1px solid #f5e3d5;
+  box-shadow: 0 2px 6px rgba(58, 43, 37, 0.04), 0 14px 34px rgba(220, 110, 60, 0.08);
 }
 .member-card:hover {
   transform: translateY(-4px);
-  border-color: #c9d2f8;
-  box-shadow: 0 4px 10px rgba(35, 41, 70, 0.05), 0 20px 44px rgba(80, 92, 220, 0.14);
+  border-color: #f0c8ad;
+  box-shadow: 0 4px 10px rgba(58, 43, 37, 0.05), 0 20px 44px rgba(220, 110, 60, 0.14);
 }
 .member-card.pickup {
-  background: linear-gradient(160deg, #f6f8ff, #f1f5ff);
-  border-color: #c9d2f8;
+  background: linear-gradient(160deg, #fff8f2, #f1f5ff);
+  border-color: #f0c8ad;
 }
 .member-card.pickup::before { background: var(--grad); }
 .avatar {
-  background: linear-gradient(145deg, #e8ecfe, #e0f3fe);
+  background: linear-gradient(145deg, #fde9dc, #fdf0dc);
   border-color: #ffffff;
-  box-shadow: 0 0 0 2px #d5ddfb;
+  box-shadow: 0 0 0 2px #f6d5c0;
 }
-.card-score { color: #5b67f2; border-color: #d5ddfb; background: #f0f3ff; }
-.tag { background: #f4f6ff; border-color: #e0e5f9; }
-.tag.likes-me { background: #eef2ff; border-color: #98a4f5; color: #5b67f2; }
+.card-score { color: #ea5a37; border-color: #f6d5c0; background: #fdf1e7; }
+.tag { background: #fdf4ec; border-color: #f3ddcb; }
+.tag.likes-me { background: #fdece3; border-color: #f5a58c; color: #ea5a37; }
 
 /* ---------- ステップ ---------- */
-.step { border: 1px solid #e5e9fa; border-radius: 16px; }
-.step-arrow { color: #98a4f5; }
+.step { border: 1px solid #f5e3d5; border-radius: 16px; }
+.step-arrow { color: #f5a58c; }
 
 /* ---------- フィルタ・タブ ---------- */
 .tag-filter.active,
@@ -1511,20 +1511,20 @@ body { font-family: "Inter", "Noto Sans JP", "Hiragino Kaku Gothic ProN", sans-s
 .tag-filter:hover, .category-tab:hover { border-color: var(--accent); }
 
 /* ---------- 実績(インディゴ/スカイ/バイオレット) ---------- */
-.stats-band .stat:nth-child(1) { background: #eef2ff; border-color: #d5ddfb; }
-.stats-band .stat:nth-child(2) { background: #e9f7fe; border-color: #c3e9fb; }
-.stats-band .stat:nth-child(3) { background: #f1eefe; border-color: #ddd4fb; }
-.stat::before { background: linear-gradient(90deg, #6672f5, #38bdf8); width: 44px; }
-.stats-band .stat:nth-child(1) .stat-num { color: #5b67f2; }
-.stats-band .stat:nth-child(2) .stat-num { color: #0ea5e9; }
-.stats-band .stat:nth-child(3) .stat-num { color: #8b5cf6; }
-.stat-num::after { color: #38bdf8; }
+.stats-band .stat:nth-child(1) { background: #fdece3; border-color: #f6d5c0; }
+.stats-band .stat:nth-child(2) { background: #fdf3e2; border-color: #f6dfb2; }
+.stats-band .stat:nth-child(3) { background: #fbeade; border-color: #f2cdb4; }
+.stat::before { background: linear-gradient(90deg, #f4694b, #f9a03f); width: 44px; }
+.stats-band .stat:nth-child(1) .stat-num { color: #ea5a37; }
+.stats-band .stat:nth-child(2) .stat-num { color: #e8930c; }
+.stats-band .stat:nth-child(3) .stat-num { color: #d96c3f; }
+.stat-num::after { color: #f9a03f; }
 
 /* ---------- デッキ ---------- */
-.deck-card { border: 1px solid #e5e9fa; border-radius: 24px; box-shadow: 0 18px 40px rgba(80, 92, 220, 0.14); }
+.deck-card { border: 1px solid #f5e3d5; border-radius: 24px; box-shadow: 0 18px 40px rgba(220, 110, 60, 0.14); }
 .score-chip { background: var(--grad); }
-.deck-like { background: var(--grad); box-shadow: 0 6px 16px rgba(102, 114, 245, 0.35); }
-.deck-skip { border: 1px solid #e2e5f3; color: #8b93b8; }
+.deck-like { background: var(--grad); box-shadow: 0 6px 16px rgba(244, 105, 75, 0.35); }
+.deck-skip { border: 1px solid #f0e2d6; color: #b39684; }
 
 /* ---------- カレンダー・イベント ---------- */
 .cal-day.has-event { background: var(--grad); }
@@ -1532,38 +1532,38 @@ body { font-family: "Inter", "Noto Sans JP", "Hiragino Kaku Gothic ProN", sans-s
 .cal-day.today { border-color: var(--accent); }
 .event-date { background: var(--grad); }
 .join-btn.joined { background: var(--grad); border-color: transparent; }
-.cal-dow.sun { color: #8b5cf6; }
-.cal-dow.sat { color: #0ea5e9; }
+.cal-dow.sun { color: #d96c3f; }
+.cal-dow.sat { color: #e8930c; }
 
 /* ---------- CTA: 夜空のネイビー(Lumeniumの世界観) ---------- */
 .cta-band {
   background:
-    radial-gradient(ellipse at 25% 15%, rgba(102, 114, 245, 0.35), transparent 55%),
-    radial-gradient(ellipse at 80% 85%, rgba(56, 189, 248, 0.2), transparent 55%),
-    #171a33;
+    radial-gradient(ellipse at 25% 15%, rgba(244, 105, 75, 0.35), transparent 55%),
+    radial-gradient(ellipse at 80% 85%, rgba(249, 160, 63, 0.2), transparent 55%),
+    #2a1712;
 }
 .cta-band::before {
   background-image:
     radial-gradient(rgba(255, 255, 255, 0.6) 1px, transparent 1.5px),
-    radial-gradient(rgba(139, 163, 251, 0.6) 1px, transparent 1.5px);
+    radial-gradient(rgba(251, 183, 131, 0.6) 1px, transparent 1.5px);
   background-size: 90px 90px, 60px 60px;
   background-position: 10px 10px, 40px 30px;
   opacity: 0.5;
 }
 .cta-band h2 { letter-spacing: 0.02em; }
-.btn-cta { color: #4f5ae8; background: #ffffff; }
+.btn-cta { color: #e2532f; background: #ffffff; }
 
 /* ---------- フッター: 夜空 ---------- */
 .site-footer {
   background:
-    radial-gradient(ellipse at 70% 10%, rgba(102, 114, 245, 0.25), transparent 55%),
-    #14172e;
+    radial-gradient(ellipse at 70% 10%, rgba(244, 105, 75, 0.25), transparent 55%),
+    #241310;
 }
 .site-footer::before {
-  background: linear-gradient(90deg, transparent, #6672f5 30%, #38bdf8 70%, transparent);
+  background: linear-gradient(90deg, transparent, #f4694b 30%, #f9a03f 70%, transparent);
   opacity: 1;
 }
-.site-footer, .footer-nav a { color: #c7cdea; }
+.site-footer, .footer-nav a { color: #e9d7cc; }
 
 /* ---------- ドロワー ---------- */
 .drawer::before {
@@ -1573,23 +1573,23 @@ body { font-family: "Inter", "Noto Sans JP", "Hiragino Kaku Gothic ProN", sans-s
   top: 0;
   bottom: 0;
   width: 3px;
-  background: linear-gradient(180deg, #6672f5, #8b7bf7, #38bdf8);
+  background: linear-gradient(180deg, #f4694b, #f77f4f, #f9a03f);
 }
 .menu-btn { border-radius: 12px; border-width: 1.5px; }
-.drawer-user { border: 1px solid #d5ddfb; background: #f4f6ff; }
+.drawer-user { border: 1px solid #f6d5c0; background: #fdf4ec; }
 .drawer-logout { border-width: 1.5px; }
 
 /* ---------- チャット ---------- */
 .chat-bubble.me { background: var(--grad); }
-.chat-header { background: #f0f3ff; border-bottom-color: #e0e5f9; }
-.msg-avatar { background: #e8ecfe; border-color: #d5ddfb; }
-.date-chip span { background: #e8ecfe; color: #8b93b8; }
+.chat-header { background: #fdf1e7; border-bottom-color: #f3ddcb; }
+.msg-avatar { background: #fde9dc; border-color: #f6d5c0; }
+.date-chip span { background: #fde9dc; color: #b39684; }
 .chat-bubble.typing span { background: var(--accent); }
-.stamp-row { border-top-color: #e5e9fa; }
+.stamp-row { border-top-color: #f5e3d5; }
 
 /* ---------- モーダル・その他 ---------- */
 .modal { border-radius: 20px; }
 .faq-item { border-radius: 14px; }
-.back-to-top { background: var(--grad); box-shadow: 0 6px 16px rgba(102, 114, 245, 0.35); }
-::selection { background: rgba(102, 114, 245, 0.2); }
+.back-to-top { background: var(--grad); box-shadow: 0 6px 16px rgba(244, 105, 75, 0.35); }
+::selection { background: rgba(244, 105, 75, 0.2); }
 :focus-visible { outline-color: var(--accent); }

@@ -5,18 +5,18 @@
    ============================================ */
 
 :root {
-  --bg: #f6f8ff;
+  --bg: #fff8f2;
   --card: #ffffff;
-  --gold: #38bdf8;
-  --gold-light: #dfe5f9;
-  --accent: #6672f5;
-  --accent-dark: #4f5ae8;
-  --text: #232946;
-  --text-light: #7d86a8;
+  --gold: #f9a03f;
+  --gold-light: #f6e0cd;
+  --accent: #f4694b;
+  --accent-dark: #e2532f;
+  --text: #3a2b25;
+  --text-light: #a18a7e;
   --white: #ffffff;
-  --error: #e14d7c;
-  --grad: linear-gradient(100deg, #6672f5, #38bdf8);
-  --shadow: 0 8px 24px rgba(80, 92, 220, 0.10);
+  --error: #e2532f;
+  --grad: linear-gradient(100deg, #f4694b, #f9a03f);
+  --shadow: 0 8px 24px rgba(220, 110, 60, 0.10);
   --radius: 16px;
   --space-1: 8px;
   --space-2: 14px;
@@ -241,25 +241,25 @@ body {
 
 /* ---------- Lumeniumテーマ(ライト) ---------- */
 body { font-family: "Inter", "Noto Sans JP", "Hiragino Kaku Gothic ProN", sans-serif; }
-.auth-card { border: 1px solid #e5e9fa; }
+.auth-card { border: 1px solid #f5e3d5; }
 .auth-card h1 { font-weight: 800; }
 .auth-logo {
-  filter: drop-shadow(0 2px 6px rgba(102, 114, 245, 0.35));
+  filter: drop-shadow(0 2px 6px rgba(244, 105, 75, 0.35));
 }
 .auth-logo-mark {
-  background: linear-gradient(135deg, #6672f5, #38bdf8);
+  background: linear-gradient(135deg, #f4694b, #f9a03f);
   clip-path: polygon(50% 0%, 93% 25%, 93% 75%, 50% 100%, 7% 75%, 7% 25%);
   width: 38px;
   height: 40px;
   border-radius: 0;
 }
-.auth-submit { background: var(--grad); box-shadow: 0 4px 14px rgba(102, 114, 245, 0.3); }
+.auth-submit { background: var(--grad); box-shadow: 0 4px 14px rgba(244, 105, 75, 0.3); }
 .auth-submit:hover { background: var(--grad); filter: brightness(1.07); }
 .auth-main {
   background-image:
-    radial-gradient(rgba(102, 114, 245, 0.35) 1px, transparent 1.6px),
-    radial-gradient(rgba(56, 189, 248, 0.3) 1px, transparent 1.6px),
-    radial-gradient(rgba(139, 123, 247, 0.25) 1.4px, transparent 2px);
+    radial-gradient(rgba(244, 105, 75, 0.35) 1px, transparent 1.6px),
+    radial-gradient(rgba(249, 160, 63, 0.3) 1px, transparent 1.6px),
+    radial-gradient(rgba(247, 127, 79, 0.25) 1.4px, transparent 2px);
   background-size: 90px 90px, 70px 70px, 130px 130px;
   background-position: 10px 5px, 40px 45px, 70px 20px;
 }
