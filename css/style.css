@@ -1593,3 +1593,116 @@ body { font-family: "Inter", "Noto Sans JP", "Hiragino Kaku Gothic ProN", sans-s
 .back-to-top { background: var(--grad); box-shadow: 0 6px 16px rgba(244, 105, 75, 0.35); }
 ::selection { background: rgba(244, 105, 75, 0.2); }
 :focus-visible { outline-color: var(--accent); }
+
+/* ============================================
+   v6.1 デザインリファイン(階層・質感・動き)
+   ============================================ */
+
+/* ---------- 見出しの改行: 文節単位で折り返す ---------- */
+.hero-title .phrase { display: inline-block; }
+
+/* ---------- セクションの英字アイキャッチ ---------- */
+.section-head[data-en]::before {
+  content: attr(data-en);
+  display: block;
+  font-family: "Inter", sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 4px;
+  color: var(--accent);
+  opacity: 0.75;
+  margin-bottom: 6px;
+}
+
+/* ---------- 検索バー: 浮遊感 ---------- */
+.search-bar input {
+  border: 1px solid #f5e3d5;
+  box-shadow: 0 10px 26px rgba(220, 110, 60, 0.10);
+  padding: 13px 20px;
+}
+.search-bar input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 10px 26px rgba(244, 105, 75, 0.16);
+}
+
+/* ---------- ステップ: アイコンチップと接続感 ---------- */
+.step { transition: transform 0.18s, box-shadow 0.18s; }
+.step:hover { transform: translateY(-3px); box-shadow: 0 14px 30px rgba(220, 110, 60, 0.14); }
+.step-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: linear-gradient(145deg, #fdece3, #fdf3e2);
+  box-shadow: inset 0 0 0 1px #f6dcc8;
+  font-size: 26px;
+}
+
+/* ---------- 実績: ラベルの調律 ---------- */
+.stat-label { letter-spacing: 1px; font-weight: 600; }
+
+/* ---------- カード: 出現アニメーション(段差) ---------- */
+@keyframes card-in {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: none; }
+}
+.card-grid .member-card { animation: card-in 0.45s ease backwards; }
+.card-grid .member-card:nth-child(1) { animation-delay: 0.02s; }
+.card-grid .member-card:nth-child(2) { animation-delay: 0.07s; }
+.card-grid .member-card:nth-child(3) { animation-delay: 0.12s; }
+.card-grid .member-card:nth-child(4) { animation-delay: 0.17s; }
+.card-grid .member-card:nth-child(5) { animation-delay: 0.22s; }
+.card-grid .member-card:nth-child(6) { animation-delay: 0.27s; }
+.card-grid .member-card:nth-child(n+7) { animation-delay: 0.32s; }
+
+/* ---------- ボタンの押下感 ---------- */
+.btn:active, .like-btn:active, .deck-btn:active, .join-btn:active { transform: scale(0.97); }
+
+/* ---------- CTA: 星空の質感と光 ---------- */
+.cta-band::before {
+  background-image:
+    radial-gradient(rgba(255, 255, 255, 0.7) 1px, transparent 1.4px),
+    radial-gradient(rgba(251, 183, 131, 0.7) 1px, transparent 1.4px),
+    radial-gradient(rgba(255, 255, 255, 0.45) 1.4px, transparent 1.8px);
+  background-size: 110px 110px, 70px 70px, 170px 170px;
+  background-position: 15px 10px, 45px 40px, 90px 25px;
+  opacity: 0.55;
+}
+.cta-band h2 { text-shadow: 0 2px 18px rgba(249, 160, 63, 0.35); }
+.cta-band p { color: #f3d9c8; }
+
+/* ---------- フッター: ブランドの佇まい ---------- */
+.footer-brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.footer-brand .logo-mark { filter: drop-shadow(0 2px 8px rgba(244, 105, 75, 0.45)); }
+.footer-tagline {
+  color: #cbb3a4;
+  font-size: 12.5px;
+  letter-spacing: 0.06em;
+  margin-bottom: 20px;
+}
+.footer-nav { margin-bottom: 20px; }
+.copyright { letter-spacing: 0.08em; }
+
+/* ---------- スクロールバー(WebKit) ---------- */
+::-webkit-scrollbar { width: 10px; }
+::-webkit-scrollbar-track { background: #fbeee0; }
+::-webkit-scrollbar-thumb { background: #f0c8ad; border-radius: 5px; border: 2px solid #fbeee0; }
+::-webkit-scrollbar-thumb:hover { background: #f4694b; }
+
+/* ---------- ドロワーリンクの動き ---------- */
+.drawer-link { transition: background 0.15s, color 0.15s, padding-left 0.15s; }
+.drawer-link:hover { padding-left: 16px; }
+
+/* ---------- 動きを減らす設定を尊重 ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .card-grid .member-card { animation: none; }
+  .step, .member-card, .btn { transition: none; }
+}
