@@ -14,6 +14,7 @@ const RefScoring = (function () {
   //   (扱う話題が少ない専門の人ほど高い。何でも扱う人ばかりが上に来ないようにする)
   // キーワード一致で+15(上限100。入力した言葉が本人の説明に含まれるのは最も具体的な一致なので、
   // 活動範囲の入力の有無より重くする。話題の言いかえでの一致は+8)。話題もキーワードも一致しない人は30%で頭打ち。
+  // 話題かキーワードが合った人には、役職・役割の基礎ポイント(REF_BASE_POINTS、+5〜+10)を足す。
   // 未入力の項目は中立の点数(活動範囲は25点中15点)にして、入力済みの人だけが
   // 大きく有利にならないようにする
   function keywordTokens(text) {
@@ -91,6 +92,8 @@ const RefScoring = (function () {
     }
 
     if (!topicHits.length && !keywordHits.length) s = Math.min(s, 30);
+    // 役職・役割の基礎ポイント(data.js の REF_BASE_POINTS)。話題かキーワードが合った人だけに足す
+    else if (typeof refBasePoints === "function" && refBasePoints(m.id)) s += refBasePoints(m.id);
 
     return { score: Math.round(Math.min(100, s)), raw: s, reasons, topicHits, keywordHits };
   }

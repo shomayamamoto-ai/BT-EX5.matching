@@ -267,12 +267,13 @@
     return out;
   }
 
-  // 検索・診断の前の並び: 1番目は利用者本人、2番目はサイトの作成者(山本 捷真)、ほかは日替わり
-  const CREATOR_ID = "yamamoto";
+  // 検索・診断の前の並び: 1番目は利用者本人。そのあとは役職・役割の基礎ポイント
+  // (data.js の REF_BASE_POINTS)の高い順、ほかは日替わり
   function viewerOrder(list) {
-    const pinned = [myMemberId, CREATOR_ID].filter((id, i, a) => id && a.indexOf(id) === i);
-    const head = pinned.map((id) => list.find((m) => m.id === id)).filter(Boolean);
-    return [...head, ...list.filter((m) => !pinned.includes(m.id))];
+    const me = list.filter((m) => m.id === myMemberId);
+    const rest = list.filter((m) => m.id !== myMemberId);
+    const ranked = rest.filter((m) => refBasePoints(m.id)).sort((a, b) => refBasePoints(b.id) - refBasePoints(a.id));
+    return [...me, ...ranked, ...rest.filter((m) => !refBasePoints(m.id))];
   }
 
   let detailReturnFocus = null;

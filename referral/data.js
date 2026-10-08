@@ -387,6 +387,21 @@ const REF_SEED_MEMBERS = [
   }),
 ];
 
+// 役職・役割の基礎ポイント(大きいほど上に出る)
+// - 紹介診断: 話題かキーワードが合った人の点数に足す(合わない人を上げることはしない)
+// - 検索・診断の前の一覧: 利用者本人を先頭にしたうえで、この点数の高い順。ほかは日替わり
+const REF_BASE_POINTS = {
+  m16: { points: 10, role: "BT-EX5代表・プライムリンカー" },
+  m09: { points: 9, role: "チーム代表" },
+  m22: { points: 8, role: "甲信越コミュニティ統括班長" },
+  m02: { points: 7, role: "LINKセレモニーメイン司会" },
+  m14: { points: 6, role: "BT-EX5副代表" },
+  yamamoto: { points: 5, role: "本システム開発者" },
+};
+function refBasePoints(id) {
+  return (REF_BASE_POINTS[id] && REF_BASE_POINTS[id].points) || 0;
+}
+
 // 既存の名簿へ一度だけ反映する初期名簿の更新(古い順。反映済みの rev は名簿側に記録される)
 const REF_SEED_REVISIONS = [
   { rev: "2026-10-profiles-1", ids: ["m02", "m03", "m04", "m05", "m08", "m09", "m16", "m20", "m22", "m25"] },
