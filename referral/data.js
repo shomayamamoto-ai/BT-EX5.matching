@@ -159,8 +159,14 @@ const REF_SEED_MEMBERS = [
     targets: ["salon", "medical", "retail"],
     prospects: ["owner", "staff"],
   }),
-  rosterMember("m06", "吉原 優", "", "", "", []),
-  rosterMember("m07", "樺澤 一郎", "", "", "", []),
+  Object.assign(rosterMember("m06", "吉原 優", "FJ 営業", "", "お金・保険", ["insurance"]), {
+    business: "ライフプラン作成、保険提案、保険の見直し、家計の見直し。",
+    customers: "誰でも",
+    triggers: ["保険を見直したい", "家計を見直したい", "ライフプラン", "老後のお金が不安", "教育費の準備"],
+    targets: ["any"],
+    prospects: ["individual", "owner"],
+  }),
+  rosterMember("m07", "樺澤 一郎", "KBlab合同会社 代表", "", "美容・健康", ["health"]),
   Object.assign(rosterMember("m08", "床島 良夫", "非営利団体 人生工房 理事", "SunnyUp🌞", "暮らし・サービス", ["event", "org"]), {
     business: "月面タイムカプセル、パーソナルインバウンドツアー。",
     customers: "地域密着の中小企業、公立・私立学校、体験型講座をお持ちの方",
@@ -185,7 +191,7 @@ const REF_SEED_MEMBERS = [
     targets: ["salon", "any"],
     prospects: ["owner", "individual"],
   }),
-  rosterMember("m11", "品川 瑞樹", "", "", "", []),
+  rosterMember("m11", "品川 瑞樹", "株式会社アドバンス/集客・コンサル", "", "IT・Web・クリエイティブ", ["web"]),
   Object.assign(rosterMember("m12", "菅野 節子", "リンパレディアソック 代表者/誰でも健康アドバイザー", "Team Bloom∞🌸", "美容・健康", ["health"]), {
     business: "リンパレディ講座。",
     customers: "セラピスト、施術者、一般のお客様、OL、主婦",
@@ -203,7 +209,14 @@ const REF_SEED_MEMBERS = [
     targets: ["any"],
     prospects: ["owner", "staff", "individual"],
   }),
-  rosterMember("m15", "安田 和真", "", "", "", []),
+  Object.assign(rosterMember("m15", "安田 和真", "ハコニワ/レンタルスペース", "", "暮らし・サービス", ["event"]), {
+    business: "レンタルスペース、イベント。",
+    customers: "これから何か挑戦したい方",
+    wants: "小さくても何か一歩踏み出したい方",
+    triggers: ["場所を借りたい", "イベント会場を探している", "教室・セミナーを開きたい", "何か挑戦したい", "一歩踏み出したい"],
+    targets: ["any"],
+    prospects: ["owner", "individual"],
+  }),
   Object.assign(rosterMember("m16", "桜羽 李果", "株式会社LEFANA/女性向けSNSブランディング", "Team Bloom∞🌸", "IT・Web・クリエイティブ", ["web", "design", "video"]), {
     business: "女性向けに特化したデザイン会社。ブランディング、Web制作・運営・コンサルティング、グラフィックデザイン、SNS運用代行、インフルエンサー・モデルのキャスティング、写真・映像撮影、ビジネスマッチング。",
     customers: "女性向けの商材をお持ちの方、美容クリニック、お菓子・スイーツ業界、不動産",
@@ -241,7 +254,14 @@ const REF_SEED_MEMBERS = [
     targets: ["any"],
     prospects: ["owner", "individual"],
   }),
-  rosterMember("m21", "中川 敏和", "", "", "", []),
+  Object.assign(rosterMember("m21", "中川 敏和", "", "", "暮らし・サービス", ["event", "life"]), {
+    business: "インクルーズ。",
+    customers: "0〜5歳の子どものいるご家庭/新婚さん/65歳以上のご夫婦",
+    wants: "結婚相談所/サロンオーナー/保険業",
+    triggers: ["結婚相談所", "サロンを経営している", "保険の仕事", "新婚さん", "小さな子どものいる家庭", "シニアのご夫婦"],
+    targets: ["salon", "pro"],
+    prospects: ["owner"],
+  }),
   Object.assign(rosterMember("m22", "小林 末季こばねぇ", "preseia 代表/心を整えるマインドコーチ", "SunnyUp🌞", "人材・組織", ["org", "health", "insurance"]), {
     business: "個別コーチング、ビジネスコンサル、健康事業、共済保険。",
     customers: "新潟・長野の方/人生に迷いながらも進み出したい人/セミナーを作りたい方/コーチの方",
@@ -279,6 +299,7 @@ const REF_SEED_REVISIONS = [
   { rev: "2026-10-profiles-1", ids: ["m02", "m03", "m04", "m05", "m08", "m09", "m16", "m20", "m22", "m25"] },
   { rev: "2026-10-profiles-2", ids: ["m10", "m12", "m14", "m18", "m19"] },
   { rev: "2026-10-profiles-3", ids: ["m17", "m26", "m27"] },
+  { rev: "2026-10-profiles-4", ids: ["m06", "m07", "m11", "m15", "m21"] },
 ];
 
 // プロフィールの記入状況(求める紹介・活動範囲が入っていれば「記入済み」)
