@@ -177,11 +177,32 @@ const REF_SEED_MEMBERS = [
     targets: ["pro"],
     prospects: ["owner", "staff"],
   }),
-  rosterMember("m10", "大枝 篤志", "売上動線も作れる公式LINE専門家", "Team Bloom∞🌸", "IT・Web・クリエイティブ", ["web"]),
+  Object.assign(rosterMember("m10", "大枝 篤志", "マイプラBT 代表/売上動線も作れる公式LINE専門家", "Team Bloom∞🌸", "IT・Web・クリエイティブ", ["web", "hiring", "life"]), {
+    business: "売上を増やす(売上動線作りのサポート・LINE・SNS)/収入を増やす(副業・紹介案件・人材紹介)/支出を減らす(格安SIM・ガス・Wi-Fiなど固定費の削減)。",
+    customers: "30〜50代の男女(特に40代が中心)/個人事業主・フリーランス・中小企業経営者/子育て世代・共働き世帯/会社員で副収入を作りたい人",
+    wants: "皆さんが定期的に通われている美容室のオーナー/起業して3年以内の経営者・個人事業主",
+    triggers: ["公式LINEを始めたい", "売上動線を作りたい", "副業を始めたい", "固定費を減らしたい", "格安SIM・Wi-Fi", "起業したばかり"],
+    targets: ["salon", "any"],
+    prospects: ["owner", "individual"],
+  }),
   rosterMember("m11", "品川 瑞樹", "", "", "", []),
-  rosterMember("m12", "菅野 節子", "誰でも健康アドバイザー", "Team Bloom∞🌸", "美容・健康", ["health"]),
+  Object.assign(rosterMember("m12", "菅野 節子", "リンパレディアソック 代表者/誰でも健康アドバイザー", "Team Bloom∞🌸", "美容・健康", ["health"]), {
+    business: "リンパレディ講座。",
+    customers: "セラピスト、施術者、一般のお客様、OL、主婦",
+    wants: "体験会の集客(体験会に参加してくれる方)",
+    triggers: ["リンパケア", "むくみ・不調", "体験会に参加したい", "セラピスト・施術者", "健康講座"],
+    targets: ["salon", "personal"],
+    prospects: ["individual", "owner"],
+  }),
   rosterMember("m13", "佐藤 慎哉", "", "", "", []),
-  rosterMember("m14", "三村 隆", "美容、建設、飲食、プラットフォーム", "Team Bloom∞🌸", "", []),
+  Object.assign(rosterMember("m14", "三村 隆", "株式会社エイレム・Guild Master株式会社 代表取締役", "Team Bloom∞🌸", "", ["health", "reform", "food"]), {
+    business: "美容、リフォーム、飲食、プラットフォーム。",
+    customers: "法人・個人問わず",
+    wants: "幅広く対応可能です",
+    triggers: ["美容", "リフォームしたい", "飲食店", "プラットフォーム"],
+    targets: ["any"],
+    prospects: ["owner", "staff", "individual"],
+  }),
   rosterMember("m15", "安田 和真", "", "", "", []),
   Object.assign(rosterMember("m16", "桜羽 李果", "株式会社LEFANA/女性向けSNSブランディング", "Team Bloom∞🌸", "IT・Web・クリエイティブ", ["web", "design", "video"]), {
     business: "女性向けに特化したデザイン会社。ブランディング、Web制作・運営・コンサルティング、グラフィックデザイン、SNS運用代行、インフルエンサー・モデルのキャスティング、写真・映像撮影、ビジネスマッチング。",
@@ -192,8 +213,19 @@ const REF_SEED_MEMBERS = [
     prospects: ["owner", "staff"],
   }),
   rosterMember("m17", "むらさき やえ", "波動を使った『あなた色ブランディング スタイリスト』", "", "美容・健康", []),
-  rosterMember("m18", "髙橋 誠二", "スポーツ用品EC事業者/EC運営支援", "CANOW", "IT・Web・クリエイティブ", ["web"]),
-  rosterMember("m19", "岡本 伸", "目標達成コーチング", "Team Bloom∞🌸", "人材・組織", ["org"]),
+  Object.assign(rosterMember("m18", "髙橋 誠二", "スポーツ用品EC事業者/EC運営支援", "CANOW", "IT・Web・クリエイティブ", ["web"]), {
+    business: "スポーツ用品のEC事業、EC運営支援。",
+    triggers: ["ネットショップを始めたい", "ECの売上を伸ばしたい", "スポーツ用品"],
+    targets: ["retail"],
+    prospects: ["owner", "staff"],
+  }),
+  Object.assign(rosterMember("m19", "岡本 伸", "株式会社 心灯/目標達成コーチング", "Team Bloom∞🌸", "IT・Web・クリエイティブ", ["web", "video", "ai", "org"]), {
+    business: "Web制作(HP・SNS運用・SEO・MEO対策・AI動画)、自己ブランディングビジネス(能力開発)。",
+    customers: "10名前後の法人様/目標達成が苦手な人/3年目の個人事業主",
+    triggers: ["HPを作りたい", "SNS運用を任せたい", "SEO・MEO対策", "AI動画", "目標が達成できない", "自分をブランディングしたい"],
+    targets: ["any"],
+    prospects: ["owner", "staff"],
+  }),
   Object.assign(rosterMember("m20", "柏木 本徳", "株式会社REVE 取締役/資金調達コンサル(融資・借換・金策)", "", "お金・保険", ["funding", "health"]), {
     business: "資金調達(個人融資・事業融資・借金の借り換え)。脱毛・眉毛・エステ(大阪・心斎橋の都度払いサロン)。",
     customers: "資金調達:毎月の支払いが大変な人、まとまったお金がすぐ欲しい人、事業などで資金が必要な人、どこも審査が通らない人/サロン:清潔感が欲しい人、髭剃りが面倒な人、モテたい人",
@@ -228,6 +260,7 @@ const REF_SEED_MEMBERS = [
 // 既存の名簿へ一度だけ反映する初期名簿の更新(古い順。反映済みの rev は名簿側に記録される)
 const REF_SEED_REVISIONS = [
   { rev: "2026-10-profiles-1", ids: ["m02", "m03", "m04", "m05", "m08", "m09", "m16", "m20", "m22", "m25"] },
+  { rev: "2026-10-profiles-2", ids: ["m10", "m12", "m14", "m18", "m19"] },
 ];
 
 // プロフィールの記入状況(求める紹介・活動範囲が入っていれば「記入済み」)
