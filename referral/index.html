@@ -6,19 +6,19 @@
   <meta name="referrer" content="no-referrer">
   <title>紹介先早見表 | BT-EX5</title>
   <style>html.guard-pending body { visibility: hidden; } html.guard-pending::after { content: "読み込み中…"; position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; font: 700 15px sans-serif; color: #a18a7e; background: #fff8f2; }</style>
-  <link rel="icon" type="image/svg+xml" href="../assets/bt-ex5-mark.svg?v=202610081918">
+  <link rel="icon" type="image/svg+xml" href="../assets/bt-ex5-mark.svg?v=202610081937">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" onload="this.onload=null;this.rel='stylesheet'">
   <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Noto+Sans+JP:wght@400;500;700;900&display=swap"></noscript>
-  <link rel="stylesheet" href="referral.css?v=202610081918">
-  <link rel="stylesheet" href="../opening/intro.css?v=202610081918">
+  <link rel="stylesheet" href="referral.css?v=202610081937">
+  <link rel="stylesheet" href="../opening/intro.css?v=202610081937">
 </head>
 <body>
 
   <header class="ref-header">
     <div class="ref-header-inner">
       <a href="./" class="ref-logo">
-        <img class="brand-mark" src="../assets/bt-ex5-mark.svg?v=202610081918" alt="" width="40" height="40">
+        <img class="brand-mark" src="../assets/bt-ex5-mark.svg?v=202610081937" alt="" width="40" height="40">
         <span class="brand-word"><span class="brand-name">BT-<em>EX5</em></span><span class="brand-sub">新潟・東京 紹介者制コミュニティ</span></span>
       </a>
       <nav class="ref-header-nav">
@@ -37,10 +37,26 @@
     <section class="ref-intro">
       <p class="ref-eyebrow" id="communityLabel"></p>
       <h1 class="ref-title">紹介先早見表</h1>
-      <p class="ref-lead">会話の中で「こんな話が出たら、この人へ」をすぐ探せる一覧です。キーワード検索・業種・エリアで絞り込めます。</p>
-      <p class="ref-notice" id="pendingNotice"></p>
+      <p class="ref-lead">会話で「こんな話が出たら、この人へ」をすぐ探せる一覧です。</p>
+      <ol class="ref-steps" aria-label="使い方">
+        <li><b>1</b>紹介診断で探す</li>
+        <li><b>2</b>キーワード・話題・業種で絞る</li>
+        <li><b>3</b>「紹介文をコピー」して送る</li>
+      </ol>
       <p class="ref-demo-note" id="demoNote" hidden>※ 現在はお試し版のため、自分の情報の編集はこの端末のブラウザの中にだけ保存されます(他のメンバーには届きません)。</p>
     </section>
+
+    <!-- 紹介診断への入口 -->
+    <button type="button" class="diag-cta" data-open-diag>
+      <span class="diag-cta-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m20 20-4.6-4.6"/><path d="M10.5 7.5v6M7.5 10.5h6"/></svg>
+      </span>
+      <span class="diag-cta-text">
+        <span class="diag-cta-title">誰に紹介すればいい?</span>
+        <span class="diag-cta-sub">会話で出た話について5つの質問に答えると、紹介先の候補と一致度がわかります(約30秒)</span>
+      </span>
+      <span class="diag-cta-go" aria-hidden="true">紹介診断をはじめる<span class="diag-cta-arrow">→</span></span>
+    </button>
 
     <!-- 自分の情報の記入のお願い -->
     <a href="../profile/" class="prof-nudge" id="profileNudge" hidden>
@@ -56,28 +72,8 @@
       <h2 class="pt-title" id="myPartnersTitle">あなたと紹介し合えそうな人</h2>
       <p class="pt-lead">同じお客様を持ち、別のサービスを出している人です。1on1で話しておくと、お互いのお客様を紹介し合えます。</p>
       <ul class="pt-list" id="myPartnersList"></ul>
+      <a href="../teams/" class="pt-more">BT-EX5 全体で仕事が回る業種は「全体分析」へ →</a>
     </section>
-
-    <!-- チーム分析への入口 -->
-    <a href="../teams/" class="team-cta">
-      <span class="team-cta-text">
-        <strong>BT-EX5 の中で仕事が回るには?</strong>
-        <span>今回っている紹介と、迎えると仕事が回る業種(税理士・弁護士・不動産・美容脱毛サロン・飲食店など)をまとめました</span>
-      </span>
-      <span class="team-cta-go">全体分析を見る →</span>
-    </a>
-
-    <!-- 紹介診断への入口 -->
-    <button type="button" class="diag-cta" data-open-diag>
-      <span class="diag-cta-icon" aria-hidden="true">
-        <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m20 20-4.6-4.6"/><path d="M10.5 7.5v6M7.5 10.5h6"/></svg>
-      </span>
-      <span class="diag-cta-text">
-        <span class="diag-cta-title">誰に紹介すればいい?</span>
-        <span class="diag-cta-sub">会話で出た話について5つの質問に答えると、紹介先の候補と一致度がわかります(約30秒)</span>
-      </span>
-      <span class="diag-cta-go" aria-hidden="true">紹介診断をはじめる<span class="diag-cta-arrow">→</span></span>
-    </button>
 
     <!-- 絞り込み -->
     <section class="ref-filter" aria-label="絞り込み">
@@ -87,20 +83,26 @@
       <label class="ref-filter-label" for="topicSelect">話題で探す</label>
       <select id="topicSelect" class="ref-topic-select"></select>
 
-      <p class="ref-filter-label">業種</p>
-      <div class="ref-chips" id="categoryChips"></div>
+      <!-- 業種・エリア・特典(スマホでは閉じておき、押すと開く) -->
+      <details class="ref-more-filters" id="moreFilters">
+        <summary><span>業種・エリアで絞り込む</span><span class="ref-more-active" id="moreFiltersActive"></span></summary>
+        <p class="ref-filter-label">業種</p>
+        <div class="ref-chips" id="categoryChips"></div>
 
-      <p class="ref-filter-label">対応エリア</p>
-      <div class="ref-chips" id="areaChips"></div>
+        <p class="ref-filter-label">対応エリア</p>
+        <div class="ref-chips" id="areaChips"></div>
 
-      <div id="offerFilter" hidden>
-        <p class="ref-filter-label">紹介されたお客様への特典</p>
-        <div class="ref-chips" id="offerChip"></div>
-      </div>
+        <div id="offerFilter" hidden>
+          <p class="ref-filter-label">紹介されたお客様への特典</p>
+          <div class="ref-chips" id="offerChip"></div>
+        </div>
+      </details>
 
       <div class="ref-count-row">
-        <p class="ref-count"><strong id="countShown">0</strong> / <span id="countTotal">0</span>名を表示<span class="ref-order-note">1番目はあなた。続いて代表・役職・役割の人、ほかの並び順は毎日入れ替わります</span></p>
+        <p class="ref-count"><strong id="countShown">0</strong> / <span id="countTotal">0</span>名を表示</p>
+        <button type="button" class="ref-clear" id="clearFilters" hidden>条件をすべてクリア</button>
       </div>
+      <p class="ref-order-note" id="orderNote">並び順:1番目はあなた → 代表・役職・役割の人 → ほかは毎日入れ替わり</p>
     </section>
 
     <div class="ref-sorted-banner" id="sortedBanner" hidden>
@@ -122,7 +124,7 @@
     <nav class="ref-footer-nav"><a href="../terms/">利用規約</a></nav>
     <p>© 2026 BT-EX5</p>
     <p class="site-credit">Created by <a href="https://lumenium.net/?utm_source=bt-ex5&amp;utm_medium=referral&amp;utm_campaign=credit" target="_blank" rel="noopener">Shoma Yamamoto</a></p>
-    <a class="site-maker" href="https://lumenium.net/?utm_source=bt-ex5&amp;utm_medium=referral&amp;utm_campaign=footer_logo" target="_blank" rel="noopener"><img src="../assets/lumenium-logo.svg?v=202610081918" alt="Lumenium" width="115" height="24"><span>Webサイト・システム制作のご相談はこちら</span></a>
+    <a class="site-maker" href="https://lumenium.net/?utm_source=bt-ex5&amp;utm_medium=referral&amp;utm_campaign=footer_logo" target="_blank" rel="noopener"><img src="../assets/lumenium-logo.svg?v=202610081937" alt="Lumenium" width="115" height="24"><span>Webサイト・システム制作のご相談はこちら</span></a>
   </footer>
 
   <!-- 紹介診断(ポップアップ) -->
@@ -177,14 +179,14 @@
 
   <div class="ref-toast" id="refToast" role="status" hidden></div>
 
-  <script src="../auth/server-core.js?v=202610081918"></script>
-  <script src="../auth/mock-server.js?v=202610081918"></script>
-  <script src="../auth/api.js?v=202610081918"></script>
-  <script src="../auth/session.js?v=202610081918"></script>
-  <script src="data.js?v=202610081918"></script>
-  <script src="partners.js?v=202610081918"></script>
-  <script src="scoring.js?v=202610081918"></script>
-  <script src="referral.js?v=202610081918"></script>
-  <script src="../opening/intro.js?v=202610081918"></script>
+  <script src="../auth/server-core.js?v=202610081937"></script>
+  <script src="../auth/mock-server.js?v=202610081937"></script>
+  <script src="../auth/api.js?v=202610081937"></script>
+  <script src="../auth/session.js?v=202610081937"></script>
+  <script src="data.js?v=202610081937"></script>
+  <script src="partners.js?v=202610081937"></script>
+  <script src="scoring.js?v=202610081937"></script>
+  <script src="referral.js?v=202610081937"></script>
+  <script src="../opening/intro.js?v=202610081937"></script>
 </body>
 </html>

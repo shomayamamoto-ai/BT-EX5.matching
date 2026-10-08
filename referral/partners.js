@@ -40,9 +40,12 @@ const RefPartners = (function () {
   }
 
   // A と B の相性(数値と理由)
+  // get: a が b から紹介してもらえそうなもの / give: a から b へ紹介できそうなもの / shared: 共通のお客様
   function pairScore(a, b) {
     let score = 0;
     const reasons = [];
+    const get = [];
+    const give = [];
     const aWants = segmentsIn(a.wants);
     const bWants = segmentsIn(b.wants);
     const aProfile = segmentsIn(profileText(a));
@@ -52,17 +55,20 @@ const RefPartners = (function () {
     if (aToB.length) {
       score += Math.min(3, 1.5 * aToB.length);
       reasons.push(`${a.name}さんが求める紹介と、${b.name}さんの事業・お客様が「${aToB.slice(0, 2).join("・")}」で重なる`);
+      get.push(...aToB);
     }
     const bToA = overlap(bWants, aProfile);
     if (bToA.length) {
       score += Math.min(3, 1.5 * bToA.length);
       reasons.push(`${b.name}さんが求める紹介と、${a.name}さんの事業・お客様が「${bToA.slice(0, 2).join("・")}」で重なる`);
+      give.push(...bToA);
     }
     if (!aToB.length) {
       const ts = topicsWanted(a.wants, b.topics);
       if (ts.length) {
         score += Math.min(3, 1.5 * ts.length);
         reasons.push(`${a.name}さんが求める紹介に、${b.name}さんの「${topicLabel(ts[0])}」が当てはまる`);
+        get.push(topicLabel(ts[0]));
       }
     }
     if (!bToA.length) {
@@ -70,6 +76,7 @@ const RefPartners = (function () {
       if (ts.length) {
         score += Math.min(3, 1.5 * ts.length);
         reasons.push(`${b.name}さんが求める紹介に、${a.name}さんの「${topicLabel(ts[0])}」が当てはまる`);
+        give.push(topicLabel(ts[0]));
       }
     }
     const sameTargets = overlap(a.targets.filter((t) => t !== "any"), b.targets.filter((t) => t !== "any"));
@@ -89,7 +96,7 @@ const RefPartners = (function () {
     // (どちらかの「求める紹介」が相手の事業を名指ししているときは、競合ではなくお客様・仲間なので下げない)
     if (minTopics && common / minTopics >= 0.6 && a.category === b.category && !aToB.length && !bToA.length) score *= 0.4;
 
-    return { score, reasons };
+    return { score, reasons, get, give, shared: shared.slice(0, 3) };
   }
 
   // me と紹介し合えそうな人を、相性の高い順に返す

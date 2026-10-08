@@ -123,14 +123,19 @@
       ...(sc ? sc.keywordHits : []),
       ...keywordTokens(filter.search),
     ];
-    const triggerHtml = m.triggers
-      .map((t) => {
-        const hit = hitWords.some((w) => t.includes(w));
-        return `<span class="ref-trigger${hit ? " hit" : ""}">「${escapeHtml(t)}」</span>`;
-      })
-      .join("");
+    // 「こんな話が出たら」はカードでは4つまで(検索に当たった言葉を先に)。全部は詳細で見られる
+    const TRIGGER_MAX = 4;
+    const triggers = m.triggers
+      .map((t) => ({ t, hit: hitWords.some((w) => t.includes(w)) }))
+      .sort((a, b) => b.hit - a.hit);
+    const triggerHtml = triggers
+      .slice(0, TRIGGER_MAX)
+      .map(({ t, hit }) => `<span class="ref-trigger${hit ? " hit" : ""}">「${escapeHtml(t)}」</span>`)
+      .join("") + (triggers.length > TRIGGER_MAX
+      ? `<button type="button" class="ref-trigger-more" data-detail="${m.id}">ほか${triggers.length - TRIGGER_MAX}件</button>` : "");
     const onlineClass = m.online === "all" ? "online-all" : m.online === "none" || m.online === "unknown" ? "online-none" : "";
-    const complete = isProfileComplete(m);
+    // 長い説明は数行で切り、続きは詳細で読む(キーワード検索中は切らない)
+    const clamp = filter.search ? "" : " is-clamped";
 
     return `
       <article class="ref-card${m.id === "yamamoto" ? " is-real" : ""}" id="member-${m.id}">
@@ -144,32 +149,33 @@
             ${sc ? `<div class="ref-match"><strong>${sc.score}%</strong><small>一致度</small></div>` : ""}
           </div>
           <div class="ref-tags">
-            ${m.base && m.base !== "未設定" ? `<span class="ref-tag ${m.base === "新潟" ? "base-niigata" : "base-tokyo"}">${escapeHtml(m.base)}拠点</span>` : ""}
-            <span class="ref-tag">${escapeHtml(m.category)}</span>
-            ${m.team ? `<span class="ref-tag team">${escapeHtml(m.team)}</span>` : ""}
             ${m.id === myMemberId ? '<span class="ref-tag me">あなた</span>' : ""}
-            ${complete ? "" : '<span class="ref-tag pending">準備中</span>'}
+            <span class="ref-tag">${escapeHtml(m.category)}</span>
+            ${m.base && m.base !== "未設定" ? `<span class="ref-tag ${m.base === "新潟" ? "base-niigata" : "base-tokyo"}">${escapeHtml(m.base)}拠点</span>` : ""}
+            ${m.team ? `<span class="ref-tag team">${escapeHtml(m.team)}</span>` : ""}
           </div>
           ${linkBadges(m)}
         </div>
         <div class="ref-col ref-col-business">
           <p class="ref-label">事業内容</p>
-          <p class="ref-business${m.business ? "" : " ref-muted"}">${m.business ? escapeHtml(m.business) : "準備中"}</p>
-          ${m.customers ? `<p class="ref-customers"><span>主なお客様</span>${escapeHtml(m.customers)}</p>` : ""}
+          <p class="ref-business${m.business ? clamp : " ref-muted"}">${m.business ? escapeHtml(m.business) : "まだ入力されていません"}</p>
+          ${m.customers ? `<p class="ref-customers${clamp}"><span>主なお客様</span>${escapeHtml(m.customers)}</p>` : ""}
           ${m.offer ? `<p class="ref-offer"><span>紹介特典</span>${escapeHtml(m.offer)}</p>` : ""}
           ${m.note ? `<p class="ref-note">${escapeHtml(m.note)}</p>` : ""}
         </div>
         <div class="ref-col ref-col-wants">
           <p class="ref-label">求める紹介</p>
-          <p class="ref-wants${m.wants ? "" : " ref-muted"}">${m.wants ? escapeHtml(m.wants) : "まだ入力されていません"}</p>
+          <p class="ref-wants${m.wants ? clamp : " ref-muted"}">${m.wants ? escapeHtml(m.wants) : "まだ入力されていません"}</p>
           <div class="ref-triggers">${triggerHtml}</div>
         </div>
         <div class="ref-col ref-col-range">
           <p class="ref-label">活動範囲</p>
-          <dl class="ref-range">
+          ${!m.face && (!m.online || m.online === "unknown")
+            ? '<p class="ref-range-none ref-muted">未入力</p>'
+            : `<dl class="ref-range">
             <dt>対面</dt><dd class="${m.face ? "" : "ref-muted"}">${m.face ? escapeHtml(m.face) : "未入力"}</dd>
             <dt>オンライン</dt><dd class="${onlineClass}">${escapeHtml(ONLINE_LABELS[m.online])}</dd>
-          </dl>
+          </dl>`}
           <div class="ref-actions">
             <button type="button" class="ref-btn" data-copy="${m.id}">紹介文をコピー</button>
             <button type="button" class="ref-btn ghost" data-detail="${m.id}">詳細・資料を見る</button>
@@ -255,12 +261,17 @@
     const box = $("#myPartners");
     box.hidden = !ps.length;
     if (!ps.length) return;
+    // 理由は「相手から紹介してもらえそう/あなたから紹介できそう/共通のお客様」の短い言葉で見せる
+    const line = (label, words) => (words.length
+      ? `<span class="pt-why"><b>${label}</b>${words.slice(0, 3).map((w) => `<span class="pt-word">${escapeHtml(w)}</span>`).join("")}</span>` : "");
     $("#myPartnersList").innerHTML = ps
       .map((p) => `
         <li class="pt-item">
           <button type="button" class="pt-name" data-detail="${p.m.id}">${escapeHtml(p.m.name)}</button>
+          ${roleMark(p.m.id, true)}
           <span class="pt-company">${escapeHtml(p.m.company || p.m.category)}</span>
-          <span class="pt-why">${escapeHtml(p.reasons.slice(0, 2).join("。"))}</span>
+          ${line("あなたへ紹介してもらえそう", p.get)}${line("あなたから紹介できそう", p.give)}${line("共通のお客様", p.shared)}
+          ${!p.get.length && !p.give.length && !p.shared.length ? `<span class="pt-why">${escapeHtml(p.reasons[0] || "")}</span>` : ""}
         </li>`)
       .join("");
   }
@@ -337,11 +348,33 @@
       : '<p class="ref-empty">条件に合うメンバーが見つかりませんでした。<br>キーワードや絞り込みを変えてみてください。</p>';
     $("#countShown").textContent = list.length;
     $("#countTotal").textContent = members.length;
+    renderFilterState();
     const diagSorted = !!(sortByScore && scores);
     $("#sortedBanner").hidden = !diagSorted && !topicScores;
     $("#sortedText").textContent = diagSorted
       ? "診断結果の一致度順に表示しています"
       : topicScores ? `「${labelOf(TOPICS, filter.topic)}」の一致度順に表示しています(代表・役職・役割の基礎ポイントを含む)` : "";
+    $("#orderNote").hidden = diagSorted || !!topicScores;
+  }
+
+  // 選んでいる条件: 閉じた「業種・エリアで絞り込む」にも出し、「条件をすべてクリア」を出す
+  function renderFilterState() {
+    const areaLabels = { niigata: "新潟で対面可", tokyo: "東京・関東で対面可", online: "オンライン可" };
+    const more = [
+      filter.category !== "all" ? filter.category : "",
+      filter.area !== "all" ? areaLabels[filter.area] : "",
+      filter.offer ? "紹介特典あり" : "",
+    ].filter(Boolean);
+    $("#moreFiltersActive").textContent = more.length ? `選択中:${more.join("・")}` : "";
+    $("#clearFilters").hidden = !(more.length || filter.search || filter.topic !== "all");
+  }
+
+  function clearFilters() {
+    Object.assign(filter, { category: "all", area: "all", search: "", topic: "all", offer: false });
+    $("#refSearch").value = "";
+    renderTopicSelect();
+    renderChips();
+    renderList();
   }
 
   function chipHtml(group, value, label, active) {
@@ -613,6 +646,7 @@
     renderList();
   });
 
+  $("#clearFilters").addEventListener("click", clearFilters);
   $("#topicSelect").addEventListener("change", (e) => {
     filter.topic = e.target.value;
     renderList();
@@ -631,9 +665,8 @@
     myMemberId = session.memberId || "";
     members = viewerOrder(dailyOrder(res.success ? res.data.members : []));
     $("#communityLabel").textContent = COMMUNITY.label;
-    const notice = $("#pendingNotice");
-    notice.textContent = COMMUNITY.pendingNote;
-    notice.hidden = !members.some((m) => !isProfileComplete(m));
+    // 業種・エリアの絞り込みは、広い画面では最初から開いておく
+    $("#moreFilters").open = window.matchMedia("(min-width: 720px)").matches;
     $("#adminLink").hidden = !session.user.isAdmin;
     $("#demoNote").hidden = AuthApi.isShared();
     renderNudge();
