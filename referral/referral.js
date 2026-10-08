@@ -3,6 +3,7 @@
 // ・業種/エリア/キーワードでの絞り込み
 // ・紹介診断:5つの質問の回答からメンバーごとの一致度(0〜100%)を計算
 // ・紹介文のコピー/LINEで送る
+// ・紹介の記録(メモつき)と、紹介を受けた本人による対応状況の更新
 // ============================================
 
 (function () {
@@ -28,6 +29,9 @@
   let stats = null;        // 紹介の実績(サーバー集計)
   let recordingId = null;  // 記録ダイアログの対象メンバー
   let myMemberId = "";     // ログイン中の本人(名簿のID)
+  let lastRecord = null;   // 直前に記録した紹介(LINEで知らせる用)
+
+  const STATUS_LABELS = { new: "未対応", contacted: "連絡済み", won: "成約", lost: "見送り" };
 
   // ---------- 一致度の計算 ----------
   // 配点: 話題50 + 業種15 + 相手のタイプ10 + 会い方・エリア25 = 100
@@ -204,7 +208,7 @@
         </div>
         <div class="ref-col ref-col-wants">
           <p class="ref-label">求める紹介</p>
-          <p class="ref-wants${m.wants ? "" : " ref-muted"}">${m.wants ? escapeHtml(m.wants) : "準備中(管理者が追加します)"}</p>
+          <p class="ref-wants${m.wants ? "" : " ref-muted"}">${m.wants ? escapeHtml(m.wants) : "まだ入力されていません"}</p>
           <div class="ref-triggers">${triggerHtml}</div>
         </div>
         <div class="ref-col ref-col-range">
@@ -216,7 +220,7 @@
           <div class="ref-actions">
             <button type="button" class="ref-btn" data-copy="${m.id}">紹介文をコピー</button>
             <button type="button" class="ref-btn line" data-line="${m.id}">LINEで送る</button>
-            ${m.id === myMemberId ? "" : `<button type="button" class="ref-btn record" data-record="${m.id}">紹介を記録</button>`}
+            ${m.id === myMemberId ? '<a href="../profile/" class="ref-btn record">自分の情報を編集</a>' : `<button type="button" class="ref-btn record" data-record="${m.id}">紹介を記録</button>`}
           </div>
         </div>
       </article>`;
@@ -415,6 +419,10 @@
     return `${d.getMonth() + 1}/${d.getDate()}`;
   }
 
+  function statusChip(status) {
+    return `<span class="status-chip status-${escapeHtml(status)}">${escapeHtml(STATUS_LABELS[status] || "")}</span>`;
+  }
+
   async function loadStats() {
     const res = await AuthApi.getReferralStats(AuthSession.getToken());
     if (!res.success) return;
@@ -422,16 +430,57 @@
     $("#statMine").textContent = stats.myCount;
     $("#statMonth").textContent = stats.monthCount;
     $("#statTotal").textContent = stats.totalCount;
+    $("#statWon").textContent = stats.wonCount;
     $("#rankingList").innerHTML = stats.ranking.length
       ? stats.ranking
-          .map((r, i) => `<li class="${r.isMe ? "is-me" : ""}"><span class="rank-pos">${i + 1}</span><span class="rank-who">${escapeHtml(r.name)}${r.isMe ? "(あなた)" : ""}</span><span class="rank-count">${r.count}件</span></li>`)
+          .map((r, i) => `<li class="${r.isMe ? "is-me" : ""}"><span class="rank-pos">${i + 1}</span><span class="rank-who">${escapeHtml(r.name)}${r.isMe ? "(あなた)" : ""}</span><span class="rank-count">${r.count}件${r.won ? `<small>成約${r.won}</small>` : ""}</span></li>`)
           .join("")
       : '<li class="ref-ranking-empty">まだ記録がありません。最初の紹介を記録してみましょう。</li>';
     $("#myLog").innerHTML = stats.myRecent.length
       ? stats.myRecent
-          .map((l) => `<li><span>${fmtDate(l.at)} ${escapeHtml(l.toName)}さんを紹介${l.prospect ? `(→ ${escapeHtml(l.prospect)})` : ""}</span><button type="button" class="ref-log-undo" data-undo="${escapeHtml(l.id)}">取り消す</button></li>`)
+          .map((l) => `<li><span>${fmtDate(l.at)} ${escapeHtml(l.toName)}さんを紹介${l.prospect ? `(→ ${escapeHtml(l.prospect)})` : ""} ${statusChip(l.status)}</span><button type="button" class="ref-log-undo" data-undo="${escapeHtml(l.id)}">取り消す</button></li>`)
           .join("")
       : "<li>まだ記録がありません。</li>";
+    renderInbox();
+  }
+
+  // ---------- あなたへの紹介 ----------
+  function renderInbox() {
+    const items = stats ? stats.inbox : [];
+    const badge = $("#inboxBadge");
+    badge.hidden = !(stats && stats.inboxNewCount);
+    badge.textContent = stats ? `未対応 ${stats.inboxNewCount}件` : "";
+    $("#inboxList").innerHTML = items.length
+      ? items
+          .map((l) => `
+        <li class="inbox-item${l.status === "new" ? " is-new" : ""}">
+          <div class="inbox-main">
+            <p class="inbox-who"><span class="inbox-date">${fmtDate(l.at)}</span><strong>${escapeHtml(l.fromName)}</strong>さんから${l.prospect ? `「${escapeHtml(l.prospect)}」さんの` : ""}ご紹介</p>
+            ${l.topics.length ? `<p class="inbox-topics">${l.topics.map((t) => `<span>${escapeHtml(labelOf(TOPICS, t))}</span>`).join("")}</p>` : ""}
+            ${l.memo ? `<p class="inbox-memo">${escapeHtml(l.memo)}</p>` : ""}
+          </div>
+          <div class="inbox-status" role="group" aria-label="対応状況">
+            ${Object.keys(STATUS_LABELS)
+              .map((st) => `<button type="button" class="status-btn status-${st}" data-status-id="${escapeHtml(l.id)}" data-status-value="${st}" aria-pressed="${l.status === st}">${STATUS_LABELS[st]}</button>`)
+              .join("")}
+          </div>
+        </li>`)
+          .join("")
+      : '<li class="inbox-empty">まだありません。「求める紹介」や「こんな話が出たら」を具体的に書いておくと、紹介が届きやすくなります。</li>';
+  }
+
+  // ---------- 自分の情報の記入状況 ----------
+  function renderNudge() {
+    const me = members.find((m) => m.id === myMemberId);
+    const missing = [];
+    if (me) {
+      if (!me.business) missing.push("事業内容");
+      if (!me.wants) missing.push("求める紹介");
+      if (!me.faceAreas.length && (!me.online || me.online === "unknown")) missing.push("活動範囲");
+      if (me.triggers.length < 3) missing.push("こんな話が出たら");
+    }
+    $("#profileNudge").hidden = !missing.length;
+    $("#profileNudgeItems").textContent = `未入力:${missing.join("・")}。入力すると紹介が届きやすくなります。`;
   }
 
   function openRecord(id) {
@@ -440,6 +489,9 @@
     recordingId = id;
     $("#recLead").textContent = `${m.name}さんを紹介したことを記録します。`;
     $("#recProspect").value = "";
+    $("#recMemo").value = "";
+    $("#recForm").hidden = false;
+    $("#recDone").hidden = true;
     $("#recOverlay").hidden = false;
     document.body.style.overflow = "hidden";
     $("#recProspect").focus();
@@ -456,18 +508,36 @@
     if (!recordingId) return;
     const m = members.find((x) => x.id === recordingId);
     const sc = scores && scores[recordingId];
+    const prospect = $("#recProspect").value.trim();
+    const memo = $("#recMemo").value.trim();
     const res = await AuthApi.recordReferral(
       AuthSession.getToken(),
       recordingId,
-      $("#recProspect").value.trim(),
-      sc ? sc.topicHits : []
+      prospect,
+      sc ? sc.topicHits : [],
+      memo
     );
-    closeRecord();
-    if (!res.success) { toast(res.error.userMessage); return; }
+    if (!res.success) { closeRecord(); toast(res.error.userMessage); return; }
+    lastRecord = { m, prospect, memo };
+    $("#recForm").hidden = true;
+    $("#recDone").hidden = false;
+    $("#recDoneLead").textContent = `${m.name}さんの「あなたへの紹介」に表示されます。LINEでも直接知らせておくと、すぐに動いてもらえます。`;
+    $("#recNotify").focus();
     await loadStats();
     renderList();
-    toast(`${m.name}さんへの紹介を記録しました。ありがとうございます!`);
   });
+
+  function notifyText(r) {
+    const lines = [`【ご紹介のお知らせ】${r.m.name}さん`, `${r.prospect ? `${r.prospect}さん` : "お客様"}をご紹介しました。`];
+    if (r.memo) lines.push("", r.memo);
+    lines.push("", "BT-EX5 紹介先早見表の「あなたへの紹介」で、対応状況を更新できます。", new URL("./", location.href).href);
+    return lines.join("\n");
+  }
+  $("#recNotify").addEventListener("click", () => {
+    if (!lastRecord) return;
+    window.open("https://line.me/R/share?text=" + encodeURIComponent(notifyText(lastRecord)), "_blank", "noopener");
+  });
+  $("#recDoneClose").addEventListener("click", closeRecord);
   $("#recClose").addEventListener("click", closeRecord);
   $("#recCancel").addEventListener("click", closeRecord);
   $("#recOverlay").addEventListener("click", (e) => { if (e.target.id === "recOverlay") closeRecord(); });
@@ -515,6 +585,15 @@
       return;
     }
 
+    const statusBtn = t.closest("[data-status-id]");
+    if (statusBtn) {
+      const res = await AuthApi.updateReferralStatus(AuthSession.getToken(), statusBtn.dataset.statusId, statusBtn.dataset.statusValue);
+      if (!res.success) { toast(res.error.userMessage); return; }
+      await loadStats();
+      toast(res.data.status === "won" ? "成約おめでとうございます!紹介してくれた方にも伝わります" : `対応状況を「${STATUS_LABELS[res.data.status]}」にしました`);
+      return;
+    }
+
     const gotoBtn = t.closest("[data-goto]");
     if (gotoBtn) { gotoCard(gotoBtn.dataset.goto); return; }
   });
@@ -555,7 +634,7 @@
   (async function init() {
     const session = await AuthSession.guardPage({ next: "referral", loginPath: "../login/" });
     if (!session) return;
-    const res = await AuthApi.listReferralMembers(AuthSession.getToken());
+    const [res] = await Promise.all([AuthApi.listReferralMembers(AuthSession.getToken()), loadStats()]);
     members = res.success ? res.data.members : [];
     $("#communityLabel").textContent = COMMUNITY.label;
     const notice = $("#pendingNotice");
@@ -563,7 +642,8 @@
     notice.hidden = !members.some((m) => !isProfileComplete(m));
     $("#adminLink").hidden = !session.user.isAdmin;
     myMemberId = session.memberId || "";
-    await loadStats();
+    $("#demoNote").hidden = AuthApi.isShared();
+    renderNudge();
     renderChips();
     renderList();
     document.documentElement.classList.remove("guard-pending");

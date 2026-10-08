@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="ja" class="guard-pending">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="referrer" content="no-referrer">
+  <meta name="robots" content="noindex">
+  <title>自分の情報を編集 | BT-EX5</title>
+  <style>html.guard-pending body { visibility: hidden; } html.guard-pending::after { content: "読み込み中…"; position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; font: 700 15px sans-serif; color: #a18a7e; background: #fff8f2; }</style>
+  <link rel="icon" type="image/svg+xml" href="../assets/bt-ex5-mark.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Noto+Sans+JP:wght@400;500;700;900&display=swap"></noscript>
+  <link rel="stylesheet" href="../referral/referral.css">
+  <link rel="stylesheet" href="../admin/admin.css">
+  <link rel="stylesheet" href="profile.css">
+</head>
+<body>
+
+  <header class="ref-header">
+    <div class="ref-header-inner">
+      <a href="../referral/" class="ref-logo">
+        <img class="brand-mark" src="../assets/bt-ex5-mark.svg" alt="" width="40" height="40">
+        <span class="brand-word"><span class="brand-name">BT-<em>EX5</em></span><span class="brand-sub">新潟・東京 紹介者制コミュニティ</span></span>
+      </a>
+      <nav class="ref-header-nav">
+        <a href="../referral/" class="ref-header-link">紹介先早見表</a>
+        <a href="../portal/" class="ref-header-link">マイページ</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="ref-main prof-main">
+    <section class="ref-intro">
+      <p class="ref-eyebrow">MY PROFILE</p>
+      <h1 class="ref-title"><span id="profName"></span>さんの情報</h1>
+      <p class="ref-lead">ここに書いた内容が紹介先早見表と紹介診断に使われます。「求める紹介」と「活動範囲」が具体的なほど、紹介が届きやすくなります。</p>
+    </section>
+
+    <section class="prof-progress" aria-live="polite">
+      <div class="prof-progress-head">
+        <span>記入状況</span>
+        <strong id="profPercent">0%</strong>
+      </div>
+      <div class="prof-progress-bar" aria-hidden="true"><span id="profBar"></span></div>
+      <ul class="prof-todo" id="profTodo"></ul>
+    </section>
+
+    <form id="profileForm" class="prof-form" novalidate>
+      <fieldset class="adm-group">
+        <legend>基本情報</legend>
+        <div class="adm-grid">
+          <label class="adm-field">会社名・肩書き<input type="text" name="company" maxlength="80"></label>
+          <label class="adm-field">業種<select name="category" id="fCategory"></select></label>
+          <label class="adm-field">拠点<select name="base" id="fBase"></select></label>
+        </div>
+        <p class="prof-hint">お名前と所属チームの変更は運営者にご連絡ください。</p>
+      </fieldset>
+
+      <fieldset class="adm-group">
+        <legend>早見表に載せる内容</legend>
+        <label class="adm-field">事業内容<span class="prof-hint">取り扱っている商品・サービスを書いてください。</span><textarea name="business" rows="3" maxlength="600"></textarea></label>
+        <label class="adm-field">主なお客様<span class="prof-hint">どんな方がお客様になっていますか。</span><textarea name="customers" rows="2" maxlength="400"></textarea></label>
+        <label class="adm-field">求める紹介<span class="prof-hint">「〇〇で困っている△△の経営者」のように、紹介してほしい相手を具体的に。</span><textarea name="wants" rows="3" maxlength="400"></textarea></label>
+        <label class="adm-field">こんな話が出たら(1行に1つ)<span class="prof-hint">会話でこの言葉が出たら自分を思い出してほしい、というキーワードです。</span><textarea name="triggers" rows="4"></textarea></label>
+        <label class="adm-field">補足(料金・返信の早さなど)<textarea name="note" rows="2" maxlength="300"></textarea></label>
+      </fieldset>
+
+      <fieldset class="adm-group">
+        <legend>活動範囲</legend>
+        <p class="adm-sub">対面で会えるエリア</p>
+        <div class="adm-checks">
+          <label><input type="checkbox" name="faceAreas" value="niigata"> 新潟で対面可</label>
+          <label><input type="checkbox" name="faceAreas" value="tokyo"> 東京・関東で対面可</label>
+        </div>
+        <div class="adm-grid">
+          <label class="adm-field">対面の表記(例:新潟市内・県央)<input type="text" name="face" maxlength="60"></label>
+          <label class="adm-field">オンライン
+            <select name="online">
+              <option value="unknown">未入力</option>
+              <option value="all">全国対応</option>
+              <option value="partial">打合せのみ可</option>
+              <option value="none">対面のみ</option>
+            </select>
+          </label>
+        </div>
+      </fieldset>
+
+      <fieldset class="adm-group">
+        <legend>紹介診断の設定</legend>
+        <p class="adm-sub">対応できる話題</p>
+        <div class="adm-checks" id="fTopics"></div>
+        <p class="adm-sub">紹介してほしい相手の業種</p>
+        <div class="adm-checks" id="fTargets"></div>
+        <p class="adm-sub">紹介してほしい相手のタイプ</p>
+        <div class="adm-checks" id="fProspects"></div>
+      </fieldset>
+
+      <p class="adm-error" id="profileError" role="alert"></p>
+      <div class="prof-actions">
+        <a href="../referral/" class="ref-btn ghost">早見表に戻る</a>
+        <button type="submit" class="ref-diag-btn" id="profileSave">保存する</button>
+      </div>
+    </form>
+  </main>
+
+  <footer class="ref-footer">
+    <nav class="ref-footer-nav"><a href="../terms/">利用規約</a><a href="../privacy/">プライバシーポリシー</a></nav>
+    <p>© 2026 BT-EX5</p>
+  </footer>
+
+  <div class="ref-toast" id="refToast" role="status" hidden></div>
+
+  <script src="../referral/data.js"></script>
+  <script src="../auth/server-core.js"></script>
+  <script src="../auth/mock-server.js"></script>
+  <script src="../auth/api.js"></script>
+  <script src="../auth/session.js"></script>
+  <script src="profile.js"></script>
+</body>
+</html>

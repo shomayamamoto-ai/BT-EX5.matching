@@ -23,6 +23,7 @@ const AuthSession = (function () {
     portal: "../portal/",
     referral: "../referral/",
     admin: "../admin/",
+    profile: "../profile/",
   };
   const ALLOWED_NEXT = Object.keys(SCREENS);
   const DEFAULT_NEXT = "home";

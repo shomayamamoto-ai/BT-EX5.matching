@@ -81,6 +81,10 @@ const AuthApi = (function () {
   function listReferralMembers(sessionToken) {
     return post("listReferralMembers", { sessionToken });
   }
+  // 本人によるプロフィール編集(名前・所属チーム以外)
+  function updateMyProfile(sessionToken, profile) {
+    return post("updateMyProfile", { sessionToken, profile });
+  }
   function adminSaveReferralMember(sessionToken, member) {
     return post("adminSaveReferralMember", { sessionToken, member });
   }
@@ -92,8 +96,12 @@ const AuthApi = (function () {
   }
 
   // ---------- 紹介の記録 ----------
-  function recordReferral(sessionToken, toMemberId, prospect, topics) {
-    return post("recordReferral", { sessionToken, toMemberId, prospect, topics });
+  function recordReferral(sessionToken, toMemberId, prospect, topics, memo) {
+    return post("recordReferral", { sessionToken, toMemberId, prospect, topics, memo: memo || "" });
+  }
+  // 紹介を受けた本人が対応状況を更新する(new / contacted / won / lost)
+  function updateReferralStatus(sessionToken, id, status) {
+    return post("updateReferralStatus", { sessionToken, id, status });
   }
   function deleteReferral(sessionToken, id) {
     return post("deleteReferral", { sessionToken, id });
@@ -104,8 +112,10 @@ const AuthApi = (function () {
 
   return {
     passcodeLogin, verifySession, logout,
-    listReferralMembers, adminSaveReferralMember, adminDeleteReferralMember, adminImportReferralMembers,
-    recordReferral, deleteReferral, getReferralStats,
+    listReferralMembers, updateMyProfile,
+    adminSaveReferralMember, adminDeleteReferralMember, adminImportReferralMembers,
+    recordReferral, deleteReferral, updateReferralStatus, getReferralStats,
+    isShared: () => Boolean(API_BASE_URL),
     NETWORK_MESSAGE,
   };
 })();

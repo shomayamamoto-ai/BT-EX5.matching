@@ -6,7 +6,7 @@
   <meta name="referrer" content="no-referrer">
   <meta name="robots" content="noindex">
   <title>名簿の管理 | BT-EX5</title>
-  <style>html.guard-pending body { visibility: hidden; }</style>
+  <style>html.guard-pending body { visibility: hidden; } html.guard-pending::after { content: "読み込み中…"; position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; font: 700 15px sans-serif; color: #a18a7e; background: #fff8f2; }</style>
   <link rel="icon" type="image/svg+xml" href="../assets/bt-ex5-mark.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" onload="this.onload=null;this.rel='stylesheet'">
@@ -57,7 +57,7 @@
       </section>
 
       <section class="adm-list" id="memberList" aria-live="polite"></section>
-      <p class="adm-footnote">このデモでは名簿はお使いのブラウザ内に保存されます。別の端末へ移すときや、実際のサーバーに移行するときは「JSONを書き出す」で保存したファイルを使ってください。</p>
+      <p class="adm-footnote" id="demoFootnote">現在はお試し版のため、名簿はお使いのブラウザ内に保存されます。共有サーバー(gas/README.md)に移行するときは「JSONを書き出す」で保存したファイルを、移行後に「JSONを読み込む」で読み込んでください。</p>
     </div>
   </main>
 
@@ -130,6 +130,7 @@
 
   <div class="ref-toast" id="refToast" role="status" hidden></div>
 
+  <script src="../auth/server-core.js"></script>
   <script src="../auth/mock-server.js"></script>
   <script src="../auth/api.js"></script>
   <script src="../auth/session.js"></script>

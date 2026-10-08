@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="referrer" content="no-referrer">
   <title>紹介先早見表 | BT-EX5</title>
-  <style>html.guard-pending body { visibility: hidden; }</style>
+  <style>html.guard-pending body { visibility: hidden; } html.guard-pending::after { content: "読み込み中…"; position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; font: 700 15px sans-serif; color: #a18a7e; background: #fff8f2; }</style>
   <link rel="icon" type="image/svg+xml" href="../assets/bt-ex5-mark.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" onload="this.onload=null;this.rel='stylesheet'">
@@ -38,6 +38,25 @@
       <p class="ref-notice" id="pendingNotice"></p>
     </section>
 
+    <!-- 自分の情報の記入のお願い -->
+    <a href="../profile/" class="prof-nudge" id="profileNudge" hidden>
+      <span class="prof-nudge-text">
+        <strong>あなたの情報に未入力の項目があります</strong>
+        <span id="profileNudgeItems"></span>
+      </span>
+      <span class="prof-nudge-go">自分の情報を入力する →</span>
+    </a>
+
+    <!-- あなたへの紹介 -->
+    <section class="inbox" id="inbox" aria-labelledby="inboxTitle">
+      <div class="inbox-head">
+        <h2 class="inbox-title" id="inboxTitle">あなたへの紹介</h2>
+        <span class="inbox-badge" id="inboxBadge" hidden></span>
+      </div>
+      <p class="inbox-lead">メンバーがあなたに紹介してくれた方です。対応したら状況を更新すると、紹介してくれた人にも伝わります。</p>
+      <ul class="inbox-list" id="inboxList"></ul>
+    </section>
+
     <!-- 紹介の実績 -->
     <section class="ref-stats" aria-label="紹介の実績">
       <div class="ref-stat is-mine">
@@ -51,6 +70,7 @@
       <div class="ref-stat">
         <span class="ref-stat-label">これまでの合計</span>
         <span class="ref-stat-num"><strong id="statTotal">0</strong>件</span>
+        <span class="ref-stat-sub">うち成約 <b id="statWon">0</b>件</span>
       </div>
       <div class="ref-ranking">
         <p class="ref-stat-label">紹介貢献ランキング</p>
@@ -60,6 +80,7 @@
         <summary>あなたの最近の紹介記録</summary>
         <ul id="myLog"></ul>
       </details>
+      <p class="ref-demo-note" id="demoNote" hidden>※ 現在はお試し版のため、紹介の記録や編集はこの端末のブラウザの中にだけ保存されます(他のメンバーには届きません)。</p>
     </section>
 
     <!-- 紹介診断への入口 -->
@@ -160,18 +181,29 @@
       <p class="rec-lead" id="recLead"></p>
       <form id="recForm" novalidate>
         <label class="rec-field" for="recProspect">紹介した相手(任意)</label>
-        <input type="text" id="recProspect" maxlength="60" autocomplete="off">
-        <p class="rec-note">記録はコミュニティの紹介数と、あなたの紹介実績として集計されます。</p>
+        <input type="text" id="recProspect" class="rec-input" maxlength="60" autocomplete="off">
+        <label class="rec-field" for="recMemo">メモ(任意)</label>
+        <textarea id="recMemo" class="rec-input" rows="3" maxlength="300"></textarea>
+        <p class="rec-note">メモ(相手のご要望・連絡のタイミングなど)は、紹介先のメンバーとあなただけが見られます。記録はコミュニティの紹介数と、あなたの紹介実績として集計されます。</p>
         <div class="rec-actions">
           <button type="button" class="ref-btn ghost" id="recCancel">キャンセル</button>
           <button type="submit" class="ref-diag-btn">記録する</button>
         </div>
       </form>
+      <div class="rec-done" id="recDone" hidden>
+        <p class="rec-done-title">記録しました。ありがとうございます!</p>
+        <p class="rec-note" id="recDoneLead"></p>
+        <div class="rec-actions">
+          <button type="button" class="ref-btn ghost" id="recDoneClose">閉じる</button>
+          <button type="button" class="ref-btn line" id="recNotify">LINEで知らせる</button>
+        </div>
+      </div>
     </div>
   </div>
 
   <div class="ref-toast" id="refToast" role="status" hidden></div>
 
+  <script src="../auth/server-core.js"></script>
   <script src="../auth/mock-server.js"></script>
   <script src="../auth/api.js"></script>
   <script src="../auth/session.js"></script>

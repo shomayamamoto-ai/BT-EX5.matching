@@ -15,8 +15,8 @@
 適用方針:
 
 - 画面仕様(§1〜§4、§10、§11)、API 契約の形状(§5)、リダイレクト仕様(§6)、セッション取り扱い(§7)、サーバー側判定ロジック(§8)は仕様書に準拠して実装
-- GAS バックエンドは存在しないため、§8 のサーバー側判定は `auth/mock-server.js`(ブラウザ内デモ実装)として同一契約・同一判定順序で実装。実 API への差し替え点は仕様書 §5.1 の記載どおり `auth/api.js` に限定(`API_BASE_URL` を設定するとモックの代わりに text/plain POST で実 API を呼ぶ)
+- §8 のサーバー側判定は `auth/server-core.js` に、実行環境に依存しない同期処理として実装。同じコードを `auth/mock-server.js`(ブラウザ内デモ・localStorage 保存)と `gas/`(Google Apps Script の共有サーバー・スプレッドシート保存。`tools/build-gas.mjs` で `gas/Code.gs` を生成)の両方で動かす。実 API への差し替え点は仕様書 §5.1 の記載どおり `auth/api.js` に限定(`API_BASE_URL` を設定するとデモの代わりに text/plain POST で共有サーバーを呼ぶ)
 - 固有名の読み替え: セッション保存キーは `tsam-auth-session` → `kouryukai-auth-session`
 - **ログイン方式の読み替え(運営者の要望による)**: メールアドレス+パスワードではなく、コミュニティ共通のパスコード(会員用/管理者用)で入る。会員登録(`/pricing/` 相当の申込導線)とパスワード再設定は設けない。§2 のメールアドレス・パスワード欄はパスコード欄と名前の選択欄に、§5.2 の login は passcodeLogin(1回目でパスコード確認→2回目に名簿の名前を指定してセッション発行)に読み替える。AUTH_FAILED / LOCKED の2種への集約、5回失敗で15分ロック、remember の `=== true` 厳密判定と 12時間/30日、成功ごとの新規トークン発行、SESSION_INVALID 単一化、placeholder 不使用は維持する。ロックは利用者単位ではなくパスコード入力全体に対して掛かり、管理者権限はセッション単位(入ったパスコード)で決まる
-- 保護対象画面: 仕様書 §6 の現行 ALLOWED_NEXT は `['portal']` だが、当サイトでは紹介先早見表などもログイン必須とする要件のため、§6 記載の手順(guardPage 明示指定 + リスト追加)に従い `home` / `portal` / `referral`(紹介先早見表)/ `admin`(管理者ページ)の4画面。3画面を超えたため §6 の将来拡張 1 に従い、ALLOWED_NEXT は `auth/session.js` の画面定義 `SCREENS` から導出する(任意URLを受け取らない原則は維持)。既定の遷移先は `home`(サイトの入口=紹介先早見表 `/referral/`)
+- 保護対象画面: 仕様書 §6 の現行 ALLOWED_NEXT は `['portal']` だが、当サイトでは紹介先早見表などもログイン必須とする要件のため、§6 記載の手順(guardPage 明示指定 + リスト追加)に従い `home` / `portal` / `referral`(紹介先早見表)/ `admin`(管理者ページ)/ `profile`(自分の情報を編集)の5画面。3画面を超えたため §6 の将来拡張 1 に従い、ALLOWED_NEXT は `auth/session.js` の画面定義 `SCREENS` から導出する(任意URLを受け取らない原則は維持)。既定の遷移先は `home`(サイトの入口=紹介先早見表 `/referral/`)
 - 仕様書中の TSAM AI 固有の記述(Stripe 連携、listPlans/checkout 系 action、settings シート等)は当リポジトリでは対象外

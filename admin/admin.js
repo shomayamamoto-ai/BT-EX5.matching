@@ -240,6 +240,7 @@
       $("#denied").hidden = false;
     } else {
       $("#adminArea").hidden = false;
+      $("#demoFootnote").hidden = AuthApi.isShared();
       setupForm();
       await load();
     }
