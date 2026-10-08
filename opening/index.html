@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="referrer" content="no-referrer">
+  <title>オープニングムービー | BT-EX5</title>
+  <link rel="icon" type="image/svg+xml" href="../assets/bt-ex5-mark.svg?v=202610081248">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Noto+Sans+JP:wght@400;700;900&family=Shippori+Mincho:wght@700&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Noto+Sans+JP:wght@400;700;900&family=Shippori+Mincho:wght@700&display=swap"></noscript>
+  <style>
+    :root { --bg: #0d0807; --ink: #fff3dc; --sub: #c99a6a; --gold: #ffbe4d; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; background: var(--bg); color: var(--ink); font-family: "Noto Sans JP", sans-serif; }
+    .wrap { max-width: 1100px; margin: 0 auto; padding-inline: 16px; padding-block: 28px 48px; display: grid; gap: 18px; }
+    h1 { margin: 0; font-family: "Shippori Mincho", serif; font-size: clamp(24px, 4vw, 36px); letter-spacing: 0.08em; }
+    p { margin: 0; color: var(--sub); line-height: 1.8; }
+    video { width: 100%; height: auto; aspect-ratio: 16 / 9; border-radius: 14px; background: #000; }
+    .links { display: flex; flex-wrap: wrap; gap: 10px; }
+    .links a { color: var(--bg); background: var(--ink); text-decoration: none; font-weight: 700; padding: 10px 18px; border-radius: 999px; font-size: 14px; }
+    .links a.ghost { background: none; color: var(--ink); border: 1px solid rgba(255, 243, 220, 0.45); }
+    .story { display: grid; gap: 4px; font-size: 14px; }
+    .story b { color: var(--gold); font-weight: 700; margin-right: 8px; font-family: "Inter", sans-serif; }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <h1>ご縁(5円)× チーム5</h1>
+    <p>BT-EX5 のオープニングムービーです(15秒・音あり)。</p>
+    <video poster="../assets/opening/poster.jpg" controls playsinline preload="metadata">
+      <source src="../assets/opening/bt-ex5-opening.mp4" type="video/mp4">
+      <source src="../assets/opening/bt-ex5-opening-720p.webm" type="video/webm">
+    </video>
+    <div class="story">
+      <p><b>0:00</b>5円玉が回りながら落ちてきて、チャリンと止まる「5円は、ご縁。」</p>
+      <p><b>0:03</b>5円玉の穴の中へ「ひとつのご縁が、」</p>
+      <p><b>0:05</b>5つの光(紹介・信頼・仲間・仕事・感謝)が赤い糸で結ばれる「5つの縁を結ぶ。」</p>
+      <p><b>0:09</b>糸の上を光が巡る「紹介が巡る、チーム5。」</p>
+      <p><b>0:11</b>結び目がロゴになり、BT-EX5 の名前が出る</p>
+    </div>
+    <div class="links">
+      <a href="../assets/opening/bt-ex5-opening.mp4" download>動画を保存(1920×1080)</a>
+      <a href="../assets/opening/bt-ex5-opening-720p.mp4" download class="ghost">軽い版を保存(1280×720)</a>
+      <a href="../login/" class="ghost">サイトへ進む</a>
+    </div>
+  </main>
+</body>
+</html>

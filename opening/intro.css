@@ -1,0 +1,32 @@
+/* ログイン画面のオープニング */
+.op-intro {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: #0d0807;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.45s ease;
+}
+.op-intro.is-closing { opacity: 0; pointer-events: none; }
+.op-intro-video { width: 100%; height: 100%; object-fit: contain; background: #0d0807; }
+.op-intro-bar {
+  position: absolute;
+  right: 16px;
+  bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  display: flex;
+  gap: 8px;
+}
+.op-intro-btn {
+  border: 1px solid rgba(255, 243, 220, 0.45);
+  background: rgba(13, 8, 7, 0.55);
+  color: #fff3dc;
+  border-radius: 999px;
+  padding: 9px 16px;
+  font: 700 13.5px "Noto Sans JP", sans-serif;
+  cursor: pointer;
+}
+.op-intro-btn.primary { background: #fff3dc; color: #2a1712; border-color: transparent; }
+.op-intro-btn:focus-visible { outline: 3px solid #ffbe4d; outline-offset: 2px; }
+html.op-intro-open, html.op-intro-open body { overflow: hidden; }
