@@ -305,10 +305,10 @@
   function roleMark(id, compact) {
     const r = refRoleOf(id);
     if (!r) return "";
-    const kind = REF_ROLE_KINDS[r.kind] || "";
-    return `<span class="ref-role ref-role-${r.kind}${compact ? " compact" : ""}" title="${escapeHtml(kind)}:${escapeHtml(r.role)}">`
+    // 「役職」「役割」などの区分の言葉は出さず、マーク(色・形)と肩書きだけを出す
+    return `<span class="ref-role ref-role-${r.kind}${compact ? " compact" : ""}" title="${escapeHtml(r.role)}">`
       + `<svg viewBox="0 0 16 16" aria-hidden="true">${ROLE_ICONS[r.kind] || ROLE_ICONS.role}</svg>`
-      + `${r.kind === "leader" ? "" : `<span class="ref-role-kind">${escapeHtml(kind)}</span>`}<span class="ref-role-text">${escapeHtml(r.role)}</span></span>`;
+      + `<span class="ref-role-text">${escapeHtml(r.role)}</span></span>`;
   }
 
   // 一覧の並び順は日替わり(だれもが上に表示される日があるように)。同じ日は同じ順

@@ -418,7 +418,7 @@ const REF_SEED_MEMBERS = [
     face: "関東(東京拠点)",
     faceAreas: ["tokyo"],
     online: "all",
-    topics: ["efficiency", "line", "web", "seo", "ai", "aitraining", "sns", "video", "prvideo", "music", "design", "casting", "org", "hiring", "event", "fixedcost", "tutoring"],
+    topics: ["efficiency", "line", "web", "seo", "ai", "aitraining", "sns", "video", "prvideo", "music", "casting", "org", "hiring", "event", "fixedcost", "tutoring"],
     targets: ["restaurant", "retail", "salon", "pro", "build", "it"],
     prospects: ["owner", "staff"],
     // 「紹介文をコピー」に入る本人の自己紹介(本人の依頼で原文のまま)
@@ -653,6 +653,8 @@ const REF_SEED_REVISIONS = [
     addTopics: ["line", "seo", "aitraining", "ad", "consult", "photo", "ehon", "mc", "recording", "casting", "fixedcost", "tutoring", "regional", "beauty", "color", "handmade", "social", "health"],
     removeTopics: { yamamoto: ["voice"], m02: ["music"], m05: ["health"], m14: ["health"], m17: ["health"], m20: ["health"] },
   },
+  // 本人の依頼で、山本さんのジャンルから「デザイン」を外す
+  { rev: "2026-10-yamamoto-design", ids: ["yamamoto"], fields: ["topics"], removeTopics: { yamamoto: ["design"] } },
 ];
 
 // 紹介に効く項目(重要な順)。足りない項目は管理者ページの「お願い文」と、
