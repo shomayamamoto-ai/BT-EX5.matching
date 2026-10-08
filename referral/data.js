@@ -270,8 +270,20 @@ const REF_SEED_MEMBERS = [
     targets: ["any"],
     prospects: ["owner", "individual"],
   }),
-  rosterMember("m23", "見上 恵", "AI絵本クリエイター、スクール講師、クリエイター募集", "Team Bloom∞🌸", "IT・Web・クリエイティブ", ["ai", "design"]),
-  rosterMember("m24", "柳橋 雅也", "地方創生", "Team Bloom∞🌸", "暮らし・サービス", []),
+  Object.assign(rosterMember("m23", "見上 恵", "ちきゅあそびくらぶ/AI絵本クリエイター、スクール講師、クリエイター募集", "Team Bloom∞🌸", "IT・Web・クリエイティブ", ["ai", "design"]), {
+    business: "AI絵本クリエイター、講座講師。",
+    customers: "自分の想いを絵本にしたい方",
+    triggers: ["想いを絵本にしたい", "自分史を絵本に残したい", "AI絵本", "クリエイターになりたい", "AIの講座を受けたい"],
+    targets: ["any"],
+    prospects: ["individual", "owner"],
+  }),
+  Object.assign(rosterMember("m24", "柳橋 雅也", "合同会社フライコア 代表社員/地方創生", "Team Bloom∞🌸", "暮らし・サービス", ["ai", "efficiency", "reform", "realestate"]), {
+    business: "地方創生コンサル、災害対策商材、AIシステム導入、内装造作費用0円、LED広告透過フィルム。",
+    customers: "税収を上げるための働きかけ、余った駐車場スペースの活用、作業効率の向上、内装費用のコスト削減などを考えている方",
+    triggers: ["地方創生", "税収を上げたい", "駐車場が余っている", "災害対策", "内装費用を抑えたい", "LED広告", "AIシステムを導入したい"],
+    targets: ["any"],
+    prospects: ["owner", "staff"],
+  }),
   Object.assign(rosterMember("m25", "松田 依子", "株式会社Lift 代表取締役/ちきゅうあそびくらぶ", "Team Bloom∞🌸", "暮らし・サービス", ["ai", "video", "event", "web", "insurance", "health"]), {
     business: "AI絵本(自分史絵本・エンディング絵本・感謝の絵本・子育て・親子・技術をわかりやすく等)、司会・MC、コンサル・プロデュース、コミュニケーション・ボイトレ・朗読、芦屋スマートラジオの企画運営・番組、イベント・パーティー企画、コミュニケーション講座、AI講座・AI動画、潜在意識・波動アップ、詐欺に遭わないための金融アドバイザー(本物か見抜く・海外保険・海外銀行等・税金対策)、美容・健康(Life wave・コロイドヨード)。",
     customers: "会社や自身や商品をもっと世に広めたい人、次世代に残したい思いのある人、自分史を絵本にしたい人、販売促進・集客したい人、自分を変えたい人、AI絵本クリエイター資格を学びたい人、AIを学びたい人、健康に困っている人、人生を変えたい人、ちきゅうあそびくらぶの理念に賛同し世界に羽ばたく活動に興味を持ってくれる人",
@@ -300,6 +312,7 @@ const REF_SEED_REVISIONS = [
   { rev: "2026-10-profiles-2", ids: ["m10", "m12", "m14", "m18", "m19"] },
   { rev: "2026-10-profiles-3", ids: ["m17", "m26", "m27"] },
   { rev: "2026-10-profiles-4", ids: ["m06", "m07", "m11", "m15", "m21"] },
+  { rev: "2026-10-profiles-5", ids: ["m23", "m24"] },
 ];
 
 // プロフィールの記入状況(求める紹介・活動範囲が入っていれば「記入済み」)
