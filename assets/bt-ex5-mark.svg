@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" role="img" aria-label="BT-EX5">
+  <defs>
+    <linearGradient id="hex" x1="6" y1="2" x2="42" y2="46" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#f4694b"/>
+      <stop offset="0.55" stop-color="#f7853f"/>
+      <stop offset="1" stop-color="#f9b046"/>
+    </linearGradient>
+    <linearGradient id="shine" x1="24" y1="2" x2="24" y2="26" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fff" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#fff" stop-opacity="0"/>
+    </linearGradient>
+    <radialGradient id="core" cx="24" cy="24" r="6" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fff"/>
+      <stop offset="1" stop-color="#ffe3cc"/>
+    </radialGradient>
+  </defs>
+  <path d="M24 2 43 13v22L24 46 5 35V13z" fill="url(#hex)"/>
+  <path d="M24 2 43 13v11H5V13z" fill="url(#shine)"/>
+  <path d="M24 8.6 37.4 16.3v15.4L24 39.4 10.6 31.7V16.3z" fill="none" stroke="#fff" stroke-opacity="0.45" stroke-width="1.1"/>
+  <g stroke="#fff" stroke-opacity="0.55" stroke-width="1" stroke-linecap="round">
+    <path d="M24 24 13.6 18M24 24 34.4 18M24 24v12"/>
+  </g>
+  <g fill="#fff" fill-opacity="0.85">
+    <circle cx="13.6" cy="18" r="1.6"/>
+    <circle cx="34.4" cy="18" r="1.6"/>
+    <circle cx="24" cy="36" r="1.6"/>
+  </g>
+  <path d="M24 11.5c.9 7.6 2.6 9.6 10.5 12.5-7.9 2.9-9.6 4.9-10.5 12.5-.9-7.6-2.6-9.6-10.5-12.5 7.9-2.9 9.6-4.9 10.5-12.5z" fill="url(#core)"/>
+  <circle cx="24" cy="24" r="2.1" fill="#f4694b"/>
+</svg>

@@ -1707,3 +1707,49 @@ body { font-family: "Inter", "Noto Sans JP", "Hiragino Kaku Gothic ProN", sans-s
   .step, .member-card, .btn { transition: none; }
 }
 .drawer-link[hidden] { display: none; }
+
+/* ---------- BT-EX5 ロゴ ---------- */
+.logo, .ref-logo, .auth-logo { gap: 10px; filter: none; }
+.brand-mark {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  filter: drop-shadow(0 3px 8px rgba(244, 105, 75, 0.35));
+  transition: transform 0.35s ease;
+}
+a:hover > .brand-mark { transform: rotate(-10deg) scale(1.06); }
+.brand-word {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.05;
+  text-align: left;
+}
+.brand-name {
+  font-family: "Inter", "Noto Sans JP", sans-serif;
+  font-size: 21px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: #3a2b25;
+}
+.brand-name em {
+  font-style: normal;
+  background: linear-gradient(100deg, #f4694b, #f9a03f);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.brand-sub {
+  margin-top: 3px;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: #a18a7e;
+  white-space: nowrap;
+}
+.brand-light .brand-name { color: #fff; }
+.brand-light .brand-sub { color: #cbb3a4; }
+@media (max-width: 420px) {
+  .brand-sub { display: none; }
+  .brand-mark { width: 34px; height: 34px; }
+  .brand-name { font-size: 19px; }
+}
