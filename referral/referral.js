@@ -441,12 +441,12 @@
   // ---------- 紹介診断 ----------
   const UNKNOWN = { id: "unknown", label: "わからない" };
   const STEPS = [
-    { key: "need", q: "紹介したい相手は、何に困っていますか?", hint: "いちばん近いものを1つ選んでください(「何をしたいか」で選んでもOKです)", options: REF_NEEDS },
-    { key: "topics", q: "どんな方法がよさそうですか?", hint: "当てはまるものをすべて選んでください。分からなければ「まだ分からない」でOKです", options: TOPICS, multi: true },
-    { key: "who", q: "相手はどんな方ですか?", hint: "わからなければ「わからない」でOKです", options: [...PROSPECTS, UNKNOWN] },
-    { key: "industry", q: "相手の業種は?", hint: "近いものを1つ選んでください", options: [...INDUSTRIES, UNKNOWN] },
-    { key: "area", q: "相手はどこにいますか?", hint: "主な活動エリアを選んでください", options: AREAS },
-    { key: "meeting", q: "会うならどの形がよさそうですか?", hint: "相手の希望に近いものを選んでください", options: MEETINGS },
+    { key: "need", q: "紹介したい相手は、何に困っていますか?", hint: "いちばん近いものを1つ選んで「次へ」を押してください(「何をしたいか」で選んでもOKです)", options: REF_NEEDS },
+    { key: "topics", q: "どんな方法がよさそうですか?", hint: "当てはまるものをすべて選んで「次へ」を押してください。分からなければ「まだ分からない」でOKです", options: TOPICS, multi: true },
+    { key: "who", q: "相手はどんな方ですか?", hint: "1つ選んで「次へ」を押してください。わからなければ「わからない」でOKです", options: [...PROSPECTS, UNKNOWN] },
+    { key: "industry", q: "相手の業種は?", hint: "近いものを1つ選んで「次へ」を押してください", options: [...INDUSTRIES, UNKNOWN] },
+    { key: "area", q: "相手はどこにいますか?", hint: "主な活動エリアを選んで「次へ」を押してください", options: AREAS },
+    { key: "meeting", q: "会うならどの形がよさそうですか?", hint: "相手の希望に近いものを選んで「結果を見る」を押してください", options: MEETINGS },
   ];
 
   const needOf = () => REF_NEEDS.find((n) => n.id === answers.need) || null;
@@ -475,7 +475,7 @@
     const need = needOf();
     const genreList = st.key === "topics" && byGenreList();
     $("#diagQuestion").textContent = st.key === "topics" && !genreList ? `「${need.label}」には、どんな方法がよさそうですか?` : genreList ? "どんな話が出ましたか?" : st.q;
-    $("#diagHint").textContent = genreList ? "当てはまるジャンルをすべて選んでください(複数選択可)" : st.hint;
+    $("#diagHint").textContent = genreList ? "当てはまるジャンルをすべて選んで「次へ」を押してください(複数選択可)" : st.hint;
     const optionHtml = (o) => {
       const on = st.multi ? answers.topics.has(o.id) : answers[st.key] === o.id;
       return `<button type="button" class="diag-option" data-opt="${o.id}" aria-pressed="${on}">${escapeHtml(o.label)}</button>`;
@@ -514,6 +514,8 @@
   function goStep(n) {
     step = n;
     renderStep();
+    // 質問が変わったら上に戻す(選択肢が少ない質問で、下の空いたところを触らないように)
+    scrollDiagTop();
     $("#diagQuestion").focus({ preventScroll: true });
   }
 
@@ -632,15 +634,9 @@
       answers.topics = new Set();
       answers.topicGroups = [];
     }
+    // どの質問も、選んだあとに「次へ」で進む(勝手に次へ進まない)
     answers[st.key] = id;
     renderStep();
-    // 単一選択は選んだら自動で次へ
-    setTimeout(() => {
-      if (step === STEPS.indexOf(st)) {
-        if (step === STEPS.length - 1) showResults();
-        else goStep(step + 1);
-      }
-    }, 220);
   }
 
   function gotoCard(id) {
@@ -715,11 +711,14 @@
   $("#diagClose").addEventListener("click", closeDiag);
   $("#detailClose").addEventListener("click", closeDetail);
   $("#detailOverlay").addEventListener("click", (e) => { if (e.target.id === "detailOverlay") closeDetail(); });
-  $("#diagOverlay").addEventListener("click", (e) => { if (e.target.id === "diagOverlay") closeDiag(); });
+  // 回答中は枠の外を触っても閉じない(閉じるのは × だけ)。結果の画面では枠の外で閉じる
+  $("#diagOverlay").addEventListener("click", (e) => {
+    if (e.target.id === "diagOverlay" && $("#diagWizard").hidden) closeDiag();
+  });
   document.addEventListener("keydown", (e) => {
     if (e.key !== "Escape") return;
     if (!$("#detailOverlay").hidden) closeDetail();
-    else if (!$("#diagOverlay").hidden) closeDiag();
+    else if (!$("#diagOverlay").hidden && $("#diagWizard").hidden) closeDiag();
   });
   $("#diagStart").addEventListener("click", startDiagnosis);
   $("#diagRetry").addEventListener("click", startDiagnosis);

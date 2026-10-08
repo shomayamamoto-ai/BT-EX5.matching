@@ -1188,3 +1188,15 @@ a.site-maker:hover span { text-decoration: underline; color: var(--accent-dark);
 .diag-method.is-empty { opacity: 0.55; }
 .diag-any { border-style: dashed !important; }
 @media (min-width: 640px) { .diag-any { grid-column: 1 / -1; } }
+
+/* 紹介診断: 「戻る/次へ」は画面の下に固定して、いつでも押せるようにする */
+.diag-dialog .diag { overflow: clip; }
+.diag-dialog #diagWizard .diag-nav {
+  position: sticky;
+  bottom: 0;
+  z-index: 3;
+  margin: 16px -20px -24px;
+  padding: 12px 20px calc(14px + env(safe-area-inset-bottom, 0px));
+  background: linear-gradient(to bottom, rgba(42, 23, 18, 0.92), #2a1712 40%);
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
