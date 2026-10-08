@@ -419,28 +419,10 @@
     return `${d.getMonth() + 1}/${d.getDate()}`;
   }
 
-  function statusChip(status) {
-    return `<span class="status-chip status-${escapeHtml(status)}">${escapeHtml(STATUS_LABELS[status] || "")}</span>`;
-  }
-
   async function loadStats() {
     const res = await AuthApi.getReferralStats(AuthSession.getToken());
     if (!res.success) return;
     stats = res.data;
-    $("#statMine").textContent = stats.myCount;
-    $("#statMonth").textContent = stats.monthCount;
-    $("#statTotal").textContent = stats.totalCount;
-    $("#statWon").textContent = stats.wonCount;
-    $("#rankingList").innerHTML = stats.ranking.length
-      ? stats.ranking
-          .map((r, i) => `<li class="${r.isMe ? "is-me" : ""}"><span class="rank-pos">${i + 1}</span><span class="rank-who">${escapeHtml(r.name)}${r.isMe ? "(あなた)" : ""}</span><span class="rank-count">${r.count}件${r.won ? `<small>成約${r.won}</small>` : ""}</span></li>`)
-          .join("")
-      : '<li class="ref-ranking-empty">まだ記録がありません。最初の紹介を記録してみましょう。</li>';
-    $("#myLog").innerHTML = stats.myRecent.length
-      ? stats.myRecent
-          .map((l) => `<li><span>${fmtDate(l.at)} ${escapeHtml(l.toName)}さんを紹介${l.prospect ? `(→ ${escapeHtml(l.prospect)})` : ""} ${statusChip(l.status)}</span><button type="button" class="ref-log-undo" data-undo="${escapeHtml(l.id)}">取り消す</button></li>`)
-          .join("")
-      : "<li>まだ記録がありません。</li>";
     renderInbox();
   }
 
@@ -559,7 +541,7 @@
     if (copyBtn) {
       const m = members.find((x) => x.id === copyBtn.dataset.copy);
       const ok = await copyText(introText(m));
-      toast(ok ? "紹介文をコピーしました。紹介したら「紹介を記録」で実績に残せます" : "コピーできませんでした");
+      toast(ok ? "紹介文をコピーしました。紹介したら「紹介を記録」で相手に届けられます" : "コピーできませんでした");
       return;
     }
 
@@ -574,23 +556,12 @@
     const recBtn = t.closest("[data-record]");
     if (recBtn) { openRecord(recBtn.dataset.record); return; }
 
-    const undoBtn = t.closest("[data-undo]");
-    if (undoBtn) {
-      if (!confirm("この紹介の記録を取り消しますか?")) return;
-      const res = await AuthApi.deleteReferral(AuthSession.getToken(), undoBtn.dataset.undo);
-      if (!res.success) { toast(res.error.userMessage); return; }
-      await loadStats();
-      renderList();
-      toast("紹介の記録を取り消しました");
-      return;
-    }
-
     const statusBtn = t.closest("[data-status-id]");
     if (statusBtn) {
       const res = await AuthApi.updateReferralStatus(AuthSession.getToken(), statusBtn.dataset.statusId, statusBtn.dataset.statusValue);
       if (!res.success) { toast(res.error.userMessage); return; }
       await loadStats();
-      toast(res.data.status === "won" ? "成約おめでとうございます!紹介してくれた方にも伝わります" : `対応状況を「${STATUS_LABELS[res.data.status]}」にしました`);
+      toast(res.data.status === "won" ? "成約おめでとうございます!" : `対応状況を「${STATUS_LABELS[res.data.status]}」にしました`);
       return;
     }
 

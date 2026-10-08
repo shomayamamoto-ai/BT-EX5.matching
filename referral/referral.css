@@ -951,7 +951,7 @@ textarea.rec-input { resize: vertical; line-height: 1.6; }
 .ref-stat-sub { font-size: 11.5px; color: var(--text-sub); }
 .ref-stat-sub b { color: #1f7a45; }
 .rank-count small { margin-left: 6px; font-size: 11px; font-weight: 700; color: #1f7a45; }
-.ref-demo-note { grid-column: 1 / -1; font-size: 12px; color: var(--text-light); }
+.ref-demo-note { margin-top: 10px; font-size: 12px; color: var(--text-light); }
 .ref-demo-note[hidden] { display: none; }
 
 .status-chip {

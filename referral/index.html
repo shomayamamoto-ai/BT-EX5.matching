@@ -53,35 +53,11 @@
         <h2 class="inbox-title" id="inboxTitle">あなたへの紹介</h2>
         <span class="inbox-badge" id="inboxBadge" hidden></span>
       </div>
-      <p class="inbox-lead">メンバーがあなたに紹介してくれた方です。対応したら状況を更新すると、紹介してくれた人にも伝わります。</p>
+      <p class="inbox-lead">メンバーがあなたに紹介してくれた方です。対応したら状況を更新しておくと、対応漏れを防げます。</p>
       <ul class="inbox-list" id="inboxList"></ul>
-    </section>
-
-    <!-- 紹介の実績 -->
-    <section class="ref-stats" aria-label="紹介の実績">
-      <div class="ref-stat is-mine">
-        <span class="ref-stat-label">あなたの紹介</span>
-        <span class="ref-stat-num"><strong id="statMine">0</strong>件</span>
-      </div>
-      <div class="ref-stat">
-        <span class="ref-stat-label">今月のコミュニティ全体</span>
-        <span class="ref-stat-num"><strong id="statMonth">0</strong>件</span>
-      </div>
-      <div class="ref-stat">
-        <span class="ref-stat-label">これまでの合計</span>
-        <span class="ref-stat-num"><strong id="statTotal">0</strong>件</span>
-        <span class="ref-stat-sub">うち成約 <b id="statWon">0</b>件</span>
-      </div>
-      <div class="ref-ranking">
-        <p class="ref-stat-label">紹介貢献ランキング</p>
-        <ol id="rankingList"></ol>
-      </div>
-      <details class="ref-mylog">
-        <summary>あなたの最近の紹介記録</summary>
-        <ul id="myLog"></ul>
-      </details>
       <p class="ref-demo-note" id="demoNote" hidden>※ 現在はお試し版のため、紹介の記録や編集はこの端末のブラウザの中にだけ保存されます(他のメンバーには届きません)。</p>
     </section>
+
 
     <!-- 紹介診断への入口 -->
     <button type="button" class="diag-cta" data-open-diag>
@@ -184,7 +160,7 @@
         <input type="text" id="recProspect" class="rec-input" maxlength="60" autocomplete="off">
         <label class="rec-field" for="recMemo">メモ(任意)</label>
         <textarea id="recMemo" class="rec-input" rows="3" maxlength="300"></textarea>
-        <p class="rec-note">メモ(相手のご要望・連絡のタイミングなど)は、紹介先のメンバーとあなただけが見られます。記録はコミュニティの紹介数と、あなたの紹介実績として集計されます。</p>
+        <p class="rec-note">メモ(相手のご要望・連絡のタイミングなど)は、紹介先のメンバーとあなただけが見られます。記録すると、紹介先のメンバーの「あなたへの紹介」に届きます。</p>
         <div class="rec-actions">
           <button type="button" class="ref-btn ghost" id="recCancel">キャンセル</button>
           <button type="submit" class="ref-diag-btn">記録する</button>
