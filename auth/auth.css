@@ -330,4 +330,9 @@ form[hidden] { display: none; }
 /* 著作権・作成者の表記 */
 .site-copy { margin-top: 10px; }
 .site-credit { margin-top: 2px; font-family: "Inter", sans-serif; font-size: 11.5px; letter-spacing: 0.08em; }
-.site-credit span { font-weight: 800; color: var(--accent); }
+.site-credit a { margin: 0; font-weight: 800; color: var(--accent); text-decoration: none; }
+.site-credit a:hover { text-decoration: underline; }
+/* 制作会社(Lumenium)へのリンク */
+a.site-maker { display: inline-flex; flex-direction: column; align-items: center; gap: 4px; margin: 12px 0 0; color: var(--text-light); font-size: 11px; text-decoration: none; }
+.site-maker img { display: block; height: 22px; width: auto; }
+a.site-maker:hover span { text-decoration: underline; color: var(--accent); }

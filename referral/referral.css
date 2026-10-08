@@ -1032,7 +1032,12 @@ a:hover > .brand-mark { transform: rotate(-10deg) scale(1.06); }
 
 /* 作成者の表記 */
 .site-credit { margin-top: 4px; font-family: "Inter", sans-serif; font-size: 11.5px; letter-spacing: 0.08em; color: var(--text-light); }
-.site-credit span { font-weight: 800; color: var(--accent-dark); }
+.site-credit a { margin: 0; font-weight: 800; color: var(--accent-dark); text-decoration: none; }
+.site-credit a:hover { text-decoration: underline; }
+/* 制作会社(Lumenium)へのリンク */
+a.site-maker { display: inline-flex; flex-direction: column; align-items: center; gap: 4px; margin: 12px 0 0; color: var(--text-light); font-size: 11px; text-decoration: none; }
+.site-maker img { display: block; height: 22px; width: auto; }
+a.site-maker:hover span { text-decoration: underline; color: var(--accent-dark); }
 /* 狭い画面: リンクが4つ(管理者)のときと、とても狭い画面では、ロゴの文字を省いてリンクを収める */
 @media (max-width: 420px) {
   .ref-header-inner:has(#adminLink:not([hidden])) .brand-word { display: none; }
@@ -1041,4 +1046,18 @@ a:hover > .brand-mark { transform: rotate(-10deg) scale(1.06); }
   .ref-header-inner .brand-word { display: none; }
   .ref-header-nav { gap: 6px; }
   .ref-header-cta { padding: 6px 8px; }
+}
+/* ヘッダーにムービーのボタン(▶)が入るぶん、狭い画面では詰める */
+@media (max-width: 420px) {
+  .ref-header-nav { gap: 8px; }
+  .ref-header-cta { padding: 6px 9px; }
+  .ref-header-inner .ref-logo { gap: 7px; }
+  .ref-header-inner .brand-mark { width: 32px; height: 32px; }
+  .ref-header-nav .op-movie-btn { width: 26px; height: 26px; }
+}
+@media (max-width: 360px) {
+  .ref-header-nav { gap: 6px; }
+}
+@media (max-width: 340px) {
+  .ref-header-inner:has(#adminLink:not([hidden])) .ref-logo { display: none; }
 }
