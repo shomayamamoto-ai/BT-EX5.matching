@@ -1066,3 +1066,29 @@ a.site-maker:hover span { text-decoration: underline; color: var(--accent-dark);
 #categoryChips { display: grid; gap: 10px; }
 .ref-chip-row { display: flex; flex-wrap: wrap; gap: 8px; }
 .ref-chip-group-label { margin: 0 0 6px; font-size: 11.5px; font-weight: 700; color: var(--text-light); letter-spacing: 0.04em; }
+
+/* 代表・役職・役割のマーク(名前の下) */
+.ref-role {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin: 4px 0 2px;
+  padding: 3px 10px 3px 7px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.4;
+  max-width: 100%;
+}
+.ref-role svg { width: 13px; height: 13px; flex-shrink: 0; fill: currentColor; }
+.ref-role-text { overflow-wrap: anywhere; }
+.ref-role-kind { font-size: 10.5px; font-weight: 700; padding-right: 5px; margin-right: 1px; border-right: 1px solid currentColor; opacity: 0.85; }
+/* 代表: 金 */
+.ref-role-leader { background: linear-gradient(135deg, #fff1c9, #ffd877); color: #7a4b00; box-shadow: inset 0 0 0 1px rgba(196, 135, 0, 0.45); }
+/* 役職: 赤 */
+.ref-role-post { background: #fde6df; color: #b23a1c; box-shadow: inset 0 0 0 1px rgba(226, 83, 47, 0.4); }
+/* 役割: 紺 */
+.ref-role-role { background: #e8edf8; color: #2e4a86; box-shadow: inset 0 0 0 1px rgba(46, 74, 134, 0.3); }
+.ref-name + .ref-role, .md-name + .ref-role { display: inline-flex; }
+.ref-role.compact { margin: 0 6px 2px 0; padding: 1px 8px 1px 6px; font-size: 11px; vertical-align: 2px; }
+.ref-role.compact svg { width: 11px; height: 11px; }

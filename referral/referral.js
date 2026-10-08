@@ -129,6 +129,7 @@
           <div class="ref-card-head">
             <div>
               <h3 class="ref-name"><button type="button" class="ref-name-btn" data-detail="${m.id}">${escapeHtml(m.name)}</button></h3>
+              ${roleMark(m.id)}
               <p class="ref-company">${escapeHtml(m.company)}</p>
             </div>
             ${sc ? `<div class="ref-match"><strong>${sc.score}%</strong><small>一致度</small></div>` : ""}
@@ -198,6 +199,7 @@
     return `
       <header class="md-head">
         <h2 class="md-name" id="detailTitle">${escapeHtml(m.name)}</h2>
+        ${roleMark(m.id)}
         <p class="md-company">${escapeHtml(m.company || "")}</p>
         <div class="ref-tags">
           ${m.base && m.base !== "未設定" ? `<span class="ref-tag ${m.base === "新潟" ? "base-niigata" : "base-tokyo"}">${escapeHtml(m.base)}拠点</span>` : ""}
@@ -252,6 +254,21 @@
           <span class="pt-why">${escapeHtml(p.reasons.slice(0, 2).join("。"))}</span>
         </li>`)
       .join("");
+  }
+
+  // 代表・役職・役割のマーク(data.js の REF_BASE_POINTS)
+  const ROLE_ICONS = {
+    leader: '<path d="M2 11.5h12L15 4.5l-3.6 2.7L8 2 4.6 7.2 1 4.5z"/>',
+    post: '<path d="M8 1.2 14 3.6v4.1c0 3.5-2.6 6.1-6 7.1-3.4-1-6-3.6-6-7.1V3.6z"/>',
+    role: '<path d="m8 1.4 1.9 4.1 4.5.5-3.4 3 1 4.4L8 11.2l-4 2.2 1-4.4-3.4-3 4.5-.5z"/>',
+  };
+  function roleMark(id, compact) {
+    const r = refRoleOf(id);
+    if (!r) return "";
+    const kind = REF_ROLE_KINDS[r.kind] || "";
+    return `<span class="ref-role ref-role-${r.kind}${compact ? " compact" : ""}" title="${escapeHtml(kind)}:${escapeHtml(r.role)}">`
+      + `<svg viewBox="0 0 16 16" aria-hidden="true">${ROLE_ICONS[r.kind] || ROLE_ICONS.role}</svg>`
+      + `${r.kind === "leader" ? "" : `<span class="ref-role-kind">${escapeHtml(kind)}</span>`}<span class="ref-role-text">${escapeHtml(r.role)}</span></span>`;
   }
 
   // 一覧の並び順は日替わり(だれもが上に表示される日があるように)。同じ日は同じ順
@@ -449,7 +466,7 @@
           <span class="rank-no">${i + 1}</span>
           <span class="rank-name">${escapeHtml(m.name)}</span>
           <span class="rank-score"><strong>${sc.score}%</strong><small>一致度</small></span>
-          <span class="rank-company">${escapeHtml(m.company)}・${escapeHtml(m.category)}</span>
+          <span class="rank-company">${roleMark(m.id, true)}${escapeHtml(m.company)}・${escapeHtml(m.category)}</span>
           <span class="rank-bar"><span style="width:${sc.score}%"></span></span>
           <span class="rank-reasons">${sc.reasons.slice(0, 4).map((r) => `<span>${escapeHtml(r)}</span>`).join("")}</span>
           <span class="rank-actions">
