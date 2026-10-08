@@ -108,8 +108,17 @@
     return true;
   }
 
+  // カードに出す一致度: 診断の一致度順のときは診断、話題で探すときはその話題の一致度
+  let topicScores = null;
+  function shownScores() {
+    if (sortByScore && scores) return scores;
+    if (topicScores) return topicScores;
+    return scores;
+  }
+
   function cardHtml(m) {
-    const sc = scores && scores[m.id];
+    const all = shownScores();
+    const sc = all && all[m.id];
     const hitWords = [
       ...(sc ? sc.keywordHits : []),
       ...keywordTokens(filter.search),
@@ -312,18 +321,27 @@
 
   function renderList() {
     let list = members.filter(matchesFilter);
+    topicScores = null;
     if (sortByScore && scores) {
       list = list.slice().sort((a, b) => scores[b.id].raw - scores[a.id].raw);
     } else if (filter.topic !== "all") {
-      // 話題で探すときは、その話題を専門にしている人(扱う話題が少ない人)を先に
-      list = list.slice().sort((a, b) => a.topics.length - b.topics.length);
+      // 話題で探すときは、その話題の一致度順(専門の人ほど高く、役職・役割の基礎ポイントも入る)。
+      // 同点なら扱う話題が少ない人、そのあとは今の並び(本人・役職・日替わり)
+      const answers = RefScoring.topicAnswers(filter.topic, filter.search);
+      topicScores = {};
+      list.forEach((m) => { topicScores[m.id] = scoreMember(m, answers); });
+      list = list.slice().sort((a, b) => topicScores[b.id].raw - topicScores[a.id].raw || a.topics.length - b.topics.length);
     }
     $("#refList").innerHTML = list.length
       ? list.map(cardHtml).join("")
       : '<p class="ref-empty">条件に合うメンバーが見つかりませんでした。<br>キーワードや絞り込みを変えてみてください。</p>';
     $("#countShown").textContent = list.length;
     $("#countTotal").textContent = members.length;
-    $("#sortedBanner").hidden = !(sortByScore && scores);
+    const diagSorted = !!(sortByScore && scores);
+    $("#sortedBanner").hidden = !diagSorted && !topicScores;
+    $("#sortedText").textContent = diagSorted
+      ? "診断結果の一致度順に表示しています"
+      : topicScores ? `「${labelOf(TOPICS, filter.topic)}」の一致度順に表示しています(代表・役職・役割の基礎ポイントを含む)` : "";
   }
 
   function chipHtml(group, value, label, active) {
@@ -589,7 +607,11 @@
     renderList();
     $("#sortedBanner").scrollIntoView({ behavior: "smooth", block: "start" });
   });
-  $("#clearSort").addEventListener("click", () => { sortByScore = false; renderList(); });
+  $("#clearSort").addEventListener("click", () => {
+    if (sortByScore && scores) sortByScore = false;
+    else { filter.topic = "all"; renderTopicSelect(); }
+    renderList();
+  });
 
   $("#topicSelect").addEventListener("change", (e) => {
     filter.topic = e.target.value;

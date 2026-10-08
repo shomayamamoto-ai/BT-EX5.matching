@@ -59,7 +59,8 @@ const RefScoring = (function () {
     const onlinePartial = m.online === "partial";
     const areaUnknown = !m.faceAreas.length && m.online === "unknown";
     let areaScore = 0;
-    if (areaUnknown) {
+    if (areaUnknown || a.area === "any") {
+      // 活動範囲が未入力の人、またはエリアを問わないとき(話題で探す)は中立の点数
       areaScore = 15;
     } else if (a.meeting === "face") {
       areaScore = faceOK ? 25 : onlineAll ? 8 : onlinePartial ? 5 : 0;
@@ -113,5 +114,11 @@ const RefScoring = (function () {
       .slice(0, o.limit);
   }
 
-  return { keywordTokens, haystack, scoreMember, rankMembers };
+  // 話題で探すときの一致度。その話題だけを選んだ診断と同じ計算(相手のタイプ・業種・エリアは
+  // 問わない=中立の点数)なので、専門の人(扱う話題が少ない人)と役職・役割の基礎ポイントが順番に入る
+  function topicAnswers(topicId, keyword) {
+    return { topics: new Set([topicId]), industry: "unknown", who: "unknown", area: "any", meeting: "any", keyword: keyword || "" };
+  }
+
+  return { keywordTokens, haystack, scoreMember, rankMembers, topicAnswers };
 })();
