@@ -24,7 +24,7 @@ const RefScoring = (function () {
   }
 
   function haystack(m) {
-    return [m.name, m.company, m.category, m.business, m.customers || "", m.note, m.wants, ...m.triggers].join(" ");
+    return [m.name, m.company, m.category, m.business, m.customers || "", m.selfIntro || "", m.note, m.wants, ...m.triggers].join(" ");
   }
 
   function scoreMember(m, a) {

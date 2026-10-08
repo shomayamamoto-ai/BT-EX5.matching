@@ -179,6 +179,7 @@ function rosterMember(id, name, headline, team, category, topics, base) {
     business: "",
     customers: "",
     offer: "",
+    selfIntro: "",
     note: "",
     wants: "",
     triggers: [],
@@ -213,6 +214,8 @@ const REF_SEED_MEMBERS = [
     topics: ["efficiency", "web", "ai", "video", "design", "org", "hiring", "event", "voice"],
     targets: ["restaurant", "retail", "salon", "pro", "build", "it"],
     prospects: ["owner", "staff"],
+    // 「紹介文をコピー」に入る本人の自己紹介(本人の依頼で原文のまま)
+    selfIntro: "初めまして！\n開発やホームページ制作のノウハウを元に、AI研修講師としてもお仕事させていただいております。\nヤマモトと申します\n以下自己紹介となります\n\n［自己紹介］\n\nお名前　山本捷真(しょーま)\n\n☑️出身　兵庫県\n\n☑️住まい🏠　神奈川県横浜市\n\n☑️お仕事\n\nシステム開発・Webページ制作・AI研修講師\n\nAI歴3年以上のAIのプロフェッショナル\n└ HP：https://lumenium.net\n\n☑️どんな人？\n「IT,AIに強い外部パートナーが欲しい。\nでも、どこに何を頼めばいいかわからない」\n\nそんな経営者様の”最初の窓口”として、\n企画・制作から人材、資金繰りのご相談まで、まとめてお受けしています😊\n\n✅事業内容\n①システム開発、ウェブサイト制作、LINE Bot制作\n└ HP：https://lumenium.net\n\n②企業向けAI関連各種\n→企業向けAI研修の講師\n→AI補助金対策用の解説動画制作\n→社内向けAIメルマガの執筆\n→AI教材／小中学生向け塾教材の制作\n\n③to C向け　携帯料金の見直しのご相談\n\n④小中高生と早慶レベルの家庭教師をつなぐマッチングサービス\n\n✅趣味\nAI💻・仮想通貨📈・ガジェット⌚️\n旅行✈️・温泉♨️・アニメ📺・ポーカー🃏\n\n新しいものを触って試すのが好きです\n\n✅こんな方とお話ししたいです🌼\n・AI活用を進めたい経営者様\n・社内の人手不足を感じている経営者様\n・Web／映像／SNSのパートナーをお探しの方\n \n\n↓【提携先(私の所属している芸能事務所)】↓\n■ 制作(映像・音楽)🎬\n・映像制作、PR動画\n　└ 合同会社AdvoVisions\n　　(芸能事務所・映像制作会社)と提携\n　└ 実績：リンガーハット様、\n　　　一つ星レストラン様 ほか、\n・映像スクール\n\n・芸能キャスト手配、MC、イベント出演\n\n\n\n(以下、作成可能なシステムに↓について)\n\n・Webサイトの裏側にWordpressのような文章編集やお知らせ投稿機能、サイトのアクセス解析、キーワード検索の際の他社との自社サイト出現率等の分析、以上の分析を元に改善案をAIが教えてくれる仕組み。\n\n・SNSアカウントを入れるとアカウント分析と市場分析を行い、動画の脚本・絵コンテを作成し、撮った素材を自動カットしテロップを入れ、各SNSに自動投稿、離脱率等を分析し、PDCAサイクルを回すSNS運用自動化ツール。\n\n・監視カメラと連携した暴力行為の感知システム。\n\n・携帯の番号①③を押して、①なら予約として席数を分析しながら適切な時間の予約を押さえてくれたり、③を押すとクレームやお客様の声を集音から文字起こしし、分析しながら改善案を提案してくれるシステム。\n\n・名刺を写真でアップロードし、営業リストを作成して、☑️を選択した人全てに一斉送信する機能。\n\n・Googleカレンダーと連携し、移動時間を含めた社員全体の予定管理ができるツール→管理職向け。\n\n・ログイン機能付き交流者マッチングツール。\n\n・商品の仕入れや備品管理ができるシステム。\n\n・契約書を作成してくれるシステム。\n\n\n→現在は、各文章系SNSで伸びる投稿文の傾向やパターンを分析し、SNS投稿を自動化するSNS運用ツールを開発中です。",
     links: [
       { type: "proposal", url: "materials/lumenium-proposal.pdf", label: "Lumenium 自己紹介・ご提案(14ページ)", cover: "materials/lumenium-proposal-cover.jpg" },
       { type: "website", url: "https://lumenium.net", label: "lumenium.net" },
@@ -409,6 +412,8 @@ const REF_SEED_REVISIONS = [
   { rev: "2026-10-links-1", ids: ["yamamoto"] },
   // 本人の依頼で、サービス内容を資料・ホームページに合わせて更新(編集済みでも置き換える)
   { rev: "2026-10-yamamoto-2", ids: ["yamamoto"], force: true },
+  // 本人の依頼で、紹介文に入れる自己紹介を追加
+  { rev: "2026-10-yamamoto-3", ids: ["yamamoto"], force: true },
 ];
 
 // 紹介に効く項目(重要な順)。足りない項目は管理者ページの「お願い文」と、
@@ -488,7 +493,7 @@ var BtexServerCore = (function () {
 
   // 本人が編集できる項目(名前・所属チーム・ID は管理者のみ)
   var SELF_EDITABLE = [
-    "company", "base", "category", "business", "customers", "offer", "note", "wants", "triggers",
+    "company", "base", "category", "business", "customers", "offer", "selfIntro", "note", "wants", "triggers",
     "face", "faceAreas", "online", "topics", "targets", "prospects", "links",
   ];
 
@@ -887,6 +892,7 @@ var BtexServerCore = (function () {
         business: cleanStr(m.business, 600),
         customers: cleanStr(m.customers, 400),
         offer: cleanStr(m.offer, 120),
+        selfIntro: cleanStr(String(m.selfIntro || "").replace(/\r\n?/g, "\n"), 3000),
         note: cleanStr(m.note, 300),
         wants: cleanStr(m.wants, 400),
         triggers: cleanList(m.triggers, null, 12).map(function (t) { return t.slice(0, 40); }),
@@ -1286,10 +1292,10 @@ function refreshSheets_() {
   var onlineLabels = { all: "全国対応", partial: "打合せのみ可", none: "対面のみ", unknown: "未入力" };
   writeSheet_(
     "名簿",
-    ["ID", "氏名", "会社名・肩書き", "所属チーム", "拠点", "業種", "事業内容", "主なお客様", "紹介特典", "求める紹介", "こんな話が出たら", "対面", "オンライン", "資料・リンク", "最終更新", "更新した人"],
+    ["ID", "氏名", "会社名・肩書き", "所属チーム", "拠点", "業種", "事業内容", "主なお客様", "紹介特典", "自己紹介文", "求める紹介", "こんな話が出たら", "対面", "オンライン", "資料・リンク", "最終更新", "更新した人"],
     members.map(function (m) {
       var links = (m.links || []).map(function (l) { return (l.label || l.type) + " " + l.url; }).join("\n");
-      return [m.id, m.name, m.company, m.team, m.base, m.category, m.business, m.customers, m.offer, m.wants, m.triggers, m.face, onlineLabels[m.online] || "", links, fmtTime_(m.editedAt), m.editedBy === "self" ? "本人" : m.editedBy === "admin" ? "管理者" : ""].map(cell_);
+      return [m.id, m.name, m.company, m.team, m.base, m.category, m.business, m.customers, m.offer, m.selfIntro, m.wants, m.triggers, m.face, onlineLabels[m.online] || "", links, fmtTime_(m.editedAt), m.editedBy === "self" ? "本人" : m.editedBy === "admin" ? "管理者" : ""].map(cell_);
     })
   );
   var memberName = function (id) {

@@ -39,6 +39,15 @@
   function introText(m) {
     const sc = scores && scores[m.id];
     const lines = [`【ご紹介】${m.name}さん${m.company ? `(${m.company})` : ""}`];
+    // 本人の自己紹介文があれば、それをそのまま入れる(事業内容などの自動の文は重なるので入れない)
+    if (m.selfIntro) {
+      if (sc && sc.topicHits.length) {
+        lines.push(`「${sc.topicHits.map((t) => labelOf(TOPICS, t)).join("・")}」のお話をされていたので、ぴったりだと思いご紹介します。`);
+      }
+      if (m.offer) lines.push(`BT-EX5のメンバーからの紹介特典:${m.offer}`);
+      lines.push("", "以下、ご本人の自己紹介です。", "", m.selfIntro, "", "ぜひ一度お話ししてみてください。");
+      return lines.join("\n");
+    }
     if (m.business) lines.push(m.business);
     lines.push("");
     if (sc && sc.topicHits.length) {
@@ -206,6 +215,7 @@
       ${!links.length ? `<p class="md-nolinks">資料・リンクはまだ登録されていません。</p>` : ""}
       ${m.offer ? `<section class="md-sec md-offer"><h3>BT-EX5 メンバーからの紹介特典</h3><p>${escapeHtml(m.offer)}</p></section>` : ""}
       ${section("事業内容", text(m.business))}
+      ${m.selfIntro ? `<details class="md-sec md-intro"><summary>自己紹介(紹介文に入る文章)</summary><p class="md-intro-text">${escapeHtml(m.selfIntro)}</p></details>` : ""}
       ${m.customers ? section("主なお客様", text(m.customers)) : ""}
       ${section("求める紹介", text(m.wants))}
       ${m.triggers.length ? section("こんな話が出たら", `<div class="ref-triggers">${m.triggers.map((t) => `<span class="ref-trigger">「${escapeHtml(t)}」</span>`).join("")}</div>`) : ""}
