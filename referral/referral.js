@@ -24,6 +24,7 @@
   let step = 0;
   let scores = null;       // { [memberId]: { score, reasons, topicHits, keywordHits } }
   let sortByScore = false;
+  let members = [];        // サーバーから取得した名簿
 
   // ---------- 一致度の計算 ----------
   // 配点: 話題50 + 業種15 + 相手のタイプ10 + 会い方・エリア25 = 100
@@ -47,7 +48,7 @@
     if (a.topics.size) s += (50 * topicHits.length) / a.topics.size;
     topicHits.forEach((t) => reasons.push(`「${labelOf(TOPICS, t)}」に対応`));
 
-    if (a.industry === "unknown") {
+    if (a.industry === "unknown" || !m.targets.length) {
       s += 9;
     } else if (m.targets.includes(a.industry)) {
       s += 15;
@@ -56,7 +57,7 @@
       s += 11;
     }
 
-    if (a.who === "unknown") {
+    if (a.who === "unknown" || !m.prospects.length) {
       s += 6;
     } else if (m.prospects.includes(a.who)) {
       s += 10;
@@ -65,8 +66,11 @@
     const faceOK = a.area !== "other" && m.faceAreas.includes(a.area);
     const onlineAll = m.online === "all";
     const onlinePartial = m.online === "partial";
+    const areaUnknown = !m.faceAreas.length && m.online === "unknown";
     let areaScore = 0;
-    if (a.meeting === "face") {
+    if (areaUnknown) {
+      areaScore = 10;
+    } else if (a.meeting === "face") {
       areaScore = faceOK ? 25 : onlineAll ? 8 : onlinePartial ? 5 : 0;
     } else if (a.meeting === "online") {
       areaScore = onlineAll ? 25 : onlinePartial ? 14 : faceOK ? 8 : 0;
@@ -91,23 +95,24 @@
 
   function computeScores() {
     scores = {};
-    REF_MEMBERS.forEach((m) => { scores[m.id] = scoreMember(m, answers); });
+    members.forEach((m) => { scores[m.id] = scoreMember(m, answers); });
   }
 
   // ---------- 紹介文 ----------
   function introText(m) {
     const sc = scores && scores[m.id];
-    const lines = [
-      `【ご紹介】${m.name}さん(${m.company})`,
-      m.business,
-      "",
-    ];
+    const lines = [`【ご紹介】${m.name}さん${m.company ? `(${m.company})` : ""}`];
+    if (m.business) lines.push(m.business);
+    lines.push("");
     if (sc && sc.topicHits.length) {
       const talk = sc.topicHits.map((t) => labelOf(TOPICS, t)).join("・");
       lines.push(`「${talk}」のお話をされていたので、ぴったりだと思いご紹介します。`);
     }
-    lines.push(`${m.name}さんは「${m.wants}」とのつながりを求めています。`);
-    lines.push(`対面:${m.face}/オンライン:${ONLINE_LABELS[m.online]}`);
+    if (m.wants) lines.push(`${m.name}さんは「${m.wants}」とのつながりを求めています。`);
+    const range = [];
+    if (m.face) range.push(`対面:${m.face}`);
+    if (m.online !== "unknown") range.push(`オンライン:${ONLINE_LABELS[m.online]}`);
+    if (range.length) lines.push(range.join("/"));
     lines.push("ぜひ一度お話ししてみてください。");
     return lines.join("\n");
   }
@@ -166,10 +171,11 @@
         return `<span class="ref-trigger${hit ? " hit" : ""}">「${escapeHtml(t)}」</span>`;
       })
       .join("");
-    const onlineClass = m.online === "all" ? "online-all" : m.online === "none" ? "online-none" : "";
+    const onlineClass = m.online === "all" ? "online-all" : m.online === "none" || m.online === "unknown" ? "online-none" : "";
+    const complete = isProfileComplete(m);
 
     return `
-      <article class="ref-card${m.sample ? "" : " is-real"}" id="member-${m.id}">
+      <article class="ref-card${m.id === "yamamoto" ? " is-real" : ""}" id="member-${m.id}">
         <div class="ref-col ref-col-member">
           <div class="ref-card-head">
             <div>
@@ -179,25 +185,26 @@
             ${sc ? `<div class="ref-match"><strong>${sc.score}%</strong><small>一致度</small></div>` : ""}
           </div>
           <div class="ref-tags">
-            <span class="ref-tag ${m.base === "新潟" ? "base-niigata" : "base-tokyo"}">${escapeHtml(m.base)}拠点</span>
+            ${m.base && m.base !== "未設定" ? `<span class="ref-tag ${m.base === "新潟" ? "base-niigata" : "base-tokyo"}">${escapeHtml(m.base)}拠点</span>` : ""}
             <span class="ref-tag">${escapeHtml(m.category)}</span>
-            ${m.sample ? '<span class="ref-tag sample">サンプル</span>' : ""}
+            ${m.team ? `<span class="ref-tag team">${escapeHtml(m.team)}</span>` : ""}
+            ${complete ? "" : '<span class="ref-tag pending">準備中</span>'}
           </div>
         </div>
         <div class="ref-col ref-col-business">
           <p class="ref-label">事業内容</p>
-          <p class="ref-business">${escapeHtml(m.business)}</p>
+          <p class="ref-business${m.business ? "" : " ref-muted"}">${m.business ? escapeHtml(m.business) : "準備中"}</p>
           ${m.note ? `<p class="ref-note">${escapeHtml(m.note)}</p>` : ""}
         </div>
         <div class="ref-col ref-col-wants">
           <p class="ref-label">求める紹介</p>
-          <p class="ref-wants">${escapeHtml(m.wants)}</p>
+          <p class="ref-wants${m.wants ? "" : " ref-muted"}">${m.wants ? escapeHtml(m.wants) : "準備中(管理者が追加します)"}</p>
           <div class="ref-triggers">${triggerHtml}</div>
         </div>
         <div class="ref-col ref-col-range">
           <p class="ref-label">活動範囲</p>
           <dl class="ref-range">
-            <dt>対面</dt><dd>${escapeHtml(m.face)}</dd>
+            <dt>対面</dt><dd class="${m.face ? "" : "ref-muted"}">${m.face ? escapeHtml(m.face) : "未入力"}</dd>
             <dt>オンライン</dt><dd class="${onlineClass}">${escapeHtml(ONLINE_LABELS[m.online])}</dd>
           </dl>
           <div class="ref-actions">
@@ -209,7 +216,7 @@
   }
 
   function renderList() {
-    let list = REF_MEMBERS.filter(matchesFilter);
+    let list = members.filter(matchesFilter);
     if (sortByScore && scores) {
       list = list.slice().sort((a, b) => scores[b.id].score - scores[a.id].score);
     }
@@ -217,7 +224,7 @@
       ? list.map(cardHtml).join("")
       : '<p class="ref-empty">条件に合うメンバーが見つかりませんでした。<br>キーワードや絞り込みを変えてみてください。</p>';
     $("#countShown").textContent = list.length;
-    $("#countTotal").textContent = REF_MEMBERS.length;
+    $("#countTotal").textContent = members.length;
     $("#sortedBanner").hidden = !(sortByScore && scores);
   }
 
@@ -327,7 +334,7 @@
     ].filter(Boolean);
     $("#diagSummary").innerHTML = summary.map((s) => `<span>${escapeHtml(s)}</span>`).join("");
 
-    const ranked = REF_MEMBERS
+    const ranked = members
       .map((m) => ({ m, sc: scores[m.id] }))
       .filter((x) => x.sc.score >= 40)
       .sort((a, b) => b.sc.score - a.sc.score)
@@ -409,7 +416,7 @@
 
     const copyBtn = t.closest("[data-copy]");
     if (copyBtn) {
-      const m = REF_MEMBERS.find((x) => x.id === copyBtn.dataset.copy);
+      const m = members.find((x) => x.id === copyBtn.dataset.copy);
       const ok = await copyText(introText(m));
       toast(ok ? "紹介文をコピーしました。LINEやメールに貼り付けて送れます" : "コピーできませんでした");
       return;
@@ -417,7 +424,7 @@
 
     const lineBtn = t.closest("[data-line]");
     if (lineBtn) {
-      const m = REF_MEMBERS.find((x) => x.id === lineBtn.dataset.line);
+      const m = members.find((x) => x.id === lineBtn.dataset.line);
       const url = "https://line.me/R/share?text=" + encodeURIComponent(introText(m));
       window.open(url, "_blank", "noopener");
       return;
@@ -459,8 +466,13 @@
   (async function init() {
     const session = await AuthSession.guardPage({ next: "referral", loginPath: "../login/" });
     if (!session) return;
+    const res = await AuthApi.listReferralMembers(AuthSession.getToken());
+    members = res.success ? res.data.members : [];
     $("#communityLabel").textContent = COMMUNITY.label;
-    $("#sampleNotice").textContent = COMMUNITY.realMemberNote;
+    const notice = $("#pendingNotice");
+    notice.textContent = COMMUNITY.pendingNote;
+    notice.hidden = !members.some((m) => !isProfileComplete(m));
+    $("#adminLink").hidden = !session.user.isAdmin;
     renderChips();
     renderList();
     document.documentElement.classList.remove("guard-pending");

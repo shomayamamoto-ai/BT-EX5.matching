@@ -655,3 +655,9 @@ button { font-family: inherit; }
 .diag-step { padding-right: 44px; }
 .diag-next { margin-left: auto; }
 .diag-dialog .diag-progress { margin-right: 46px; }
+
+/* 名簿の所属チーム・準備中の表示 */
+.ref-notice[hidden], .ref-header-link[hidden] { display: none; }
+.ref-tag.team { background: #f4efff; color: #6b4fbf; border-color: transparent; font-weight: 700; }
+.ref-tag.pending { background: #f3efe9; color: #9a8a80; border-color: transparent; }
+.ref-muted { color: var(--text-light) !important; font-weight: 500 !important; }

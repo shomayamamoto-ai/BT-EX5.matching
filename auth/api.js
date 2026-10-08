@@ -19,7 +19,7 @@ const AuthApi = (function () {
   const KNOWN_CODES = new Set([
     "AUTH_FAILED", "LOCKED", "SESSION_INVALID",
     "INVALID_REQUEST", "INVALID_ACTION", "RATE_LIMITED", "SERVER_ERROR",
-    "WEAK_PASSWORD", "REGISTER_FAILED", "FORBIDDEN",
+    "WEAK_PASSWORD", "REGISTER_FAILED", "FORBIDDEN", "FORBIDDEN_ADMIN",
   ]);
 
   // §5.6 フォールバック: message 欠落・未知コード → NETWORK_MESSAGE
@@ -99,9 +99,24 @@ const AuthApi = (function () {
     return post("getMessages", { sessionToken, toUserId });
   }
 
+  // ---------- 紹介先早見表の名簿(追加・編集・削除は管理者のみ) ----------
+  function listReferralMembers(sessionToken) {
+    return post("listReferralMembers", { sessionToken });
+  }
+  function adminSaveReferralMember(sessionToken, member) {
+    return post("adminSaveReferralMember", { sessionToken, member });
+  }
+  function adminDeleteReferralMember(sessionToken, id) {
+    return post("adminDeleteReferralMember", { sessionToken, id });
+  }
+  function adminImportReferralMembers(sessionToken, members) {
+    return post("adminImportReferralMembers", { sessionToken, members });
+  }
+
   return {
     login, verifySession, logout, requestPasswordReset, register,
     listMembers, sendLike, getMatches, sendMessage, getMessages,
+    listReferralMembers, adminSaveReferralMember, adminDeleteReferralMember, adminImportReferralMembers,
     NETWORK_MESSAGE,
   };
 })();

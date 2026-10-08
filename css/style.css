@@ -1706,3 +1706,4 @@ body { font-family: "Inter", "Noto Sans JP", "Hiragino Kaku Gothic ProN", sans-s
   .card-grid .member-card { animation: none; }
   .step, .member-card, .btn { transition: none; }
 }
+.drawer-link[hidden] { display: none; }

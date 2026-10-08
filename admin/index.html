@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="ja" class="guard-pending">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="referrer" content="no-referrer">
+  <meta name="robots" content="noindex">
+  <title>名簿の管理 | 交流会マッチング</title>
+  <style>html.guard-pending body { visibility: hidden; }</style>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%23f4694b'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='%23fffdf7' font-family='sans-serif'>縁</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Noto+Sans+JP:wght@400;500;700;900&display=swap"></noscript>
+  <link rel="stylesheet" href="../referral/referral.css">
+  <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+
+  <header class="ref-header">
+    <div class="ref-header-inner">
+      <a href="../" class="ref-logo">
+        <span class="ref-logo-mark">縁</span>
+        <span class="ref-logo-text">交流会マッチング</span>
+      </a>
+      <nav class="ref-header-nav">
+        <a href="../referral/" class="ref-header-link">紹介先早見表</a>
+        <a href="../" class="ref-header-link">アプリへ戻る</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="ref-main">
+    <section class="ref-intro">
+      <p class="ref-eyebrow">ADMIN</p>
+      <h1 class="ref-title">名簿の管理</h1>
+      <p class="ref-lead">紹介先早見表に載るメンバーの追加・編集・削除ができます。「準備中」のメンバーは、求める紹介や活動範囲を追加すると早見表と紹介診断に反映されます。</p>
+    </section>
+
+    <section class="adm-denied" id="denied" hidden>
+      <h2>管理者のみ利用できます</h2>
+      <p>このページは管理者アカウントでログインしたときだけ使えます。</p>
+      <a href="../referral/" class="ref-btn">紹介先早見表へ戻る</a>
+    </section>
+
+    <div id="adminArea" hidden>
+      <section class="ref-filter adm-toolbar">
+        <div class="adm-stats" id="stats"></div>
+        <div class="adm-tools">
+          <button type="button" class="ref-diag-btn" id="addMember">+ メンバーを追加</button>
+          <button type="button" class="ref-btn ghost" id="exportJson">JSONを書き出す</button>
+          <button type="button" class="ref-btn ghost" id="importJsonBtn">JSONを読み込む</button>
+          <input type="file" id="importJson" accept="application/json,.json" hidden>
+        </div>
+        <label class="visually-hidden" for="admSearch">名前・肩書き・チームで検索</label>
+        <input type="search" id="admSearch" class="ref-search" placeholder="名前・肩書き・チームで検索" autocomplete="off">
+        <div class="ref-chips" id="statusChips"></div>
+      </section>
+
+      <section class="adm-list" id="memberList" aria-live="polite"></section>
+      <p class="adm-footnote">このデモでは名簿はお使いのブラウザ内に保存されます。別の端末へ移すときや、実際のサーバーに移行するときは「JSONを書き出す」で保存したファイルを使ってください。</p>
+    </div>
+  </main>
+
+  <!-- 編集フォーム -->
+  <div class="diag-overlay adm-overlay" id="editorOverlay" hidden>
+    <div class="adm-dialog" role="dialog" aria-modal="true" aria-labelledby="editorTitle">
+      <button type="button" class="adm-close" id="editorClose" aria-label="閉じる">×</button>
+      <h2 class="adm-dialog-title" id="editorTitle">メンバーを追加</h2>
+      <form id="editorForm" novalidate>
+        <input type="hidden" name="id">
+
+        <fieldset class="adm-group">
+          <legend>基本情報</legend>
+          <div class="adm-grid">
+            <label class="adm-field">氏名(必須)<input type="text" name="name" maxlength="40" required></label>
+            <label class="adm-field">会社名・肩書き<input type="text" name="company" maxlength="80"></label>
+            <label class="adm-field">所属チーム<input type="text" name="team" maxlength="40" list="teamList"></label>
+            <label class="adm-field">業種<select name="category" id="fCategory"></select></label>
+            <label class="adm-field">拠点<select name="base" id="fBase"></select></label>
+          </div>
+          <datalist id="teamList"></datalist>
+        </fieldset>
+
+        <fieldset class="adm-group">
+          <legend>早見表に載せる内容</legend>
+          <label class="adm-field">事業内容<textarea name="business" rows="3" maxlength="600"></textarea></label>
+          <label class="adm-field">補足(料金・返信の早さなど)<textarea name="note" rows="2" maxlength="300"></textarea></label>
+          <label class="adm-field">求める紹介<textarea name="wants" rows="2" maxlength="400"></textarea></label>
+          <label class="adm-field">こんな話が出たら(1行に1つ)<textarea name="triggers" rows="3"></textarea></label>
+        </fieldset>
+
+        <fieldset class="adm-group">
+          <legend>活動範囲</legend>
+          <div class="adm-checks">
+            <label><input type="checkbox" name="faceAreas" value="niigata"> 新潟で対面可</label>
+            <label><input type="checkbox" name="faceAreas" value="tokyo"> 東京・関東で対面可</label>
+          </div>
+          <div class="adm-grid">
+            <label class="adm-field">対面の表記(例:関東(東京拠点))<input type="text" name="face" maxlength="60"></label>
+            <label class="adm-field">オンライン
+              <select name="online">
+                <option value="unknown">未入力</option>
+                <option value="all">全国対応</option>
+                <option value="partial">打合せのみ可</option>
+                <option value="none">対面のみ</option>
+              </select>
+            </label>
+          </div>
+        </fieldset>
+
+        <fieldset class="adm-group">
+          <legend>紹介診断の設定</legend>
+          <p class="adm-sub">対応できる話題</p>
+          <div class="adm-checks" id="fTopics"></div>
+          <p class="adm-sub">紹介してほしい相手の業種</p>
+          <div class="adm-checks" id="fTargets"></div>
+          <p class="adm-sub">紹介してほしい相手のタイプ</p>
+          <div class="adm-checks" id="fProspects"></div>
+        </fieldset>
+
+        <p class="adm-error" id="editorError" role="alert"></p>
+        <div class="adm-form-actions">
+          <button type="button" class="ref-btn ghost" id="editorCancel">キャンセル</button>
+          <button type="submit" class="ref-diag-btn">保存する</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="ref-toast" id="refToast" role="status" hidden></div>
+
+  <script src="../auth/mock-server.js"></script>
+  <script src="../auth/api.js"></script>
+  <script src="../auth/session.js"></script>
+  <script src="../referral/data.js"></script>
+  <script src="admin.js"></script>
+</body>
+</html>

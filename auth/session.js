@@ -15,24 +15,23 @@ const AuthSession = (function () {
 
   // 許可リスト方式(§6)。任意URL・任意パスは恒久的に受け取らない。
   // ログイン直後に外部サイトへ遷移させるオープンリダイレクトを構造的に排除する。
-  // home(トップ=アプリ本体)・referral(紹介先早見表)は §6 の手順
-  // (guardPage明示指定+リスト追加)で追加した保護画面。3画面を超えたら §6 の再設計を行う
-  const ALLOWED_NEXT = ["portal", "home", "referral"];
-  const DEFAULT_NEXT = "home";
-
-  // 画面名 → ログインページからの相対パス
-  const SCREEN_PATHS = {
-    portal: "../portal/",
+  // 保護対象画面が3つを超えたため、§6 の将来拡張どおり ALLOWED_NEXT は
+  // 画面定義(SCREENS)から導出する。画面の追加はここに1行足すだけでよい
+  const SCREENS = {
     home: "../",
+    portal: "../portal/",
     referral: "../referral/",
+    admin: "../admin/",
   };
+  const ALLOWED_NEXT = Object.keys(SCREENS);
+  const DEFAULT_NEXT = "home";
 
   function safeNextName(value) {
     return ALLOWED_NEXT.indexOf(value) !== -1 ? value : DEFAULT_NEXT;
   }
 
   function screenPath(name) {
-    return SCREEN_PATHS[safeNextName(name)];
+    return SCREENS[safeNextName(name)];
   }
 
   function storageAvailable() {

@@ -16,4 +16,8 @@
   // ヘッダーにログイン中ユーザーを表示(textContent のみ使用 §11)
   const label = document.getElementById("loggedInUser");
   if (label) label.textContent = data.user.email;
+
+  // 管理者だけ名簿の管理への導線を出す(権限の判定はサーバー側で行う)
+  const adminLink = document.getElementById("drawerAdmin");
+  if (adminLink) adminLink.hidden = !data.user.isAdmin;
 })();

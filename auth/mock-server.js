@@ -36,6 +36,7 @@ const AuthMockServer = (function () {
     INVALID_REQUEST: "リクエストの形式が正しくありません。",
     INVALID_ACTION: "不明な操作が指定されました。",
     FORBIDDEN: "マッチングした相手とのみメッセージのやり取りができます。",
+    FORBIDDEN_ADMIN: "この操作は管理者のみ行えます。",
     SERVER_ERROR: "サーバーでエラーが発生しました。時間をおいて再度お試しください。",
   };
 
@@ -198,6 +199,20 @@ const AuthMockServer = (function () {
         });
       }
       db.botsSeeded = true;
+      migrated = true;
+    }
+
+    // 紹介先早見表の名簿(名簿が未作成のときだけ初期名簿を投入)
+    if (!db.referralMembers && typeof REF_SEED_MEMBERS !== "undefined") {
+      db.referralMembers = JSON.parse(JSON.stringify(REF_SEED_MEMBERS));
+      migrated = true;
+    }
+
+    // デモ会員を管理者にする(名簿の追加・編集用)
+    const demo = db.users.find((u) => u.email === "demo@kouryukai.jp" && !u.isBot);
+    if (demo && !demo.isAdmin) {
+      demo.isAdmin = true;
+      demo.role = "admin";
       migrated = true;
     }
 
@@ -577,9 +592,121 @@ const AuthMockServer = (function () {
     });
   }
 
+  // ============================================
+  // 紹介先早見表の名簿(閲覧は会員、追加・編集・削除は管理者のみ)
+  // ============================================
+
+  function cleanStr(v, max) {
+    return String(v === undefined || v === null ? "" : v).trim().slice(0, max);
+  }
+
+  function cleanList(v, allowed, max) {
+    if (!Array.isArray(v)) return [];
+    const out = [];
+    v.forEach((x) => {
+      const t = cleanStr(x, 60);
+      if (!t || out.includes(t)) return;
+      if (allowed && !allowed.includes(t)) return;
+      out.push(t);
+    });
+    return out.slice(0, max);
+  }
+
+  const idsOf = (list) => (typeof list === "undefined" ? null : list.map((x) => x.id));
+
+  function sanitizeReferralMember(input, id) {
+    const m = input || {};
+    const categories = typeof REF_CATEGORIES === "undefined" ? null : REF_CATEGORIES;
+    const bases = typeof REF_BASES === "undefined" ? null : REF_BASES;
+    const category = cleanStr(m.category, 40);
+    const base = cleanStr(m.base, 10);
+    const online = cleanStr(m.online, 10);
+    return {
+      id,
+      name: cleanStr(m.name, 40),
+      company: cleanStr(m.company, 80),
+      team: cleanStr(m.team, 40),
+      base: !bases || bases.includes(base) ? base || "未設定" : "未設定",
+      category: !categories || categories.includes(category) ? category : categories[categories.length - 1],
+      business: cleanStr(m.business, 600),
+      note: cleanStr(m.note, 300),
+      wants: cleanStr(m.wants, 400),
+      triggers: cleanList(m.triggers, null, 12).map((t) => t.slice(0, 40)),
+      face: cleanStr(m.face, 60),
+      faceAreas: cleanList(m.faceAreas, ["niigata", "tokyo"], 2),
+      online: ["all", "partial", "none", "unknown"].includes(online) ? online : "unknown",
+      topics: cleanList(m.topics, idsOf(typeof TOPICS === "undefined" ? undefined : TOPICS), 20),
+      targets: cleanList(m.targets, (idsOf(typeof INDUSTRIES === "undefined" ? undefined : INDUSTRIES) || []).concat("any"), 10),
+      prospects: cleanList(m.prospects, idsOf(typeof PROSPECTS === "undefined" ? undefined : PROSPECTS), 3),
+    };
+  }
+
+  function requireAdmin(db, token) {
+    const user = authUser(db, token);
+    if (!user) return { error: fail("SESSION_INVALID") };
+    if (!user.isAdmin) return { error: fail("FORBIDDEN_ADMIN") };
+    return { user };
+  }
+
+  async function listReferralMembers(body) {
+    const db = await ensureDb();
+    if (!authUser(db, body.sessionToken)) return fail("SESSION_INVALID");
+    return ok({ members: db.referralMembers || [] });
+  }
+
+  async function adminSaveReferralMember(body) {
+    const db = await ensureDb();
+    const auth = requireAdmin(db, body.sessionToken);
+    if (auth.error) return auth.error;
+    if (!db.referralMembers) db.referralMembers = [];
+
+    const requestedId = cleanStr(body.member && body.member.id, 40);
+    const index = db.referralMembers.findIndex((x) => x.id === requestedId);
+    const id = index >= 0 ? requestedId : "m_" + randomSalt().slice(0, 10);
+    const member = sanitizeReferralMember(body.member, id);
+    if (!member.name) return fail("INVALID_REQUEST");
+
+    if (index >= 0) db.referralMembers[index] = member;
+    else db.referralMembers.push(member);
+    saveDb(db);
+    return ok({ member, created: index < 0 });
+  }
+
+  async function adminDeleteReferralMember(body) {
+    const db = await ensureDb();
+    const auth = requireAdmin(db, body.sessionToken);
+    if (auth.error) return auth.error;
+    const id = cleanStr(body.id, 40);
+    const before = (db.referralMembers || []).length;
+    db.referralMembers = (db.referralMembers || []).filter((x) => x.id !== id);
+    if (db.referralMembers.length === before) return fail("INVALID_REQUEST");
+    saveDb(db);
+    return ok({});
+  }
+
+  async function adminImportReferralMembers(body) {
+    const db = await ensureDb();
+    const auth = requireAdmin(db, body.sessionToken);
+    if (auth.error) return auth.error;
+    if (!Array.isArray(body.members) || body.members.length > 500) return fail("INVALID_REQUEST");
+    const seen = new Set();
+    const members = [];
+    body.members.forEach((raw) => {
+      let id = cleanStr(raw && raw.id, 40);
+      if (!id || seen.has(id)) id = "m_" + randomSalt().slice(0, 10);
+      seen.add(id);
+      const m = sanitizeReferralMember(raw, id);
+      if (m.name) members.push(m);
+    });
+    db.referralMembers = members;
+    saveDb(db);
+    return ok({ count: members.length });
+  }
+
   const ACTIONS = {
     login, verifySession, logout, register, requestPasswordReset,
     listMembers, sendLike, getMatches, sendMessage, getMessages,
+    listReferralMembers, adminSaveReferralMember, adminDeleteReferralMember, adminImportReferralMembers,
   };
 
   async function handle(body) {
