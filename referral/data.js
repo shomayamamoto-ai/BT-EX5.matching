@@ -212,7 +212,14 @@ const REF_SEED_MEMBERS = [
     targets: ["salon", "medical", "retail", "restaurant"],
     prospects: ["owner", "staff"],
   }),
-  rosterMember("m17", "むらさき やえ", "波動を使った『あなた色ブランディング スタイリスト』", "", "美容・健康", []),
+  Object.assign(rosterMember("m17", "むらさき やえ", "COCOLOR(ココカラー)代表/波動を使った「あなた色ブランディング スタイリスト」", "", "美容・健康", ["health", "design"]), {
+    business: "あなた色ブランディングプログラム/(内面)バースカラー診断/(外見)似合う色・質感・柄・形診断/(表現)ブランディングコンサル/スタイリング・ショッピング同行/(プロ養成)CoCoカラースタイリスト養成講座。",
+    customers: "「すでに経験も実力もある。でも、まだ自分を活かし切れていない方」。自分の経験や能力をさらに活かし、自分らしく次のステージへ進みたい40〜60代の起業家・経営者・専門職・講師業の方。外見・発信・ブランディングを整え、仕事でも人生でも「自分らしく選ばれる存在」になりたい方。",
+    wants: "【法人】アパレル&デザイン&広告関係/結婚相談所/起業支援事業 【個人】「実力はあるのに、なぜか選ばれない」「今の見せ方が本当の自分と合っていない」「これからの人生や仕事を自分らしくステージアップしたい」と感じている40〜60代の起業家・経営者・専門家",
+    triggers: ["実力はあるのに選ばれない", "見せ方を変えたい", "似合う色を知りたい", "パーソナルカラー", "ショッピング同行", "セルフブランディング"],
+    targets: ["retail", "pro", "any"],
+    prospects: ["owner", "individual"],
+  }),
   Object.assign(rosterMember("m18", "髙橋 誠二", "スポーツ用品EC事業者/EC運営支援", "CANOW", "IT・Web・クリエイティブ", ["web"]), {
     business: "スポーツ用品のEC事業、EC運営支援。",
     triggers: ["ネットショップを始めたい", "ECの売上を伸ばしたい", "スポーツ用品"],
@@ -253,14 +260,25 @@ const REF_SEED_MEMBERS = [
     targets: ["any"],
     prospects: ["owner", "individual"],
   }),
-  rosterMember("m26", "坂上 智子", "地域密着型", "All Win🏆", "", []),
-  rosterMember("m27", "一場 ゆな", "東京ケータリング", "", "食・地域産品", ["food", "event"]),
+  Object.assign(rosterMember("m26", "坂上 智子", "OHANAの輪 代表/地域密着型", "All Win🏆", "食・地域産品", ["food", "event"]), {
+    business: "子ども食堂の寄付金付き商品の販売、子ども食堂のイベント。",
+    wants: "子ども食堂の寄付金付き商品を探しています(商品をお持ちの方)",
+    triggers: ["子ども食堂", "寄付金付きの商品", "社会貢献をしたい", "地域のイベント", "商品の販路を広げたい"],
+    targets: ["retail", "restaurant", "any"],
+    prospects: ["owner", "individual"],
+  }),
+  Object.assign(rosterMember("m27", "一場 ゆな", "東京ケータリング", "", "食・地域産品", ["food", "event"]), {
+    business: "ケータリング(イベント)。",
+    triggers: ["ケータリングを頼みたい", "パーティーの料理", "イベントの食事"],
+    prospects: ["owner", "staff", "individual"],
+  }),
 ];
 
 // 既存の名簿へ一度だけ反映する初期名簿の更新(古い順。反映済みの rev は名簿側に記録される)
 const REF_SEED_REVISIONS = [
   { rev: "2026-10-profiles-1", ids: ["m02", "m03", "m04", "m05", "m08", "m09", "m16", "m20", "m22", "m25"] },
   { rev: "2026-10-profiles-2", ids: ["m10", "m12", "m14", "m18", "m19"] },
+  { rev: "2026-10-profiles-3", ids: ["m17", "m26", "m27"] },
 ];
 
 // プロフィールの記入状況(求める紹介・活動範囲が入っていれば「記入済み」)
