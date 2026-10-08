@@ -223,6 +223,7 @@ var BtexServerCore = (function () {
       var changed = false;
       revs.forEach(function (r) {
         if (db.seedRevisions.indexOf(r.rev) !== -1) return;
+        (r.remove || []).forEach(function (id) { removeMember(db, id); });
         r.ids.forEach(function (id) {
           var seedMember = seedMembers.filter(function (m) { return m.id === id; })[0];
           var index = findIndex(db.referralMembers, function (m) { return m.id === id; });
@@ -239,6 +240,20 @@ var BtexServerCore = (function () {
         changed = true;
       });
       return changed;
+    }
+
+    // メンバーを名簿から消し、そのメンバーとして作られたログイン情報・セッション・
+    // 紹介の記録もあわせて消す
+    function removeMember(db, id) {
+      var userIds = db.users.filter(function (u) { return u.memberId === id; }).map(function (u) { return u.userId; });
+      db.referralMembers = db.referralMembers.filter(function (m) { return m.id !== id; });
+      db.users = db.users.filter(function (u) { return u.memberId !== id; });
+      Object.keys(db.sessions).forEach(function (t) {
+        if (userIds.indexOf(db.sessions[t].userId) !== -1) delete db.sessions[t];
+      });
+      db.referralLogs = db.referralLogs.filter(function (l) {
+        return l.toMemberId !== id && userIds.indexOf(l.fromUserId) === -1;
+      });
     }
 
     function findIndex(list, fn) {

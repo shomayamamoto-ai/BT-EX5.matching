@@ -238,7 +238,6 @@ const REF_SEED_MEMBERS = [
     targets: ["any"],
     prospects: ["owner", "staff", "individual"],
   }),
-  rosterMember("m15", "安田 和真", "", "", "", []),
   Object.assign(rosterMember("m16", "桜羽 李果", "株式会社LEFANA/女性向けSNSブランディング", "Team Bloom∞🌸", "IT・Web・クリエイティブ", ["branding", "web", "design", "video"]), {
     business: "女性向けに特化したデザイン会社。ブランディング、Web制作・運営・コンサルティング、グラフィックデザイン、SNS運用代行、インフルエンサー・モデルのキャスティング、写真・映像撮影、ビジネスマッチング。",
     customers: "女性向けの商材をお持ちの方、美容クリニック、お菓子・スイーツ業界、不動産",
@@ -338,8 +337,10 @@ const REF_SEED_REVISIONS = [
   { rev: "2026-10-profiles-5", ids: ["m23", "m24"] },
   // 診断の話題を細かくしたときの見直し(未編集のメンバーのみ置き換わる)
   { rev: "2026-10-topics-1", ids: ["m02", "m04", "m06", "m08", "m10", "m15", "m16", "m17", "m18", "m19", "m21", "m22", "m23", "m24", "m25", "m26", "m27"] },
-  // 安田さんの登録内容を消す(名前のみ残す)
+  // m15 の登録内容を消す → 次の更新で名簿から削除
   { rev: "2026-10-clear-m15", ids: ["m15"], force: true },
+  // remove: 名簿から削除し、そのメンバーのログイン情報も消す
+  { rev: "2026-10-remove-m15", ids: [], remove: ["m15"] },
 ];
 
 // 紹介に効く項目(重要な順)。足りない項目は管理者ページの「お願い文」と、
@@ -588,6 +589,7 @@ var BtexServerCore = (function () {
       var changed = false;
       revs.forEach(function (r) {
         if (db.seedRevisions.indexOf(r.rev) !== -1) return;
+        (r.remove || []).forEach(function (id) { removeMember(db, id); });
         r.ids.forEach(function (id) {
           var seedMember = seedMembers.filter(function (m) { return m.id === id; })[0];
           var index = findIndex(db.referralMembers, function (m) { return m.id === id; });
@@ -604,6 +606,20 @@ var BtexServerCore = (function () {
         changed = true;
       });
       return changed;
+    }
+
+    // メンバーを名簿から消し、そのメンバーとして作られたログイン情報・セッション・
+    // 紹介の記録もあわせて消す
+    function removeMember(db, id) {
+      var userIds = db.users.filter(function (u) { return u.memberId === id; }).map(function (u) { return u.userId; });
+      db.referralMembers = db.referralMembers.filter(function (m) { return m.id !== id; });
+      db.users = db.users.filter(function (u) { return u.memberId !== id; });
+      Object.keys(db.sessions).forEach(function (t) {
+        if (userIds.indexOf(db.sessions[t].userId) !== -1) delete db.sessions[t];
+      });
+      db.referralLogs = db.referralLogs.filter(function (l) {
+        return l.toMemberId !== id && userIds.indexOf(l.fromUserId) === -1;
+      });
     }
 
     function findIndex(list, fn) {
