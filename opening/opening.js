@@ -3,10 +3,10 @@
 // render(t) が時刻 t(秒)の画面を作る(同じ t なら同じ画面)。
 // サイトでは requestAnimationFrame で再生し、動画(MP4)は1コマずつ書き出して作る。
 //
-//  0.0〜2.0  ひとつの光がともる                       「ひとつの出会いが、」
+//  0.0〜2.0  ひとつの光がともる                       「出会いは、ひとつの光から。」
 //  2.0〜3.2  光が5つに分かれ、五角形に並ぶ(紹介・信頼・仲間・仕事・感謝)
-//  3.2〜4.8  赤い糸で5つを結ぶ                         「5つの縁を結ぶ。」
-//  4.8〜7.2  糸の上を光が巡る                          「紹介が巡る、チーム5。」
+//  3.2〜4.8  赤い糸で5つを結ぶ                         「信頼で、つながる。」
+//  4.8〜7.2  糸の上を光が巡る                          「ご縁が巡る、BT-EX5。」
 //  7.2〜12.0 結び目がロゴになり、名前が出る             「BT-EX5」
 // ============================================
 
@@ -20,7 +20,7 @@ const BtexOpening = (function () {
   const CY = H / 2 - 40;
   const NS = "http://www.w3.org/2000/svg";
   const R = 300; // 五角形の大きさ
-  const VALUES = ["紹介", "信頼", "仲間", "仕事", "感謝"];
+  const VALUES = ["出会い", "信頼", "紹介", "仕事", "感謝"];
   const SPLIT = [2.0, 2.15, 2.3, 2.45, 2.6]; // 光が分かれて飛び出す時刻
   const FLY = 0.6;
 
@@ -28,7 +28,7 @@ const BtexOpening = (function () {
   const MARK_SIZE = 380;
   const MARK_K = MARK_SIZE / 64;
   const MARK_R = 18.24 * MARK_K;
-  const MARK_X = CX - 410; // ロゴの中心(名前と合わせて画面の中央に来る位置)
+  const MARK_X = CX - 475; // ロゴの中心(名前と合わせて画面の中央に来る位置)
   const MARK_DY = (32.44 - 32) * MARK_K;
 
   const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
@@ -111,7 +111,7 @@ const BtexOpening = (function () {
       </g>
       <g class="op-brand">
         <text class="op-wordmark" x="0" y="0" text-anchor="start"><tspan class="op-bt">BT-</tspan><tspan class="op-ex5">EX5</tspan></text>
-        <text class="op-tagline" x="0" y="0" text-anchor="start">縁が巡る、紹介者制コミュニティ</text>
+        <text class="op-tagline" x="0" y="0" text-anchor="start">新潟・東京　日本海側最大の経営者コミュニティ</text>
         <text class="op-area" x="0" y="0" text-anchor="start">NIIGATA ・ TOKYO</text>
       </g>
       <text class="op-line" x="${CX}" y="${H - 150}" text-anchor="middle"></text>`;
@@ -174,7 +174,7 @@ const BtexOpening = (function () {
       .op-wordmark { font-family: "Inter", "Noto Sans JP", sans-serif; font-weight: 800; font-size: 150px; letter-spacing: 0.04em; }
       .op-bt { fill: #fff3dc; }
       .op-ex5 { fill: #ff8a5c; }
-      .op-tagline { font-family: "Shippori Mincho", "Noto Serif JP", serif; font-weight: 700; font-size: 46px; letter-spacing: 0.16em; fill: #ffe2b0; }
+      .op-tagline { font-family: "Shippori Mincho", "Noto Serif JP", serif; font-weight: 700; font-size: 38px; letter-spacing: 0.08em; fill: #ffe2b0; }
       .op-area { font-family: "Inter", sans-serif; font-weight: 700; font-size: 26px; letter-spacing: 0.5em; fill: #c99a6a; }`;
     svg.prepend(style);
 
@@ -259,9 +259,9 @@ const BtexOpening = (function () {
 
     // ---- 字幕
     const lines = [
-      [0.7, 1.1, 1.9, 2.3, "ひとつの出会いが、"],
-      [3.3, 3.7, 4.5, 4.9, "5つの縁を結ぶ。"],
-      [5.0, 5.4, 6.6, 7.0, "紹介が巡る、チーム5。"],
+      [0.7, 1.1, 1.9, 2.3, "出会いは、ひとつの光から。"],
+      [3.3, 3.7, 4.5, 4.9, "信頼で、つながる。"],
+      [5.0, 5.4, 6.6, 7.0, "ご縁が巡る、BT-EX5。"],
     ];
     const cur = lines.find((l) => t >= l[0] && t < l[3]);
     if (cur) {
