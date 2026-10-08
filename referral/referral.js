@@ -2,7 +2,7 @@
 // 紹介先早見表 - ロジック
 // ・業種/エリア/キーワードでの絞り込み
 // ・紹介診断:5つの質問の回答からメンバーごとの一致度(0〜100%)を計算
-// ・紹介文のコピー/LINEで送る
+// ・紹介文のコピー
 // ============================================
 
 (function () {
@@ -149,8 +149,6 @@
           </dl>
           <div class="ref-actions">
             <button type="button" class="ref-btn" data-copy="${m.id}">紹介文をコピー</button>
-            <button type="button" class="ref-btn line" data-line="${m.id}">LINEで送る</button>
-            ${m.id === myMemberId ? '<a href="../profile/" class="ref-btn record">自分の情報を編集</a>' : ""}
           </div>
         </div>
       </article>`;
@@ -304,7 +302,6 @@
           <span class="rank-reasons">${sc.reasons.slice(0, 4).map((r) => `<span>${escapeHtml(r)}</span>`).join("")}</span>
           <span class="rank-actions">
             <button type="button" class="ref-btn" data-copy="${m.id}">紹介文をコピー</button>
-            <button type="button" class="ref-btn line" data-line="${m.id}">LINEで送る</button>
             <button type="button" class="ref-btn ghost" data-goto="${m.id}">カードを見る</button>
           </span>
         </li>`)
@@ -381,14 +378,6 @@
       const m = members.find((x) => x.id === copyBtn.dataset.copy);
       const ok = await copyText(introText(m));
       toast(ok ? "紹介文をコピーしました" : "コピーできませんでした");
-      return;
-    }
-
-    const lineBtn = t.closest("[data-line]");
-    if (lineBtn) {
-      const m = members.find((x) => x.id === lineBtn.dataset.line);
-      const url = "https://line.me/R/share?text=" + encodeURIComponent(introText(m));
-      window.open(url, "_blank", "noopener");
       return;
     }
 

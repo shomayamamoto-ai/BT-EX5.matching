@@ -238,14 +238,7 @@ const REF_SEED_MEMBERS = [
     targets: ["any"],
     prospects: ["owner", "staff", "individual"],
   }),
-  Object.assign(rosterMember("m15", "安田 和真", "ハコニワ/レンタルスペース", "", "暮らし・サービス", ["venue", "event"]), {
-    business: "レンタルスペース、イベント。",
-    customers: "これから何か挑戦したい方",
-    wants: "小さくても何か一歩踏み出したい方",
-    triggers: ["場所を借りたい", "イベント会場を探している", "教室・セミナーを開きたい", "何か挑戦したい", "一歩踏み出したい"],
-    targets: ["any"],
-    prospects: ["owner", "individual"],
-  }),
+  rosterMember("m15", "安田 和真", "", "", "", []),
   Object.assign(rosterMember("m16", "桜羽 李果", "株式会社LEFANA/女性向けSNSブランディング", "Team Bloom∞🌸", "IT・Web・クリエイティブ", ["branding", "web", "design", "video"]), {
     business: "女性向けに特化したデザイン会社。ブランディング、Web制作・運営・コンサルティング、グラフィックデザイン、SNS運用代行、インフルエンサー・モデルのキャスティング、写真・映像撮影、ビジネスマッチング。",
     customers: "女性向けの商材をお持ちの方、美容クリニック、お菓子・スイーツ業界、不動産",
@@ -345,6 +338,8 @@ const REF_SEED_REVISIONS = [
   { rev: "2026-10-profiles-5", ids: ["m23", "m24"] },
   // 診断の話題を細かくしたときの見直し(未編集のメンバーのみ置き換わる)
   { rev: "2026-10-topics-1", ids: ["m02", "m04", "m06", "m08", "m10", "m15", "m16", "m17", "m18", "m19", "m21", "m22", "m23", "m24", "m25", "m26", "m27"] },
+  // 安田さんの登録内容を消す(名前のみ残す)
+  { rev: "2026-10-clear-m15", ids: ["m15"], force: true },
 ];
 
 // 紹介に効く項目(重要な順)。足りない項目は管理者ページの「お願い文」と、
@@ -583,7 +578,8 @@ var BtexServerCore = (function () {
 
     // 初期名簿の更新(REF_SEED_REVISIONS)を既存の名簿に一度だけ反映する。
     // 管理者ページ・本人が編集していないメンバーは初期名簿の内容に置き換え、
-    // 編集済みのメンバーは空欄だけを埋める。削除済みのメンバーは戻さない
+    // 編集済みのメンバーは空欄だけを埋める(force: true の更新は編集済みでも置き換える)。
+    // 削除済みのメンバーは戻さない
     function applySeedRevisions(db) {
       var revs = dataList("REF_SEED_REVISIONS");
       var seedMembers = dataList("REF_SEED_MEMBERS");
@@ -600,7 +596,7 @@ var BtexServerCore = (function () {
           var next = Object.assign({}, current);
           Object.keys(seedMember).forEach(function (k) {
             if (k === "id") return;
-            if (!current.editedAt || isBlankField(k, current[k])) next[k] = clone(seedMember[k]);
+            if (r.force || !current.editedAt || isBlankField(k, current[k])) next[k] = clone(seedMember[k]);
           });
           db.referralMembers[index] = next;
         });

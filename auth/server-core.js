@@ -213,7 +213,8 @@ var BtexServerCore = (function () {
 
     // 初期名簿の更新(REF_SEED_REVISIONS)を既存の名簿に一度だけ反映する。
     // 管理者ページ・本人が編集していないメンバーは初期名簿の内容に置き換え、
-    // 編集済みのメンバーは空欄だけを埋める。削除済みのメンバーは戻さない
+    // 編集済みのメンバーは空欄だけを埋める(force: true の更新は編集済みでも置き換える)。
+    // 削除済みのメンバーは戻さない
     function applySeedRevisions(db) {
       var revs = dataList("REF_SEED_REVISIONS");
       var seedMembers = dataList("REF_SEED_MEMBERS");
@@ -230,7 +231,7 @@ var BtexServerCore = (function () {
           var next = Object.assign({}, current);
           Object.keys(seedMember).forEach(function (k) {
             if (k === "id") return;
-            if (!current.editedAt || isBlankField(k, current[k])) next[k] = clone(seedMember[k]);
+            if (r.force || !current.editedAt || isBlankField(k, current[k])) next[k] = clone(seedMember[k]);
           });
           db.referralMembers[index] = next;
         });
