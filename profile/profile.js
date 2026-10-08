@@ -72,13 +72,9 @@
     };
   }
 
-  // 紹介に効く項目の記入状況
+  // 紹介に効く項目の記入状況(referral/data.js の PROFILE_ITEMS と、診断用の話題)
   const CHECKS = [
-    { label: "事業内容", ok: (p) => Boolean(p.business) },
-    { label: "求める紹介", ok: (p) => Boolean(p.wants) },
-    { label: "活動範囲(対面エリアかオンライン)", ok: (p) => p.faceAreas.length > 0 || p.online !== "unknown" },
-    { label: "こんな話が出たら(3つ以上)", ok: (p) => p.triggers.length >= 3 },
-    { label: "主なお客様", ok: (p) => Boolean(p.customers) },
+    ...PROFILE_ITEMS.map((it) => ({ label: it.key === "triggers" ? `${it.label}(3つ以上)` : it.label, ok: it.ok })),
     { label: "対応できる話題", ok: (p) => p.topics.length > 0 },
   ];
 

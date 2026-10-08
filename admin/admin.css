@@ -118,3 +118,10 @@
   .adm-dialog { padding: 28px 30px; }
   .adm-row { grid-template-columns: 1fr auto; padding: 14px 20px; }
 }
+
+.adm-row-missing { margin-top: 4px; font-size: 12.5px; color: #b4442c; }
+.adm-row-actions { flex-wrap: wrap; justify-content: flex-end; }
+@media (max-width: 719px) {
+  .adm-row { grid-template-columns: 1fr; }
+  .adm-row-actions { justify-content: flex-start; }
+}

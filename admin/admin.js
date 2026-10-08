@@ -65,13 +65,48 @@
               ${m.team ? `<span class="ref-tag team">${escapeHtml(m.team)}</span>` : ""}
               ${isProfileComplete(m) ? '<span class="ref-tag done">記入済み</span>' : '<span class="ref-tag pending">準備中</span>'}
             </div>
+            ${missingProfileItems(m).length ? `<div class="adm-row-missing">足りない情報:${missingProfileItems(m).map((it) => escapeHtml(it.label)).join("・")}</div>` : ""}
           </div>
           <div class="adm-row-actions">
+            ${missingProfileItems(m).length ? `<button type="button" class="ref-btn line" data-ask="${escapeHtml(m.id)}">お願い文をコピー</button>` : ""}
             <button type="button" class="ref-btn" data-edit="${escapeHtml(m.id)}">編集</button>
             <button type="button" class="ref-btn ghost danger" data-delete="${escapeHtml(m.id)}">削除</button>
           </div>
         </div>`).join("")
       : '<p class="ref-empty">該当するメンバーがいません。</p>';
+  }
+
+  // ---------- 足りない情報のお願い文 ----------
+  function askText(m) {
+    const items = missingProfileItems(m);
+    return [
+      `${m.name}さん`,
+      "BT-EX5の紹介先早見表に載せる情報について、次の項目を教えていただけますか?紹介するときの参考にさせていただきます。",
+      "",
+      ...items.map((it) => `・${it.ask}`),
+      "",
+      "ご自身で入力することもできます(ログイン後「自分の情報を編集」):",
+      new URL("../profile/", location.href).href,
+    ].join("\n");
+  }
+
+  async function copyText(text) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.setAttribute("readonly", "");
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      let ok = false;
+      try { ok = document.execCommand("copy"); } catch { ok = false; }
+      ta.remove();
+      return ok;
+    }
   }
 
   // ---------- 編集フォーム ----------
@@ -206,6 +241,14 @@
 
     const edit = e.target.closest("[data-edit]");
     if (edit) { openEditor(members.find((m) => m.id === edit.dataset.edit)); return; }
+
+    const ask = e.target.closest("[data-ask]");
+    if (ask) {
+      const m = members.find((x) => x.id === ask.dataset.ask);
+      const ok = await copyText(askText(m));
+      toast(ok ? `${m.name}さんへのお願い文をコピーしました。LINEに貼り付けて送ってください` : "コピーできませんでした");
+      return;
+    }
 
     const del = e.target.closest("[data-delete]");
     if (del) {

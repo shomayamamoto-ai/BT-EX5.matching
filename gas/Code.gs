@@ -38,25 +38,46 @@ const REF_CATEGORIES = [
 const REF_BASES = ["東京", "新潟", "未設定"];
 
 // 紹介診断の質問で使う選択肢。id はメンバーの topics / targets / prospects と対応する
+// 話題はグループごとに表示する。ほかのメンバーと重ならない具体的な話題があるほど、
+// その人が診断で上位に出やすくなる
+const TOPIC_GROUPS = [
+  { id: "biz", label: "仕事・集客" },
+  { id: "money", label: "お金・法律" },
+  { id: "people", label: "人・組織・成長" },
+  { id: "place", label: "住まい・地域" },
+  { id: "life", label: "健康・暮らし" },
+  { id: "food", label: "食・イベント" },
+];
+
 const TOPICS = [
-  { id: "efficiency", label: "業務の効率化・システム化" },
-  { id: "web", label: "ホームページ・集客・SNS" },
-  { id: "ai", label: "AI活用・AI研修" },
-  { id: "video", label: "動画・PR" },
-  { id: "design", label: "デザイン・印刷物" },
-  { id: "tax", label: "税金・会計" },
-  { id: "legal", label: "契約・法律・許認可" },
-  { id: "funding", label: "資金調達・補助金・融資" },
-  { id: "insurance", label: "保険・資産・相続" },
-  { id: "realestate", label: "不動産・物件・空き家" },
-  { id: "reform", label: "リフォーム・内装" },
-  { id: "hiring", label: "採用・人材" },
-  { id: "org", label: "組織づくり・社員研修" },
-  { id: "labor", label: "労務・助成金" },
-  { id: "health", label: "健康・美容" },
-  { id: "food", label: "食・ギフト・仕入れ" },
-  { id: "event", label: "イベント・会場" },
-  { id: "life", label: "暮らし(車・介護・家事)" },
+  { id: "efficiency", group: "biz", label: "業務の効率化・システム化" },
+  { id: "web", group: "biz", label: "ホームページ・集客・SNS" },
+  { id: "ec", group: "biz", label: "ネットショップ・EC" },
+  { id: "ai", group: "biz", label: "AI活用・AI研修" },
+  { id: "video", group: "biz", label: "動画・PR" },
+  { id: "design", group: "biz", label: "デザイン・印刷物" },
+  { id: "branding", group: "biz", label: "ブランディング・見せ方" },
+  { id: "tax", group: "money", label: "税金・会計" },
+  { id: "legal", group: "money", label: "契約・法律・許認可" },
+  { id: "funding", group: "money", label: "資金調達・補助金・融資" },
+  { id: "insurance", group: "money", label: "保険・資産・相続" },
+  { id: "hiring", group: "people", label: "採用・人材" },
+  { id: "org", group: "people", label: "組織づくり・社員研修" },
+  { id: "labor", group: "people", label: "労務・助成金" },
+  { id: "coaching", group: "people", label: "コーチング・人生相談" },
+  { id: "voice", group: "people", label: "声・話し方・司会" },
+  { id: "realestate", group: "place", label: "不動産・物件・空き家" },
+  { id: "reform", group: "place", label: "リフォーム・内装" },
+  { id: "inbound", group: "place", label: "インバウンド・海外・地方創生" },
+  { id: "health", group: "life", label: "健康・美容" },
+  { id: "spiritual", group: "life", label: "スピリチュアル・癒やし" },
+  { id: "life", group: "life", label: "暮らし(車・介護・家事・固定費)" },
+  { id: "family", group: "life", label: "結婚・子育て・家族" },
+  { id: "kids", group: "life", label: "子ども・学校・教育" },
+  { id: "food", group: "food", label: "食品・ギフト・仕入れ" },
+  { id: "catering", group: "food", label: "ケータリング・パーティー料理" },
+  { id: "event", group: "food", label: "イベント企画" },
+  { id: "venue", group: "food", label: "会場・レンタルスペース" },
 ];
 
 const PROSPECTS = [
@@ -134,7 +155,7 @@ const REF_SEED_MEMBERS = [
     targets: ["restaurant", "retail", "salon", "pro", "build", "it"],
     prospects: ["owner", "staff"],
   },
-  Object.assign(rosterMember("m02", "あまみや 七音", "echo studio 代表/声優ボイス・ドクター", "Over", "IT・Web・クリエイティブ", ["video", "health"]), {
+  Object.assign(rosterMember("m02", "あまみや 七音", "echo studio 代表/声優ボイス・ドクター", "Over", "IT・Web・クリエイティブ", ["voice", "video", "health"]), {
     business: "ボイストレーニング教室、レコーディングスタジオ、タレント・声優のキャスティング。",
     customers: "声優の卵、芸能プロダクション、カラオケ好きのビジネスマン、映像制作会社、TV局",
     note: "「長く喋ると喉が枯れる…原因は姿勢と口の開け方と呼吸量」",
@@ -151,7 +172,7 @@ const REF_SEED_MEMBERS = [
     targets: ["any"],
     prospects: ["owner", "individual"],
   }),
-  Object.assign(rosterMember("m04", "吉澤 美和子", "新潟県/ハンドメイド", "SunnyUp🌞", "暮らし・サービス", ["health"], "新潟"), {
+  Object.assign(rosterMember("m04", "吉澤 美和子", "新潟県/ハンドメイド", "SunnyUp🌞", "暮らし・サービス", ["spiritual", "health"], "新潟"), {
     business: "オルゴナイトの制作・販売。",
     customers: "スピリチュアルが好きな方、スピリチュアルのお仕事をされている方",
     wants: "スピリチュアルのお仕事をされている方",
@@ -167,7 +188,7 @@ const REF_SEED_MEMBERS = [
     targets: ["salon", "medical", "retail"],
     prospects: ["owner", "staff"],
   }),
-  Object.assign(rosterMember("m06", "吉原 優", "FJ 営業", "", "お金・保険", ["insurance"]), {
+  Object.assign(rosterMember("m06", "吉原 優", "FJ 営業", "", "お金・保険", ["insurance", "family"]), {
     business: "ライフプラン作成、保険提案、保険の見直し、家計の見直し。",
     customers: "誰でも",
     triggers: ["保険を見直したい", "家計を見直したい", "ライフプラン", "老後のお金が不安", "教育費の準備"],
@@ -175,7 +196,7 @@ const REF_SEED_MEMBERS = [
     prospects: ["individual", "owner"],
   }),
   rosterMember("m07", "樺澤 一郎", "KBlab合同会社 代表", "", "美容・健康", ["health"]),
-  Object.assign(rosterMember("m08", "床島 良夫", "非営利団体 人生工房 理事", "SunnyUp🌞", "暮らし・サービス", ["event", "org"]), {
+  Object.assign(rosterMember("m08", "床島 良夫", "非営利団体 人生工房 理事", "SunnyUp🌞", "暮らし・サービス", ["inbound", "kids", "event"]), {
     business: "月面タイムカプセル、パーソナルインバウンドツアー。",
     customers: "地域密着の中小企業、公立・私立学校、体験型講座をお持ちの方",
     note: "月面タイムカプセルとパーソナルインバウンドツアーで外貨を稼ごう!",
@@ -217,7 +238,7 @@ const REF_SEED_MEMBERS = [
     targets: ["any"],
     prospects: ["owner", "staff", "individual"],
   }),
-  Object.assign(rosterMember("m15", "安田 和真", "ハコニワ/レンタルスペース", "", "暮らし・サービス", ["event"]), {
+  Object.assign(rosterMember("m15", "安田 和真", "ハコニワ/レンタルスペース", "", "暮らし・サービス", ["venue", "event"]), {
     business: "レンタルスペース、イベント。",
     customers: "これから何か挑戦したい方",
     wants: "小さくても何か一歩踏み出したい方",
@@ -225,7 +246,7 @@ const REF_SEED_MEMBERS = [
     targets: ["any"],
     prospects: ["owner", "individual"],
   }),
-  Object.assign(rosterMember("m16", "桜羽 李果", "株式会社LEFANA/女性向けSNSブランディング", "Team Bloom∞🌸", "IT・Web・クリエイティブ", ["web", "design", "video"]), {
+  Object.assign(rosterMember("m16", "桜羽 李果", "株式会社LEFANA/女性向けSNSブランディング", "Team Bloom∞🌸", "IT・Web・クリエイティブ", ["branding", "web", "design", "video"]), {
     business: "女性向けに特化したデザイン会社。ブランディング、Web制作・運営・コンサルティング、グラフィックデザイン、SNS運用代行、インフルエンサー・モデルのキャスティング、写真・映像撮影、ビジネスマッチング。",
     customers: "女性向けの商材をお持ちの方、美容クリニック、お菓子・スイーツ業界、不動産",
     wants: "Webディレクター、Webデザイナー、SNS運用ディレクター、営業など(一緒に働く仲間)",
@@ -233,7 +254,7 @@ const REF_SEED_MEMBERS = [
     targets: ["salon", "medical", "retail", "restaurant"],
     prospects: ["owner", "staff"],
   }),
-  Object.assign(rosterMember("m17", "むらさき やえ", "COCOLOR(ココカラー)代表/波動を使った「あなた色ブランディング スタイリスト」", "", "美容・健康", ["health", "design"]), {
+  Object.assign(rosterMember("m17", "むらさき やえ", "COCOLOR(ココカラー)代表/波動を使った「あなた色ブランディング スタイリスト」", "", "美容・健康", ["branding", "health", "spiritual"]), {
     business: "あなた色ブランディングプログラム/(内面)バースカラー診断/(外見)似合う色・質感・柄・形診断/(表現)ブランディングコンサル/スタイリング・ショッピング同行/(プロ養成)CoCoカラースタイリスト養成講座。",
     customers: "「すでに経験も実力もある。でも、まだ自分を活かし切れていない方」。自分の経験や能力をさらに活かし、自分らしく次のステージへ進みたい40〜60代の起業家・経営者・専門職・講師業の方。外見・発信・ブランディングを整え、仕事でも人生でも「自分らしく選ばれる存在」になりたい方。",
     wants: "【法人】アパレル&デザイン&広告関係/結婚相談所/起業支援事業 【個人】「実力はあるのに、なぜか選ばれない」「今の見せ方が本当の自分と合っていない」「これからの人生や仕事を自分らしくステージアップしたい」と感じている40〜60代の起業家・経営者・専門家",
@@ -241,13 +262,13 @@ const REF_SEED_MEMBERS = [
     targets: ["retail", "pro", "any"],
     prospects: ["owner", "individual"],
   }),
-  Object.assign(rosterMember("m18", "髙橋 誠二", "スポーツ用品EC事業者/EC運営支援", "CANOW", "IT・Web・クリエイティブ", ["web"]), {
+  Object.assign(rosterMember("m18", "髙橋 誠二", "スポーツ用品EC事業者/EC運営支援", "CANOW", "IT・Web・クリエイティブ", ["ec", "web"]), {
     business: "スポーツ用品のEC事業、EC運営支援。",
     triggers: ["ネットショップを始めたい", "ECの売上を伸ばしたい", "スポーツ用品"],
     targets: ["retail"],
     prospects: ["owner", "staff"],
   }),
-  Object.assign(rosterMember("m19", "岡本 伸", "株式会社 心灯/目標達成コーチング", "Team Bloom∞🌸", "IT・Web・クリエイティブ", ["web", "video", "ai", "org"]), {
+  Object.assign(rosterMember("m19", "岡本 伸", "株式会社 心灯/目標達成コーチング", "Team Bloom∞🌸", "IT・Web・クリエイティブ", ["coaching", "branding", "web", "video"]), {
     business: "Web制作(HP・SNS運用・SEO・MEO対策・AI動画)、自己ブランディングビジネス(能力開発)。",
     customers: "10名前後の法人様/目標達成が苦手な人/3年目の個人事業主",
     triggers: ["HPを作りたい", "SNS運用を任せたい", "SEO・MEO対策", "AI動画", "目標が達成できない", "自分をブランディングしたい"],
@@ -262,7 +283,7 @@ const REF_SEED_MEMBERS = [
     targets: ["any"],
     prospects: ["owner", "individual"],
   }),
-  Object.assign(rosterMember("m21", "中川 敏和", "", "", "暮らし・サービス", ["event", "life"]), {
+  Object.assign(rosterMember("m21", "中川 敏和", "", "", "暮らし・サービス", ["family", "event"]), {
     business: "インクルーズ。",
     customers: "0〜5歳の子どものいるご家庭/新婚さん/65歳以上のご夫婦",
     wants: "結婚相談所/サロンオーナー/保険業",
@@ -270,7 +291,7 @@ const REF_SEED_MEMBERS = [
     targets: ["salon", "pro"],
     prospects: ["owner"],
   }),
-  Object.assign(rosterMember("m22", "小林 末季こばねぇ", "preseia 代表/心を整えるマインドコーチ", "SunnyUp🌞", "人材・組織", ["org", "health", "insurance"]), {
+  Object.assign(rosterMember("m22", "小林 末季こばねぇ", "preseia 代表/心を整えるマインドコーチ", "SunnyUp🌞", "人材・組織", ["coaching", "health", "spiritual", "insurance"]), {
     business: "個別コーチング、ビジネスコンサル、健康事業、共済保険。",
     customers: "新潟・長野の方/人生に迷いながらも進み出したい人/セミナーを作りたい方/コーチの方",
     wants: "新潟・長野の方/コーチングをグレードアップしたい方/健康事業に興味のある方/スピリチュアルに興味のある方",
@@ -278,21 +299,21 @@ const REF_SEED_MEMBERS = [
     targets: ["any"],
     prospects: ["owner", "individual"],
   }),
-  Object.assign(rosterMember("m23", "見上 恵", "ちきゅあそびくらぶ/AI絵本クリエイター、スクール講師、クリエイター募集", "Team Bloom∞🌸", "IT・Web・クリエイティブ", ["ai", "design"]), {
+  Object.assign(rosterMember("m23", "見上 恵", "ちきゅあそびくらぶ/AI絵本クリエイター、スクール講師、クリエイター募集", "Team Bloom∞🌸", "IT・Web・クリエイティブ", ["ai", "design", "kids"]), {
     business: "AI絵本クリエイター、講座講師。",
     customers: "自分の想いを絵本にしたい方",
     triggers: ["想いを絵本にしたい", "自分史を絵本に残したい", "AI絵本", "クリエイターになりたい", "AIの講座を受けたい"],
     targets: ["any"],
     prospects: ["individual", "owner"],
   }),
-  Object.assign(rosterMember("m24", "柳橋 雅也", "合同会社フライコア 代表社員/地方創生", "Team Bloom∞🌸", "暮らし・サービス", ["ai", "efficiency", "reform", "realestate"]), {
+  Object.assign(rosterMember("m24", "柳橋 雅也", "合同会社フライコア 代表社員/地方創生", "Team Bloom∞🌸", "暮らし・サービス", ["inbound", "ai", "efficiency", "reform", "realestate"]), {
     business: "地方創生コンサル、災害対策商材、AIシステム導入、内装造作費用0円、LED広告透過フィルム。",
     customers: "税収を上げるための働きかけ、余った駐車場スペースの活用、作業効率の向上、内装費用のコスト削減などを考えている方",
     triggers: ["地方創生", "税収を上げたい", "駐車場が余っている", "災害対策", "内装費用を抑えたい", "LED広告", "AIシステムを導入したい"],
     targets: ["any"],
     prospects: ["owner", "staff"],
   }),
-  Object.assign(rosterMember("m25", "松田 依子", "株式会社Lift 代表取締役/ちきゅうあそびくらぶ", "Team Bloom∞🌸", "暮らし・サービス", ["ai", "video", "event", "web", "insurance", "health"]), {
+  Object.assign(rosterMember("m25", "松田 依子", "株式会社Lift 代表取締役/ちきゅうあそびくらぶ", "Team Bloom∞🌸", "暮らし・サービス", ["ai", "kids", "voice", "event", "insurance"]), {
     business: "AI絵本(自分史絵本・エンディング絵本・感謝の絵本・子育て・親子・技術をわかりやすく等)、司会・MC、コンサル・プロデュース、コミュニケーション・ボイトレ・朗読、芦屋スマートラジオの企画運営・番組、イベント・パーティー企画、コミュニケーション講座、AI講座・AI動画、潜在意識・波動アップ、詐欺に遭わないための金融アドバイザー(本物か見抜く・海外保険・海外銀行等・税金対策)、美容・健康(Life wave・コロイドヨード)。",
     customers: "会社や自身や商品をもっと世に広めたい人、次世代に残したい思いのある人、自分史を絵本にしたい人、販売促進・集客したい人、自分を変えたい人、AI絵本クリエイター資格を学びたい人、AIを学びたい人、健康に困っている人、人生を変えたい人、ちきゅうあそびくらぶの理念に賛同し世界に羽ばたく活動に興味を持ってくれる人",
     wants: "会社や自身や商品をもっと世に広めたい人/次世代に残したい技術・思いのある企業・社長等/終活ビジネス(エンディング絵本)/AI絵本クリエイター資格をとって一緒に活動してくれるクリエイターになりたい人/新しいビジネススキルが欲しい人/ラジオ番組を持ちたい人",
@@ -300,16 +321,17 @@ const REF_SEED_MEMBERS = [
     targets: ["any"],
     prospects: ["owner", "individual"],
   }),
-  Object.assign(rosterMember("m26", "坂上 智子", "OHANAの輪 代表/地域密着型", "All Win🏆", "食・地域産品", ["food", "event"]), {
+  Object.assign(rosterMember("m26", "坂上 智子", "OHANAの輪 代表/地域密着型", "All Win🏆", "食・地域産品", ["food", "kids", "event"]), {
     business: "子ども食堂の寄付金付き商品の販売、子ども食堂のイベント。",
     wants: "子ども食堂の寄付金付き商品を探しています(商品をお持ちの方)",
     triggers: ["子ども食堂", "寄付金付きの商品", "社会貢献をしたい", "地域のイベント", "商品の販路を広げたい"],
     targets: ["retail", "restaurant", "any"],
     prospects: ["owner", "individual"],
   }),
-  Object.assign(rosterMember("m27", "一場 ゆな", "東京ケータリング", "", "食・地域産品", ["food", "event"]), {
+  Object.assign(rosterMember("m27", "一場 ゆな", "東京ケータリング", "", "食・地域産品", ["catering", "event", "food"]), {
     business: "ケータリング(イベント)。",
-    triggers: ["ケータリングを頼みたい", "パーティーの料理", "イベントの食事"],
+    triggers: ["ケータリングを頼みたい", "パーティー・懇親会の料理", "イベントの食事", "周年記念・社内パーティー", "セミナー後の交流会"],
+    targets: ["any"],
     prospects: ["owner", "staff", "individual"],
   }),
 ];
@@ -321,7 +343,23 @@ const REF_SEED_REVISIONS = [
   { rev: "2026-10-profiles-3", ids: ["m17", "m26", "m27"] },
   { rev: "2026-10-profiles-4", ids: ["m06", "m07", "m11", "m15", "m21"] },
   { rev: "2026-10-profiles-5", ids: ["m23", "m24"] },
+  // 診断の話題を細かくしたときの見直し(未編集のメンバーのみ置き換わる)
+  { rev: "2026-10-topics-1", ids: ["m02", "m04", "m06", "m08", "m10", "m15", "m16", "m17", "m18", "m19", "m21", "m22", "m23", "m24", "m25", "m26", "m27"] },
 ];
+
+// 紹介に効く項目(重要な順)。足りない項目は管理者ページの「お願い文」と、
+// 本人への記入のお願いに使う
+const PROFILE_ITEMS = [
+  { key: "range", label: "活動範囲", ask: "活動範囲(新潟・東京/関東で対面できるか、オンラインで対応できるか)", ok: (m) => m.faceAreas.length > 0 || (m.online && m.online !== "unknown") },
+  { key: "wants", label: "求める紹介", ask: "求める紹介(どんな悩みを持つ、どんな人を紹介してほしいか)", ok: (m) => Boolean(m.wants) },
+  { key: "business", label: "事業内容", ask: "事業内容(取り扱っている商品・サービス)", ok: (m) => Boolean(m.business) },
+  { key: "triggers", label: "こんな話が出たら", ask: "こんな話が出たら自分を思い出してほしい、という言葉(3つ以上。例:「HPを作ったきり」「人が採れない」)", ok: (m) => m.triggers.length >= 3 },
+  { key: "customers", label: "主なお客様", ask: "主なお客様(どんな方がお客様になっているか)", ok: (m) => Boolean(m.customers) },
+];
+
+function missingProfileItems(m) {
+  return PROFILE_ITEMS.filter((it) => !it.ok(m));
+}
 
 // プロフィールの記入状況(求める紹介・活動範囲が入っていれば「記入済み」)
 function isProfileComplete(m) {

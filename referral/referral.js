@@ -19,7 +19,7 @@
   const labelOf = (list, id) => (list.find((x) => x.id === id) || {}).label || "";
 
   // ---------- 状態 ----------
-  const filter = { category: "all", area: "all", search: "" };
+  const filter = { category: "all", area: "all", search: "", topic: "all" };
   const answers = { topics: new Set(), keyword: "", who: null, industry: null, area: null, meeting: null };
   let step = 0;
   let scores = null;       // { [memberId]: { score, reasons, topicHits, keywordHits } }
@@ -28,72 +28,7 @@
   let myMemberId = "";     // ログイン中の本人(名簿のID)
 
 
-  // ---------- 一致度の計算 ----------
-  // 配点: 話題50 + 業種15 + 相手のタイプ10 + 会い方・エリア25 = 100
-  // キーワード一致で+10(上限100)。話題もキーワードも一致しない人は30%で頭打ち
-  function keywordTokens(text) {
-    return String(text || "")
-      .split(/[\s、,,・/]+/)
-      .map((t) => t.trim())
-      .filter((t) => t.length >= 2);
-  }
-
-  function haystack(m) {
-    return [m.name, m.company, m.category, m.business, m.customers || "", m.note, m.wants, ...m.triggers].join(" ");
-  }
-
-  function scoreMember(m, a) {
-    const reasons = [];
-    let s = 0;
-
-    const topicHits = [...a.topics].filter((t) => m.topics.includes(t));
-    if (a.topics.size) s += (50 * topicHits.length) / a.topics.size;
-    topicHits.forEach((t) => reasons.push(`「${labelOf(TOPICS, t)}」に対応`));
-
-    if (a.industry === "unknown" || !m.targets.length) {
-      s += 9;
-    } else if (m.targets.includes(a.industry)) {
-      s += 15;
-      reasons.push(`${labelOf(INDUSTRIES, a.industry)}の紹介を求めている`);
-    } else if (m.targets.includes("any")) {
-      s += 11;
-    }
-
-    if (a.who === "unknown" || !m.prospects.length) {
-      s += 6;
-    } else if (m.prospects.includes(a.who)) {
-      s += 10;
-    }
-
-    const faceOK = a.area !== "other" && m.faceAreas.includes(a.area);
-    const onlineAll = m.online === "all";
-    const onlinePartial = m.online === "partial";
-    const areaUnknown = !m.faceAreas.length && m.online === "unknown";
-    let areaScore = 0;
-    if (areaUnknown) {
-      areaScore = 10;
-    } else if (a.meeting === "face") {
-      areaScore = faceOK ? 25 : onlineAll ? 8 : onlinePartial ? 5 : 0;
-    } else if (a.meeting === "online") {
-      areaScore = onlineAll ? 25 : onlinePartial ? 14 : faceOK ? 8 : 0;
-    } else {
-      areaScore = faceOK || onlineAll ? 25 : onlinePartial ? 14 : 0;
-    }
-    s += areaScore;
-    if (faceOK && a.meeting !== "online") reasons.push(`${labelOf(AREAS, a.area)}で対面可`);
-    if (onlineAll && (a.meeting !== "face" || !faceOK)) reasons.push("オンライン全国対応");
-
-    const hay = haystack(m);
-    const keywordHits = keywordTokens(a.keyword).filter((t) => hay.includes(t));
-    if (keywordHits.length) {
-      s += 10;
-      keywordHits.forEach((t) => reasons.push(`「${t}」がキーワードに一致`));
-    }
-
-    if (!topicHits.length && !keywordHits.length) s = Math.min(s, 30);
-
-    return { score: Math.round(Math.min(100, s)), reasons, topicHits, keywordHits };
-  }
+  const { keywordTokens, haystack, scoreMember } = RefScoring;
 
   function computeScores() {
     scores = {};
@@ -149,6 +84,7 @@
 
   // ---------- 一覧 ----------
   function matchesFilter(m) {
+    if (filter.topic !== "all" && !m.topics.includes(filter.topic)) return false;
     if (filter.category !== "all" && m.category !== filter.category) return false;
     if (filter.area === "niigata" && !m.faceAreas.includes("niigata")) return false;
     if (filter.area === "tokyo" && !m.faceAreas.includes("tokyo")) return false;
@@ -223,7 +159,10 @@
   function renderList() {
     let list = members.filter(matchesFilter);
     if (sortByScore && scores) {
-      list = list.slice().sort((a, b) => scores[b.id].score - scores[a.id].score);
+      list = list.slice().sort((a, b) => scores[b.id].raw - scores[a.id].raw);
+    } else if (filter.topic !== "all") {
+      // 話題で探すときは、その話題を専門にしている人(扱う話題が少ない人)を先に
+      list = list.slice().sort((a, b) => a.topics.length - b.topics.length);
     }
     $("#refList").innerHTML = list.length
       ? list.map(cardHtml).join("")
@@ -235,6 +174,14 @@
 
   function chipHtml(group, value, label, active) {
     return `<button type="button" class="ref-chip" data-${group}="${escapeHtml(value)}" aria-pressed="${active}">${escapeHtml(label)}</button>`;
+  }
+
+  function renderTopicSelect() {
+    $("#topicSelect").innerHTML = '<option value="all">すべての話題</option>' + TOPIC_GROUPS
+      .map((g) => `<optgroup label="${escapeHtml(g.label)}">${TOPICS.filter((t) => t.group === g.id)
+        .map((t) => `<option value="${t.id}"${filter.topic === t.id ? " selected" : ""}>${escapeHtml(t.label)}(${members.filter((m) => m.topics.includes(t.id)).length}名)</option>`)
+        .join("")}</optgroup>`)
+      .join("");
   }
 
   function renderChips() {
@@ -273,12 +220,16 @@
     $("#diagStepLabel").textContent = `質問 ${step + 1} / ${STEPS.length}`;
     $("#diagQuestion").textContent = st.q;
     $("#diagHint").textContent = st.hint;
-    $("#diagOptions").innerHTML = st.options
-      .map((o) => {
-        const on = st.multi ? answers.topics.has(o.id) : answers[st.key] === o.id;
-        return `<button type="button" class="diag-option" data-opt="${o.id}" aria-pressed="${on}">${escapeHtml(o.label)}</button>`;
-      })
-      .join("");
+    const optionHtml = (o) => {
+      const on = st.multi ? answers.topics.has(o.id) : answers[st.key] === o.id;
+      return `<button type="button" class="diag-option" data-opt="${o.id}" aria-pressed="${on}">${escapeHtml(o.label)}</button>`;
+    };
+    // 話題はグループごとに見出しをつけて並べる
+    $("#diagOptions").innerHTML = st.key === "topics" && typeof TOPIC_GROUPS !== "undefined"
+      ? TOPIC_GROUPS
+          .map((g) => `<div class="diag-group"><p class="diag-group-label">${escapeHtml(g.label)}</p><div class="diag-group-options">${st.options.filter((o) => o.group === g.id).map(optionHtml).join("")}</div></div>`)
+          .join("")
+      : st.options.map(optionHtml).join("");
     $("#diagKeywordWrap").hidden = !st.multi;
     $("#diagBack").hidden = step === 0;
     $("#diagNext").textContent = step === STEPS.length - 1 ? "結果を見る" : "次へ";
@@ -339,11 +290,7 @@
     ].filter(Boolean);
     $("#diagSummary").innerHTML = summary.map((s) => `<span>${escapeHtml(s)}</span>`).join("");
 
-    const ranked = members
-      .map((m) => ({ m, sc: scores[m.id] }))
-      .filter((x) => x.sc.score >= 40)
-      .sort((a, b) => b.sc.score - a.sc.score)
-      .slice(0, 5);
+    const ranked = RefScoring.rankMembers(members, answers);
 
     $("#diagRanking").innerHTML = ranked.length
       ? ranked
@@ -396,7 +343,9 @@
     filter.category = "all";
     filter.area = "all";
     filter.search = "";
+    filter.topic = "all";
     $("#refSearch").value = "";
+    $("#topicSelect").value = "all";
     renderChips();
     renderList();
     const card = document.getElementById(`member-${id}`);
@@ -409,13 +358,7 @@
   // ---------- 自分の情報の記入状況 ----------
   function renderNudge() {
     const me = members.find((m) => m.id === myMemberId);
-    const missing = [];
-    if (me) {
-      if (!me.business) missing.push("事業内容");
-      if (!me.wants) missing.push("求める紹介");
-      if (!me.faceAreas.length && (!me.online || me.online === "unknown")) missing.push("活動範囲");
-      if (me.triggers.length < 3) missing.push("こんな話が出たら");
-    }
+    const missing = me ? missingProfileItems(me).filter((it) => it.key !== "customers").map((it) => it.label) : [];
     $("#profileNudge").hidden = !missing.length;
     $("#profileNudgeItems").textContent = `未入力:${missing.join("・")}。入力すると紹介されやすくなります。`;
   }
@@ -473,11 +416,18 @@
     sortByScore = true;
     filter.category = "all";
     filter.area = "all";
+    filter.topic = "all";
+    $("#topicSelect").value = "all";
     renderChips();
     renderList();
     $("#sortedBanner").scrollIntoView({ behavior: "smooth", block: "start" });
   });
   $("#clearSort").addEventListener("click", () => { sortByScore = false; renderList(); });
+
+  $("#topicSelect").addEventListener("change", (e) => {
+    filter.topic = e.target.value;
+    renderList();
+  });
 
   $("#refSearch").addEventListener("input", (e) => {
     filter.search = e.target.value;
@@ -498,6 +448,7 @@
     myMemberId = session.memberId || "";
     $("#demoNote").hidden = AuthApi.isShared();
     renderNudge();
+    renderTopicSelect();
     renderChips();
     renderList();
     document.documentElement.classList.remove("guard-pending");

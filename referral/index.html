@@ -63,7 +63,10 @@
     <!-- 絞り込み -->
     <section class="ref-filter" aria-label="絞り込み">
       <label class="visually-hidden" for="refSearch">キーワード検索</label>
-      <input type="search" id="refSearch" class="ref-search" placeholder="例:補助金、空き家、AI研修、採用" autocomplete="off">
+      <input type="search" id="refSearch" class="ref-search" placeholder="例:補助金、空き家、ケータリング、採用" autocomplete="off">
+
+      <label class="ref-filter-label" for="topicSelect">話題で探す</label>
+      <select id="topicSelect" class="ref-topic-select"></select>
 
       <p class="ref-filter-label">業種</p>
       <div class="ref-chips" id="categoryChips"></div>
@@ -115,7 +118,7 @@
             <p class="diag-hint" id="diagHint"></p>
             <div class="diag-options" id="diagOptions"></div>
             <div class="diag-keyword" id="diagKeywordWrap" hidden>
-              <label for="diagKeyword">気になった言葉があれば(任意)</label>
+              <label for="diagKeyword">会話に出た言葉があれば入力(任意)<small>例:ケータリング、空き家、ボイトレ。一致した人が上位に来ます</small></label>
               <input type="text" id="diagKeyword" autocomplete="off">
             </div>
             <div class="diag-nav">
@@ -145,6 +148,7 @@
   <script src="../auth/api.js"></script>
   <script src="../auth/session.js"></script>
   <script src="data.js"></script>
+  <script src="scoring.js"></script>
   <script src="referral.js"></script>
 </body>
 </html>
