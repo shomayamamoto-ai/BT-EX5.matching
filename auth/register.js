@@ -1,6 +1,6 @@
 // ============================================
 // auth/register.js — 会員登録ページの画面ロジック(デモ用)
-// 登録成功時は自動ログインしてアプリ本体へ遷移する。
+// 登録成功時は自動ログインして紹介先早見表へ遷移する。
 // ============================================
 
 (function () {
@@ -73,9 +73,7 @@
 
     isBusy = true;
     AuthUI.setBusy(submitButton, true, SUBMIT_BUSY_LABEL, SUBMIT_LABEL);
-    const category = document.getElementById("register-category").value;
-    const bio = document.getElementById("register-bio").value.trim();
-    const result = await AuthApi.register(name, email, password, category, bio);
+    const result = await AuthApi.register(name, email, password);
     isBusy = false;
     AuthUI.setBusy(submitButton, false, SUBMIT_BUSY_LABEL, SUBMIT_LABEL);
 
@@ -88,7 +86,7 @@
       return;
     }
 
-    // 自動ログイン成功: トークンのみ保存してアプリ本体へ
+    // 自動ログイン成功: トークンのみ保存して紹介先早見表へ
     AuthSession.clearToken();
     AuthSession.saveToken(result.data.sessionToken);
     location.replace(AuthSession.screenPath("home"));

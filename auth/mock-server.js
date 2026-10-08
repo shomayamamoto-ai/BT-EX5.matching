@@ -10,11 +10,9 @@
 // 未登録アドレスにはダミー照合で時間を揃える。verifySession の失敗は
 // SESSION_INVALID 単一コード。
 //
-// メッセージング: いいね・マッチング・メッセージはすべてこの層で
-// アクセス制御する。メッセージの閲覧・送信は「相互いいね(マッチング)
-// 成立済みの2者」のみに許可し、それ以外は FORBIDDEN を返す。
-// データは localStorage の共有DBに保存し、書き込みのたびに
-// BroadcastChannel で通知することで別タブへ即時反映される。
+// 紹介先早見表: 名簿の閲覧は会員、追加・編集・削除は管理者のみ。
+// 紹介の記録は会員が自分の名義でのみ追加・取り消しできる。
+// データは localStorage のDBに保存する(デモのため同一ブラウザ内のみ)。
 // ============================================
 
 const AuthMockServer = (function () {
@@ -35,7 +33,6 @@ const AuthMockServer = (function () {
     SESSION_INVALID: "セッションが無効です。もう一度ログインしてください。",
     INVALID_REQUEST: "リクエストの形式が正しくありません。",
     INVALID_ACTION: "不明な操作が指定されました。",
-    FORBIDDEN: "マッチングした相手とのみメッセージのやり取りができます。",
     FORBIDDEN_ADMIN: "この操作は管理者のみ行えます。",
     SERVER_ERROR: "サーバーでエラーが発生しました。時間をおいて再度お試しください。",
   };
@@ -47,27 +44,8 @@ const AuthMockServer = (function () {
       password: "kouryukai-demo-2026",
       role: "member",
       name: "デモ 会員",
-      category: "経営者",
-      avatar: "😀",
-      bio: "デモ用のアカウントです。よろしくお願いします!",
     },
   ];
-
-  // いいねを返してくれるサンプルメンバー(旧 INCOMING_LIKES 相当)
-  const AUTO_LIKE_BOT_IDS = new Set([2, 4, 5, 8, 11, 15]);
-
-  // サンプルメンバーの自動返信(デモ用)
-  const AUTO_REPLIES = [
-    { text: "メッセージありがとうございます!ぜひ今度お話しましょう。" },
-    { text: "👍", stamp: true },
-    { text: "こちらこそよろしくお願いします。次回の交流会には参加されますか?" },
-    { text: "興味あります!詳しく聞かせてください。" },
-    { text: "🙏", stamp: true },
-    { text: "ありがとうございます。今度ランチでもいかがですか?" },
-    { text: "いいですね!日程候補をいくつか送ってもらえますか?" },
-  ];
-
-  const HUMAN_AVATARS = ["😀", "😄", "🙂", "😎", "🤗", "🧑‍💼", "👩‍💼", "🤠"];
 
   let channel = null;
   try {
@@ -118,16 +96,10 @@ const AuthMockServer = (function () {
     return crypto.randomUUID ? crypto.randomUUID() : randomSalt();
   }
 
-  function strHash(s) {
-    let h = 0;
-    for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
-    return h;
-  }
-
   async function ensureDb() {
     let db = loadDb();
     if (!db || !db.users || !db.dummy) {
-      db = { users: [], sessions: {}, likes: [], messages: {}, dummy: null, botsSeeded: false };
+      db = { users: [], sessions: {}, referralLogs: [], dummy: null };
       for (const seed of SEED_USERS) {
         const salt = randomSalt();
         db.users.push({
@@ -144,15 +116,7 @@ const AuthMockServer = (function () {
           lockedUntil: 0,
           passwordChangedAt: 0,
           createdAt: nowMs(),
-          isBot: false,
           name: seed.name,
-          category: seed.category,
-          avatar: seed.avatar,
-          tags: [],
-          bio: seed.bio,
-          interest: "",
-          isNew: false,
-          isPickup: false,
         });
       }
       // 未登録アドレス用のダミー照合データ(§8 判定順序2)
@@ -161,46 +125,12 @@ const AuthMockServer = (function () {
       saveDb(db);
     }
 
-    // 旧バージョンDBからの移行
+    // 旧バージョンDBからの移行: マッチング機能(サンプル会員・いいね・メッセージ)の
+    // データを削除し、紹介の記録を用意する
     let migrated = false;
-    if (!db.likes) { db.likes = []; migrated = true; }
-    if (!db.messages) { db.messages = {}; migrated = true; }
-
-    // サンプルメンバー(ボット)の投入。data.js の MEMBERS が読み込まれて
-    // いるページ(アプリ本体)で初回に行う
-    if (!db.botsSeeded && typeof MEMBERS !== "undefined") {
-      for (const m of MEMBERS) {
-        if (db.users.some((u) => u.userId === "usr_bot_" + m.id)) continue;
-        db.users.push({
-          userId: "usr_bot_" + m.id,
-          email: "member" + m.id + "@kouryukai.jp",
-          role: "member",
-          accountStatus: "active",
-          subscriptionStatus: "active",
-          paymentExempt: false,
-          isAdmin: false,
-          salt: "",
-          passwordHash: "",
-          failureCount: 0,
-          lockedUntil: 0,
-          passwordChangedAt: 0,
-          createdAt: 0,
-          isBot: true,
-          botId: m.id,
-          name: m.name,
-          company: m.company,
-          category: m.category,
-          avatar: m.avatar,
-          tags: m.tags,
-          bio: m.bio,
-          interest: m.interest,
-          isNew: m.isNew,
-          isPickup: m.isPickup,
-        });
-      }
-      db.botsSeeded = true;
-      migrated = true;
-    }
+    if (db.users.some((u) => u.isBot)) { db.users = db.users.filter((u) => !u.isBot); migrated = true; }
+    ["likes", "messages", "botsSeeded"].forEach((k) => { if (k in db) { delete db[k]; migrated = true; } });
+    if (!db.referralLogs) { db.referralLogs = []; migrated = true; }
 
     // 紹介先早見表の名簿(名簿が未作成のときだけ初期名簿を投入)
     if (!db.referralMembers && typeof REF_SEED_MEMBERS !== "undefined") {
@@ -209,7 +139,7 @@ const AuthMockServer = (function () {
     }
 
     // デモ会員を管理者にする(名簿の追加・編集用)
-    const demo = db.users.find((u) => u.email === "demo@kouryukai.jp" && !u.isBot);
+    const demo = db.users.find((u) => u.email === "demo@kouryukai.jp");
     if (demo && !demo.isAdmin) {
       demo.isAdmin = true;
       demo.role = "admin";
@@ -262,7 +192,7 @@ const AuthMockServer = (function () {
       return fail("AUTH_FAILED");
     }
 
-    const user = db.users.find((u) => u.email === email && !u.isBot);
+    const user = db.users.find((u) => u.email === email);
     if (!user) {
       await hashPassword(password, db.dummy.salt);
       return fail("AUTH_FAILED");
@@ -375,8 +305,6 @@ const AuthMockServer = (function () {
     const email = String(body.email || "").trim().toLowerCase();
     const name = String(body.name || "").trim().slice(0, 40);
     const password = String(body.password || "");
-    const category = String(body.category || "").trim().slice(0, 20) || "会員";
-    const bio = String(body.bio || "").trim().slice(0, 300);
 
     if (!name || !email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return fail("INVALID_REQUEST");
@@ -385,7 +313,7 @@ const AuthMockServer = (function () {
     if (weak) {
       return { success: false, error: { code: "WEAK_PASSWORD", message: weak } };
     }
-    if (db.users.some((u) => u.email === email && !u.isBot)) {
+    if (db.users.some((u) => u.email === email)) {
       return {
         success: false,
         error: { code: "REGISTER_FAILED", message: "このメールアドレスでは登録できません。ログインまたはパスワード再設定をお試しください。" },
@@ -407,15 +335,7 @@ const AuthMockServer = (function () {
       lockedUntil: 0,
       passwordChangedAt: 0,
       createdAt: nowMs(),
-      isBot: false,
       name,
-      category,
-      avatar: HUMAN_AVATARS[strHash(email) % HUMAN_AVATARS.length],
-      tags: [],
-      bio,
-      interest: "",
-      isNew: true,
-      isPickup: false,
     });
     saveDb(db);
 
@@ -428,167 +348,6 @@ const AuthMockServer = (function () {
     await ensureDb();
     return ok({
       message: "入力されたメールアドレス宛に、再設定のご案内を送信しました(登録がある場合)。",
-    });
-  }
-
-  // ============================================
-  // ここから いいね・マッチング・メッセージ
-  // ============================================
-
-  function convKey(a, b) { return [a, b].sort().join("__"); }
-  function likeExists(db, from, to) {
-    return db.likes.some((l) => l.from === from && l.to === to);
-  }
-  function isMutual(db, a, b) {
-    return likeExists(db, a, b) && likeExists(db, b, a);
-  }
-
-  // 一覧表示用のメンバー情報(パスワード関連・メールは含めない)
-  function toMemberView(db, me, u) {
-    const likeFromU = db.likes.find((l) => l.from === u.userId && l.to === me.userId);
-    return {
-      likesMeAt: likeFromU ? likeFromU.at : 0,
-      userId: u.userId,
-      name: u.name || "会員",
-      company: u.company || "",
-      category: u.category || "会員",
-      avatar: u.avatar || "🙂",
-      tags: u.tags || [],
-      bio: u.bio || "",
-      interest: u.interest || "",
-      isNew: !!u.isNew,
-      isPickup: !!u.isPickup,
-      isBot: !!u.isBot,
-      createdAt: u.createdAt || 0,
-      likedByMe: likeExists(db, me.userId, u.userId),
-      likesMe: likeExists(db, u.userId, me.userId),
-      matched: isMutual(db, me.userId, u.userId),
-    };
-  }
-
-  // ---------- listMembers(要ログイン) ----------
-  async function listMembers(body) {
-    const db = await ensureDb();
-    const me = authUser(db, body.sessionToken);
-    if (!me) return fail("SESSION_INVALID");
-    return ok({
-      members: db.users
-        .filter((u) => u.userId !== me.userId)
-        .map((u) => toMemberView(db, me, u)),
-    });
-  }
-
-  // ---------- sendLike(いいねのトグル) ----------
-  async function sendLike(body) {
-    const db = await ensureDb();
-    const me = authUser(db, body.sessionToken);
-    if (!me) return fail("SESSION_INVALID");
-    const target = db.users.find((u) => u.userId === String(body.toUserId || ""));
-    if (!target || target.userId === me.userId) return fail("INVALID_REQUEST");
-
-    const idx = db.likes.findIndex((l) => l.from === me.userId && l.to === target.userId);
-    let liked;
-    if (idx >= 0) {
-      db.likes.splice(idx, 1);
-      liked = false;
-    } else {
-      db.likes.push({ from: me.userId, to: target.userId, at: nowMs() });
-      liked = true;
-      // デモ: 一部のサンプルメンバーはいいねを返してくれる
-      if (target.isBot && AUTO_LIKE_BOT_IDS.has(target.botId) && !likeExists(db, target.userId, me.userId)) {
-        db.likes.push({ from: target.userId, to: me.userId, at: nowMs() });
-      }
-    }
-    saveDb(db);
-    return ok({ liked, matched: isMutual(db, me.userId, target.userId) });
-  }
-
-  // ---------- getMatches(マッチ済み相手と未読数) ----------
-  async function getMatches(body) {
-    const db = await ensureDb();
-    const me = authUser(db, body.sessionToken);
-    if (!me) return fail("SESSION_INVALID");
-    const matches = db.users
-      .filter((u) => u.userId !== me.userId && isMutual(db, me.userId, u.userId))
-      .map((u) => {
-        const conv = db.messages[convKey(me.userId, u.userId)] || [];
-        const last = conv[conv.length - 1] || null;
-        return Object.assign(toMemberView(db, me, u), {
-          lastMessage: last
-            ? { text: last.text, stamp: !!last.stamp, at: last.at, mine: last.from === me.userId }
-            : null,
-          unreadCount: conv.filter((msg) => msg.from !== me.userId && !msg.read).length,
-        });
-      });
-    return ok({ matches });
-  }
-
-  // サンプルメンバーの自動返信(最後の発言が相手からで1.2秒以上経過していたら返す)
-  function maybeBotReply(db, conv, bot) {
-    if (!conv.length) return false;
-    const last = conv[conv.length - 1];
-    if (last.from === bot.userId) return false;
-    if (nowMs() - last.at < 1200) return false;
-    const replyCount = conv.filter((m) => m.from === bot.userId).length;
-    const reply = AUTO_REPLIES[replyCount % AUTO_REPLIES.length];
-    conv.push({ from: bot.userId, text: reply.text, stamp: !!reply.stamp, at: nowMs(), read: false });
-    conv.forEach((m) => { if (m.from !== bot.userId) m.read = true; });
-    return true;
-  }
-
-  // ---------- sendMessage(マッチング相手のみ) ----------
-  async function sendMessage(body) {
-    const db = await ensureDb();
-    const me = authUser(db, body.sessionToken);
-    if (!me) return fail("SESSION_INVALID");
-    const target = db.users.find((u) => u.userId === String(body.toUserId || ""));
-    const text = String(body.text || "").trim().slice(0, 2000);
-    if (!target || target.userId === me.userId || !text) return fail("INVALID_REQUEST");
-    // アクセス制御: マッチング(相互いいね)済みの相手以外には送信できない
-    if (!isMutual(db, me.userId, target.userId)) return fail("FORBIDDEN");
-
-    const key = convKey(me.userId, target.userId);
-    if (!db.messages[key]) db.messages[key] = [];
-    db.messages[key].push({
-      from: me.userId,
-      text,
-      stamp: body.stamp === true,
-      at: nowMs(),
-      read: false,
-    });
-    saveDb(db);
-    return ok({});
-  }
-
-  // ---------- getMessages(マッチング相手のみ・取得時に既読化) ----------
-  async function getMessages(body) {
-    const db = await ensureDb();
-    const me = authUser(db, body.sessionToken);
-    if (!me) return fail("SESSION_INVALID");
-    const target = db.users.find((u) => u.userId === String(body.toUserId || ""));
-    if (!target || target.userId === me.userId) return fail("INVALID_REQUEST");
-    // アクセス制御: マッチング相手以外の会話は閲覧できない
-    if (!isMutual(db, me.userId, target.userId)) return fail("FORBIDDEN");
-
-    const key = convKey(me.userId, target.userId);
-    const conv = db.messages[key] || (db.messages[key] = []);
-
-    let changed = false;
-    if (target.isBot) changed = maybeBotReply(db, conv, target) || changed;
-    // 自分宛のメッセージを既読化(相手側には「既読」として反映される)
-    conv.forEach((msg) => {
-      if (msg.from !== me.userId && !msg.read) { msg.read = true; changed = true; }
-    });
-    if (changed) saveDb(db);
-
-    return ok({
-      messages: conv.map((msg) => ({
-        mine: msg.from === me.userId,
-        text: msg.text,
-        stamp: !!msg.stamp,
-        at: msg.at,
-        read: !!msg.read,
-      })),
     });
   }
 
@@ -703,10 +462,88 @@ const AuthMockServer = (function () {
     return ok({ count: members.length });
   }
 
+  // ============================================
+  // 紹介の記録(会員が自分の名義でのみ追加・取り消しできる)
+  // ============================================
+
+  function displayName(u) {
+    return u.name || "会員";
+  }
+
+  async function recordReferral(body) {
+    const db = await ensureDb();
+    const me = authUser(db, body.sessionToken);
+    if (!me) return fail("SESSION_INVALID");
+    const memberId = cleanStr(body.toMemberId, 40);
+    const member = (db.referralMembers || []).find((m) => m.id === memberId);
+    if (!member) return fail("INVALID_REQUEST");
+    const log = {
+      id: "r_" + randomSalt().slice(0, 12),
+      fromUserId: me.userId,
+      toMemberId: member.id,
+      prospect: cleanStr(body.prospect, 60),
+      topics: cleanList(body.topics, idsOf(typeof TOPICS === "undefined" ? undefined : TOPICS), 10),
+      at: nowMs(),
+    };
+    db.referralLogs.push(log);
+    saveDb(db);
+    return ok({ log });
+  }
+
+  async function deleteReferral(body) {
+    const db = await ensureDb();
+    const me = authUser(db, body.sessionToken);
+    if (!me) return fail("SESSION_INVALID");
+    const id = cleanStr(body.id, 40);
+    const log = db.referralLogs.find((l) => l.id === id);
+    if (!log || log.fromUserId !== me.userId) return fail("INVALID_REQUEST");
+    db.referralLogs = db.referralLogs.filter((l) => l.id !== id);
+    saveDb(db);
+    return ok({});
+  }
+
+  async function getReferralStats(body) {
+    const db = await ensureDb();
+    const me = authUser(db, body.sessionToken);
+    if (!me) return fail("SESSION_INVALID");
+    const logs = db.referralLogs;
+    const monthStart = new Date();
+    monthStart.setDate(1);
+    monthStart.setHours(0, 0, 0, 0);
+
+    const received = {};
+    const byGiver = {};
+    logs.forEach((l) => {
+      received[l.toMemberId] = (received[l.toMemberId] || 0) + 1;
+      byGiver[l.fromUserId] = (byGiver[l.fromUserId] || 0) + 1;
+    });
+    const ranking = Object.entries(byGiver)
+      .map(([userId, count]) => {
+        const u = db.users.find((x) => x.userId === userId);
+        return { name: u ? displayName(u) : "退会した会員", count, isMe: userId === me.userId };
+      })
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+    const memberName = (id) => ((db.referralMembers || []).find((m) => m.id === id) || {}).name || "(削除されたメンバー)";
+    const mine = logs.filter((l) => l.fromUserId === me.userId);
+
+    return ok({
+      myCount: mine.length,
+      totalCount: logs.length,
+      monthCount: logs.filter((l) => l.at >= monthStart.getTime()).length,
+      received,
+      ranking,
+      myRecent: mine
+        .slice(-5)
+        .reverse()
+        .map((l) => ({ id: l.id, toName: memberName(l.toMemberId), prospect: l.prospect, at: l.at })),
+    });
+  }
+
   const ACTIONS = {
     login, verifySession, logout, register, requestPasswordReset,
-    listMembers, sendLike, getMatches, sendMessage, getMessages,
     listReferralMembers, adminSaveReferralMember, adminDeleteReferralMember, adminImportReferralMembers,
+    recordReferral, deleteReferral, getReferralStats,
   };
 
   async function handle(body) {

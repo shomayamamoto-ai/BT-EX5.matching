@@ -707,3 +707,136 @@ a:hover > .brand-mark { transform: rotate(-10deg) scale(1.06); }
   .brand-mark { width: 34px; height: 34px; }
   .brand-name { font-size: 19px; }
 }
+
+/* ============================================
+   紹介の実績・記録
+   ============================================ */
+.ref-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 18px;
+}
+.ref-stat {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.ref-stat.is-mine { background: linear-gradient(140deg, #fff1e9, #fff8ef); border-color: #f6d5c0; }
+.ref-stat-label { font-size: 12px; font-weight: 700; color: var(--text-sub); }
+.ref-stat-num { font-size: 13px; color: var(--text-sub); }
+.ref-stat-num strong {
+  font-family: "Inter", sans-serif;
+  font-size: 28px;
+  font-weight: 800;
+  line-height: 1.1;
+  margin-right: 2px;
+  background: var(--grad);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: var(--accent);
+}
+.ref-ranking {
+  grid-column: 1 / -1;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 12px 14px;
+}
+.ref-ranking ol { list-style: none; display: flex; flex-direction: column; gap: 4px; margin-top: 6px; }
+.ref-ranking li { display: flex; align-items: center; gap: 10px; font-size: 14px; }
+.ref-ranking li.is-me { font-weight: 800; color: var(--accent-dark); }
+.rank-pos {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--tokyo-bg);
+  color: var(--accent-dark);
+  font-size: 12px;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.ref-ranking li:first-child .rank-pos { background: var(--grad); color: #fff; }
+.rank-who { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.rank-count { font-weight: 700; color: var(--text); }
+.ref-ranking-empty { color: var(--text-light); font-size: 13px !important; }
+.ref-mylog {
+  grid-column: 1 / -1;
+  font-size: 13.5px;
+  color: var(--text-sub);
+}
+.ref-mylog summary { cursor: pointer; font-weight: 700; padding: 2px 0; }
+.ref-mylog ul { list-style: none; margin-top: 6px; display: flex; flex-direction: column; gap: 4px; }
+.ref-mylog li { display: flex; justify-content: space-between; gap: 10px; background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 6px 10px; }
+.ref-log-undo { border: none; background: none; color: var(--text-light); font-size: 12px; text-decoration: underline; cursor: pointer; flex-shrink: 0; }
+.ref-log-undo:hover { color: var(--accent); }
+
+.ref-received { font-size: 13px; color: var(--accent-dark); margin-top: 8px; }
+.ref-received strong { font-size: 16px; }
+.ref-btn.record { border-color: var(--amber); color: #b9661a; }
+.ref-btn.record:hover { background: #fff7ea; }
+
+@media (min-width: 960px) {
+  .ref-stats { grid-template-columns: 1fr 1fr 1fr 1.6fr; }
+  .ref-ranking { grid-column: auto; grid-row: span 2; }
+  .ref-mylog { grid-column: 1 / 4; }
+}
+@media (max-width: 480px) {
+  .ref-stats { grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
+  .ref-stat { padding: 10px; }
+  .ref-stat-label { font-size: 10.5px; }
+  .ref-stat-num strong { font-size: 22px; }
+}
+
+/* 記録ダイアログ */
+.rec-overlay { align-items: center; }
+.rec-dialog {
+  position: relative;
+  width: 100%;
+  max-width: 440px;
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 24px 22px;
+  box-shadow: 0 20px 50px rgba(42, 23, 18, 0.25);
+}
+.rec-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid var(--line-strong);
+  background: #fff;
+  color: var(--text-sub);
+  font-size: 19px;
+  line-height: 1;
+  cursor: pointer;
+}
+.rec-title { font-size: 19px; font-weight: 900; margin-bottom: 4px; }
+.rec-lead { font-size: 14.5px; margin-bottom: 14px; padding-right: 30px; }
+.rec-field { display: block; font-size: 13px; font-weight: 700; color: var(--text-sub); margin-bottom: 4px; }
+#recProspect {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+  background: #fdf8f4;
+  font-family: inherit;
+  font-size: 15px;
+  color: var(--text);
+}
+#recProspect:focus { outline: none; border-color: var(--accent); background: #fff; }
+.rec-note { font-size: 12.5px; color: var(--text-light); margin: 8px 0 16px; }
+.rec-actions { display: flex; justify-content: flex-end; gap: 10px; }
+
+.ref-footer-nav { display: flex; justify-content: center; gap: 16px; margin-bottom: 6px; }
+.ref-footer-nav a { margin: 0; }

@@ -16,14 +16,14 @@
 
   <header class="ref-header">
     <div class="ref-header-inner">
-      <a href="../" class="ref-logo">
+      <a href="./" class="ref-logo">
         <img class="brand-mark" src="../assets/bt-ex5-mark.svg" alt="" width="40" height="40">
         <span class="brand-word"><span class="brand-name">BT-<em>EX5</em></span><span class="brand-sub">新潟・東京 紹介者制コミュニティ</span></span>
       </a>
       <nav class="ref-header-nav">
         <button type="button" class="ref-header-cta" data-open-diag>紹介診断</button>
         <a href="../admin/" class="ref-header-link" id="adminLink" hidden>名簿の管理</a>
-        <a href="../" class="ref-header-link">アプリへ戻る</a>
+        <a href="../portal/" class="ref-header-link">マイページ</a>
       </nav>
     </div>
   </header>
@@ -36,6 +36,30 @@
       <h1 class="ref-title">紹介先早見表</h1>
       <p class="ref-lead">会話の中で「こんな話が出たら、この人へ」をすぐ探せる一覧です。キーワード検索・業種・エリアで絞り込めます。</p>
       <p class="ref-notice" id="pendingNotice"></p>
+    </section>
+
+    <!-- 紹介の実績 -->
+    <section class="ref-stats" aria-label="紹介の実績">
+      <div class="ref-stat is-mine">
+        <span class="ref-stat-label">あなたの紹介</span>
+        <span class="ref-stat-num"><strong id="statMine">0</strong>件</span>
+      </div>
+      <div class="ref-stat">
+        <span class="ref-stat-label">今月のコミュニティ全体</span>
+        <span class="ref-stat-num"><strong id="statMonth">0</strong>件</span>
+      </div>
+      <div class="ref-stat">
+        <span class="ref-stat-label">これまでの合計</span>
+        <span class="ref-stat-num"><strong id="statTotal">0</strong>件</span>
+      </div>
+      <div class="ref-ranking">
+        <p class="ref-stat-label">紹介貢献ランキング</p>
+        <ol id="rankingList"></ol>
+      </div>
+      <details class="ref-mylog">
+        <summary>あなたの最近の紹介記録</summary>
+        <ul id="myLog"></ul>
+      </details>
     </section>
 
     <!-- 絞り込み -->
@@ -71,7 +95,7 @@
   </main>
 
   <footer class="ref-footer">
-    <a href="../">交流会マッチングへ戻る</a>
+    <nav class="ref-footer-nav"><a href="../terms/">利用規約</a><a href="../privacy/">プライバシーポリシー</a></nav>
     <p>© 2026 BT-EX5</p>
   </footer>
 
@@ -114,6 +138,24 @@
             </div>
           </div>
         </section>
+    </div>
+  </div>
+
+  <!-- 紹介の記録 -->
+  <div class="diag-overlay rec-overlay" id="recOverlay" hidden>
+    <div class="rec-dialog" role="dialog" aria-modal="true" aria-labelledby="recTitle">
+      <button type="button" class="rec-close" id="recClose" aria-label="閉じる">×</button>
+      <h2 class="rec-title" id="recTitle">紹介を記録</h2>
+      <p class="rec-lead" id="recLead"></p>
+      <form id="recForm" novalidate>
+        <label class="rec-field" for="recProspect">紹介した相手(任意)</label>
+        <input type="text" id="recProspect" maxlength="60" autocomplete="off">
+        <p class="rec-note">記録はコミュニティの紹介数と、あなたの紹介実績として集計されます。</p>
+        <div class="rec-actions">
+          <button type="button" class="ref-btn ghost" id="recCancel">キャンセル</button>
+          <button type="submit" class="ref-diag-btn">記録する</button>
+        </div>
+      </form>
     </div>
   </div>
 

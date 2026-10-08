@@ -19,7 +19,7 @@ const AuthApi = (function () {
   const KNOWN_CODES = new Set([
     "AUTH_FAILED", "LOCKED", "SESSION_INVALID",
     "INVALID_REQUEST", "INVALID_ACTION", "RATE_LIMITED", "SERVER_ERROR",
-    "WEAK_PASSWORD", "REGISTER_FAILED", "FORBIDDEN", "FORBIDDEN_ADMIN",
+    "WEAK_PASSWORD", "REGISTER_FAILED", "FORBIDDEN_ADMIN",
   ]);
 
   // §5.6 フォールバック: message 欠落・未知コード → NETWORK_MESSAGE
@@ -78,25 +78,8 @@ const AuthApi = (function () {
   function requestPasswordReset(email) {
     return post("requestPasswordReset", { email });
   }
-  function register(name, email, password, category, bio) {
-    return post("register", { name, email, password, category, bio });
-  }
-
-  // ---------- 会員・いいね・メッセージ(要ログイン) ----------
-  function listMembers(sessionToken) {
-    return post("listMembers", { sessionToken });
-  }
-  function sendLike(sessionToken, toUserId) {
-    return post("sendLike", { sessionToken, toUserId });
-  }
-  function getMatches(sessionToken) {
-    return post("getMatches", { sessionToken });
-  }
-  function sendMessage(sessionToken, toUserId, text, stamp) {
-    return post("sendMessage", { sessionToken, toUserId, text, stamp: stamp === true });
-  }
-  function getMessages(sessionToken, toUserId) {
-    return post("getMessages", { sessionToken, toUserId });
+  function register(name, email, password) {
+    return post("register", { name, email, password });
   }
 
   // ---------- 紹介先早見表の名簿(追加・編集・削除は管理者のみ) ----------
@@ -113,10 +96,21 @@ const AuthApi = (function () {
     return post("adminImportReferralMembers", { sessionToken, members });
   }
 
+  // ---------- 紹介の記録 ----------
+  function recordReferral(sessionToken, toMemberId, prospect, topics) {
+    return post("recordReferral", { sessionToken, toMemberId, prospect, topics });
+  }
+  function deleteReferral(sessionToken, id) {
+    return post("deleteReferral", { sessionToken, id });
+  }
+  function getReferralStats(sessionToken) {
+    return post("getReferralStats", { sessionToken });
+  }
+
   return {
     login, verifySession, logout, requestPasswordReset, register,
-    listMembers, sendLike, getMatches, sendMessage, getMessages,
     listReferralMembers, adminSaveReferralMember, adminDeleteReferralMember, adminImportReferralMembers,
+    recordReferral, deleteReferral, getReferralStats,
     NETWORK_MESSAGE,
   };
 })();

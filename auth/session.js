@@ -17,8 +17,9 @@ const AuthSession = (function () {
   // ログイン直後に外部サイトへ遷移させるオープンリダイレクトを構造的に排除する。
   // 保護対象画面が3つを超えたため、§6 の将来拡張どおり ALLOWED_NEXT は
   // 画面定義(SCREENS)から導出する。画面の追加はここに1行足すだけでよい
+  // home(サイトの入口)は紹介先早見表
   const SCREENS = {
-    home: "../",
+    home: "../referral/",
     portal: "../portal/",
     referral: "../referral/",
     admin: "../admin/",

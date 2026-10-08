@@ -25,6 +25,8 @@
   let scores = null;       // { [memberId]: { score, reasons, topicHits, keywordHits } }
   let sortByScore = false;
   let members = [];        // サーバーから取得した名簿
+  let stats = null;        // 紹介の実績(サーバー集計)
+  let recordingId = null;  // 記録ダイアログの対象メンバー
 
   // ---------- 一致度の計算 ----------
   // 配点: 話題50 + 業種15 + 相手のタイプ10 + 会い方・エリア25 = 100
@@ -190,6 +192,7 @@
             ${m.team ? `<span class="ref-tag team">${escapeHtml(m.team)}</span>` : ""}
             ${complete ? "" : '<span class="ref-tag pending">準備中</span>'}
           </div>
+          ${stats && stats.received[m.id] ? `<p class="ref-received">受けた紹介 <strong>${stats.received[m.id]}</strong>件</p>` : ""}
         </div>
         <div class="ref-col ref-col-business">
           <p class="ref-label">事業内容</p>
@@ -210,6 +213,7 @@
           <div class="ref-actions">
             <button type="button" class="ref-btn" data-copy="${m.id}">紹介文をコピー</button>
             <button type="button" class="ref-btn line" data-line="${m.id}">LINEで送る</button>
+            <button type="button" class="ref-btn record" data-record="${m.id}">紹介を記録</button>
           </div>
         </div>
       </article>`;
@@ -353,6 +357,7 @@
           <span class="rank-actions">
             <button type="button" class="ref-btn" data-copy="${m.id}">紹介文をコピー</button>
             <button type="button" class="ref-btn line" data-line="${m.id}">LINEで送る</button>
+            <button type="button" class="ref-btn record" data-record="${m.id}">紹介を記録</button>
             <button type="button" class="ref-btn ghost" data-goto="${m.id}">カードを見る</button>
           </span>
         </li>`)
@@ -401,6 +406,69 @@
     setTimeout(() => card.classList.remove("is-highlight"), 2200);
   }
 
+  // ---------- 紹介の実績・記録 ----------
+  function fmtDate(ms) {
+    const d = new Date(ms);
+    return `${d.getMonth() + 1}/${d.getDate()}`;
+  }
+
+  async function loadStats() {
+    const res = await AuthApi.getReferralStats(AuthSession.getToken());
+    if (!res.success) return;
+    stats = res.data;
+    $("#statMine").textContent = stats.myCount;
+    $("#statMonth").textContent = stats.monthCount;
+    $("#statTotal").textContent = stats.totalCount;
+    $("#rankingList").innerHTML = stats.ranking.length
+      ? stats.ranking
+          .map((r, i) => `<li class="${r.isMe ? "is-me" : ""}"><span class="rank-pos">${i + 1}</span><span class="rank-who">${escapeHtml(r.name)}${r.isMe ? "(あなた)" : ""}</span><span class="rank-count">${r.count}件</span></li>`)
+          .join("")
+      : '<li class="ref-ranking-empty">まだ記録がありません。最初の紹介を記録してみましょう。</li>';
+    $("#myLog").innerHTML = stats.myRecent.length
+      ? stats.myRecent
+          .map((l) => `<li><span>${fmtDate(l.at)} ${escapeHtml(l.toName)}さんを紹介${l.prospect ? `(→ ${escapeHtml(l.prospect)})` : ""}</span><button type="button" class="ref-log-undo" data-undo="${escapeHtml(l.id)}">取り消す</button></li>`)
+          .join("")
+      : "<li>まだ記録がありません。</li>";
+  }
+
+  function openRecord(id) {
+    const m = members.find((x) => x.id === id);
+    if (!m) return;
+    recordingId = id;
+    $("#recLead").textContent = `${m.name}さんを紹介したことを記録します。`;
+    $("#recProspect").value = "";
+    $("#recOverlay").hidden = false;
+    document.body.style.overflow = "hidden";
+    $("#recProspect").focus();
+  }
+
+  function closeRecord() {
+    $("#recOverlay").hidden = true;
+    recordingId = null;
+    if ($("#diagOverlay").hidden) document.body.style.overflow = "";
+  }
+
+  $("#recForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    if (!recordingId) return;
+    const m = members.find((x) => x.id === recordingId);
+    const sc = scores && scores[recordingId];
+    const res = await AuthApi.recordReferral(
+      AuthSession.getToken(),
+      recordingId,
+      $("#recProspect").value.trim(),
+      sc ? sc.topicHits : []
+    );
+    closeRecord();
+    if (!res.success) { toast(res.error.userMessage); return; }
+    await loadStats();
+    renderList();
+    toast(`${m.name}さんへの紹介を記録しました。ありがとうございます!`);
+  });
+  $("#recClose").addEventListener("click", closeRecord);
+  $("#recCancel").addEventListener("click", closeRecord);
+  $("#recOverlay").addEventListener("click", (e) => { if (e.target.id === "recOverlay") closeRecord(); });
+
   // ---------- イベント ----------
   document.addEventListener("click", async (e) => {
     const t = e.target;
@@ -418,7 +486,7 @@
     if (copyBtn) {
       const m = members.find((x) => x.id === copyBtn.dataset.copy);
       const ok = await copyText(introText(m));
-      toast(ok ? "紹介文をコピーしました。LINEやメールに貼り付けて送れます" : "コピーできませんでした");
+      toast(ok ? "紹介文をコピーしました。紹介したら「紹介を記録」で実績に残せます" : "コピーできませんでした");
       return;
     }
 
@@ -430,6 +498,20 @@
       return;
     }
 
+    const recBtn = t.closest("[data-record]");
+    if (recBtn) { openRecord(recBtn.dataset.record); return; }
+
+    const undoBtn = t.closest("[data-undo]");
+    if (undoBtn) {
+      if (!confirm("この紹介の記録を取り消しますか?")) return;
+      const res = await AuthApi.deleteReferral(AuthSession.getToken(), undoBtn.dataset.undo);
+      if (!res.success) { toast(res.error.userMessage); return; }
+      await loadStats();
+      renderList();
+      toast("紹介の記録を取り消しました");
+      return;
+    }
+
     const gotoBtn = t.closest("[data-goto]");
     if (gotoBtn) { gotoCard(gotoBtn.dataset.goto); return; }
   });
@@ -437,7 +519,11 @@
   document.querySelectorAll("[data-open-diag]").forEach((b) => b.addEventListener("click", openDiag));
   $("#diagClose").addEventListener("click", closeDiag);
   $("#diagOverlay").addEventListener("click", (e) => { if (e.target.id === "diagOverlay") closeDiag(); });
-  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !$("#diagOverlay").hidden) closeDiag(); });
+  document.addEventListener("keydown", (e) => {
+    if (e.key !== "Escape") return;
+    if (!$("#recOverlay").hidden) closeRecord();
+    else if (!$("#diagOverlay").hidden) closeDiag();
+  });
   $("#diagStart").addEventListener("click", startDiagnosis);
   $("#diagRetry").addEventListener("click", startDiagnosis);
   $("#diagBack").addEventListener("click", () => { if (step > 0) goStep(step - 1); });
@@ -473,6 +559,7 @@
     notice.textContent = COMMUNITY.pendingNote;
     notice.hidden = !members.some((m) => !isProfileComplete(m));
     $("#adminLink").hidden = !session.user.isAdmin;
+    await loadStats();
     renderChips();
     renderList();
     document.documentElement.classList.remove("guard-pending");

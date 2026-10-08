@@ -20,7 +20,7 @@
       </a>
 
       <h1>無料会員登録</h1>
-      <p class="auth-lead">登録するとすぐにメンバー検索・マッチングをご利用いただけます。</p>
+      <p class="auth-lead">登録すると、紹介先早見表と紹介診断をご利用いただけます。</p>
 
       <form id="register-form" novalidate>
         <div class="auth-field">
@@ -38,24 +38,6 @@
             <button type="button" id="password-toggle" class="password-toggle" aria-pressed="false" aria-label="パスワードを表示">表示</button>
           </div>
         </div>
-        <div class="auth-field">
-          <label for="register-category">業種</label>
-          <select id="register-category" name="category">
-            <option value="経営者">経営者</option>
-            <option value="エンジニア">エンジニア</option>
-            <option value="クリエイター">クリエイター</option>
-            <option value="マーケター">マーケター</option>
-            <option value="飲食">飲食</option>
-            <option value="美容・健康">美容・健康</option>
-            <option value="士業・コンサル">士業・コンサル</option>
-            <option value="不動産・金融">不動産・金融</option>
-          </select>
-        </div>
-        <div class="auth-field">
-          <label for="register-bio">ひとことアピール(任意)</label>
-          <textarea id="register-bio" name="bio" rows="2"></textarea>
-        </div>
-
         <button type="submit" id="register-submit" class="auth-submit" aria-busy="false">登録してはじめる</button>
         <div id="register-message" class="auth-message"></div>
       </form>
