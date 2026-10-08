@@ -69,7 +69,7 @@ index.html            … 紹介先早見表へ移動する入口
 referral/             … 紹介先早見表・紹介診断(data.js に初期名簿と診断の選択肢)
 admin/                … 名簿の管理(管理者のみ)
 profile/              … 自分の情報を編集(会員本人)
-login/  portal/  terms/  privacy/ … ログイン(パスコード)・マイページ・規約
+login/  portal/  terms/ … ログイン(パスコード)・マイページ・利用規約
 auth/                 … 認証共通層(api / session / ui / 各画面ロジック)
   server-core.js      … サーバー側の判定(お試し版と共有サーバーで共通)
   mock-server.js      … お試し版の保存先(localStorage)
