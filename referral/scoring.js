@@ -12,7 +12,8 @@ const RefScoring = (function () {
   // 配点: 話題50 + 業種15 + 相手のタイプ10 + 会い方・エリア25 = 100
   //   話題50 = 選んだ話題をどれだけ扱えるか42 + その話題がその人の本業に近いか8
   //   (扱う話題が少ない専門の人ほど高い。何でも扱う人ばかりが上に来ないようにする)
-  // キーワード一致で+10(上限100)。話題もキーワードも一致しない人は30%で頭打ち。
+  // キーワード一致で+15(上限100。入力した言葉が本人の説明に含まれるのは最も具体的な一致なので、
+  // 活動範囲の入力の有無より重くする)。話題もキーワードも一致しない人は30%で頭打ち。
   // 未入力の項目は中立の点数(活動範囲は25点中15点)にして、入力済みの人だけが
   // 大きく有利にならないようにする
   function keywordTokens(text) {
@@ -73,7 +74,7 @@ const RefScoring = (function () {
     const hay = haystack(m);
     const keywordHits = keywordTokens(a.keyword).filter((t) => hay.includes(t));
     if (keywordHits.length) {
-      s += 10;
+      s += 15;
       keywordHits.forEach((t) => reasons.push(`「${t}」がキーワードに一致`));
     }
 
