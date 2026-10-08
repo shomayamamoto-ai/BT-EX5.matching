@@ -21,7 +21,7 @@
         <span class="ref-logo-text">交流会マッチング</span>
       </a>
       <nav class="ref-header-nav">
-        <a href="#diagnosis" class="ref-header-cta">紹介診断</a>
+        <button type="button" class="ref-header-cta" data-open-diag>紹介診断</button>
         <a href="../" class="ref-header-link">アプリへ戻る</a>
       </nav>
     </div>
@@ -37,43 +37,6 @@
       <p class="ref-notice" id="sampleNotice"></p>
     </section>
 
-    <!-- 紹介診断 -->
-    <section class="diag" id="diagnosis" aria-labelledby="diagTitle">
-      <div class="diag-intro" id="diagIntro">
-        <p class="diag-eyebrow">MATCH CHECK</p>
-        <h2 class="diag-title" id="diagTitle">誰に紹介すればいい?</h2>
-        <p class="diag-lead">会話で出た話について5つの質問に答えるだけで、メンバーごとの一致度(マッチ率)を計算します。</p>
-        <button type="button" class="diag-start" id="diagStart">紹介診断をはじめる</button>
-      </div>
-
-      <div class="diag-wizard" id="diagWizard" hidden>
-        <div class="diag-progress" aria-hidden="true"><span id="diagProgressBar"></span></div>
-        <p class="diag-step" id="diagStepLabel"></p>
-        <h2 class="diag-question" id="diagQuestion" tabindex="-1"></h2>
-        <p class="diag-hint" id="diagHint"></p>
-        <div class="diag-options" id="diagOptions"></div>
-        <div class="diag-keyword" id="diagKeywordWrap" hidden>
-          <label for="diagKeyword">気になった言葉があれば(任意)</label>
-          <input type="text" id="diagKeyword" autocomplete="off">
-        </div>
-        <div class="diag-nav">
-          <button type="button" class="diag-back" id="diagBack">戻る</button>
-          <button type="button" class="diag-next" id="diagNext">次へ</button>
-        </div>
-      </div>
-
-      <div class="diag-results" id="diagResults" hidden>
-        <p class="diag-eyebrow">RESULT</p>
-        <h2 class="diag-title">紹介先の候補</h2>
-        <div class="diag-summary" id="diagSummary"></div>
-        <ol class="diag-ranking" id="diagRanking"></ol>
-        <div class="diag-result-actions">
-          <button type="button" class="diag-sort" id="diagSortList">一覧を一致度順に表示</button>
-          <button type="button" class="diag-retry" id="diagRetry">もう一度診断する</button>
-        </div>
-      </div>
-    </section>
-
     <!-- 絞り込み -->
     <section class="ref-filter" aria-label="絞り込み">
       <label class="visually-hidden" for="refSearch">キーワード検索</label>
@@ -85,7 +48,10 @@
       <p class="ref-filter-label">対応エリア</p>
       <div class="ref-chips" id="areaChips"></div>
 
-      <p class="ref-count"><strong id="countShown">0</strong> / <span id="countTotal">0</span>名を表示</p>
+      <div class="ref-count-row">
+        <p class="ref-count"><strong id="countShown">0</strong> / <span id="countTotal">0</span>名を表示</p>
+        <button type="button" class="ref-diag-btn" data-open-diag>誰に紹介する?紹介診断で探す</button>
+      </div>
     </section>
 
     <div class="ref-sorted-banner" id="sortedBanner" hidden>
@@ -94,6 +60,12 @@
     </div>
 
     <!-- 一覧 -->
+    <div class="ref-list-head" aria-hidden="true">
+      <span>メンバー</span>
+      <span>事業内容</span>
+      <span>求める紹介 ／ こんな話が出たら</span>
+      <span>活動範囲</span>
+    </div>
     <section class="ref-list" id="refList" aria-live="polite"></section>
   </main>
 
@@ -101,6 +73,48 @@
     <a href="../">交流会マッチングへ戻る</a>
     <p>© 2026 交流会マッチング</p>
   </footer>
+
+  <!-- 紹介診断(ポップアップ) -->
+  <div class="diag-overlay" id="diagOverlay" hidden>
+    <div class="diag-dialog" role="dialog" aria-modal="true" aria-labelledby="diagTitle">
+      <button type="button" class="diag-close" id="diagClose" aria-label="閉じる">×</button>
+        <section class="diag" id="diagnosis" aria-labelledby="diagTitle">
+          <div class="diag-intro" id="diagIntro" hidden>
+            <p class="diag-eyebrow">MATCH CHECK</p>
+            <h2 class="diag-title" id="diagTitle">誰に紹介すればいい?</h2>
+            <p class="diag-lead">会話で出た話について5つの質問に答えるだけで、メンバーごとの一致度(マッチ率)を計算します。</p>
+            <button type="button" class="diag-start" id="diagStart">紹介診断をはじめる</button>
+          </div>
+
+          <div class="diag-wizard" id="diagWizard" hidden>
+            <div class="diag-progress" aria-hidden="true"><span id="diagProgressBar"></span></div>
+            <p class="diag-step" id="diagStepLabel"></p>
+            <h2 class="diag-question" id="diagQuestion" tabindex="-1"></h2>
+            <p class="diag-hint" id="diagHint"></p>
+            <div class="diag-options" id="diagOptions"></div>
+            <div class="diag-keyword" id="diagKeywordWrap" hidden>
+              <label for="diagKeyword">気になった言葉があれば(任意)</label>
+              <input type="text" id="diagKeyword" autocomplete="off">
+            </div>
+            <div class="diag-nav">
+              <button type="button" class="diag-back" id="diagBack">戻る</button>
+              <button type="button" class="diag-next" id="diagNext">次へ</button>
+            </div>
+          </div>
+
+          <div class="diag-results" id="diagResults" hidden>
+            <p class="diag-eyebrow">RESULT</p>
+            <h2 class="diag-title">紹介先の候補</h2>
+            <div class="diag-summary" id="diagSummary"></div>
+            <ol class="diag-ranking" id="diagRanking"></ol>
+            <div class="diag-result-actions">
+              <button type="button" class="diag-sort" id="diagSortList">一覧を一致度順に表示</button>
+              <button type="button" class="diag-retry" id="diagRetry">もう一度診断する</button>
+            </div>
+          </div>
+        </section>
+    </div>
+  </div>
 
   <div class="ref-toast" id="refToast" role="status" hidden></div>
 

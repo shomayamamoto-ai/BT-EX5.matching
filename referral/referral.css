@@ -539,3 +539,119 @@ button { font-family: inherit; }
 
 /* 追従ヘッダーの下にスクロール位置を合わせる */
 .diag, .ref-sorted-banner { scroll-margin-top: 70px; }
+
+/* ============================================
+   PC表示: 横幅いっぱいの表形式レイアウト
+   ============================================ */
+.ref-header-inner,
+.ref-main { max-width: 1240px; }
+
+.ref-header-cta { border: none; cursor: pointer; }
+
+.ref-lead { max-width: 52em; }
+.ref-notice { display: inline-block; }
+
+.ref-count-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.ref-diag-btn {
+  border: none;
+  background: var(--grad);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 9px 18px;
+  border-radius: 999px;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(244, 105, 75, 0.3);
+  transition: filter 0.15s, transform 0.15s;
+}
+.ref-diag-btn:hover { filter: brightness(1.07); transform: translateY(-1px); }
+.ref-diag-btn:active { transform: scale(0.97); }
+
+.ref-list-head { display: none; }
+
+.ref-card-head { margin-bottom: 0; }
+
+@media (min-width: 960px) {
+  .ref-main { padding-left: 24px; padding-right: 24px; }
+  .ref-filter { padding: 26px 28px; margin-bottom: 26px; }
+
+  .ref-list-head,
+  .ref-card {
+    display: grid;
+    grid-template-columns: 1.05fr 1.15fr 1.4fr 0.9fr;
+    column-gap: 36px;
+  }
+  .ref-list-head {
+    padding: 0 30px 10px;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-sub);
+  }
+  .ref-card { padding: 28px 30px; align-items: start; }
+  .ref-card.is-real { border-width: 1.5px; border-left-width: 6px; }
+
+  /* 見出し行があるので各列の見出しは隠す */
+  .ref-col .ref-label { display: none; }
+
+  .ref-col-member .ref-tags {
+    flex-direction: column;
+    align-items: flex-start;
+    margin-bottom: 0;
+  }
+  .ref-name { font-size: 22px; }
+  .ref-company { margin-bottom: 12px; }
+  .ref-business { font-size: 15.5px; line-height: 1.85; }
+  .ref-wants { font-size: 16px; }
+  .ref-col-wants .ref-triggers { margin-bottom: 0; }
+  .ref-range { margin-bottom: 14px; }
+  .ref-actions { flex-direction: column; align-items: flex-start; }
+}
+
+/* ============================================
+   紹介診断ポップアップ
+   ============================================ */
+.diag-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  background: rgba(42, 23, 18, 0.55);
+  backdrop-filter: blur(3px);
+  overflow-y: auto;
+  padding: 24px 12px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+.diag-overlay[hidden] { display: none; }
+.diag-dialog {
+  position: relative;
+  width: 100%;
+  max-width: 680px;
+  margin: auto 0;
+}
+.diag-dialog .diag { margin-bottom: 0; }
+.diag-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 2;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+}
+.diag-close:hover { background: rgba(255, 255, 255, 0.22); }
+.diag-step { padding-right: 44px; }
+.diag-next { margin-left: auto; }
+.diag-dialog .diag-progress { margin-right: 46px; }

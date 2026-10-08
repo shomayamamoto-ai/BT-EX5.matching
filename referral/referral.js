@@ -170,32 +170,40 @@
 
     return `
       <article class="ref-card${m.sample ? "" : " is-real"}" id="member-${m.id}">
-        <div class="ref-card-head">
-          <div>
-            <h3 class="ref-name">${escapeHtml(m.name)}</h3>
-            <p class="ref-company">${escapeHtml(m.company)}</p>
+        <div class="ref-col ref-col-member">
+          <div class="ref-card-head">
+            <div>
+              <h3 class="ref-name">${escapeHtml(m.name)}</h3>
+              <p class="ref-company">${escapeHtml(m.company)}</p>
+            </div>
+            ${sc ? `<div class="ref-match"><strong>${sc.score}%</strong><small>一致度</small></div>` : ""}
           </div>
-          ${sc ? `<div class="ref-match"><strong>${sc.score}%</strong><small>一致度</small></div>` : ""}
+          <div class="ref-tags">
+            <span class="ref-tag ${m.base === "新潟" ? "base-niigata" : "base-tokyo"}">${escapeHtml(m.base)}拠点</span>
+            <span class="ref-tag">${escapeHtml(m.category)}</span>
+            ${m.sample ? '<span class="ref-tag sample">サンプル</span>' : ""}
+          </div>
         </div>
-        <div class="ref-tags">
-          <span class="ref-tag ${m.base === "新潟" ? "base-niigata" : "base-tokyo"}">${escapeHtml(m.base)}拠点</span>
-          <span class="ref-tag">${escapeHtml(m.category)}</span>
-          ${m.sample ? '<span class="ref-tag sample">サンプル</span>' : ""}
+        <div class="ref-col ref-col-business">
+          <p class="ref-label">事業内容</p>
+          <p class="ref-business">${escapeHtml(m.business)}</p>
+          ${m.note ? `<p class="ref-note">${escapeHtml(m.note)}</p>` : ""}
         </div>
-        <p class="ref-label">事業内容</p>
-        <p class="ref-business">${escapeHtml(m.business)}</p>
-        ${m.note ? `<p class="ref-note">${escapeHtml(m.note)}</p>` : ""}
-        <p class="ref-label">求める紹介</p>
-        <p class="ref-wants">${escapeHtml(m.wants)}</p>
-        <div class="ref-triggers">${triggerHtml}</div>
-        <p class="ref-label">活動範囲</p>
-        <dl class="ref-range">
-          <dt>対面</dt><dd>${escapeHtml(m.face)}</dd>
-          <dt>オンライン</dt><dd class="${onlineClass}">${escapeHtml(ONLINE_LABELS[m.online])}</dd>
-        </dl>
-        <div class="ref-actions">
-          <button type="button" class="ref-btn" data-copy="${m.id}">紹介文をコピー</button>
-          <button type="button" class="ref-btn line" data-line="${m.id}">LINEで送る</button>
+        <div class="ref-col ref-col-wants">
+          <p class="ref-label">求める紹介</p>
+          <p class="ref-wants">${escapeHtml(m.wants)}</p>
+          <div class="ref-triggers">${triggerHtml}</div>
+        </div>
+        <div class="ref-col ref-col-range">
+          <p class="ref-label">活動範囲</p>
+          <dl class="ref-range">
+            <dt>対面</dt><dd>${escapeHtml(m.face)}</dd>
+            <dt>オンライン</dt><dd class="${onlineClass}">${escapeHtml(ONLINE_LABELS[m.online])}</dd>
+          </dl>
+          <div class="ref-actions">
+            <button type="button" class="ref-btn" data-copy="${m.id}">紹介文をコピー</button>
+            <button type="button" class="ref-btn line" data-line="${m.id}">LINEで送る</button>
+          </div>
         </div>
       </article>`;
   }
@@ -271,6 +279,28 @@
     $("#diagQuestion").focus({ preventScroll: true });
   }
 
+  function openDiag() {
+    $("#diagOverlay").hidden = false;
+    document.body.style.overflow = "hidden";
+    if (scores) {
+      $("#diagIntro").hidden = true;
+      $("#diagWizard").hidden = true;
+      $("#diagResults").hidden = false;
+      $("#diagResults .diag-title").focus({ preventScroll: true });
+    } else {
+      startDiagnosis();
+    }
+  }
+
+  function closeDiag() {
+    $("#diagOverlay").hidden = true;
+    document.body.style.overflow = "";
+  }
+
+  function scrollDiagTop() {
+    $("#diagOverlay").scrollTop = 0;
+  }
+
   function startDiagnosis() {
     answers.topics = new Set();
     answers.keyword = "";
@@ -280,7 +310,7 @@
     $("#diagResults").hidden = true;
     $("#diagWizard").hidden = false;
     goStep(0);
-    $("#diagnosis").scrollIntoView({ behavior: "smooth", block: "start" });
+    scrollDiagTop();
   }
 
   function showResults() {
@@ -326,7 +356,7 @@
     $("#diagResults").hidden = false;
     $("#diagResults .diag-title").setAttribute("tabindex", "-1");
     $("#diagResults .diag-title").focus({ preventScroll: true });
-    $("#diagnosis").scrollIntoView({ behavior: "smooth", block: "start" });
+    scrollDiagTop();
     renderList();
   }
 
@@ -350,6 +380,7 @@
   }
 
   function gotoCard(id) {
+    closeDiag();
     filter.category = "all";
     filter.area = "all";
     filter.search = "";
@@ -396,6 +427,10 @@
     if (gotoBtn) { gotoCard(gotoBtn.dataset.goto); return; }
   });
 
+  document.querySelectorAll("[data-open-diag]").forEach((b) => b.addEventListener("click", openDiag));
+  $("#diagClose").addEventListener("click", closeDiag);
+  $("#diagOverlay").addEventListener("click", (e) => { if (e.target.id === "diagOverlay") closeDiag(); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !$("#diagOverlay").hidden) closeDiag(); });
   $("#diagStart").addEventListener("click", startDiagnosis);
   $("#diagRetry").addEventListener("click", startDiagnosis);
   $("#diagBack").addEventListener("click", () => { if (step > 0) goStep(step - 1); });
@@ -405,6 +440,7 @@
     else goStep(step + 1);
   });
   $("#diagSortList").addEventListener("click", () => {
+    closeDiag();
     sortByScore = true;
     filter.category = "all";
     filter.area = "all";
