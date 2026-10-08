@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="ja" class="guard-pending">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="referrer" content="no-referrer">
+  <title>紹介先早見表 | 交流会マッチング</title>
+  <style>html.guard-pending body { visibility: hidden; }</style>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%23f4694b'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='%23fffdf7' font-family='sans-serif'>縁</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Noto+Sans+JP:wght@400;500;700;900&display=swap"></noscript>
+  <link rel="stylesheet" href="referral.css">
+</head>
+<body>
+
+  <header class="ref-header">
+    <div class="ref-header-inner">
+      <a href="../" class="ref-logo">
+        <span class="ref-logo-mark">縁</span>
+        <span class="ref-logo-text">交流会マッチング</span>
+      </a>
+      <nav class="ref-header-nav">
+        <a href="#diagnosis" class="ref-header-cta">紹介診断</a>
+        <a href="../" class="ref-header-link">アプリへ戻る</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="ref-main">
+
+    <!-- 導入 -->
+    <section class="ref-intro">
+      <p class="ref-eyebrow" id="communityLabel"></p>
+      <h1 class="ref-title">紹介先早見表</h1>
+      <p class="ref-lead">会話の中で「こんな話が出たら、この人へ」をすぐ探せる一覧です。キーワード検索・業種・エリアで絞り込めます。</p>
+      <p class="ref-notice" id="sampleNotice"></p>
+    </section>
+
+    <!-- 紹介診断 -->
+    <section class="diag" id="diagnosis" aria-labelledby="diagTitle">
+      <div class="diag-intro" id="diagIntro">
+        <p class="diag-eyebrow">MATCH CHECK</p>
+        <h2 class="diag-title" id="diagTitle">誰に紹介すればいい?</h2>
+        <p class="diag-lead">会話で出た話について5つの質問に答えるだけで、メンバーごとの一致度(マッチ率)を計算します。</p>
+        <button type="button" class="diag-start" id="diagStart">紹介診断をはじめる</button>
+      </div>
+
+      <div class="diag-wizard" id="diagWizard" hidden>
+        <div class="diag-progress" aria-hidden="true"><span id="diagProgressBar"></span></div>
+        <p class="diag-step" id="diagStepLabel"></p>
+        <h2 class="diag-question" id="diagQuestion" tabindex="-1"></h2>
+        <p class="diag-hint" id="diagHint"></p>
+        <div class="diag-options" id="diagOptions"></div>
+        <div class="diag-keyword" id="diagKeywordWrap" hidden>
+          <label for="diagKeyword">気になった言葉があれば(任意)</label>
+          <input type="text" id="diagKeyword" autocomplete="off">
+        </div>
+        <div class="diag-nav">
+          <button type="button" class="diag-back" id="diagBack">戻る</button>
+          <button type="button" class="diag-next" id="diagNext">次へ</button>
+        </div>
+      </div>
+
+      <div class="diag-results" id="diagResults" hidden>
+        <p class="diag-eyebrow">RESULT</p>
+        <h2 class="diag-title">紹介先の候補</h2>
+        <div class="diag-summary" id="diagSummary"></div>
+        <ol class="diag-ranking" id="diagRanking"></ol>
+        <div class="diag-result-actions">
+          <button type="button" class="diag-sort" id="diagSortList">一覧を一致度順に表示</button>
+          <button type="button" class="diag-retry" id="diagRetry">もう一度診断する</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 絞り込み -->
+    <section class="ref-filter" aria-label="絞り込み">
+      <label class="visually-hidden" for="refSearch">キーワード検索</label>
+      <input type="search" id="refSearch" class="ref-search" placeholder="例:補助金、空き家、AI研修、採用" autocomplete="off">
+
+      <p class="ref-filter-label">業種</p>
+      <div class="ref-chips" id="categoryChips"></div>
+
+      <p class="ref-filter-label">対応エリア</p>
+      <div class="ref-chips" id="areaChips"></div>
+
+      <p class="ref-count"><strong id="countShown">0</strong> / <span id="countTotal">0</span>名を表示</p>
+    </section>
+
+    <div class="ref-sorted-banner" id="sortedBanner" hidden>
+      <span>診断結果の一致度順に表示しています</span>
+      <button type="button" id="clearSort">解除</button>
+    </div>
+
+    <!-- 一覧 -->
+    <section class="ref-list" id="refList" aria-live="polite"></section>
+  </main>
+
+  <footer class="ref-footer">
+    <a href="../">交流会マッチングへ戻る</a>
+    <p>© 2026 交流会マッチング</p>
+  </footer>
+
+  <div class="ref-toast" id="refToast" role="status" hidden></div>
+
+  <script src="../auth/mock-server.js"></script>
+  <script src="../auth/api.js"></script>
+  <script src="../auth/session.js"></script>
+  <script src="data.js"></script>
+  <script src="referral.js"></script>
+</body>
+</html>
