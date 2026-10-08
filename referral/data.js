@@ -105,7 +105,7 @@ const TOPICS = [
   { id: "efficiency", group: "it", label: "システム開発・業務効率化", tag: "システム開発" },
   { id: "line", group: "it", label: "公式LINE・LINE Bot構築", tag: "公式LINE構築" },
   { id: "web", group: "it", label: "ホームページ・LP制作", tag: "HP・LP制作" },
-  { id: "seo", group: "it", label: "SEO・MEO対策", tag: "SEO・MEO" },
+  { id: "seo", group: "it", label: "SEO・MEO・AIO対策", tag: "SEO・MEO・AIO" },
   { id: "ec", group: "it", label: "ネットショップ・EC", tag: "EC・ネットショップ" },
   { id: "ai", group: "it", label: "AI活用・AI導入", tag: "AI導入" },
   { id: "aitraining", group: "it", label: "AI研修・AI講座", tag: "AI研修" },
@@ -152,13 +152,120 @@ const TOPICS = [
   { id: "social", group: "food", label: "社会貢献・子ども食堂・寄付", tag: "社会貢献" },
 ];
 
+// 紹介診断の入口: 相手の「困りごと(課題)」から、具体的な方法(ジャンル)へ進む。
+// 方法は topics(ジャンル)に対応する。「まだ分からない」を選ぶと、その課題の方法すべてで探す。
+// 課題の分け方は、中小企業の経営課題の整理(人材の確保・育成/販路・集客/単価・収益/業務効率化・コスト/資金)に、
+// 暮らし・イベント・美容など会員の仕事に多い分野を足したもの
+const REF_NEEDS = [
+  { id: "hire", label: "人を採用したい・人手が足りない", desc: "求人・採用・人手不足", methods: [
+    { label: "採用・人材紹介の相談", topics: ["hiring"] },
+    { label: "求人ページ・採用サイトを作る", topics: ["web"] },
+    { label: "SNSで採用を強くする", topics: ["sns"] },
+    { label: "採用動画を作る", topics: ["prvideo"] },
+    { label: "業務をシステム・AIで減らす", desc: "人を増やさずに回す", topics: ["efficiency", "ai"] },
+    { label: "助成金・労務の相談", topics: ["labor"] },
+  ] },
+  { id: "grow", label: "人を育てたい・組織を強くしたい", desc: "社員教育・マインド・チームづくり", methods: [
+    { label: "AI研修", desc: "社員がAIを使えるように", topics: ["aitraining"] },
+    { label: "マインドセット・コーチング", topics: ["coaching"] },
+    { label: "ビジネスコンサル", topics: ["consult"] },
+    { label: "社員研修・組織づくり", topics: ["org"] },
+    { label: "話し方・プレゼン", topics: ["voice"] },
+    { label: "労務・就業規則", topics: ["labor"] },
+  ] },
+  { id: "customers", label: "お客様を増やしたい(集客)", desc: "問い合わせ・来店・新規客を増やす", methods: [
+    { label: "SEO・MEO・AIO対策", desc: "Google検索・マップ・AI検索で見つけてもらう", topics: ["seo"] },
+    { label: "ホームページ・LPを作る・直す", topics: ["web"] },
+    { label: "PR動画・会社紹介動画", topics: ["prvideo", "video"] },
+    { label: "SNS運用", topics: ["sns"] },
+    { label: "公式LINEでリピートを増やす", topics: ["line"] },
+    { label: "広告・チラシ・看板", topics: ["ad", "design"] },
+    { label: "集客のコンサル", topics: ["consult"] },
+    { label: "ネットショップで売る", topics: ["ec"] },
+  ] },
+  { id: "price", label: "より高い価格で売りたい", desc: "単価を上げたい・安売りから抜けたい", methods: [
+    { label: "ブランディング", desc: "選ばれる理由・世界観をつくる", topics: ["branding"] },
+    { label: "ビジネスコンサルティング", desc: "商品・価格・売り方の見直し", topics: ["consult"] },
+    { label: "デザイン・写真で見せ方を良くする", topics: ["design", "photo"] },
+    { label: "PR動画で価値を伝える", topics: ["prvideo"] },
+    { label: "本人の見せ方(カラー・スタイリング)", topics: ["color"] },
+  ] },
+  { id: "sns", label: "SNSで発信したい", desc: "Instagram・TikTok・YouTube・LINE", methods: [
+    { label: "SNS運用(代行・相談)", topics: ["sns"] },
+    { label: "動画編集・ショート動画", topics: ["video"] },
+    { label: "芸能キャスト(モデル・タレント)の手配", topics: ["casting"] },
+    { label: "写真撮影", topics: ["photo"] },
+    { label: "公式LINE", topics: ["line"] },
+    { label: "話し方・声の出し方", topics: ["voice"] },
+  ] },
+  { id: "efficiency", label: "業務を楽にしたい・コストを下げたい", desc: "手作業・Excel・人件費・固定費", methods: [
+    { label: "業務システムを作る", desc: "予約・在庫・顧客管理など", topics: ["efficiency"] },
+    { label: "AIを導入する", topics: ["ai"] },
+    { label: "社員にAIを教える", topics: ["aitraining"] },
+    { label: "公式LINE・自動応答", topics: ["line"] },
+    { label: "固定費(携帯・光熱費)を下げる", topics: ["fixedcost"] },
+  ] },
+  { id: "money", label: "お金のこと(資金・税金・保険)", desc: "資金繰り・融資・補助金・節税", methods: [
+    { label: "資金調達・融資・補助金", topics: ["funding"] },
+    { label: "税金・会計", topics: ["tax"] },
+    { label: "保険・資産・相続", topics: ["insurance"] },
+    { label: "契約・法律・許認可", topics: ["legal"] },
+    { label: "固定費・家計の見直し", topics: ["fixedcost"] },
+  ] },
+  { id: "place", label: "お店・場所・地域のこと", desc: "物件・内装・会場・地方創生", methods: [
+    { label: "物件・空き家・テナント", topics: ["realestate"] },
+    { label: "リフォーム・内装", topics: ["reform"] },
+    { label: "会場・レンタルスペース", topics: ["venue"] },
+    { label: "地方創生・自治体", topics: ["regional"] },
+    { label: "インバウンド・海外のお客様", topics: ["inbound"] },
+  ] },
+  { id: "make", label: "作ってほしいものがある", desc: "HP・動画・デザイン・曲・絵本など", methods: [
+    { label: "ホームページ・LP", topics: ["web"] },
+    { label: "動画", topics: ["video"] },
+    { label: "企業PR動画・採用動画", topics: ["prvideo"] },
+    { label: "写真", topics: ["photo"] },
+    { label: "デザイン(ロゴ・チラシ・イラスト)", topics: ["design"] },
+    { label: "作詞作曲・オリジナル曲", topics: ["music"] },
+    { label: "ナレーション・音声収録", topics: ["recording", "voice"] },
+    { label: "絵本・AI絵本", topics: ["ehon"] },
+    { label: "システム・アプリ", topics: ["efficiency"] },
+    { label: "ネットショップ", topics: ["ec"] },
+  ] },
+  { id: "event", label: "イベント・パーティーをしたい", desc: "企画・司会・料理・会場", methods: [
+    { label: "イベント企画", topics: ["event"] },
+    { label: "司会・MC", topics: ["mc"] },
+    { label: "ケータリング・料理", topics: ["catering"] },
+    { label: "会場", topics: ["venue"] },
+    { label: "キャスト・タレントの手配", topics: ["casting"] },
+    { label: "ギフト・食品", topics: ["food"] },
+  ] },
+  { id: "beauty", label: "美容・健康・心のこと", desc: "エステ・体のケア・人生相談", methods: [
+    { label: "美容・エステ・脱毛", topics: ["beauty"] },
+    { label: "健康・体のケア", topics: ["health"] },
+    { label: "コーチング・人生相談", topics: ["coaching"] },
+    { label: "癒やし・スピリチュアル", topics: ["spiritual"] },
+    { label: "パーソナルカラー・スタイリング", topics: ["color"] },
+    { label: "ボイストレーニング", topics: ["voice"] },
+  ] },
+  { id: "family", label: "暮らし・家族・子どものこと", desc: "子育て・教育・介護・家計", methods: [
+    { label: "結婚・子育て・家族", topics: ["family"] },
+    { label: "子どもの教育・家庭教師", topics: ["kids", "tutoring"] },
+    { label: "暮らし(車・介護・家事)", topics: ["life"] },
+    { label: "携帯料金・固定費の見直し", topics: ["fixedcost"] },
+    { label: "保険・相続", topics: ["insurance"] },
+    { label: "ハンドメイド・雑貨", topics: ["handmade"] },
+    { label: "社会貢献・子ども食堂", topics: ["social"] },
+  ] },
+  { id: "other", label: "その他・ジャンルから選ぶ", desc: "すべてのジャンルの一覧から選ぶ", methods: null },
+];
+
 // 話題ごとの言いかえ。診断のキーワードがこれに当たると、その話題を持つ人に一致する
 // (本人の説明文にその言葉がなくても見つかるように)
 const TOPIC_KEYWORDS = {
   efficiency: ["効率化", "システム", "自動化", "手作業", "Excel", "エクセル", "予約管理", "在庫", "DX", "アプリ", "開発"],
   line: ["LINE", "公式LINE", "LINE Bot", "LINEボット", "ステップ配信"],
   web: ["ホームページ", "HP", "Web", "ウェブ", "サイト", "LP"],
-  seo: ["SEO", "MEO", "検索順位", "Googleマップ", "口コミ"],
+  seo: ["SEO", "MEO", "AIO", "LLMO", "AI検索", "検索順位", "Googleマップ", "口コミ"],
   ec: ["EC", "ネットショップ", "通販", "楽天", "Amazon", "ネット販売"],
   ai: ["AI", "ChatGPT", "生成AI", "AI導入"],
   aitraining: ["AI研修", "AI講座", "AI講師", "AIセミナー", "AIを学びたい"],

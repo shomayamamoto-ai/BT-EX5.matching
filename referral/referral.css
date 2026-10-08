@@ -1169,3 +1169,22 @@ a.site-maker:hover span { text-decoration: underline; color: var(--accent-dark);
 .ref-genre.more { background: none; color: var(--accent-dark); text-decoration: underline; text-underline-offset: 3px; }
 .ref-genre.more::before { content: none; }
 .md-head .ref-genres { margin-bottom: 0; }
+
+/* 紹介診断: 困りごと・方法のカード */
+.diag-needs, .diag-methods { display: grid; grid-template-columns: 1fr; gap: 8px; }
+@media (min-width: 640px) { .diag-needs, .diag-methods { grid-template-columns: 1fr 1fr; } }
+.diag-option.diag-need, .diag-option.diag-method {
+  display: grid;
+  gap: 2px;
+  text-align: left;
+  border-radius: 14px;
+  padding: 11px 14px;
+  position: relative;
+}
+.diag-need b, .diag-method b { font-size: 14.5px; font-weight: 800; line-height: 1.45; }
+.diag-need small, .diag-method small { font-size: 12px; opacity: 0.78; line-height: 1.5; }
+.diag-method { padding-right: 56px !important; }
+.diag-method-count { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); font-size: 12px; font-weight: 800; opacity: 0.85; }
+.diag-method.is-empty { opacity: 0.55; }
+.diag-any { border-style: dashed !important; }
+@media (min-width: 640px) { .diag-any { grid-column: 1 / -1; } }

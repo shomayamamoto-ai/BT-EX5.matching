@@ -1,7 +1,7 @@
 // ============================================
 // 紹介先早見表 - ロジック
 // ・業種/エリア/キーワードでの絞り込み
-// ・紹介診断:5つの質問の回答からメンバーごとの一致度(0〜100%)を計算
+// ・紹介診断:困りごと → 方法 → 相手の情報(6つの質問)の回答からメンバーごとの一致度(0〜100%)を計算
 // ・紹介文のコピー
 // ============================================
 
@@ -20,7 +20,9 @@
 
   // ---------- 状態 ----------
   const filter = { category: "all", area: "all", search: "", topic: "all", offer: false };
-  const answers = { topics: new Set(), keyword: "", who: null, industry: null, area: null, meeting: null };
+  // need: 困りごと(REF_NEEDS の id) / methods: 選んだ方法の番号 / anyTopic: 「まだ分からない」
+  // topics・topicGroups は選んだ方法から作る(「その他」のときはジャンルを直接選ぶ)
+  const answers = { need: null, methods: new Set(), anyTopic: false, topics: new Set(), topicGroups: [], keyword: "", who: null, industry: null, area: null, meeting: null };
   let step = 0;
   let scores = null;       // { [memberId]: { score, reasons, topicHits, keywordHits } }
   let sortByScore = false;
@@ -439,33 +441,70 @@
   // ---------- 紹介診断 ----------
   const UNKNOWN = { id: "unknown", label: "わからない" };
   const STEPS = [
-    { key: "topics", q: "どんな話が出ましたか?", hint: "当てはまるものをすべて選んでください(複数選択可)", options: TOPICS, multi: true },
+    { key: "need", q: "紹介したい相手は、何に困っていますか?", hint: "いちばん近いものを1つ選んでください(「何をしたいか」で選んでもOKです)", options: REF_NEEDS },
+    { key: "topics", q: "どんな方法がよさそうですか?", hint: "当てはまるものをすべて選んでください。分からなければ「まだ分からない」でOKです", options: TOPICS, multi: true },
     { key: "who", q: "相手はどんな方ですか?", hint: "わからなければ「わからない」でOKです", options: [...PROSPECTS, UNKNOWN] },
     { key: "industry", q: "相手の業種は?", hint: "近いものを1つ選んでください", options: [...INDUSTRIES, UNKNOWN] },
     { key: "area", q: "相手はどこにいますか?", hint: "主な活動エリアを選んでください", options: AREAS },
     { key: "meeting", q: "会うならどの形がよさそうですか?", hint: "相手の希望に近いものを選んでください", options: MEETINGS },
   ];
 
+  const needOf = () => REF_NEEDS.find((n) => n.id === answers.need) || null;
+  const byGenreList = () => { const n = needOf(); return !n || !n.methods; };
+
   function isAnswered(st) {
-    return st.multi ? answers.topics.size > 0 : answers[st.key] !== null;
+    if (st.multi) return byGenreList() ? answers.topics.size > 0 : answers.methods.size > 0 || answers.anyTopic;
+    return answers[st.key] !== null;
   }
+
+  // 選んだ方法から、点数に使うジャンルを作る
+  function syncTopics() {
+    const n = needOf();
+    if (!n || !n.methods) { answers.topicGroups = []; return; }
+    const chosen = answers.anyTopic ? n.methods : [...answers.methods].sort((a, b) => a - b).map((i) => n.methods[i]);
+    answers.topicGroups = chosen.map((x) => x.topics);
+    answers.topics = new Set(chosen.flatMap((x) => x.topics));
+  }
+
+  const memberCount = (topics) => members.filter((m) => topics.some((t) => m.topics.includes(t))).length;
 
   function renderStep() {
     const st = STEPS[step];
     $("#diagProgressBar").style.width = `${((step + 1) / STEPS.length) * 100}%`;
     $("#diagStepLabel").textContent = `質問 ${step + 1} / ${STEPS.length}`;
-    $("#diagQuestion").textContent = st.q;
-    $("#diagHint").textContent = st.hint;
+    const need = needOf();
+    const genreList = st.key === "topics" && byGenreList();
+    $("#diagQuestion").textContent = st.key === "topics" && !genreList ? `「${need.label}」には、どんな方法がよさそうですか?` : genreList ? "どんな話が出ましたか?" : st.q;
+    $("#diagHint").textContent = genreList ? "当てはまるジャンルをすべて選んでください(複数選択可)" : st.hint;
     const optionHtml = (o) => {
       const on = st.multi ? answers.topics.has(o.id) : answers[st.key] === o.id;
       return `<button type="button" class="diag-option" data-opt="${o.id}" aria-pressed="${on}">${escapeHtml(o.label)}</button>`;
     };
-    // 話題はグループごとに見出しをつけて並べる
-    $("#diagOptions").innerHTML = st.key === "topics" && typeof TOPIC_GROUPS !== "undefined"
-      ? TOPIC_GROUPS
-          .map((g) => `<div class="diag-group"><p class="diag-group-label">${escapeHtml(g.label)}</p><div class="diag-group-options">${st.options.filter((o) => o.group === g.id).map(optionHtml).join("")}</div></div>`)
-          .join("")
-      : st.options.map(optionHtml).join("");
+    if (st.key === "need") {
+      // 困りごと: 説明つきのカードで並べる
+      $("#diagOptions").innerHTML = `<div class="diag-needs">${REF_NEEDS.map((n) => `
+        <button type="button" class="diag-option diag-need" data-opt="${n.id}" aria-pressed="${answers.need === n.id}">
+          <b>${escapeHtml(n.label)}</b><small>${escapeHtml(n.desc)}</small>
+        </button>`).join("")}</div>`;
+    } else if (st.key === "topics" && !genreList) {
+      // 方法: その困りごとに合う仕事。何人いるかも出す。「まだ分からない」はその課題の方法すべてで探す
+      $("#diagOptions").innerHTML = `<div class="diag-methods">${need.methods.map((x, i) => {
+        const n = memberCount(x.topics);
+        return `<button type="button" class="diag-option diag-method${n ? "" : " is-empty"}" data-opt="m${i}" aria-pressed="${answers.methods.has(i)}">
+          <b>${escapeHtml(x.label)}</b>${x.desc ? `<small>${escapeHtml(x.desc)}</small>` : ""}<span class="diag-method-count">${n}名</span>
+        </button>`;
+      }).join("")}
+        <button type="button" class="diag-option diag-method diag-any" data-opt="any" aria-pressed="${answers.anyTopic}">
+          <b>まだ分からない(おまかせ)</b><small>上のどれでも対応できる人を探します</small>
+        </button></div>`;
+    } else if (genreList) {
+      // ジャンルはまとまりごとに見出しをつけて並べる
+      $("#diagOptions").innerHTML = TOPIC_GROUPS
+        .map((g) => `<div class="diag-group"><p class="diag-group-label">${escapeHtml(g.label)}</p><div class="diag-group-options">${st.options.filter((o) => o.group === g.id).map(optionHtml).join("")}</div></div>`)
+        .join("");
+    } else {
+      $("#diagOptions").innerHTML = st.options.map(optionHtml).join("");
+    }
     $("#diagKeywordWrap").hidden = !st.multi;
     $("#diagBack").hidden = step === 0;
     $("#diagNext").textContent = step === STEPS.length - 1 ? "結果を見る" : "次へ";
@@ -502,6 +541,10 @@
 
   function startDiagnosis() {
     answers.topics = new Set();
+    answers.need = null;
+    answers.methods = new Set();
+    answers.anyTopic = false;
+    answers.topicGroups = [];
     answers.keyword = "";
     answers.who = answers.industry = answers.area = answers.meeting = null;
     $("#diagKeyword").value = "";
@@ -516,8 +559,12 @@
     answers.keyword = $("#diagKeyword").value.trim();
     computeScores();
 
+    const need = needOf();
     const summary = [
-      ...[...answers.topics].map((t) => labelOf(TOPICS, t)),
+      need && need.methods ? need.label : null,
+      ...(need && need.methods
+        ? (answers.anyTopic ? ["方法はおまかせ"] : [...answers.methods].sort((a, b) => a - b).map((i) => need.methods[i].label))
+        : [...answers.topics].map((t) => labelOf(TOPICS, t))),
       answers.who === "unknown" ? null : labelOf(PROSPECTS, answers.who),
       answers.industry === "unknown" ? null : labelOf(INDUSTRIES, answers.industry),
       labelOf(AREAS, answers.area),
@@ -544,7 +591,7 @@
           </span>
         </li>`)
           .join("")
-      : '<p class="diag-empty">一致度の高いメンバーが見つかりませんでした。話題を増やすか、会い方を「どちらでもよい」にして再診断してみてください。</p>';
+      : '<p class="diag-empty">一致度の高いメンバーが見つかりませんでした。方法を「まだ分からない」にするか、会い方を「どちらでもよい」にして再診断してみてください。</p>';
 
     $("#diagWizard").hidden = true;
     $("#diagResults").hidden = false;
@@ -556,11 +603,34 @@
 
   function onOptionClick(id) {
     const st = STEPS[step];
+    if (st.multi && !byGenreList()) {
+      // 方法: 「まだ分からない」とほかの方法は同時に選ばない
+      if (id === "any") {
+        answers.anyTopic = !answers.anyTopic;
+        if (answers.anyTopic) answers.methods.clear();
+      } else {
+        const i = Number(id.slice(1));
+        if (answers.methods.has(i)) answers.methods.delete(i);
+        else answers.methods.add(i);
+        answers.anyTopic = false;
+      }
+      syncTopics();
+      renderStep();
+      return;
+    }
     if (st.multi) {
       if (answers.topics.has(id)) answers.topics.delete(id);
       else answers.topics.add(id);
       renderStep();
       return;
+    }
+    if (st.key === "need" && answers.need !== id) {
+      // 困りごとを変えたら、選んでいた方法はリセット
+      answers.need = id;
+      answers.methods = new Set();
+      answers.anyTopic = false;
+      answers.topics = new Set();
+      answers.topicGroups = [];
     }
     answers[st.key] = id;
     renderStep();

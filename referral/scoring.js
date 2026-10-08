@@ -10,7 +10,7 @@ const RefScoring = (function () {
 
   // ---------- 一致度の計算 ----------
   // 配点: 話題50 + 業種15 + 相手のタイプ10 + 会い方・エリア25 = 100
-  //   話題50 = 選んだ話題をどれだけ扱えるか42 + その話題がその人の本業に近いか8
+  //   話題50 = 選んだ方法(ジャンル)をどれだけ扱えるか42 + そのジャンルがその人の本業に近いか8
   //   (扱う話題が少ない専門の人ほど高い。何でも扱う人ばかりが上に来ないようにする)
   // キーワード一致で+15(上限100。入力した言葉が本人の説明に含まれるのは最も具体的な一致なので、
   // 活動範囲の入力の有無より重くする。話題の言いかえでの一致は+8)。話題もキーワードも一致しない人は30%で頭打ち。
@@ -32,9 +32,15 @@ const RefScoring = (function () {
     const reasons = [];
     let s = 0;
 
+    // 選んだ方法(topicGroups: 方法ごとのジャンルの組)のうち、いくつに対応できるか。
+    // 1つの方法が複数のジャンルにまたがるときは、どれか1つに対応していれば対応とみなす。
+    // anyTopic(「まだ分からない」)のときは、どれか1つに対応していれば高い点、多いほど少し上がる
     const topicHits = [...a.topics].filter((t) => m.topics.includes(t));
-    if (a.topics.size && topicHits.length) {
-      s += (42 * topicHits.length) / a.topics.size;
+    const groups = a.topicGroups && a.topicGroups.length ? a.topicGroups : [...a.topics].map((t) => [t]);
+    const covered = groups.filter((g) => g.some((t) => m.topics.includes(t))).length;
+    if (groups.length && covered) {
+      const coverage = a.anyTopic ? Math.min(1, 0.85 + 0.075 * (covered - 1)) : covered / groups.length;
+      s += 42 * coverage;
       s += (8 * topicHits.length) / Math.max(m.topics.length, topicHits.length);
     }
     topicHits.forEach((t) => reasons.push(`「${labelOf(TOPICS, t)}」に対応`));
