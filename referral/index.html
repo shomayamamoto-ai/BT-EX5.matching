@@ -62,6 +62,18 @@
       </details>
     </section>
 
+    <!-- 紹介診断への入口 -->
+    <button type="button" class="diag-cta" data-open-diag>
+      <span class="diag-cta-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m20 20-4.6-4.6"/><path d="M10.5 7.5v6M7.5 10.5h6"/></svg>
+      </span>
+      <span class="diag-cta-text">
+        <span class="diag-cta-title">誰に紹介すればいい?</span>
+        <span class="diag-cta-sub">会話で出た話について5つの質問に答えると、紹介先の候補と一致度がわかります(約30秒)</span>
+      </span>
+      <span class="diag-cta-go" aria-hidden="true">紹介診断をはじめる<span class="diag-cta-arrow">→</span></span>
+    </button>
+
     <!-- 絞り込み -->
     <section class="ref-filter" aria-label="絞り込み">
       <label class="visually-hidden" for="refSearch">キーワード検索</label>
@@ -75,7 +87,6 @@
 
       <div class="ref-count-row">
         <p class="ref-count"><strong id="countShown">0</strong> / <span id="countTotal">0</span>名を表示</p>
-        <button type="button" class="ref-diag-btn" data-open-diag>誰に紹介する?紹介診断で探す</button>
       </div>
     </section>
 
