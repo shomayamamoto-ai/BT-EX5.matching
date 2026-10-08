@@ -53,7 +53,7 @@ var BtexServerCore = (function () {
 
   // 本人が編集できる項目(名前・所属チーム・ID は管理者のみ)
   var SELF_EDITABLE = [
-    "company", "base", "category", "business", "customers", "note", "wants", "triggers",
+    "company", "base", "category", "business", "customers", "offer", "note", "wants", "triggers",
     "face", "faceAreas", "online", "topics", "targets", "prospects", "links",
   ];
 
@@ -451,6 +451,7 @@ var BtexServerCore = (function () {
         category: !categories || categories.indexOf(category) !== -1 ? category : categories[categories.length - 1],
         business: cleanStr(m.business, 600),
         customers: cleanStr(m.customers, 400),
+        offer: cleanStr(m.offer, 120),
         note: cleanStr(m.note, 300),
         wants: cleanStr(m.wants, 400),
         triggers: cleanList(m.triggers, null, 12).map(function (t) { return t.slice(0, 40); }),

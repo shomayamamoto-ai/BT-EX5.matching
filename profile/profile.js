@@ -41,7 +41,7 @@
   }
 
   function fill(m) {
-    ["company", "category", "base", "business", "customers", "note", "wants", "face", "online"].forEach((k) => {
+    ["company", "category", "base", "business", "customers", "offer", "note", "wants", "face", "online"].forEach((k) => {
       form.elements[k].value = m[k] || "";
     });
     if (!form.elements.online.value) form.elements.online.value = "unknown";
@@ -61,6 +61,7 @@
       base: v("base"),
       business: v("business"),
       customers: v("customers"),
+      offer: v("offer"),
       note: v("note"),
       wants: v("wants"),
       triggers: form.elements.triggers.value.split(/\r?\n/).map((t) => t.replace(/^[「『]|[」』]$/g, "").trim()).filter(Boolean),

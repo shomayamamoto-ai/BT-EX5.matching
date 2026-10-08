@@ -13,7 +13,7 @@ const RefScoring = (function () {
   //   話題50 = 選んだ話題をどれだけ扱えるか42 + その話題がその人の本業に近いか8
   //   (扱う話題が少ない専門の人ほど高い。何でも扱う人ばかりが上に来ないようにする)
   // キーワード一致で+15(上限100。入力した言葉が本人の説明に含まれるのは最も具体的な一致なので、
-  // 活動範囲の入力の有無より重くする)。話題もキーワードも一致しない人は30%で頭打ち。
+  // 活動範囲の入力の有無より重くする。話題の言いかえでの一致は+8)。話題もキーワードも一致しない人は30%で頭打ち。
   // 未入力の項目は中立の点数(活動範囲は25点中15点)にして、入力済みの人だけが
   // 大きく有利にならないようにする
   function keywordTokens(text) {
@@ -71,11 +71,23 @@ const RefScoring = (function () {
     if (faceOK && a.meeting !== "online") reasons.push(`${labelOf(AREAS, a.area)}で対面可`);
     if (onlineAll && (a.meeting !== "face" || !faceOK)) reasons.push("オンライン全国対応");
 
+    // キーワード: 本人の説明文にその言葉がある(+15)か、その人の話題の言いかえ(TOPIC_KEYWORDS)を
+    // 含む(+8)。本人の言葉そのものの一致を、言いかえでの一致より重くする
     const hay = haystack(m);
-    const keywordHits = keywordTokens(a.keyword).filter((t) => hay.includes(t));
-    if (keywordHits.length) {
+    const tokens = keywordTokens(a.keyword);
+    const textHits = tokens.filter((t) => hay.includes(t));
+    const synonymHits = typeof TOPIC_KEYWORDS === "undefined" ? [] : tokens
+      .filter((t) => !textHits.includes(t))
+      // 選んだ話題の言いかえは、話題の点ですでに数えているので二重に数えない
+      .map((t) => ({ t, topic: m.topics.find((id) => !a.topics.has(id) && (TOPIC_KEYWORDS[id] || []).some((k) => t.includes(k))) }))
+      .filter((x) => x.topic);
+    const keywordHits = [...textHits, ...synonymHits.map((x) => x.t)];
+    if (textHits.length) {
       s += 15;
-      keywordHits.forEach((t) => reasons.push(`「${t}」がキーワードに一致`));
+      textHits.forEach((t) => reasons.push(`「${t}」がキーワードに一致`));
+    } else if (synonymHits.length) {
+      s += 8;
+      synonymHits.forEach((x) => reasons.push(`「${x.t}」は「${labelOf(TOPICS, x.topic)}」の話`));
     }
 
     if (!topicHits.length && !keywordHits.length) s = Math.min(s, 30);

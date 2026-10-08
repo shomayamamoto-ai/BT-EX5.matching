@@ -19,7 +19,7 @@
   const labelOf = (list, id) => (list.find((x) => x.id === id) || {}).label || "";
 
   // ---------- 状態 ----------
-  const filter = { category: "all", area: "all", search: "", topic: "all" };
+  const filter = { category: "all", area: "all", search: "", topic: "all", offer: false };
   const answers = { topics: new Set(), keyword: "", who: null, industry: null, area: null, meeting: null };
   let step = 0;
   let scores = null;       // { [memberId]: { score, reasons, topicHits, keywordHits } }
@@ -46,6 +46,7 @@
       lines.push(`「${talk}」のお話をされていたので、ぴったりだと思いご紹介します。`);
     }
     if (m.wants) lines.push(`${m.name}さんは「${m.wants}」とのつながりを求めています。`);
+    if (m.offer) lines.push(`BT-EX5のメンバーからの紹介特典:${m.offer}`);
     const range = [];
     if (m.face) range.push(`対面:${m.face}`);
     if (m.online !== "unknown") range.push(`オンライン:${ONLINE_LABELS[m.online]}`);
@@ -85,6 +86,7 @@
   // ---------- 一覧 ----------
   function matchesFilter(m) {
     if (filter.topic !== "all" && !m.topics.includes(filter.topic)) return false;
+    if (filter.offer && !m.offer) return false;
     if (filter.category !== "all" && m.category !== filter.category) return false;
     if (filter.area === "niigata" && !m.faceAreas.includes("niigata")) return false;
     if (filter.area === "tokyo" && !m.faceAreas.includes("tokyo")) return false;
@@ -135,6 +137,7 @@
           <p class="ref-label">事業内容</p>
           <p class="ref-business${m.business ? "" : " ref-muted"}">${m.business ? escapeHtml(m.business) : "準備中"}</p>
           ${m.customers ? `<p class="ref-customers"><span>主なお客様</span>${escapeHtml(m.customers)}</p>` : ""}
+          ${m.offer ? `<p class="ref-offer"><span>紹介特典</span>${escapeHtml(m.offer)}</p>` : ""}
           ${m.note ? `<p class="ref-note">${escapeHtml(m.note)}</p>` : ""}
         </div>
         <div class="ref-col ref-col-wants">
@@ -201,16 +204,57 @@
       ${webs.length ? section("ホームページ・リンク", `<div class="md-links">${webs.map(linkButton).join("")}</div>`) : ""}
       ${contacts.length ? section("連絡先・SNS", `<div class="md-links">${contacts.map(linkButton).join("")}</div>`) : ""}
       ${!links.length ? `<p class="md-nolinks">資料・リンクはまだ登録されていません。</p>` : ""}
+      ${m.offer ? `<section class="md-sec md-offer"><h3>BT-EX5 メンバーからの紹介特典</h3><p>${escapeHtml(m.offer)}</p></section>` : ""}
       ${section("事業内容", text(m.business))}
       ${m.customers ? section("主なお客様", text(m.customers)) : ""}
       ${section("求める紹介", text(m.wants))}
       ${m.triggers.length ? section("こんな話が出たら", `<div class="ref-triggers">${m.triggers.map((t) => `<span class="ref-trigger">「${escapeHtml(t)}」</span>`).join("")}</div>`) : ""}
       ${m.note ? section("補足", text(m.note)) : ""}
       ${section("活動範囲", text(range, "未入力"))}
+      ${partnersSection(m)}
       <div class="md-actions">
         <button type="button" class="ref-btn" data-copy="${m.id}">紹介文をコピー</button>
         <button type="button" class="ref-btn ghost" data-close-detail>閉じる</button>
       </div>`;
+  }
+
+  // この人と紹介し合えそうな人(詳細画面)
+  function partnersSection(m) {
+    const ps = RefPartners.findPartners(members, m, 3);
+    if (!ps.length) return "";
+    return `<section class="md-sec"><h3>この人と紹介し合えそうな人</h3><ul class="md-partners">${ps
+      .map((p) => `<li><button type="button" class="md-partner-name" data-detail="${p.m.id}">${escapeHtml(p.m.name)}</button><span>${escapeHtml(p.reasons[0])}</span></li>`)
+      .join("")}</ul></section>`;
+  }
+
+  // あなたと紹介し合えそうな人(一覧の上)
+  function renderPartners() {
+    const me = members.find((m) => m.id === myMemberId);
+    const ps = RefPartners.findPartners(members, me, 3);
+    const box = $("#myPartners");
+    box.hidden = !ps.length;
+    if (!ps.length) return;
+    $("#myPartnersList").innerHTML = ps
+      .map((p) => `
+        <li class="pt-item">
+          <button type="button" class="pt-name" data-detail="${p.m.id}">${escapeHtml(p.m.name)}</button>
+          <span class="pt-company">${escapeHtml(p.m.company || p.m.category)}</span>
+          <span class="pt-why">${escapeHtml(p.reasons.slice(0, 2).join("。"))}</span>
+        </li>`)
+      .join("");
+  }
+
+  // 一覧の並び順は日替わり(だれもが上に表示される日があるように)。同じ日は同じ順
+  function dailyOrder(list) {
+    const d = new Date();
+    let seed = d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate();
+    const rand = () => { seed = (seed * 1103515245 + 12345) % 2147483648; return seed / 2147483648; };
+    const out = list.slice();
+    for (let i = out.length - 1; i > 0; i--) {
+      const j = Math.floor(rand() * (i + 1));
+      [out[i], out[j]] = [out[j], out[i]];
+    }
+    return out;
   }
 
   let detailReturnFocus = null;
@@ -272,6 +316,8 @@
     $("#areaChips").innerHTML = areaOptions
       .map(([v, l]) => chipHtml("area", v, l, filter.area === v))
       .join("");
+    const offerCount = members.filter((m) => m.offer).length;
+    $("#offerChip").innerHTML = `<button type="button" class="ref-chip" data-offer aria-pressed="${filter.offer}">紹介特典あり(${offerCount}名)</button>`;
   }
 
   // ---------- 紹介診断 ----------
@@ -431,7 +477,7 @@
   // ---------- 自分の情報の記入状況 ----------
   function renderNudge() {
     const me = members.find((m) => m.id === myMemberId);
-    const missing = me ? missingProfileItems(me).filter((it) => it.key !== "customers").map((it) => it.label) : [];
+    const missing = me ? missingProfileItems(me).filter((it) => it.key !== "customers" && it.key !== "offer").map((it) => it.label) : [];
     $("#profileNudge").hidden = !missing.length;
     $("#profileNudgeItems").textContent = `未入力:${missing.join("・")}。入力すると紹介されやすくなります。`;
   }
@@ -442,6 +488,8 @@
 
     const cat = t.closest("[data-category]");
     if (cat) { filter.category = cat.dataset.category; renderChips(); renderList(); return; }
+
+    if (t.closest("[data-offer]")) { filter.offer = !filter.offer; renderChips(); renderList(); return; }
 
     const area = t.closest("[data-area]");
     if (area) { filter.area = area.dataset.area; renderChips(); renderList(); return; }
@@ -511,7 +559,7 @@
     const session = await AuthSession.guardPage({ next: "referral", loginPath: "../login/" });
     if (!session) return;
     const res = await AuthApi.listReferralMembers(AuthSession.getToken());
-    members = res.success ? res.data.members : [];
+    members = dailyOrder(res.success ? res.data.members : []);
     $("#communityLabel").textContent = COMMUNITY.label;
     const notice = $("#pendingNotice");
     notice.textContent = COMMUNITY.pendingNote;
@@ -520,6 +568,7 @@
     myMemberId = session.memberId || "";
     $("#demoNote").hidden = AuthApi.isShared();
     renderNudge();
+    renderPartners();
     renderTopicSelect();
     renderChips();
     renderList();
