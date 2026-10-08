@@ -119,11 +119,52 @@ const AuthMockServer = (function () {
     // 紹介先早見表の名簿(名簿が未作成のときだけ初期名簿を投入)
     if (!db.referralMembers && typeof REF_SEED_MEMBERS !== "undefined") {
       db.referralMembers = JSON.parse(JSON.stringify(REF_SEED_MEMBERS));
+      db.seedRevisions = seedRevisionIds();
       migrated = true;
     }
+    if (applySeedRevisions(db)) migrated = true;
 
     if (migrated) saveDb(db);
     return db;
+  }
+
+  function seedRevisionIds() {
+    return typeof REF_SEED_REVISIONS === "undefined" ? [] : REF_SEED_REVISIONS.map((r) => r.rev);
+  }
+
+  function isBlankField(key, value) {
+    if (Array.isArray(value)) return value.length === 0;
+    if (key === "base") return !value || value === "未設定";
+    if (key === "online") return !value || value === "unknown";
+    if (key === "category") return !value || (typeof UNCATEGORIZED !== "undefined" && value === UNCATEGORIZED);
+    return !value;
+  }
+
+  // 初期名簿の更新(REF_SEED_REVISIONS)を既存の名簿に一度だけ反映する。
+  // 管理者ページで編集していないメンバーは初期名簿の内容に置き換え、
+  // 編集済みのメンバーは空欄だけを埋める。削除済みのメンバーは戻さない
+  function applySeedRevisions(db) {
+    if (!db.referralMembers || typeof REF_SEED_REVISIONS === "undefined" || typeof REF_SEED_MEMBERS === "undefined") return false;
+    if (!Array.isArray(db.seedRevisions)) db.seedRevisions = [];
+    let changed = false;
+    REF_SEED_REVISIONS.forEach((r) => {
+      if (db.seedRevisions.includes(r.rev)) return;
+      r.ids.forEach((id) => {
+        const seed = REF_SEED_MEMBERS.find((m) => m.id === id);
+        const index = db.referralMembers.findIndex((m) => m.id === id);
+        if (!seed || index < 0) return;
+        const current = db.referralMembers[index];
+        const next = Object.assign({}, current);
+        Object.keys(seed).forEach((k) => {
+          if (k === "id") return;
+          if (!current.editedAt || isBlankField(k, current[k])) next[k] = JSON.parse(JSON.stringify(seed[k]));
+        });
+        db.referralMembers[index] = next;
+      });
+      db.seedRevisions.push(r.rev);
+      changed = true;
+    });
+    return changed;
   }
 
   function toPublicUser(u, session) {
@@ -313,6 +354,7 @@ const AuthMockServer = (function () {
       base: !bases || bases.includes(base) ? base || "未設定" : "未設定",
       category: !categories || categories.includes(category) ? category : categories[categories.length - 1],
       business: cleanStr(m.business, 600),
+      customers: cleanStr(m.customers, 400),
       note: cleanStr(m.note, 300),
       wants: cleanStr(m.wants, 400),
       triggers: cleanList(m.triggers, null, 12).map((t) => t.slice(0, 40)),
@@ -349,6 +391,7 @@ const AuthMockServer = (function () {
     const id = index >= 0 ? requestedId : "m_" + randomSalt().slice(0, 10);
     const member = sanitizeReferralMember(body.member, id);
     if (!member.name) return fail("INVALID_REQUEST");
+    member.editedAt = nowMs();
 
     if (index >= 0) db.referralMembers[index] = member;
     else db.referralMembers.push(member);
@@ -380,6 +423,7 @@ const AuthMockServer = (function () {
       if (!id || seen.has(id)) id = "m_" + randomSalt().slice(0, 10);
       seen.add(id);
       const m = sanitizeReferralMember(raw, id);
+      m.editedAt = nowMs();
       if (m.name) members.push(m);
     });
     db.referralMembers = members;

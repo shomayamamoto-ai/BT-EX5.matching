@@ -91,14 +91,14 @@
 
   const EMPTY = {
     id: "", name: "", company: "", team: "", base: "未設定", category: UNCATEGORIZED,
-    business: "", note: "", wants: "", triggers: [], face: "", faceAreas: [], online: "unknown",
+    business: "", customers: "", note: "", wants: "", triggers: [], face: "", faceAreas: [], online: "unknown",
     topics: [], targets: [], prospects: [],
   };
 
   function openEditor(member) {
     const m = Object.assign({}, EMPTY, member || {});
     $("#editorTitle").textContent = member ? `${m.name}さんを編集` : "メンバーを追加";
-    ["id", "name", "company", "team", "category", "base", "business", "note", "wants", "face", "online"].forEach((k) => {
+    ["id", "name", "company", "team", "category", "base", "business", "customers", "note", "wants", "face", "online"].forEach((k) => {
       form.elements[k].value = m[k];
     });
     form.elements.triggers.value = m.triggers.join("\n");
@@ -131,6 +131,7 @@
       category: v("category"),
       base: v("base"),
       business: v("business"),
+      customers: v("customers"),
       note: v("note"),
       wants: v("wants"),
       triggers: form.elements.triggers.value.split(/\r?\n/).map((t) => t.replace(/^[「『]|[」』]$/g, "").trim()).filter(Boolean),

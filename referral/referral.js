@@ -40,7 +40,7 @@
   }
 
   function haystack(m) {
-    return [m.name, m.company, m.category, m.business, m.note, m.wants, ...m.triggers].join(" ");
+    return [m.name, m.company, m.category, m.business, m.customers || "", m.note, m.wants, ...m.triggers].join(" ");
   }
 
   function scoreMember(m, a) {
@@ -199,6 +199,7 @@
         <div class="ref-col ref-col-business">
           <p class="ref-label">事業内容</p>
           <p class="ref-business${m.business ? "" : " ref-muted"}">${m.business ? escapeHtml(m.business) : "準備中"}</p>
+          ${m.customers ? `<p class="ref-customers"><span>主なお客様</span>${escapeHtml(m.customers)}</p>` : ""}
           ${m.note ? `<p class="ref-note">${escapeHtml(m.note)}</p>` : ""}
         </div>
         <div class="ref-col ref-col-wants">
