@@ -15,11 +15,11 @@ const AuthApi = (function () {
 
   const NETWORK_MESSAGE = "通信に失敗しました。ネットワーク環境をご確認のうえ、再度お試しください。";
 
-  // 既知のエラーコード(§5.4 / §5.5 / 入口・例外側 / 登録・メッセージ用)
+  // 既知のエラーコード(§5.4 / §5.5 / 入口・例外側 / 名簿・紹介の記録用)
   const KNOWN_CODES = new Set([
     "AUTH_FAILED", "LOCKED", "SESSION_INVALID",
     "INVALID_REQUEST", "INVALID_ACTION", "RATE_LIMITED", "SERVER_ERROR",
-    "WEAK_PASSWORD", "REGISTER_FAILED", "FORBIDDEN_ADMIN",
+    "FORBIDDEN_ADMIN", "SELF_REFERRAL",
   ]);
 
   // §5.6 フォールバック: message 欠落・未知コード → NETWORK_MESSAGE
@@ -65,21 +65,16 @@ const AuthApi = (function () {
     }
   }
 
+  // memberId を省くと、パスコードが正しい場合に名簿の名前一覧が返る。
   // remember はここでも === true の厳密判定で boolean を保証する(§5.2 の3層判定)
-  function login(email, password, remember) {
-    return post("login", { email, password, remember: remember === true });
+  function passcodeLogin(passcode, memberId, remember) {
+    return post("passcodeLogin", { passcode, memberId: memberId || "", remember: remember === true });
   }
   function verifySession(sessionToken) {
     return post("verifySession", { sessionToken });
   }
   function logout(sessionToken) {
     return post("logout", { sessionToken });
-  }
-  function requestPasswordReset(email) {
-    return post("requestPasswordReset", { email });
-  }
-  function register(name, email, password) {
-    return post("register", { name, email, password });
   }
 
   // ---------- 紹介先早見表の名簿(追加・編集・削除は管理者のみ) ----------
@@ -108,7 +103,7 @@ const AuthApi = (function () {
   }
 
   return {
-    login, verifySession, logout, requestPasswordReset, register,
+    passcodeLogin, verifySession, logout,
     listReferralMembers, adminSaveReferralMember, adminDeleteReferralMember, adminImportReferralMembers,
     recordReferral, deleteReferral, getReferralStats,
     NETWORK_MESSAGE,

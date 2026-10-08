@@ -27,6 +27,7 @@
   let members = [];        // サーバーから取得した名簿
   let stats = null;        // 紹介の実績(サーバー集計)
   let recordingId = null;  // 記録ダイアログの対象メンバー
+  let myMemberId = "";     // ログイン中の本人(名簿のID)
 
   // ---------- 一致度の計算 ----------
   // 配点: 話題50 + 業種15 + 相手のタイプ10 + 会い方・エリア25 = 100
@@ -190,6 +191,7 @@
             ${m.base && m.base !== "未設定" ? `<span class="ref-tag ${m.base === "新潟" ? "base-niigata" : "base-tokyo"}">${escapeHtml(m.base)}拠点</span>` : ""}
             <span class="ref-tag">${escapeHtml(m.category)}</span>
             ${m.team ? `<span class="ref-tag team">${escapeHtml(m.team)}</span>` : ""}
+            ${m.id === myMemberId ? '<span class="ref-tag me">あなた</span>' : ""}
             ${complete ? "" : '<span class="ref-tag pending">準備中</span>'}
           </div>
           ${stats && stats.received[m.id] ? `<p class="ref-received">受けた紹介 <strong>${stats.received[m.id]}</strong>件</p>` : ""}
@@ -213,7 +215,7 @@
           <div class="ref-actions">
             <button type="button" class="ref-btn" data-copy="${m.id}">紹介文をコピー</button>
             <button type="button" class="ref-btn line" data-line="${m.id}">LINEで送る</button>
-            <button type="button" class="ref-btn record" data-record="${m.id}">紹介を記録</button>
+            ${m.id === myMemberId ? "" : `<button type="button" class="ref-btn record" data-record="${m.id}">紹介を記録</button>`}
           </div>
         </div>
       </article>`;
@@ -357,7 +359,7 @@
           <span class="rank-actions">
             <button type="button" class="ref-btn" data-copy="${m.id}">紹介文をコピー</button>
             <button type="button" class="ref-btn line" data-line="${m.id}">LINEで送る</button>
-            <button type="button" class="ref-btn record" data-record="${m.id}">紹介を記録</button>
+            ${m.id === myMemberId ? "" : `<button type="button" class="ref-btn record" data-record="${m.id}">紹介を記録</button>`}
             <button type="button" class="ref-btn ghost" data-goto="${m.id}">カードを見る</button>
           </span>
         </li>`)
@@ -559,6 +561,7 @@
     notice.textContent = COMMUNITY.pendingNote;
     notice.hidden = !members.some((m) => !isProfileComplete(m));
     $("#adminLink").hidden = !session.user.isAdmin;
+    myMemberId = session.memberId || "";
     await loadStats();
     renderChips();
     renderList();

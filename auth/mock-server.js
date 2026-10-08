@@ -2,13 +2,15 @@
 // auth/mock-server.js — サーバー側判定のブラウザ内デモ実装
 // 仕様: docs/specs/login-page-detailed-spec-v3.md §5, §8
 //
-// 本来は GAS 等のバックエンドが担う判定を、デモ用に同一契約・
-// 同一判定順序でブラウザ内に実装したもの。実 API へ移行する場合は
-// api.js の API_BASE_URL を設定すればこのファイルは使われなくなる。
+// 本来は GAS 等のバックエンドが担う判定を、デモ用にブラウザ内に実装したもの。
+// 実 API へ移行する場合は api.js の API_BASE_URL を設定すればこのファイルは
+// 使われなくなる。
 //
-// 認証(§5.4/§5.5): 失敗理由は AUTH_FAILED / LOCKED の2種に集約し、
-// 未登録アドレスにはダミー照合で時間を揃える。verifySession の失敗は
-// SESSION_INVALID 単一コード。
+// 認証: 会員登録はなく、コミュニティ共通のパスコードで入る。
+// パスコードが正しければ名簿から自分の名前を選んでセッションを発行する
+// (紹介の記録を本人名義で集計するため)。管理者用パスコードで入った
+// セッションだけが名簿を編集できる。失敗理由は AUTH_FAILED / LOCKED の2種、
+// verifySession の失敗は SESSION_INVALID 単一コード(§5.4 / §5.5)。
 //
 // 紹介先早見表: 名簿の閲覧は会員、追加・編集・削除は管理者のみ。
 // 紹介の記録は会員が自分の名義でのみ追加・取り消しできる。
@@ -26,26 +28,24 @@ const AuthMockServer = (function () {
   const SESSION_TTL_HOURS = 12;
   const SESSION_REMEMBER_DAYS = 30;
 
+  // パスコードは平文を置かず、ソルト付き SHA-256 のハッシュだけを持つ。
+  // 照合前に小文字化し、ハイフンと空白を取り除く
+  const PASSCODES = {
+    member: { salt: "0fdad7ca2a02b6424d2fda1d85d36c3a", hash: "c2bd4fe026b60aed343fe5d9547119167f92dcec1a5fb8a7df44f41c65f79595" },
+    admin: { salt: "208b4fd8211062d5ced31e63c9e4626e", hash: "9e47ede3415ac83b0fc215d0780ecabd8cb9a7da124aa19c5facd44d23c9438a" },
+  };
+
   // サーバー由来エラー文言(§9: Response.gs ERRORS 相当)
   const ERRORS = {
-    AUTH_FAILED: "メールアドレスまたはパスワードが正しくありません。",
+    AUTH_FAILED: "パスコードが正しくありません。",
     LOCKED: "ログインを一時的に制限しています。時間をおいて再度お試しください。",
     SESSION_INVALID: "セッションが無効です。もう一度ログインしてください。",
     INVALID_REQUEST: "リクエストの形式が正しくありません。",
     INVALID_ACTION: "不明な操作が指定されました。",
     FORBIDDEN_ADMIN: "この操作は管理者のみ行えます。",
+    SELF_REFERRAL: "ご自身への紹介は記録できません。",
     SERVER_ERROR: "サーバーでエラーが発生しました。時間をおいて再度お試しください。",
   };
-
-  // デモ用アカウント(初回アクセス時に投入)
-  const SEED_USERS = [
-    {
-      email: "demo@kouryukai.jp",
-      password: "kouryukai-demo-2026",
-      role: "member",
-      name: "デモ 会員",
-    },
-  ];
 
   let channel = null;
   try {
@@ -86,9 +86,8 @@ const AuthMockServer = (function () {
     return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
   }
 
-  async function hashPassword(password, salt) {
-    const data = new TextEncoder().encode(salt + ":" + password);
-    const buf = await crypto.subtle.digest("SHA-256", data);
+  async function sha256(text) {
+    const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
     return Array.from(new Uint8Array(buf), (b) => b.toString(16).padStart(2, "0")).join("");
   }
 
@@ -98,39 +97,24 @@ const AuthMockServer = (function () {
 
   async function ensureDb() {
     let db = loadDb();
-    if (!db || !db.users || !db.dummy) {
-      db = { users: [], sessions: {}, referralLogs: [], dummy: null };
-      for (const seed of SEED_USERS) {
-        const salt = randomSalt();
-        db.users.push({
-          userId: "usr_" + uuid(),
-          email: seed.email.toLowerCase(),
-          role: seed.role,
-          accountStatus: "active",
-          subscriptionStatus: "active",
-          paymentExempt: false,
-          isAdmin: false,
-          salt,
-          passwordHash: await hashPassword(seed.password, salt),
-          failureCount: 0,
-          lockedUntil: 0,
-          passwordChangedAt: 0,
-          createdAt: nowMs(),
-          name: seed.name,
-        });
-      }
-      // 未登録アドレス用のダミー照合データ(§8 判定順序2)
-      const dummySalt = randomSalt();
-      db.dummy = { salt: dummySalt, hash: await hashPassword("dummy-password-for-timing", dummySalt) };
+    if (!db || !db.users) {
+      db = { users: [], sessions: {}, referralLogs: [], passcodeGuard: { failures: 0, lockedUntil: 0 } };
       saveDb(db);
     }
 
-    // 旧バージョンDBからの移行: マッチング機能(サンプル会員・いいね・メッセージ)の
-    // データを削除し、紹介の記録を用意する
     let migrated = false;
-    if (db.users.some((u) => u.isBot)) { db.users = db.users.filter((u) => !u.isBot); migrated = true; }
-    ["likes", "messages", "botsSeeded"].forEach((k) => { if (k in db) { delete db[k]; migrated = true; } });
+    // 旧バージョンからの移行: マッチング機能のデータ、メールアドレスで作った
+    // アカウントとそのセッションを削除する(パスコード方式に一本化)
+    ["likes", "messages", "botsSeeded", "dummy"].forEach((k) => { if (k in db) { delete db[k]; migrated = true; } });
+    if (db.users.some((u) => !u.memberId)) {
+      db.users = db.users.filter((u) => u.memberId);
+      migrated = true;
+    }
+    Object.keys(db.sessions).forEach((t) => {
+      if (!db.users.some((u) => u.userId === db.sessions[t].userId)) { delete db.sessions[t]; migrated = true; }
+    });
     if (!db.referralLogs) { db.referralLogs = []; migrated = true; }
+    if (!db.passcodeGuard) { db.passcodeGuard = { failures: 0, lockedUntil: 0 }; migrated = true; }
 
     // 紹介先早見表の名簿(名簿が未作成のときだけ初期名簿を投入)
     if (!db.referralMembers && typeof REF_SEED_MEMBERS !== "undefined") {
@@ -138,28 +122,20 @@ const AuthMockServer = (function () {
       migrated = true;
     }
 
-    // デモ会員を管理者にする(名簿の追加・編集用)
-    const demo = db.users.find((u) => u.email === "demo@kouryukai.jp");
-    if (demo && !demo.isAdmin) {
-      demo.isAdmin = true;
-      demo.role = "admin";
-      migrated = true;
-    }
-
     if (migrated) saveDb(db);
     return db;
   }
 
-  function toPublicUser(u) {
-    // §5.3: 公開7フィールドのみ。passwordHash / salt は含めない
+  function toPublicUser(u, session) {
+    // §5.3 の7フィールド。管理者かどうかはセッション単位(入ったパスコード)で決まる
     return {
       userId: u.userId,
-      email: u.email,
-      role: u.role,
-      accountStatus: u.accountStatus,
-      subscriptionStatus: u.subscriptionStatus,
-      paymentExempt: u.paymentExempt,
-      isAdmin: u.isAdmin,
+      email: "",
+      role: session.isAdmin ? "admin" : "member",
+      accountStatus: "active",
+      subscriptionStatus: "active",
+      paymentExempt: false,
+      isAdmin: session.isAdmin === true,
     };
   }
 
@@ -171,63 +147,78 @@ const AuthMockServer = (function () {
     };
   }
 
-  // セッショントークンから利用者を解決(無効なら null)
-  function authUser(db, token) {
+  // セッショントークンから { session, user } を解決(無効なら null)
+  function authSession(db, token) {
     const session = db.sessions[String(token || "")];
     if (!session || session.revoked || session.expiresAt <= nowMs()) return null;
     const user = db.users.find((u) => u.userId === session.userId);
-    if (!user || user.accountStatus !== "active") return null;
-    if (!user.paymentExempt && user.subscriptionStatus !== "active") return null;
-    if (user.passwordChangedAt && session.issuedAt < user.passwordChangedAt) return null;
-    return user;
+    if (!user) return null;
+    // 名簿から削除されたメンバーのセッションは無効
+    if (db.referralMembers && !db.referralMembers.some((m) => m.id === user.memberId)) return null;
+    return { session, user };
   }
 
-  // ---------- login(判定順序は §8 に一致) ----------
-  async function login(body) {
+  function authUser(db, token) {
+    const a = authSession(db, token);
+    return a ? a.user : null;
+  }
+
+  // 入力されたパスコードの種類を返す("admin" / "member" / null)。
+  // どちらの照合も必ず行い、どちらに一致したかで処理時間が変わらないようにする
+  async function matchPasscode(code) {
+    const normalized = String(code || "").trim().toLowerCase().replace(/[\s-]/g, "");
+    const [adminHash, memberHash] = await Promise.all([
+      sha256(PASSCODES.admin.salt + ":" + normalized),
+      sha256(PASSCODES.member.salt + ":" + normalized),
+    ]);
+    if (!normalized) return null;
+    if (adminHash === PASSCODES.admin.hash) return "admin";
+    if (memberHash === PASSCODES.member.hash) return "member";
+    return null;
+  }
+
+  // ---------- passcodeLogin ----------
+  // 1回目: { passcode } → 正しければ名簿の名前一覧を返す
+  // 2回目: { passcode, memberId, remember } → セッションを発行する
+  async function passcodeLogin(body) {
     const db = await ensureDb();
+    const guard = db.passcodeGuard;
 
-    const email = String(body.email || "").trim().toLowerCase();
-    const password = String(body.password || "");
-    if (!email || !password || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      return fail("AUTH_FAILED");
-    }
+    // ロック中は照合しない(§8 判定順序3)
+    if (guard.lockedUntil > nowMs()) return fail("LOCKED");
 
-    const user = db.users.find((u) => u.email === email);
-    if (!user) {
-      await hashPassword(password, db.dummy.salt);
-      return fail("AUTH_FAILED");
-    }
-
-    if (user.lockedUntil > nowMs()) {
-      return fail("LOCKED");
-    }
-
-    if (user.accountStatus !== "active") {
-      await hashPassword(password, db.dummy.salt);
-      return fail("AUTH_FAILED");
-    }
-
-    const hash = await hashPassword(password, user.salt);
-    if (hash !== user.passwordHash) {
-      user.failureCount += 1;
-      if (user.failureCount >= LOGIN_FAILURE_LIMIT) {
-        user.lockedUntil = nowMs() + LOCK_DURATION_MINUTES * 60 * 1000;
-        user.failureCount = 0;
+    const role = await matchPasscode(body.passcode);
+    if (!role) {
+      guard.failures += 1;
+      if (guard.failures >= LOGIN_FAILURE_LIMIT) {
+        guard.lockedUntil = nowMs() + LOCK_DURATION_MINUTES * 60 * 1000;
+        guard.failures = 0;
         saveDb(db);
         return fail("LOCKED");
       }
       saveDb(db);
       return fail("AUTH_FAILED");
     }
+    guard.failures = 0;
+    guard.lockedUntil = 0;
 
-    if (!user.paymentExempt && user.subscriptionStatus !== "active") {
-      return fail("AUTH_FAILED");
+    const roster = db.referralMembers || [];
+    const memberId = String(body.memberId || "").trim();
+    if (!memberId) {
+      saveDb(db);
+      return ok({ step: "chooseMember", members: roster.map((m) => ({ id: m.id, name: m.name })) });
     }
+    const member = roster.find((m) => m.id === memberId);
+    if (!member) return fail("INVALID_REQUEST");
+
+    let user = db.users.find((u) => u.memberId === member.id);
+    if (!user) {
+      user = { userId: "usr_" + uuid(), memberId: member.id, name: member.name, createdAt: nowMs() };
+      db.users.push(user);
+    }
+    user.name = member.name;
 
     // Session fixation 対策(§7): 成功のたびに必ず新規トークンを発行
-    user.failureCount = 0;
-    user.lockedUntil = 0;
-
     // remember は === true の厳密判定(§5.2)。
     // Boolean()正規化は不可。Boolean("false")===true となり
     // 30日セッションが誤発行される(docs/specs §14)
@@ -237,37 +228,40 @@ const AuthMockServer = (function () {
       : SESSION_TTL_HOURS * 60 * 60 * 1000;
 
     const token = randomToken();
-    db.sessions[token] = {
+    const session = {
       userId: user.userId,
+      isAdmin: role === "admin",
       issuedAt: nowMs(),
       expiresAt: nowMs() + ttlMs,
       remember,
       revoked: false,
       userAgent: String(body.userAgent || "").slice(0, 300),
     };
+    db.sessions[token] = session;
     saveDb(db);
 
     return ok({
       sessionToken: token,
-      expiresAt: new Date(nowMs() + ttlMs).toISOString(),
+      expiresAt: new Date(session.expiresAt).toISOString(),
       remember,
-      user: toPublicUser(user),
+      user: toPublicUser(user, session),
+      displayName: user.name,
     });
   }
 
   // ---------- verifySession(失敗は常に SESSION_INVALID §5.5) ----------
   async function verifySession(body) {
     const db = await ensureDb();
-    const token = String(body.sessionToken || "");
-    const session = db.sessions[token];
-    const user = authUser(db, token);
-    if (!session || !user) return fail("SESSION_INVALID");
+    const a = authSession(db, body.sessionToken);
+    if (!a) return fail("SESSION_INVALID");
 
     // 期限判定はサーバー時刻のみ・検証時の延長は行わない(§8)
     return ok({
-      expiresAt: new Date(session.expiresAt).toISOString(),
-      remember: session.remember,
-      user: toPublicUser(user),
+      expiresAt: new Date(a.session.expiresAt).toISOString(),
+      remember: a.session.remember,
+      user: toPublicUser(a.user, a.session),
+      displayName: a.user.name,
+      memberId: a.user.memberId,
     });
   }
 
@@ -280,75 +274,6 @@ const AuthMockServer = (function () {
       saveDb(db);
     }
     return ok({});
-  }
-
-  // ---------- register(デモ用の新規会員登録) ----------
-  // パスワードポリシー(§8 参考): 12〜128文字 / 空白のみ禁止 / 同一文字の繰り返しのみ禁止
-  function validatePasswordStrength(password) {
-    if (typeof password !== "string" || password.length < 12) {
-      return "パスワードは12文字以上で入力してください。";
-    }
-    if (password.length > 128) {
-      return "パスワードは128文字以内で入力してください。";
-    }
-    if (!password.trim()) {
-      return "パスワードに空白以外の文字を含めてください。";
-    }
-    if (/^(.)\1+$/.test(password)) {
-      return "同じ文字の繰り返しのみのパスワードは使用できません。";
-    }
-    return null;
-  }
-
-  async function register(body) {
-    const db = await ensureDb();
-    const email = String(body.email || "").trim().toLowerCase();
-    const name = String(body.name || "").trim().slice(0, 40);
-    const password = String(body.password || "");
-
-    if (!name || !email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      return fail("INVALID_REQUEST");
-    }
-    const weak = validatePasswordStrength(password);
-    if (weak) {
-      return { success: false, error: { code: "WEAK_PASSWORD", message: weak } };
-    }
-    if (db.users.some((u) => u.email === email)) {
-      return {
-        success: false,
-        error: { code: "REGISTER_FAILED", message: "このメールアドレスでは登録できません。ログインまたはパスワード再設定をお試しください。" },
-      };
-    }
-
-    const salt = randomSalt();
-    db.users.push({
-      userId: "usr_" + uuid(),
-      email,
-      role: "member",
-      accountStatus: "active",
-      subscriptionStatus: "active",
-      paymentExempt: false,
-      isAdmin: false,
-      salt,
-      passwordHash: await hashPassword(password, salt),
-      failureCount: 0,
-      lockedUntil: 0,
-      passwordChangedAt: 0,
-      createdAt: nowMs(),
-      name,
-    });
-    saveDb(db);
-
-    // 登録後は自動ログイン(通常セッション12時間)
-    return login({ email, password, remember: false, userAgent: body.userAgent });
-  }
-
-  // ---------- requestPasswordReset(常時成功応答:列挙耐性) ----------
-  async function requestPasswordReset() {
-    await ensureDb();
-    return ok({
-      message: "入力されたメールアドレス宛に、再設定のご案内を送信しました(登録がある場合)。",
-    });
   }
 
   // ============================================
@@ -401,10 +326,10 @@ const AuthMockServer = (function () {
   }
 
   function requireAdmin(db, token) {
-    const user = authUser(db, token);
-    if (!user) return { error: fail("SESSION_INVALID") };
-    if (!user.isAdmin) return { error: fail("FORBIDDEN_ADMIN") };
-    return { user };
+    const a = authSession(db, token);
+    if (!a) return { error: fail("SESSION_INVALID") };
+    if (!a.session.isAdmin) return { error: fail("FORBIDDEN_ADMIN") };
+    return { user: a.user };
   }
 
   async function listReferralMembers(body) {
@@ -477,6 +402,7 @@ const AuthMockServer = (function () {
     const memberId = cleanStr(body.toMemberId, 40);
     const member = (db.referralMembers || []).find((m) => m.id === memberId);
     if (!member) return fail("INVALID_REQUEST");
+    if (member.id === me.memberId) return fail("SELF_REFERRAL");
     const log = {
       id: "r_" + randomSalt().slice(0, 12),
       fromUserId: me.userId,
@@ -541,7 +467,7 @@ const AuthMockServer = (function () {
   }
 
   const ACTIONS = {
-    login, verifySession, logout, register, requestPasswordReset,
+    passcodeLogin, verifySession, logout,
     listReferralMembers, adminSaveReferralMember, adminDeleteReferralMember, adminImportReferralMembers,
     recordReferral, deleteReferral, getReferralStats,
   };

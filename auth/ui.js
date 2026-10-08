@@ -9,9 +9,8 @@ const AuthUI = (function () {
   "use strict";
 
   const MESSAGES = {
-    emailRequired: "エラー:メールアドレスを入力してください。",
-    emailInvalid: "エラー:メールアドレスの形式が正しくありません。",
-    passwordRequired: "エラー:パスワードを入力してください。",
+    passcodeRequired: "エラー:パスコードを入力してください。",
+    memberRequired: "エラー:お名前を選んでください。",
     storageUnavailable:
       "お使いのブラウザではログイン情報を保存できないため、ログインできません。プライベートブラウズを終了するか、サイトデータの保存を許可してください。",
   };

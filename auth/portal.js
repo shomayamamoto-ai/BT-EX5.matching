@@ -20,7 +20,7 @@
     if (!data) return;
 
     // 未サニタイズ innerHTML は使わない。textContent のみ(§11)
-    document.getElementById("portal-email").textContent = data.user.email;
+    document.getElementById("portal-name").textContent = data.displayName || "";
     document.getElementById("portal-role").textContent =
       ROLE_LABELS[data.user.role] || data.user.role;
     // expiresAt は表示・参考値に限定(§5.3)。認可判断には使わない

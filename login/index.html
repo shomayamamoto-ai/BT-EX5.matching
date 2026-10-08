@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="referrer" content="no-referrer">
-  <title>ログイン | 交流会マッチング</title>
+  <title>ログイン | BT-EX5</title>
   <link rel="icon" type="image/svg+xml" href="../assets/bt-ex5-mark.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Noto+Sans+JP:wght@400;700;900&display=swap" onload="this.onload=null;this.rel='stylesheet'">
@@ -20,19 +20,15 @@
       </a>
 
       <h1>ログイン</h1>
-      <p class="auth-lead">会員の方はこちらからログインしてください。</p>
+      <p class="auth-lead" id="login-lead">コミュニティのパスコードを入力してください。</p>
 
+      <!-- 手順1: パスコード -->
       <form id="login-form" novalidate>
         <div class="auth-field">
-          <label for="login-email">メールアドレス</label>
-          <input type="email" id="login-email" name="email" autocomplete="email" required>
-        </div>
-
-        <div class="auth-field">
-          <label for="login-password">パスワード</label>
+          <label for="login-passcode">パスコード</label>
           <div class="password-row">
-            <input type="password" id="login-password" name="password" autocomplete="current-password" required>
-            <button type="button" id="password-toggle" class="password-toggle" aria-pressed="false" aria-label="パスワードを表示">表示</button>
+            <input type="password" id="login-passcode" name="passcode" autocomplete="current-password" autocapitalize="off" spellcheck="false" required>
+            <button type="button" id="password-toggle" class="password-toggle" aria-pressed="false" aria-label="パスコードを表示">表示</button>
           </div>
         </div>
 
@@ -42,15 +38,23 @@
           <span class="remember-note">(オフ:12時間 / オン:30日)</span>
         </div>
 
-        <button type="submit" id="login-submit" class="auth-submit" aria-busy="false">ログイン</button>
-
-        <div id="login-message" class="auth-message"></div>
+        <button type="submit" id="login-submit" class="auth-submit" aria-busy="false">次へ</button>
       </form>
 
-      <div class="auth-links">
-        <a href="../password/reset/">パスワードをお忘れですか</a>
-        <a href="../register/">初めてご利用の方 / 無料で登録する</a>
-      </div>
+      <!-- 手順2: 名前を選ぶ -->
+      <form id="member-form" novalidate hidden>
+        <div class="auth-field">
+          <label for="login-member">あなたのお名前</label>
+          <select id="login-member" name="member" required></select>
+        </div>
+        <p class="member-note">選んだお名前で、紹介の記録と実績が集計されます。</p>
+        <button type="submit" id="member-submit" class="auth-submit" aria-busy="false">はじめる</button>
+        <button type="button" id="member-back" class="auth-text-btn">パスコードを入れ直す</button>
+      </form>
+
+      <div id="login-message" class="auth-message"></div>
+
+      <p class="auth-help">パスコードがわからない場合は、コミュニティの運営者にお問い合わせください。</p>
     </div>
   </main>
 
@@ -58,6 +62,7 @@
     <a href="../terms/">利用規約</a><a href="../privacy/">プライバシーポリシー</a>
   </footer>
 
+  <script src="../referral/data.js"></script>
   <script src="../auth/mock-server.js"></script>
   <script src="../auth/api.js"></script>
   <script src="../auth/session.js"></script>

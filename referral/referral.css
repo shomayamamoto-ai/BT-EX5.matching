@@ -926,3 +926,5 @@ a:hover > .brand-mark { transform: rotate(-10deg) scale(1.06); }
 @media (prefers-reduced-motion: reduce) {
   .diag-cta, .diag-cta-arrow { transition: none; }
 }
+
+.ref-tag.me { background: var(--grad); color: #fff; border-color: transparent; font-weight: 700; }
