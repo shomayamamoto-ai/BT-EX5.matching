@@ -902,3 +902,94 @@ a:hover > .brand-mark { transform: rotate(-10deg) scale(1.06); }
   .ref-header-nav { gap: 4px; }
   .ref-header-link { font-size: 11px; }
 }
+
+/* ============================================
+   メンバーの詳細・資料
+   ============================================ */
+.ref-name-btn {
+  border: none;
+  background: none;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-underline-offset: 4px;
+  transition: text-decoration-color 0.15s;
+}
+.ref-name-btn:hover, .ref-name-btn:focus-visible { text-decoration-color: var(--accent); outline: none; color: var(--accent-dark); }
+.ref-link-badges { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; padding: 0; border: none; background: none; cursor: pointer; }
+.ref-link-badge { font-size: 11.5px; font-weight: 700; padding: 1px 8px; border-radius: 6px; background: #fff1e6; color: var(--accent-dark); }
+.ref-link-badge.contact { background: #fdeef4; color: #b0306a; }
+.ref-link-badge.web { background: #eef3fb; color: #2f5d9a; }
+.ref-link-badges:hover .ref-link-badge, .ref-link-badges:focus-visible .ref-link-badge { text-decoration: underline; }
+
+.md-overlay { align-items: flex-start; }
+.md-dialog {
+  position: relative;
+  width: 100%;
+  max-width: 680px;
+  margin: auto 0;
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 24px 20px 20px;
+  box-shadow: 0 20px 50px rgba(42, 23, 18, 0.25);
+}
+.md-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--line-strong);
+  background: #fff;
+  color: var(--text-sub);
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+}
+.md-head { padding-right: 44px; margin-bottom: 6px; }
+.md-name { font-size: 24px; font-weight: 900; }
+.md-company { font-size: 14px; color: var(--text-sub); margin-bottom: 8px; }
+.md-sec { border-top: 1px solid var(--line); padding-top: 12px; margin-top: 12px; }
+.md-sec h3 { font-size: 13px; font-weight: 800; color: var(--text-light); letter-spacing: 0.04em; margin-bottom: 6px; }
+.md-sec p { font-size: 15px; line-height: 1.8; overflow-wrap: anywhere; }
+.md-material {
+  display: block;
+  overflow: hidden;
+  border: 1px solid var(--line-strong);
+  border-radius: 12px;
+  color: var(--text);
+  text-decoration: none;
+}
+.md-material + .md-material { margin-top: 8px; }
+.md-material img { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; object-fit: cover; background: #f6efe9; }
+.md-material-bar { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 14px; font-weight: 700; font-size: 14.5px; }
+.md-material-open { flex-shrink: 0; color: var(--accent-dark); font-size: 13.5px; }
+.md-material:hover { border-color: var(--accent); }
+.md-material:hover .md-material-open { text-decoration: underline; }
+.md-links { display: grid; gap: 8px; }
+.md-link {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border: 1px solid var(--line-strong);
+  border-radius: 12px;
+  color: var(--text);
+  text-decoration: none;
+}
+.md-link:hover, .md-link:focus-visible { border-color: var(--accent); outline: none; }
+.md-link-type { font-size: 12px; font-weight: 800; padding: 2px 8px; border-radius: 6px; background: #eef3fb; color: #2f5d9a; white-space: nowrap; }
+.md-link.contact .md-link-type { background: #fdeef4; color: #b0306a; }
+.md-link-text { font-size: 14.5px; font-weight: 700; overflow-wrap: anywhere; }
+.md-link-go { color: var(--accent); font-weight: 800; }
+.md-nolinks { margin-top: 12px; font-size: 13.5px; color: var(--text-light); }
+.md-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px; margin-top: 16px; }
+@media (min-width: 720px) {
+  .md-dialog { padding: 28px 30px 24px; }
+}

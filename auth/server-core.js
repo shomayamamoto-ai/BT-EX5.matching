@@ -54,7 +54,7 @@ var BtexServerCore = (function () {
   // 本人が編集できる項目(名前・所属チーム・ID は管理者のみ)
   var SELF_EDITABLE = [
     "company", "base", "category", "business", "customers", "note", "wants", "triggers",
-    "face", "faceAreas", "online", "topics", "targets", "prospects",
+    "face", "faceAreas", "online", "topics", "targets", "prospects", "links",
   ];
 
   // ---------- SHA-256(UTF-8 文字列 → 16進) ----------
@@ -137,6 +137,7 @@ var BtexServerCore = (function () {
       REF_BASES: typeof REF_BASES === "undefined" ? null : REF_BASES,
       REF_SEED_MEMBERS: typeof REF_SEED_MEMBERS === "undefined" ? null : REF_SEED_MEMBERS,
       REF_SEED_REVISIONS: typeof REF_SEED_REVISIONS === "undefined" ? null : REF_SEED_REVISIONS,
+      LINK_TYPES: typeof LINK_TYPES === "undefined" ? null : LINK_TYPES,
     };
     return lists[name];
   }
@@ -459,7 +460,32 @@ var BtexServerCore = (function () {
         topics: cleanList(m.topics, idsOf("TOPICS"), 20),
         targets: cleanList(m.targets, industries ? industries.concat("any") : null, 10),
         prospects: cleanList(m.prospects, idsOf("PROSPECTS"), 3),
+        links: cleanLinks(m.links),
       };
+    }
+
+    // 資料・リンク: https:// のURLか、サイト内の materials/ のファイルだけを受け付ける
+    function cleanUrl(v) {
+      var u = cleanStr(v, 500);
+      if (/^https:\/\/[^\s"'<>]+$/i.test(u)) return u;
+      if (/^materials\/[\w.-]+$/.test(u) && u.indexOf("..") === -1) return u;
+      return "";
+    }
+    function cleanLinks(v) {
+      if (!Array.isArray(v)) return [];
+      var types = idsOf("LINK_TYPES");
+      var out = [];
+      v.forEach(function (x) {
+        if (!x || typeof x !== "object" || out.length >= 8) return;
+        var type = cleanStr(x.type, 20);
+        var url = cleanUrl(x.url);
+        if (!url || (types && types.indexOf(type) === -1)) return;
+        var link = { type: type, url: url, label: cleanStr(x.label, 60) };
+        var cover = cleanUrl(x.cover);
+        if (cover) link.cover = cover;
+        out.push(link);
+      });
+      return out;
     }
 
     function requireAdmin(db, token) {

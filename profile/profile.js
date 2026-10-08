@@ -46,6 +46,7 @@
     });
     if (!form.elements.online.value) form.elements.online.value = "unknown";
     form.elements.triggers.value = (m.triggers || []).join("\n");
+    LinksEditor.mount($("#fLinks"), m.links || []);
     ["faceAreas", "topics", "targets", "prospects"].forEach((k) => {
       form.querySelectorAll(`input[name="${k}"]`).forEach((cb) => { cb.checked = (m[k] || []).includes(cb.value); });
     });
@@ -69,6 +70,7 @@
       topics: checked("topics"),
       targets: checked("targets"),
       prospects: checked("prospects"),
+      links: LinksEditor.read($("#fLinks")).links,
     };
   }
 
@@ -95,6 +97,10 @@
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     $("#profileError").textContent = "";
+    if (LinksEditor.read($("#fLinks")).error) {
+      $("#profileError").textContent = "資料・リンクのURLを確認してください(https:// から始まるURL)。";
+      return;
+    }
     $("#profileSave").disabled = true;
     const res = await AuthApi.updateMyProfile(AuthSession.getToken(), readForm());
     $("#profileSave").disabled = false;

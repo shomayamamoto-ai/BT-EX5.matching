@@ -101,6 +101,18 @@ const MEETINGS = [
   { id: "either", label: "どちらでもよい" },
 ];
 
+// メンバーの資料・リンク(詳細画面に表示)。url は https:// か、サイト内の materials/ のファイル
+const LINK_TYPES = [
+  { id: "proposal", label: "提案資料・パンフレット", kind: "material" },
+  { id: "website", label: "ホームページ", kind: "web" },
+  { id: "instagram", label: "Instagram", kind: "contact" },
+  { id: "line", label: "LINE", kind: "contact" },
+  { id: "facebook", label: "Facebook", kind: "contact" },
+  { id: "x", label: "X(旧Twitter)", kind: "contact" },
+  { id: "youtube", label: "YouTube", kind: "web" },
+  { id: "other", label: "その他のリンク", kind: "web" },
+];
+
 const ONLINE_LABELS = { all: "全国対応", partial: "打合せのみ可", none: "対面のみ", unknown: "未入力" };
 
 // 名簿の肩書き・所属チームのみ分かっているメンバーの初期データを作る
@@ -123,6 +135,7 @@ function rosterMember(id, name, headline, team, category, topics, base) {
     topics: topics || [],
     targets: [],
     prospects: [],
+    links: [],
   };
 }
 
@@ -146,6 +159,11 @@ const REF_SEED_MEMBERS = [
     topics: ["efficiency", "web", "ai", "video", "design", "org"],
     targets: ["restaurant", "retail", "salon", "pro", "build", "it"],
     prospects: ["owner", "staff"],
+    links: [
+      { type: "proposal", url: "materials/lumenium-proposal.pdf", label: "Lumenium 自己紹介・ご提案(14ページ)", cover: "materials/lumenium-proposal-cover.jpg" },
+      { type: "website", url: "https://lumenium.net", label: "lumenium.net" },
+      { type: "instagram", url: "https://www.instagram.com/showstagram.keio/", label: "@showstagram.keio" },
+    ],
   },
   Object.assign(rosterMember("m02", "あまみや 七音", "echo studio 代表/声優ボイス・ドクター", "Over", "IT・Web・クリエイティブ", ["voice", "video", "health"]), {
     business: "ボイストレーニング教室、レコーディングスタジオ、タレント・声優のキャスティング。",
@@ -333,6 +351,8 @@ const REF_SEED_REVISIONS = [
   { rev: "2026-10-clear-m15", ids: ["m15"], force: true },
   // remove: 名簿から削除し、そのメンバーのログイン情報も消す
   { rev: "2026-10-remove-m15", ids: [], remove: ["m15"] },
+  // 資料・リンクの追加(空欄だけを埋める)
+  { rev: "2026-10-links-1", ids: ["yamamoto"] },
 ];
 
 // 紹介に効く項目(重要な順)。足りない項目は管理者ページの「お願い文」と、

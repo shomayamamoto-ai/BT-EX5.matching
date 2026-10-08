@@ -109,6 +109,18 @@ const MEETINGS = [
   { id: "either", label: "どちらでもよい" },
 ];
 
+// メンバーの資料・リンク(詳細画面に表示)。url は https:// か、サイト内の materials/ のファイル
+const LINK_TYPES = [
+  { id: "proposal", label: "提案資料・パンフレット", kind: "material" },
+  { id: "website", label: "ホームページ", kind: "web" },
+  { id: "instagram", label: "Instagram", kind: "contact" },
+  { id: "line", label: "LINE", kind: "contact" },
+  { id: "facebook", label: "Facebook", kind: "contact" },
+  { id: "x", label: "X(旧Twitter)", kind: "contact" },
+  { id: "youtube", label: "YouTube", kind: "web" },
+  { id: "other", label: "その他のリンク", kind: "web" },
+];
+
 const ONLINE_LABELS = { all: "全国対応", partial: "打合せのみ可", none: "対面のみ", unknown: "未入力" };
 
 // 名簿の肩書き・所属チームのみ分かっているメンバーの初期データを作る
@@ -131,6 +143,7 @@ function rosterMember(id, name, headline, team, category, topics, base) {
     topics: topics || [],
     targets: [],
     prospects: [],
+    links: [],
   };
 }
 
@@ -154,6 +167,11 @@ const REF_SEED_MEMBERS = [
     topics: ["efficiency", "web", "ai", "video", "design", "org"],
     targets: ["restaurant", "retail", "salon", "pro", "build", "it"],
     prospects: ["owner", "staff"],
+    links: [
+      { type: "proposal", url: "materials/lumenium-proposal.pdf", label: "Lumenium 自己紹介・ご提案(14ページ)", cover: "materials/lumenium-proposal-cover.jpg" },
+      { type: "website", url: "https://lumenium.net", label: "lumenium.net" },
+      { type: "instagram", url: "https://www.instagram.com/showstagram.keio/", label: "@showstagram.keio" },
+    ],
   },
   Object.assign(rosterMember("m02", "あまみや 七音", "echo studio 代表/声優ボイス・ドクター", "Over", "IT・Web・クリエイティブ", ["voice", "video", "health"]), {
     business: "ボイストレーニング教室、レコーディングスタジオ、タレント・声優のキャスティング。",
@@ -341,6 +359,8 @@ const REF_SEED_REVISIONS = [
   { rev: "2026-10-clear-m15", ids: ["m15"], force: true },
   // remove: 名簿から削除し、そのメンバーのログイン情報も消す
   { rev: "2026-10-remove-m15", ids: [], remove: ["m15"] },
+  // 資料・リンクの追加(空欄だけを埋める)
+  { rev: "2026-10-links-1", ids: ["yamamoto"] },
 ];
 
 // 紹介に効く項目(重要な順)。足りない項目は管理者ページの「お願い文」と、
@@ -420,7 +440,7 @@ var BtexServerCore = (function () {
   // 本人が編集できる項目(名前・所属チーム・ID は管理者のみ)
   var SELF_EDITABLE = [
     "company", "base", "category", "business", "customers", "note", "wants", "triggers",
-    "face", "faceAreas", "online", "topics", "targets", "prospects",
+    "face", "faceAreas", "online", "topics", "targets", "prospects", "links",
   ];
 
   // ---------- SHA-256(UTF-8 文字列 → 16進) ----------
@@ -503,6 +523,7 @@ var BtexServerCore = (function () {
       REF_BASES: typeof REF_BASES === "undefined" ? null : REF_BASES,
       REF_SEED_MEMBERS: typeof REF_SEED_MEMBERS === "undefined" ? null : REF_SEED_MEMBERS,
       REF_SEED_REVISIONS: typeof REF_SEED_REVISIONS === "undefined" ? null : REF_SEED_REVISIONS,
+      LINK_TYPES: typeof LINK_TYPES === "undefined" ? null : LINK_TYPES,
     };
     return lists[name];
   }
@@ -825,7 +846,32 @@ var BtexServerCore = (function () {
         topics: cleanList(m.topics, idsOf("TOPICS"), 20),
         targets: cleanList(m.targets, industries ? industries.concat("any") : null, 10),
         prospects: cleanList(m.prospects, idsOf("PROSPECTS"), 3),
+        links: cleanLinks(m.links),
       };
+    }
+
+    // 資料・リンク: https:// のURLか、サイト内の materials/ のファイルだけを受け付ける
+    function cleanUrl(v) {
+      var u = cleanStr(v, 500);
+      if (/^https:\/\/[^\s"'<>]+$/i.test(u)) return u;
+      if (/^materials\/[\w.-]+$/.test(u) && u.indexOf("..") === -1) return u;
+      return "";
+    }
+    function cleanLinks(v) {
+      if (!Array.isArray(v)) return [];
+      var types = idsOf("LINK_TYPES");
+      var out = [];
+      v.forEach(function (x) {
+        if (!x || typeof x !== "object" || out.length >= 8) return;
+        var type = cleanStr(x.type, 20);
+        var url = cleanUrl(x.url);
+        if (!url || (types && types.indexOf(type) === -1)) return;
+        var link = { type: type, url: url, label: cleanStr(x.label, 60) };
+        var cover = cleanUrl(x.cover);
+        if (cover) link.cover = cover;
+        out.push(link);
+      });
+      return out;
     }
 
     function requireAdmin(db, token) {
@@ -1190,9 +1236,10 @@ function refreshSheets_() {
   var onlineLabels = { all: "全国対応", partial: "打合せのみ可", none: "対面のみ", unknown: "未入力" };
   writeSheet_(
     "名簿",
-    ["ID", "氏名", "会社名・肩書き", "所属チーム", "拠点", "業種", "事業内容", "主なお客様", "求める紹介", "こんな話が出たら", "対面", "オンライン", "最終更新", "更新した人"],
+    ["ID", "氏名", "会社名・肩書き", "所属チーム", "拠点", "業種", "事業内容", "主なお客様", "求める紹介", "こんな話が出たら", "対面", "オンライン", "資料・リンク", "最終更新", "更新した人"],
     members.map(function (m) {
-      return [m.id, m.name, m.company, m.team, m.base, m.category, m.business, m.customers, m.wants, m.triggers, m.face, onlineLabels[m.online] || "", fmtTime_(m.editedAt), m.editedBy === "self" ? "本人" : m.editedBy === "admin" ? "管理者" : ""].map(cell_);
+      var links = (m.links || []).map(function (l) { return (l.label || l.type) + " " + l.url; }).join("\n");
+      return [m.id, m.name, m.company, m.team, m.base, m.category, m.business, m.customers, m.wants, m.triggers, m.face, onlineLabels[m.online] || "", links, fmtTime_(m.editedAt), m.editedBy === "self" ? "本人" : m.editedBy === "admin" ? "管理者" : ""].map(cell_);
     })
   );
   var memberName = function (id) {

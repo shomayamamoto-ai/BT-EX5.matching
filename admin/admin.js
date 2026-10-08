@@ -127,7 +127,7 @@
   const EMPTY = {
     id: "", name: "", company: "", team: "", base: "未設定", category: UNCATEGORIZED,
     business: "", customers: "", note: "", wants: "", triggers: [], face: "", faceAreas: [], online: "unknown",
-    topics: [], targets: [], prospects: [],
+    topics: [], targets: [], prospects: [], links: [],
   };
 
   function openEditor(member) {
@@ -137,6 +137,7 @@
       form.elements[k].value = m[k];
     });
     form.elements.triggers.value = m.triggers.join("\n");
+    LinksEditor.mount($("#fLinks"), m.links || []);
     ["faceAreas", "topics", "targets", "prospects"].forEach((k) => {
       form.querySelectorAll(`input[name="${k}"]`).forEach((cb) => { cb.checked = m[k].includes(cb.value); });
     });
@@ -176,12 +177,17 @@
       topics: checked("topics"),
       targets: checked("targets"),
       prospects: checked("prospects"),
+      links: LinksEditor.read($("#fLinks")).links,
     };
   }
 
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     const member = readForm();
+    if (LinksEditor.read($("#fLinks")).error) {
+      $("#editorError").textContent = "エラー:資料・リンクのURLを確認してください。";
+      return;
+    }
     if (!member.name) {
       form.elements.name.setAttribute("aria-invalid", "true");
       $("#editorError").textContent = "エラー:氏名を入力してください。";

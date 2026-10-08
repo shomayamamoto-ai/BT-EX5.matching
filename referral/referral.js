@@ -117,7 +117,7 @@
         <div class="ref-col ref-col-member">
           <div class="ref-card-head">
             <div>
-              <h3 class="ref-name">${escapeHtml(m.name)}</h3>
+              <h3 class="ref-name"><button type="button" class="ref-name-btn" data-detail="${m.id}">${escapeHtml(m.name)}</button></h3>
               <p class="ref-company">${escapeHtml(m.company)}</p>
             </div>
             ${sc ? `<div class="ref-match"><strong>${sc.score}%</strong><small>一致度</small></div>` : ""}
@@ -129,6 +129,7 @@
             ${m.id === myMemberId ? '<span class="ref-tag me">あなた</span>' : ""}
             ${complete ? "" : '<span class="ref-tag pending">準備中</span>'}
           </div>
+          ${linkBadges(m)}
         </div>
         <div class="ref-col ref-col-business">
           <p class="ref-label">事業内容</p>
@@ -149,9 +150,84 @@
           </dl>
           <div class="ref-actions">
             <button type="button" class="ref-btn" data-copy="${m.id}">紹介文をコピー</button>
+            <button type="button" class="ref-btn ghost" data-detail="${m.id}">詳細・資料を見る</button>
           </div>
         </div>
       </article>`;
+  }
+
+  // ---------- 資料・リンク ----------
+  const linkType = (id) => (typeof LINK_TYPES !== "undefined" && LINK_TYPES.find((t) => t.id === id)) || { label: "リンク", kind: "web" };
+  // サイト内の資料(materials/…)はこのページから見た相対パスにする
+  const linkHref = (url) => (/^https:\/\//i.test(url) ? url : "../" + url);
+
+  function linkBadges(m) {
+    const links = m.links || [];
+    if (!links.length) return "";
+    const kinds = [...new Set(links.map((l) => linkType(l.type).kind))];
+    const names = { material: "資料あり", web: "HPあり", contact: "SNS・連絡先" };
+    return `<button type="button" class="ref-link-badges" data-detail="${m.id}" aria-label="${escapeHtml(m.name)}さんの資料・リンクを見る">${kinds.map((k) => `<span class="ref-link-badge ${k}">${names[k]}</span>`).join("")}</button>`;
+  }
+
+  function linkButton(l) {
+    const t = linkType(l.type);
+    const text = l.label || t.label;
+    return `<a class="md-link ${t.kind}" href="${escapeHtml(linkHref(l.url))}" target="_blank" rel="noopener noreferrer"><span class="md-link-type">${escapeHtml(t.label)}</span><span class="md-link-text">${escapeHtml(text)}</span><span class="md-link-go" aria-hidden="true">↗</span></a>`;
+  }
+
+  function detailHtml(m) {
+    const links = m.links || [];
+    const materials = links.filter((l) => linkType(l.type).kind === "material");
+    const webs = links.filter((l) => linkType(l.type).kind === "web");
+    const contacts = links.filter((l) => linkType(l.type).kind === "contact");
+    const section = (title, body) => `<section class="md-sec"><h3>${title}</h3>${body}</section>`;
+    const text = (v, empty = "まだ入力されていません") => (v ? `<p>${escapeHtml(v)}</p>` : `<p class="ref-muted">${empty}</p>`);
+    const range = [m.face ? `対面:${m.face}` : "", m.online && m.online !== "unknown" ? `オンライン:${ONLINE_LABELS[m.online]}` : ""].filter(Boolean).join(" / ");
+    return `
+      <header class="md-head">
+        <h2 class="md-name" id="detailTitle">${escapeHtml(m.name)}</h2>
+        <p class="md-company">${escapeHtml(m.company || "")}</p>
+        <div class="ref-tags">
+          ${m.base && m.base !== "未設定" ? `<span class="ref-tag ${m.base === "新潟" ? "base-niigata" : "base-tokyo"}">${escapeHtml(m.base)}拠点</span>` : ""}
+          <span class="ref-tag">${escapeHtml(m.category)}</span>
+          ${m.team ? `<span class="ref-tag team">${escapeHtml(m.team)}</span>` : ""}
+        </div>
+      </header>
+      ${materials.length ? section("資料", materials.map((l) => `
+        <a class="md-material" href="${escapeHtml(linkHref(l.url))}" target="_blank" rel="noopener noreferrer">
+          ${l.cover ? `<img src="${escapeHtml(linkHref(l.cover))}" alt="" loading="lazy" width="960" height="540">` : ""}
+          <span class="md-material-bar"><span>${escapeHtml(l.label || linkType(l.type).label)}</span><span class="md-material-open">開く ↗</span></span>
+        </a>`).join("")) : ""}
+      ${webs.length ? section("ホームページ・リンク", `<div class="md-links">${webs.map(linkButton).join("")}</div>`) : ""}
+      ${contacts.length ? section("連絡先・SNS", `<div class="md-links">${contacts.map(linkButton).join("")}</div>`) : ""}
+      ${!links.length ? `<p class="md-nolinks">資料・リンクはまだ登録されていません。</p>` : ""}
+      ${section("事業内容", text(m.business))}
+      ${m.customers ? section("主なお客様", text(m.customers)) : ""}
+      ${section("求める紹介", text(m.wants))}
+      ${m.triggers.length ? section("こんな話が出たら", `<div class="ref-triggers">${m.triggers.map((t) => `<span class="ref-trigger">「${escapeHtml(t)}」</span>`).join("")}</div>`) : ""}
+      ${m.note ? section("補足", text(m.note)) : ""}
+      ${section("活動範囲", text(range, "未入力"))}
+      <div class="md-actions">
+        <button type="button" class="ref-btn" data-copy="${m.id}">紹介文をコピー</button>
+        <button type="button" class="ref-btn ghost" data-close-detail>閉じる</button>
+      </div>`;
+  }
+
+  let detailReturnFocus = null;
+  function openDetail(id) {
+    const m = members.find((x) => x.id === id);
+    if (!m) return;
+    detailReturnFocus = document.activeElement;
+    $("#detailBody").innerHTML = detailHtml(m);
+    $("#detailOverlay").hidden = false;
+    $("#detailOverlay").scrollTop = 0;
+    document.body.style.overflow = "hidden";
+    $("#detailClose").focus();
+  }
+  function closeDetail() {
+    $("#detailOverlay").hidden = true;
+    document.body.style.overflow = "";
+    if (detailReturnFocus && detailReturnFocus.focus) detailReturnFocus.focus();
   }
 
   function renderList() {
@@ -381,16 +457,23 @@
       return;
     }
 
+    const detailBtn = t.closest("[data-detail]");
+    if (detailBtn) { openDetail(detailBtn.dataset.detail); return; }
+    if (t.closest("[data-close-detail]")) { closeDetail(); return; }
+
     const gotoBtn = t.closest("[data-goto]");
     if (gotoBtn) { gotoCard(gotoBtn.dataset.goto); return; }
   });
 
   document.querySelectorAll("[data-open-diag]").forEach((b) => b.addEventListener("click", openDiag));
   $("#diagClose").addEventListener("click", closeDiag);
+  $("#detailClose").addEventListener("click", closeDetail);
+  $("#detailOverlay").addEventListener("click", (e) => { if (e.target.id === "detailOverlay") closeDetail(); });
   $("#diagOverlay").addEventListener("click", (e) => { if (e.target.id === "diagOverlay") closeDiag(); });
   document.addEventListener("keydown", (e) => {
     if (e.key !== "Escape") return;
-    if (!$("#diagOverlay").hidden) closeDiag();
+    if (!$("#detailOverlay").hidden) closeDetail();
+    else if (!$("#diagOverlay").hidden) closeDiag();
   });
   $("#diagStart").addEventListener("click", startDiagnosis);
   $("#diagRetry").addEventListener("click", startDiagnosis);
