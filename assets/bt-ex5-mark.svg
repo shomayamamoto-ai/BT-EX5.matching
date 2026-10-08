@@ -1,30 +1,63 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" role="img" aria-label="BT-EX5">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="BT-EX5">
+  <!-- 立体のキューブに十字のリボン(紹介=贈り物)。3面の明暗で奥行きを出し、上面の結び目に光る星を置く -->
   <defs>
-    <linearGradient id="hex" x1="6" y1="2" x2="42" y2="46" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#f4694b"/>
-      <stop offset="0.55" stop-color="#f7853f"/>
-      <stop offset="1" stop-color="#f9b046"/>
+    <linearGradient id="bx-top" x1="12" y1="10" x2="52" y2="32" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffe9d6"/>
+      <stop offset="0.5" stop-color="#ffc79a"/>
+      <stop offset="1" stop-color="#ffa86a"/>
     </linearGradient>
-    <linearGradient id="shine" x1="24" y1="2" x2="24" y2="26" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#fff" stop-opacity="0.35"/>
+    <linearGradient id="bx-left" x1="9" y1="22" x2="32" y2="58" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#f4694b"/>
+      <stop offset="1" stop-color="#b52e1a"/>
+    </linearGradient>
+    <linearGradient id="bx-right" x1="55" y1="22" x2="32" y2="58" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffb54d"/>
+      <stop offset="1" stop-color="#ea6a22"/>
+    </linearGradient>
+    <linearGradient id="bx-rim" x1="32" y1="6" x2="32" y2="58" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fff" stop-opacity="0.95"/>
+      <stop offset="0.5" stop-color="#fff" stop-opacity="0.35"/>
       <stop offset="1" stop-color="#fff" stop-opacity="0"/>
     </linearGradient>
-    <radialGradient id="core" cx="24" cy="24" r="6" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#fff"/>
-      <stop offset="1" stop-color="#ffe3cc"/>
+    <linearGradient id="bx-ribbon-l" x1="20" y1="25" x2="20" y2="52" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fff4ea"/>
+      <stop offset="1" stop-color="#ffc9b2"/>
+    </linearGradient>
+    <linearGradient id="bx-ribbon-r" x1="43" y1="25" x2="43" y2="52" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fffaf2"/>
+      <stop offset="1" stop-color="#ffe1b8"/>
+    </linearGradient>
+    <radialGradient id="bx-glow" cx="32" cy="21" r="12" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fff" stop-opacity="0.95"/>
+      <stop offset="1" stop-color="#fff" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="bx-shadow" cx="32" cy="60" r="20" gradientUnits="userSpaceOnUse" gradientTransform="matrix(1 0 0 0.18 0 49.2)">
+      <stop offset="0" stop-color="#7a2a14" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#7a2a14" stop-opacity="0"/>
     </radialGradient>
   </defs>
-  <path d="M24 2 43 13v22L24 46 5 35V13z" fill="url(#hex)"/>
-  <path d="M24 2 43 13v11H5V13z" fill="url(#shine)"/>
-  <path d="M24 8.6 37.4 16.3v15.4L24 39.4 10.6 31.7V16.3z" fill="none" stroke="#fff" stroke-opacity="0.45" stroke-width="1.1"/>
-  <g stroke="#fff" stroke-opacity="0.55" stroke-width="1" stroke-linecap="round">
-    <path d="M24 24 13.6 18M24 24 34.4 18M24 24v12"/>
-  </g>
-  <g fill="#fff" fill-opacity="0.85">
-    <circle cx="13.6" cy="18" r="1.6"/>
-    <circle cx="34.4" cy="18" r="1.6"/>
-    <circle cx="24" cy="36" r="1.6"/>
-  </g>
-  <path d="M24 11.5c.9 7.6 2.6 9.6 10.5 12.5-7.9 2.9-9.6 4.9-10.5 12.5-.9-7.6-2.6-9.6-10.5-12.5 7.9-2.9 9.6-4.9 10.5-12.5z" fill="url(#core)"/>
-  <circle cx="24" cy="24" r="2.1" fill="#f4694b"/>
+
+  <!-- 接地の影 -->
+  <ellipse cx="32" cy="60" rx="20" ry="3.6" fill="url(#bx-shadow)"/>
+
+  <!-- 3面 -->
+  <path d="M32 6.5 54.5 19.3 32 32.1 9.5 19.3Z" fill="url(#bx-top)" stroke="url(#bx-top)" stroke-width="1.6" stroke-linejoin="round"/>
+  <path d="M9.5 19.3 32 32.1v25.4L9.5 44.7Z" fill="url(#bx-left)" stroke="url(#bx-left)" stroke-width="1.6" stroke-linejoin="round"/>
+  <path d="M54.5 19.3 32 32.1v25.4l22.5-12.8Z" fill="url(#bx-right)" stroke="url(#bx-right)" stroke-width="1.6" stroke-linejoin="round"/>
+
+  <!-- 紹介は「贈り物」: キューブに十字のリボンを掛ける -->
+  <path d="M18.95 24.68 22.55 26.72v25.4l-3.6-2.04Z" fill="url(#bx-ribbon-l)"/>
+  <path d="M41.45 26.72 45.05 24.68v25.4l-3.6 2.04Z" fill="url(#bx-ribbon-r)"/>
+  <path d="M18.95 24.68 22.55 26.72 45.05 13.92 41.45 11.88Z" fill="#fff" fill-opacity="0.92"/>
+  <path d="M41.45 26.72 45.05 24.68 22.55 11.88 18.95 13.92Z" fill="#fff" fill-opacity="0.92"/>
+  <path d="M22.55 26.72v25.4M41.45 26.72v25.4" stroke="#7a2a14" stroke-opacity="0.18" stroke-width="0.5"/>
+
+  <!-- 稜線のハイライト -->
+  <path d="M9.5 19.3 32 6.5l22.5 12.8M32 32.1v25.4" fill="none" stroke="url(#bx-rim)" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round"/>
+  <path d="M9.5 19.3 32 32.1 54.5 19.3" fill="none" stroke="#fff" stroke-opacity="0.75" stroke-width="1" stroke-linejoin="round"/>
+
+  <!-- 上面の光の結び目(等角に寝かせた4方向の星) -->
+  <ellipse cx="32" cy="19.3" rx="12" ry="6.8" fill="url(#bx-glow)" opacity="0.7"/>
+  <path d="M32 12.4c.7 4 2.2 5.4 7.4 6.9-5.2 1.5-6.7 2.9-7.4 6.9-.7-4-2.2-5.4-7.4-6.9 5.2-1.5 6.7-2.9 7.4-6.9Z" fill="#fff" stroke="#ffb27a" stroke-width="0.6" stroke-linejoin="round"/>
+  <circle cx="32" cy="19.3" r="1.7" fill="#f4694b"/>
 </svg>

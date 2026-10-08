@@ -6,22 +6,23 @@
   <meta name="referrer" content="no-referrer">
   <title>紹介先早見表 | BT-EX5</title>
   <style>html.guard-pending body { visibility: hidden; } html.guard-pending::after { content: "読み込み中…"; position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; font: 700 15px sans-serif; color: #a18a7e; background: #fff8f2; }</style>
-  <link rel="icon" type="image/svg+xml" href="../assets/bt-ex5-mark.svg">
+  <link rel="icon" type="image/svg+xml" href="../assets/bt-ex5-mark.svg?v=202610080958">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" onload="this.onload=null;this.rel='stylesheet'">
   <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Noto+Sans+JP:wght@400;500;700;900&display=swap"></noscript>
-  <link rel="stylesheet" href="referral.css?v=202610080948">
+  <link rel="stylesheet" href="referral.css?v=202610080958">
 </head>
 <body>
 
   <header class="ref-header">
     <div class="ref-header-inner">
       <a href="./" class="ref-logo">
-        <img class="brand-mark" src="../assets/bt-ex5-mark.svg" alt="" width="40" height="40">
+        <img class="brand-mark" src="../assets/bt-ex5-mark.svg?v=202610080958" alt="" width="40" height="40">
         <span class="brand-word"><span class="brand-name">BT-<em>EX5</em></span><span class="brand-sub">新潟・東京 紹介者制コミュニティ</span></span>
       </a>
       <nav class="ref-header-nav">
         <button type="button" class="ref-header-cta" data-open-diag>紹介診断</button>
+        <a href="../teams/" class="ref-header-link">チーム分析</a>
         <a href="../admin/" class="ref-header-link" id="adminLink" hidden>名簿の管理</a>
         <a href="../portal/" class="ref-header-link">マイページ</a>
       </nav>
@@ -46,6 +47,15 @@
         <span id="profileNudgeItems"></span>
       </span>
       <span class="prof-nudge-go">自分の情報を入力する →</span>
+    </a>
+
+    <!-- チーム分析への入口 -->
+    <a href="../teams/" class="team-cta">
+      <span class="team-cta-text">
+        <strong>チームの中で仕事が回るには?</strong>
+        <span>各チームで今回っている紹介と、迎えると仕事が回る人(税理士・不動産・写真館など)をまとめました</span>
+      </span>
+      <span class="team-cta-go">チーム分析を見る →</span>
     </a>
 
     <!-- 紹介診断への入口 -->
@@ -143,12 +153,12 @@
 
   <div class="ref-toast" id="refToast" role="status" hidden></div>
 
-  <script src="../auth/server-core.js?v=202610080948"></script>
-  <script src="../auth/mock-server.js?v=202610080948"></script>
-  <script src="../auth/api.js?v=202610080948"></script>
-  <script src="../auth/session.js?v=202610080948"></script>
-  <script src="data.js?v=202610080948"></script>
-  <script src="scoring.js?v=202610080948"></script>
-  <script src="referral.js?v=202610080948"></script>
+  <script src="../auth/server-core.js?v=202610080958"></script>
+  <script src="../auth/mock-server.js?v=202610080958"></script>
+  <script src="../auth/api.js?v=202610080958"></script>
+  <script src="../auth/session.js?v=202610080958"></script>
+  <script src="data.js?v=202610080958"></script>
+  <script src="scoring.js?v=202610080958"></script>
+  <script src="referral.js?v=202610080958"></script>
 </body>
 </html>

@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ja" class="guard-pending">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="referrer" content="no-referrer">
+  <meta name="robots" content="noindex">
+  <title>チーム分析 | BT-EX5</title>
+  <style>html.guard-pending body { visibility: hidden; } html.guard-pending::after { content: "読み込み中…"; position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; font: 700 15px sans-serif; color: #a18a7e; background: #fff8f2; }</style>
+  <link rel="icon" type="image/svg+xml" href="../assets/bt-ex5-mark.svg?v=202610080958">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Noto+Sans+JP:wght@400;500;700;900&display=swap"></noscript>
+  <link rel="stylesheet" href="../referral/referral.css?v=202610080958">
+  <link rel="stylesheet" href="teams.css?v=202610080958">
+</head>
+<body>
+
+  <header class="ref-header">
+    <div class="ref-header-inner">
+      <a href="../referral/" class="ref-logo">
+        <img class="brand-mark" src="../assets/bt-ex5-mark.svg?v=202610080958" alt="" width="40" height="40">
+        <span class="brand-word"><span class="brand-name">BT-<em>EX5</em></span><span class="brand-sub">新潟・東京 紹介者制コミュニティ</span></span>
+      </a>
+      <nav class="ref-header-nav">
+        <a href="../referral/" class="ref-header-link">紹介先早見表</a>
+        <a href="../portal/" class="ref-header-link">マイページ</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="ref-main tm-main">
+    <section class="ref-intro">
+      <p class="ref-eyebrow">TEAM ANALYSIS</p>
+      <h1 class="ref-title">チーム分析</h1>
+      <p class="ref-lead">紹介した仕事がチームの中で回るのは、<strong>同じお客様を持ち、別のサービスを出せる人</strong>が同じチームにいるときです。今の名簿をもとに、各チームで回る紹介と、迎えると仕事が回る人をまとめました。</p>
+      <p class="tm-date" id="tmDate"></p>
+    </section>
+
+    <section class="tm-highlights" aria-label="全体のポイント" id="tmHighlights"></section>
+
+    <section class="tm-block" aria-labelledby="tmFieldsTitle">
+      <h2 class="tm-h2" id="tmFieldsTitle">業種ごとの人数</h2>
+      <p class="tm-sub">0名の業種は、どのチームに入っても紹介が回りやすい「空いている席」です。</p>
+      <ul class="tm-fields" id="tmFields"></ul>
+    </section>
+
+    <nav class="tm-jump" aria-label="チームへ移動" id="tmJump"></nav>
+
+    <div class="tm-teams" id="tmTeams"></div>
+
+    <p class="tm-foot">分析は、名簿の「事業内容」「主なお客様」「求める紹介」をもとにしています。各メンバーの情報が増えたら見直します。</p>
+  </main>
+
+  <footer class="ref-footer">
+    <nav class="ref-footer-nav"><a href="../terms/">利用規約</a><a href="../privacy/">プライバシーポリシー</a></nav>
+    <p>© 2026 BT-EX5</p>
+  </footer>
+
+  <script src="../referral/data.js?v=202610080958"></script>
+  <script src="../auth/server-core.js?v=202610080958"></script>
+  <script src="../auth/mock-server.js?v=202610080958"></script>
+  <script src="../auth/api.js?v=202610080958"></script>
+  <script src="../auth/session.js?v=202610080958"></script>
+  <script src="analysis.js?v=202610080958"></script>
+  <script src="teams.js?v=202610080958"></script>
+</body>
+</html>

@@ -24,6 +24,7 @@ const AuthSession = (function () {
     referral: "../referral/",
     admin: "../admin/",
     profile: "../profile/",
+    teams: "../teams/",
   };
   const ALLOWED_NEXT = Object.keys(SCREENS);
   const DEFAULT_NEXT = "home";
