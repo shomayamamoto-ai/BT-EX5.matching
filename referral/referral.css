@@ -1061,3 +1061,8 @@ a.site-maker:hover span { text-decoration: underline; color: var(--accent-dark);
 @media (max-width: 340px) {
   .ref-header-inner:has(#adminLink:not([hidden])) .ref-logo { display: none; }
 }
+
+/* 業種の絞り込み: まとまりごとに見出しをつける */
+#categoryChips { display: grid; gap: 10px; }
+.ref-chip-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.ref-chip-group-label { margin: 0 0 6px; font-size: 11.5px; font-weight: 700; color: var(--text-light); letter-spacing: 0.04em; }

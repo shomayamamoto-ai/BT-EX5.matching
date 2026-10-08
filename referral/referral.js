@@ -96,7 +96,7 @@
   function matchesFilter(m) {
     if (filter.topic !== "all" && !m.topics.includes(filter.topic)) return false;
     if (filter.offer && !m.offer) return false;
-    if (filter.category !== "all" && m.category !== filter.category) return false;
+    if (filter.category !== "all" && !refInCategory(m, filter.category)) return false;
     if (filter.area === "niigata" && !m.faceAreas.includes("niigata")) return false;
     if (filter.area === "tokyo" && !m.faceAreas.includes("tokyo")) return false;
     if (filter.area === "online" && m.online === "none") return false;
@@ -322,9 +322,18 @@
   }
 
   function renderChips() {
+    // 業種はまとまりごとに並べる。IT・Web・クリエイティブは細かく分け、その仕事を扱う人も数える
+    const count = (c) => members.filter((m) => refInCategory(m, c)).length;
+    const grouped = REF_CATEGORY_GROUPS.flatMap((g) => g.categories);
+    const rest = REF_CATEGORIES.filter((c) => !grouped.includes(c));
     $("#categoryChips").innerHTML = [
-      chipHtml("category", "all", "すべて", filter.category === "all"),
-      ...REF_CATEGORIES.map((c) => chipHtml("category", c, c, filter.category === c)),
+      `<div class="ref-chip-row">${chipHtml("category", "all", "すべて", filter.category === "all")}</div>`,
+      ...REF_CATEGORY_GROUPS.map((g, i) => `
+        <div class="ref-chip-group">
+          <p class="ref-chip-group-label">${escapeHtml(g.label)}</p>
+          <div class="ref-chip-row">${(i === REF_CATEGORY_GROUPS.length - 1 ? g.categories.concat(rest) : g.categories)
+            .map((c) => chipHtml("category", c, `${c}(${count(c)})`, filter.category === c)).join("")}</div>
+        </div>`),
     ].join("");
     const areaOptions = [
       ["all", "すべて"],

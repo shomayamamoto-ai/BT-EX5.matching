@@ -23,8 +23,61 @@ const COMMUNITY = {
 
 const UNCATEGORIZED = "その他・未分類";
 
+// IT・Web・クリエイティブは広いので、仕事の中身ごとに分ける(一覧では1つのまとまりとして並べる)
+const REF_CATEGORY_GROUPS = [
+  {
+    label: "IT・Web・クリエイティブ",
+    categories: [
+      "AI研修・AI活用",
+      "システム開発",
+      "Web制作",
+      "SNS運用・集客",
+      "動画編集・映像制作",
+      "企業PR動画制作",
+      "音楽・作詞作曲・声",
+      "デザイン・ブランディング",
+      "EC・ネットショップ",
+    ],
+  },
+  {
+    label: "そのほかの業種",
+    categories: ["士業・専門家", "お金・保険", "住まい・不動産", "人材・組織", "美容・健康", "食・地域産品", "暮らし・サービス"],
+  },
+];
+
+// 業種と話題の対応。業種で絞り込むと、その業種の人に加えて、この話題を扱う人も出る
+// (例: 本業がシステム開発でも、Web制作を扱う人は「Web制作」に出る)
+const REF_CATEGORY_TOPICS = {
+  "AI研修・AI活用": ["ai"],
+  "システム開発": ["efficiency"],
+  "Web制作": ["web"],
+  "SNS運用・集客": ["sns"],
+  "動画編集・映像制作": ["video", "prvideo"],
+  "企業PR動画制作": ["prvideo"],
+  "音楽・作詞作曲・声": ["music"],
+  "デザイン・ブランディング": ["design", "branding"],
+  "EC・ネットショップ": ["ec"],
+};
+
+// 前に使っていた業種名(保存済みの名簿は、読み込むときに新しい業種へ置き換える)
+const REF_LEGACY_CATEGORIES = ["IT・Web・クリエイティブ"];
+
+function refInCategory(m, c) {
+  if (m.category === c) return true;
+  const topics = REF_CATEGORY_TOPICS[c];
+  return !!topics && (m.topics || []).some((t) => topics.includes(t));
+}
+
 const REF_CATEGORIES = [
-  "IT・Web・クリエイティブ",
+  "AI研修・AI活用",
+  "システム開発",
+  "Web制作",
+  "SNS運用・集客",
+  "動画編集・映像制作",
+  "企業PR動画制作",
+  "音楽・作詞作曲・声",
+  "デザイン・ブランディング",
+  "EC・ネットショップ",
   "士業・専門家",
   "お金・保険",
   "住まい・不動産",
@@ -50,11 +103,14 @@ const TOPIC_GROUPS = [
 ];
 
 const TOPICS = [
-  { id: "efficiency", group: "biz", label: "業務の効率化・システム化" },
-  { id: "web", group: "biz", label: "ホームページ・集客・SNS" },
+  { id: "efficiency", group: "biz", label: "システム開発・業務効率化" },
+  { id: "web", group: "biz", label: "ホームページ・Web制作" },
+  { id: "sns", group: "biz", label: "SNS運用・集客・公式LINE" },
   { id: "ec", group: "biz", label: "ネットショップ・EC" },
   { id: "ai", group: "biz", label: "AI活用・AI研修" },
-  { id: "video", group: "biz", label: "動画・PR" },
+  { id: "video", group: "biz", label: "動画編集・撮影" },
+  { id: "prvideo", group: "biz", label: "企業PR動画・採用動画" },
+  { id: "music", group: "biz", label: "作詞作曲・音楽制作" },
   { id: "design", group: "biz", label: "デザイン・印刷物" },
   { id: "branding", group: "biz", label: "ブランディング・見せ方" },
   { id: "tax", group: "money", label: "税金・会計" },
@@ -83,11 +139,14 @@ const TOPICS = [
 // 話題ごとの言いかえ。診断のキーワードがこれに当たると、その話題を持つ人に一致する
 // (本人の説明文にその言葉がなくても見つかるように)
 const TOPIC_KEYWORDS = {
-  efficiency: ["効率化", "システム", "自動化", "手作業", "Excel", "エクセル", "予約管理", "在庫", "DX"],
-  web: ["ホームページ", "HP", "Web", "ウェブ", "サイト", "LP", "集客", "SNS", "インスタ", "LINE", "SEO", "MEO"],
+  efficiency: ["効率化", "システム", "自動化", "手作業", "Excel", "エクセル", "予約管理", "在庫", "DX", "アプリ", "開発"],
+  web: ["ホームページ", "HP", "Web", "ウェブ", "サイト", "LP", "SEO", "MEO"],
+  sns: ["SNS", "インスタ", "Instagram", "TikTok", "LINE", "集客", "フォロワー", "運用代行"],
   ec: ["EC", "ネットショップ", "通販", "楽天", "Amazon", "ネット販売"],
   ai: ["AI", "ChatGPT", "生成AI", "AI研修"],
-  video: ["動画", "映像", "YouTube", "PR", "撮影"],
+  video: ["動画", "映像", "YouTube", "撮影", "編集", "ショート動画", "リール"],
+  prvideo: ["PR動画", "企業PR", "会社紹介", "採用動画", "CM", "プロモーション", "PR"],
+  music: ["作詞", "作曲", "音楽", "BGM", "楽曲", "ジングル", "レコーディング"],
   design: ["デザイン", "ロゴ", "チラシ", "ポスター", "バナー", "印刷", "名刺", "パンフレット"],
   branding: ["ブランディング", "見せ方", "印象", "ブランド"],
   tax: ["税金", "税理士", "会計", "確定申告", "経理", "節税"],
@@ -200,7 +259,7 @@ const REF_SEED_MEMBERS = [
     company: "Lumenium(ルメニウム)代表",
     team: "フェリシア",
     base: "東京",
-    category: "IT・Web・クリエイティブ",
+    category: "システム開発",
     business:
       "業務効率化システムの開発(予約・在庫・仕入れ・契約書・営業リスト・電話の自動応対・会員制マッチングなど/30万〜600万円)、自分で更新・分析できるホームページ・LP制作(サイト60万円〜・LP30万円〜)、社員向け生成AI研修・AI導入支援・教材制作(講師1回10万円〜)。動画制作・映像編集(PR・SNS・企業紹介・採用・AI動画/5万円〜)、SNS運用代行・LINE構築・LINE Bot(初期20万円〜・月額10万円〜)、ロゴ・バナー・ポスター・イラスト・作詞作曲(3万円〜)、モデル・アクター・MCの手配とイベント企画運営(キャスト1名5,000円〜)。",
     customers: "複数店舗の店舗オーナー/飲食チェーンの店舗統括/SNS運用代行会社/名刺交換の多い経営者/会員制の交流会の運営会社/雑貨店など小売・物販の経営者/士業事務所/研修を行いたい企業",
@@ -211,7 +270,7 @@ const REF_SEED_MEMBERS = [
     face: "関東(東京拠点)",
     faceAreas: ["tokyo"],
     online: "all",
-    topics: ["efficiency", "web", "ai", "video", "design", "org", "hiring", "event", "voice"],
+    topics: ["efficiency", "web", "ai", "sns", "video", "prvideo", "music", "design", "org", "hiring", "event", "voice"],
     targets: ["restaurant", "retail", "salon", "pro", "build", "it"],
     prospects: ["owner", "staff"],
     // 「紹介文をコピー」に入る本人の自己紹介(本人の依頼で原文のまま)
@@ -222,7 +281,7 @@ const REF_SEED_MEMBERS = [
       { type: "instagram", url: "https://www.instagram.com/showstagram.keio/", label: "@showstagram.keio" },
     ],
   },
-  Object.assign(rosterMember("m02", "あまみや 七音", "echo studio 代表/声優ボイス・ドクター", "Over", "IT・Web・クリエイティブ", ["voice", "video", "health"]), {
+  Object.assign(rosterMember("m02", "あまみや 七音", "echo studio 代表/声優ボイス・ドクター", "Over", "音楽・作詞作曲・声", ["voice", "video", "music", "health"]), {
     business: "ボイストレーニング教室、レコーディングスタジオ、タレント・声優のキャスティング。",
     customers: "声優の卵、芸能プロダクション、カラオケ好きのビジネスマン、映像制作会社、TV局",
     note: "「長く喋ると喉が枯れる…原因は姿勢と口の開け方と呼吸量」",
@@ -231,7 +290,7 @@ const REF_SEED_MEMBERS = [
     targets: ["it", "personal"],
     prospects: ["individual", "owner", "staff"],
   }),
-  Object.assign(rosterMember("m03", "佐藤 志織", "アットハッピー/Canva・AI講師、LP・サイト制作", "All Win🏆", "IT・Web・クリエイティブ", ["ai", "web", "design"]), {
+  Object.assign(rosterMember("m03", "佐藤 志織", "アットハッピー/Canva・AI講師、LP・サイト制作", "All Win🏆", "AI研修・AI活用", ["ai", "web", "design"]), {
     business: "Canva・AI講師、LP・サイト制作、Webデザイン。",
     customers: "個人・フリーランス・事業主",
     wants: "いい活動をしているのに、発信・Web・LINE・申し込み導線がバラバラでうまく広がっていない人",
@@ -279,7 +338,7 @@ const REF_SEED_MEMBERS = [
     targets: ["pro"],
     prospects: ["owner", "staff"],
   }),
-  Object.assign(rosterMember("m10", "大枝 篤志", "マイプラBT 代表/売上動線も作れる公式LINE専門家", "Team Bloom∞🌸", "IT・Web・クリエイティブ", ["web", "hiring", "life"]), {
+  Object.assign(rosterMember("m10", "大枝 篤志", "マイプラBT 代表/売上動線も作れる公式LINE専門家", "Team Bloom∞🌸", "SNS運用・集客", ["sns", "hiring", "life"]), {
     business: "売上を増やす(売上動線作りのサポート・LINE・SNS)/収入を増やす(副業・紹介案件・人材紹介)/支出を減らす(格安SIM・ガス・Wi-Fiなど固定費の削減)。",
     customers: "30〜50代の男女(特に40代が中心)/個人事業主・フリーランス・中小企業経営者/子育て世代・共働き世帯/会社員で副収入を作りたい人",
     wants: "皆さんが定期的に通われている美容室のオーナー/起業して3年以内の経営者・個人事業主",
@@ -287,7 +346,7 @@ const REF_SEED_MEMBERS = [
     targets: ["salon", "any"],
     prospects: ["owner", "individual"],
   }),
-  rosterMember("m11", "品川 瑞樹", "株式会社アドバンス/集客・コンサル", "", "IT・Web・クリエイティブ", ["web"]),
+  rosterMember("m11", "品川 瑞樹", "株式会社アドバンス/集客・コンサル", "", "SNS運用・集客", ["sns", "web"]),
   Object.assign(rosterMember("m12", "菅野 節子", "リンパレディアソック 代表者/誰でも健康アドバイザー", "Team Bloom∞🌸", "美容・健康", ["health"]), {
     business: "リンパレディ講座。",
     customers: "セラピスト、施術者、一般のお客様、OL、主婦",
@@ -305,7 +364,7 @@ const REF_SEED_MEMBERS = [
     targets: ["any"],
     prospects: ["owner", "staff", "individual"],
   }),
-  Object.assign(rosterMember("m16", "桜羽 李果", "株式会社LEFANA/女性向けSNSブランディング", "Team Bloom∞🌸", "IT・Web・クリエイティブ", ["branding", "web", "design", "video"]), {
+  Object.assign(rosterMember("m16", "桜羽 李果", "株式会社LEFANA/女性向けSNSブランディング", "Team Bloom∞🌸", "デザイン・ブランディング", ["branding", "sns", "web", "design", "video"]), {
     business: "女性向けに特化したデザイン会社。ブランディング、Web制作・運営・コンサルティング、グラフィックデザイン、SNS運用代行、インフルエンサー・モデルのキャスティング、写真・映像撮影、ビジネスマッチング。",
     customers: "女性向けの商材をお持ちの方、美容クリニック、お菓子・スイーツ業界、不動産",
     wants: "Webディレクター、Webデザイナー、SNS運用ディレクター、営業など(一緒に働く仲間)",
@@ -321,13 +380,13 @@ const REF_SEED_MEMBERS = [
     targets: ["retail", "pro", "any"],
     prospects: ["owner", "individual"],
   }),
-  Object.assign(rosterMember("m18", "髙橋 誠二", "スポーツ用品EC事業者/EC運営支援", "CANOW", "IT・Web・クリエイティブ", ["ec", "web"]), {
+  Object.assign(rosterMember("m18", "髙橋 誠二", "スポーツ用品EC事業者/EC運営支援", "CANOW", "EC・ネットショップ", ["ec", "web"]), {
     business: "スポーツ用品のEC事業、EC運営支援。",
     triggers: ["ネットショップを始めたい", "ECの売上を伸ばしたい", "スポーツ用品"],
     targets: ["retail"],
     prospects: ["owner", "staff"],
   }),
-  Object.assign(rosterMember("m19", "岡本 伸", "株式会社 心灯/目標達成コーチング", "Team Bloom∞🌸", "IT・Web・クリエイティブ", ["coaching", "branding", "web", "video"]), {
+  Object.assign(rosterMember("m19", "岡本 伸", "株式会社 心灯/目標達成コーチング", "Team Bloom∞🌸", "Web制作", ["coaching", "branding", "web", "sns", "video"]), {
     business: "Web制作(HP・SNS運用・SEO・MEO対策・AI動画)、自己ブランディングビジネス(能力開発)。",
     customers: "10名前後の法人様/目標達成が苦手な人/3年目の個人事業主",
     triggers: ["HPを作りたい", "SNS運用を任せたい", "SEO・MEO対策", "AI動画", "目標が達成できない", "自分をブランディングしたい"],
@@ -358,7 +417,7 @@ const REF_SEED_MEMBERS = [
     targets: ["any"],
     prospects: ["owner", "individual"],
   }),
-  Object.assign(rosterMember("m23", "見上 恵", "ちきゅあそびくらぶ/AI絵本クリエイター、スクール講師、クリエイター募集", "Team Bloom∞🌸", "IT・Web・クリエイティブ", ["ai", "design", "kids"]), {
+  Object.assign(rosterMember("m23", "見上 恵", "ちきゅあそびくらぶ/AI絵本クリエイター、スクール講師、クリエイター募集", "Team Bloom∞🌸", "AI研修・AI活用", ["ai", "design", "kids"]), {
     business: "AI絵本クリエイター、講座講師。",
     customers: "自分の想いを絵本にしたい方",
     triggers: ["想いを絵本にしたい", "自分史を絵本に残したい", "AI絵本", "クリエイターになりたい", "AIの講座を受けたい"],
@@ -429,6 +488,9 @@ const REF_SEED_REVISIONS = [
   { rev: "2026-10-yamamoto-2", ids: ["yamamoto"], force: true },
   // 本人の依頼で、紹介文に入れる自己紹介を追加
   { rev: "2026-10-yamamoto-3", ids: ["yamamoto"], force: true },
+  // IT・Web・クリエイティブを細かい業種に分けたときの見直し。業種と話題だけを見る。
+  // 未編集のメンバーは置き換え、編集済みのメンバーには新しい話題(addTopics)だけを足す
+  { rev: "2026-10-it-split-1", ids: ["yamamoto", "m02", "m03", "m10", "m11", "m16", "m18", "m19", "m23"], fields: ["category", "topics"], addTopics: ["sns", "prvideo", "music"] },
 ];
 
 // 紹介に効く項目(重要な順)。足りない項目は管理者ページの「お願い文」と、
@@ -593,6 +655,8 @@ var BtexServerCore = (function () {
       REF_SEED_MEMBERS: typeof REF_SEED_MEMBERS === "undefined" ? null : REF_SEED_MEMBERS,
       REF_SEED_REVISIONS: typeof REF_SEED_REVISIONS === "undefined" ? null : REF_SEED_REVISIONS,
       LINK_TYPES: typeof LINK_TYPES === "undefined" ? null : LINK_TYPES,
+      REF_LEGACY_CATEGORIES: typeof REF_LEGACY_CATEGORIES === "undefined" ? null : REF_LEGACY_CATEGORIES,
+      REF_CATEGORY_TOPICS: typeof REF_CATEGORY_TOPICS === "undefined" ? null : REF_CATEGORY_TOPICS,
     };
     return lists[name];
   }
@@ -649,6 +713,7 @@ var BtexServerCore = (function () {
         migrated = true;
       }
       if (applySeedRevisions(db)) migrated = true;
+      if (remapLegacyCategories(db)) migrated = true;
 
       if (migrated) saveDb(db);
       return db;
@@ -670,7 +735,8 @@ var BtexServerCore = (function () {
     // 初期名簿の更新(REF_SEED_REVISIONS)を既存の名簿に一度だけ反映する。
     // 管理者ページ・本人が編集していないメンバーは初期名簿の内容に置き換え、
     // 編集済みのメンバーは空欄だけを埋める(force: true の更新は編集済みでも置き換える)。
-    // 削除済みのメンバーは戻さない
+    // fields があればその項目だけを見る。addTopics は、置き換えなかった(編集済みの)メンバーに
+    // 初期名簿のその話題だけを足す。削除済みのメンバーは戻さない
     function applySeedRevisions(db) {
       var revs = dataList("REF_SEED_REVISIONS");
       var seedMembers = dataList("REF_SEED_MEMBERS");
@@ -688,11 +754,41 @@ var BtexServerCore = (function () {
           var next = Object.assign({}, current);
           Object.keys(seedMember).forEach(function (k) {
             if (k === "id") return;
+            if (r.fields && r.fields.indexOf(k) === -1) return;
             if (r.force || !current.editedAt || isBlankField(k, current[k])) next[k] = clone(seedMember[k]);
           });
+          if (r.addTopics && Array.isArray(next.topics)) {
+            next.topics = next.topics.concat((seedMember.topics || []).filter(function (t) {
+              return r.addTopics.indexOf(t) !== -1 && next.topics.indexOf(t) === -1;
+            }));
+          }
           db.referralMembers[index] = next;
         });
         db.seedRevisions.push(r.rev);
+        changed = true;
+      });
+      return changed;
+    }
+
+    // 使わなくなった業種名(REF_LEGACY_CATEGORIES)のメンバーを新しい業種に置き換える。
+    // 初期名簿にいる人は初期名簿の業種、いない人は扱う話題から決め、決まらなければ未分類
+    function remapLegacyCategories(db) {
+      var legacy = dataList("REF_LEGACY_CATEGORIES");
+      var categories = dataList("REF_CATEGORIES");
+      if (!legacy || !categories || !db.referralMembers) return false;
+      var seedMembers = dataList("REF_SEED_MEMBERS") || [];
+      var catTopics = dataList("REF_CATEGORY_TOPICS") || {};
+      var changed = false;
+      db.referralMembers.forEach(function (m) {
+        if (legacy.indexOf(m.category) === -1) return;
+        var seedMember = seedMembers.filter(function (x) { return x.id === m.id; })[0];
+        var next = seedMember && categories.indexOf(seedMember.category) !== -1 ? seedMember.category : null;
+        if (!next) {
+          next = Object.keys(catTopics).filter(function (c) {
+            return categories.indexOf(c) !== -1 && (m.topics || []).some(function (t) { return catTopics[c].indexOf(t) !== -1; });
+          })[0] || categories[categories.length - 1];
+        }
+        m.category = next;
         changed = true;
       });
       return changed;

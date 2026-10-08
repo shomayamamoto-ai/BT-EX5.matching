@@ -138,6 +138,8 @@ var BtexServerCore = (function () {
       REF_SEED_MEMBERS: typeof REF_SEED_MEMBERS === "undefined" ? null : REF_SEED_MEMBERS,
       REF_SEED_REVISIONS: typeof REF_SEED_REVISIONS === "undefined" ? null : REF_SEED_REVISIONS,
       LINK_TYPES: typeof LINK_TYPES === "undefined" ? null : LINK_TYPES,
+      REF_LEGACY_CATEGORIES: typeof REF_LEGACY_CATEGORIES === "undefined" ? null : REF_LEGACY_CATEGORIES,
+      REF_CATEGORY_TOPICS: typeof REF_CATEGORY_TOPICS === "undefined" ? null : REF_CATEGORY_TOPICS,
     };
     return lists[name];
   }
@@ -194,6 +196,7 @@ var BtexServerCore = (function () {
         migrated = true;
       }
       if (applySeedRevisions(db)) migrated = true;
+      if (remapLegacyCategories(db)) migrated = true;
 
       if (migrated) saveDb(db);
       return db;
@@ -215,7 +218,8 @@ var BtexServerCore = (function () {
     // 初期名簿の更新(REF_SEED_REVISIONS)を既存の名簿に一度だけ反映する。
     // 管理者ページ・本人が編集していないメンバーは初期名簿の内容に置き換え、
     // 編集済みのメンバーは空欄だけを埋める(force: true の更新は編集済みでも置き換える)。
-    // 削除済みのメンバーは戻さない
+    // fields があればその項目だけを見る。addTopics は、置き換えなかった(編集済みの)メンバーに
+    // 初期名簿のその話題だけを足す。削除済みのメンバーは戻さない
     function applySeedRevisions(db) {
       var revs = dataList("REF_SEED_REVISIONS");
       var seedMembers = dataList("REF_SEED_MEMBERS");
@@ -233,11 +237,41 @@ var BtexServerCore = (function () {
           var next = Object.assign({}, current);
           Object.keys(seedMember).forEach(function (k) {
             if (k === "id") return;
+            if (r.fields && r.fields.indexOf(k) === -1) return;
             if (r.force || !current.editedAt || isBlankField(k, current[k])) next[k] = clone(seedMember[k]);
           });
+          if (r.addTopics && Array.isArray(next.topics)) {
+            next.topics = next.topics.concat((seedMember.topics || []).filter(function (t) {
+              return r.addTopics.indexOf(t) !== -1 && next.topics.indexOf(t) === -1;
+            }));
+          }
           db.referralMembers[index] = next;
         });
         db.seedRevisions.push(r.rev);
+        changed = true;
+      });
+      return changed;
+    }
+
+    // 使わなくなった業種名(REF_LEGACY_CATEGORIES)のメンバーを新しい業種に置き換える。
+    // 初期名簿にいる人は初期名簿の業種、いない人は扱う話題から決め、決まらなければ未分類
+    function remapLegacyCategories(db) {
+      var legacy = dataList("REF_LEGACY_CATEGORIES");
+      var categories = dataList("REF_CATEGORIES");
+      if (!legacy || !categories || !db.referralMembers) return false;
+      var seedMembers = dataList("REF_SEED_MEMBERS") || [];
+      var catTopics = dataList("REF_CATEGORY_TOPICS") || {};
+      var changed = false;
+      db.referralMembers.forEach(function (m) {
+        if (legacy.indexOf(m.category) === -1) return;
+        var seedMember = seedMembers.filter(function (x) { return x.id === m.id; })[0];
+        var next = seedMember && categories.indexOf(seedMember.category) !== -1 ? seedMember.category : null;
+        if (!next) {
+          next = Object.keys(catTopics).filter(function (c) {
+            return categories.indexOf(c) !== -1 && (m.topics || []).some(function (t) { return catTopics[c].indexOf(t) !== -1; });
+          })[0] || categories[categories.length - 1];
+        }
+        m.category = next;
         changed = true;
       });
       return changed;

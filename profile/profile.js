@@ -33,7 +33,11 @@
   }
 
   function setupForm() {
-    $("#fCategory").innerHTML = REF_CATEGORIES.map((c) => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join("");
+    // 業種はまとまりごとに選べるようにする(どのまとまりにも入らない業種は最後に)
+    const opt = (c) => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`;
+    const grouped = REF_CATEGORY_GROUPS.flatMap((g) => g.categories);
+    $("#fCategory").innerHTML = REF_CATEGORY_GROUPS.map((g) => `<optgroup label="${escapeHtml(g.label)}">${g.categories.map(opt).join("")}</optgroup>`).join("")
+      + REF_CATEGORIES.filter((c) => !grouped.includes(c)).map(opt).join("");
     $("#fBase").innerHTML = REF_BASES.map((b) => `<option value="${escapeHtml(b)}">${escapeHtml(b)}</option>`).join("");
     checkboxes("#fTopics", "topics", TOPICS);
     checkboxes("#fTargets", "targets", [{ id: "any", label: "業種を問わない" }, ...INDUSTRIES]);

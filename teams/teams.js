@@ -22,7 +22,7 @@
 
   function fillCounts(text) {
     const vars = {
-      webCount: members.filter((m) => m.topics.some((t) => t === "web" || t === "ec")).length,
+      webCount: members.filter((m) => m.topics.some((t) => t === "web" || t === "sns" || t === "ec")).length,
       noWantsCount: members.filter((m) => !m.wants).length,
     };
     return text.replace(/\{(\w+)\}/g, (_, k) => (k in vars ? vars[k] : ""));
@@ -36,7 +36,7 @@
   }
 
   function renderFields() {
-    const counts = REF_CATEGORIES.map((c) => ({ c, n: members.filter((m) => m.category === c).length }));
+    const counts = REF_CATEGORIES.map((c) => ({ c, n: members.filter((m) => refInCategory(m, c)).length }));
     const max = Math.max(1, ...counts.map((x) => x.n));
     $("#tmFields").innerHTML = counts
       .map(({ c, n }) => `
