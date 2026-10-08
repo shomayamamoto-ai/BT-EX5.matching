@@ -1,44 +1,40 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="BT-EX5">
-  <!-- ご縁(5円)のコイン。中央の穴のまわりに5つの点(チーム5)を、赤い糸(縁)で結ぶ -->
+  <!-- 5つの点を1本の糸で結んだ五角形。紹介が人から人へ巡る様子(オープニングムービーの結び目) -->
   <defs>
-    <linearGradient id="cn-face" x1="10" y1="6" x2="54" y2="58" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#fff0b8"/>
-      <stop offset="0.35" stop-color="#f6cf6a"/>
-      <stop offset="0.7" stop-color="#dba23a"/>
-      <stop offset="1" stop-color="#b9781f"/>
+    <linearGradient id="mk-tile" x1="8" y1="2" x2="56" y2="62" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#3a2219"/>
+      <stop offset="1" stop-color="#140b09"/>
     </linearGradient>
-    <linearGradient id="cn-rim" x1="54" y1="58" x2="10" y2="6" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#fff3c4"/>
-      <stop offset="0.5" stop-color="#c58a2a"/>
-      <stop offset="1" stop-color="#8f5a14"/>
+    <linearGradient id="mk-thread" x1="12" y1="12" x2="52" y2="52" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ff7a52"/>
+      <stop offset="0.55" stop-color="#f4694b"/>
+      <stop offset="1" stop-color="#ffbe4d"/>
     </linearGradient>
-    <linearGradient id="cn-hole" x1="27" y1="27" x2="37" y2="37" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#8f5a14"/>
-      <stop offset="1" stop-color="#fff0b8"/>
+    <radialGradient id="mk-glow" cx="32" cy="14.2" r="11" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffd27a" stop-opacity="0.75"/>
+      <stop offset="1" stop-color="#ffd27a" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="mk-streak" x1="49.3" y1="26.8" x2="42.7" y2="47.2" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fff4dc" stop-opacity="0"/>
+      <stop offset="0.75" stop-color="#fff4dc" stop-opacity="0.95"/>
+      <stop offset="1" stop-color="#fff4dc" stop-opacity="1"/>
     </linearGradient>
-    <mask id="cn-cut">
-      <rect width="64" height="64" fill="#fff"/>
-      <circle cx="32" cy="32" r="6.4" fill="#000"/>
-    </mask>
+    <linearGradient id="mk-edge" x1="32" y1="0" x2="32" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fff" stop-opacity="0.22"/>
+      <stop offset="1" stop-color="#fff" stop-opacity="0"/>
+    </linearGradient>
   </defs>
-
-  <g mask="url(#cn-cut)">
-    <!-- 面と縁 -->
-    <circle cx="32" cy="32" r="29" fill="url(#cn-face)"/>
-    <circle cx="32" cy="32" r="27.4" fill="none" stroke="url(#cn-rim)" stroke-width="2.4"/>
-    <circle cx="32" cy="32" r="24.6" fill="none" stroke="#9a6418" stroke-opacity="0.35" stroke-width="0.7"/>
-    <!-- 光の反射 -->
-    <path d="M12.5 22a21.5 21.5 0 0 1 17-13.4" fill="none" stroke="#fff" stroke-opacity="0.75" stroke-width="2" stroke-linecap="round"/>
-    <!-- 赤い糸で結ぶ5つの点 -->
-    <path d="M32 15.2 48 26.8 41.9 45.6H22.1L16 26.8Z" fill="none" stroke="#d8402a" stroke-width="2.1" stroke-linejoin="round"/>
-    <g fill="#fff8e6" stroke="#d8402a" stroke-width="1.4">
-      <circle cx="32" cy="15.2" r="3"/>
-      <circle cx="48" cy="26.8" r="3"/>
-      <circle cx="41.9" cy="45.6" r="3"/>
-      <circle cx="22.1" cy="45.6" r="3"/>
-      <circle cx="16" cy="26.8" r="3"/>
-    </g>
+  <rect x="1" y="1" width="62" height="62" rx="15" fill="url(#mk-tile)"/>
+  <rect x="1.6" y="1.6" width="60.8" height="60.8" rx="14.4" fill="none" stroke="url(#mk-edge)" stroke-width="1.2"/>
+  <circle cx="32" cy="14.2" r="11" fill="url(#mk-glow)"/>
+  <path d="M32 14.2 49.3 26.8 42.7 47.2H21.3L14.7 26.8Z" fill="none" stroke="url(#mk-thread)" stroke-width="3.4" stroke-linejoin="round"/>
+  <!-- 糸の上を巡る光 -->
+  <path d="M49.3 26.8 42.7 47.2" stroke="url(#mk-streak)" stroke-width="3.4" stroke-linecap="round"/>
+  <g fill="#fff8ec" stroke="#1c100c" stroke-width="1.2">
+    <circle cx="49.3" cy="26.8" r="3.5"/>
+    <circle cx="42.7" cy="47.2" r="3.5"/>
+    <circle cx="21.3" cy="47.2" r="3.5"/>
+    <circle cx="14.7" cy="26.8" r="3.5"/>
   </g>
-  <!-- 穴の内側の段差 -->
-  <circle cx="32" cy="32" r="7.1" fill="none" stroke="url(#cn-hole)" stroke-width="1.4"/>
+  <circle cx="32" cy="14.2" r="4.6" fill="#fff8ec" stroke="#ffbe4d" stroke-width="1.6"/>
 </svg>

@@ -1,7 +1,7 @@
 # BT-EX5 オープニングの音(ここで合成する)
 import numpy as np, wave, sys
 SR = 44100
-DUR = 15.0
+DUR = 12.0
 n = int(SR * DUR)
 t = np.arange(n) / SR
 out = np.zeros(n)
@@ -26,42 +26,31 @@ pad = sum(np.sin(2 * np.pi * f * t + 0.3 * np.sin(2 * np.pi * 0.2 * t + k)) for 
 pad_env = np.clip(t / 3.0, 0, 1) * np.clip((DUR - t) / 2.5, 0, 1)
 out += 0.035 * pad * pad_env
 
-# 2) 5円玉のチャリン(落下の着地 1.95s と、はずみ 2.35s / 2.55s)
-for st, g in [(1.95, 0.5), (2.32, 0.22), (2.52, 0.1)]:
-    for f, a, d in [(3150, 1.0, 9), (4720, 0.7, 12), (6280, 0.45, 16), (2210, 0.4, 7)]:
-        out += g * a * np.sin(2 * np.pi * f * t) * env_exp(st, d, 1.5) * np.clip((t - st) / 0.001, 0, 1)
+# 2) 最初の光がともる音(0.35s)
+out += bell(587.33, 0.35, 0.10, decay=1.2)
+out += bell(880.0, 0.38, 0.04, decay=1.6)
 
-# 3) 穴に飛び込む「ヒュッ」(3.4〜5.0)— ノイズをだんだん明るく
-rng = np.random.default_rng(5)
-noise = rng.standard_normal(n)
-i0, i1 = int(3.4 * SR), int(5.05 * SR)
-seg = noise[i0:i1]
-filt = np.zeros_like(seg)
-acc = 0.0
-L = len(seg)
-for i in range(L):
-    a = 0.01 + 0.25 * (i / L) ** 2
-    acc += a * (seg[i] - acc)
-    filt[i] = acc
-sweep_env = np.sin(np.linspace(0, np.pi, L)) ** 2 * np.linspace(0.3, 1, L)
-out[i0:i1] += 0.5 * filt * sweep_env
+# 3) 光が5つに分かれる「ふわっ」(1.9〜2.7)— 高い音がゆっくり立ち上がる
+rise = sum(np.sin(2 * np.pi * f * t) for f in [1174.7, 1568.0])
+rise_env = np.clip((t - 1.9) / 0.6, 0, 1) * np.clip((2.8 - t) / 0.3, 0, 1)
+out += 0.015 * rise * rise_env
 
-# 4) 5つの光がともる音(陽音階 D5 E5 G5 A5 B5)
-for st, f in zip([5.2, 5.6, 6.0, 6.4, 6.8], [587.33, 659.25, 783.99, 880.0, 987.77]):
+# 4) 5つの光が着く音(陽音階 D5 E5 G5 A5 B5、着く時刻に合わせる)
+for st, f in zip([2.6, 2.75, 2.9, 3.05, 3.2], [587.33, 659.25, 783.99, 880.0, 987.77]):
     out += bell(f, st, 0.16)
 
-# 5) 赤い糸を結ぶきらめき(7.0〜8.4)
+# 5) 糸を結ぶきらめき(3.2〜4.6)
 shim = sum(np.sin(2 * np.pi * f * t) for f in [1760, 2349, 2637])
-shim_env = np.clip((t - 7.0) / 0.4, 0, 1) * np.clip((8.6 - t) / 0.6, 0, 1) * (0.5 + 0.5 * np.sin(2 * np.pi * 9 * t))
+shim_env = np.clip((t - 3.2) / 0.4, 0, 1) * np.clip((4.8 - t) / 0.6, 0, 1) * (0.5 + 0.5 * np.sin(2 * np.pi * 9 * t))
 out += 0.012 * shim * shim_env
 
-# 6) 光が巡るあいだの軽い鈴(8.6〜10.6、5回)
-for k, st in enumerate(np.linspace(8.7, 10.3, 5)):
+# 6) 光が巡るあいだの軽い鈴(4.6〜7.0、5回)
+for k, st in enumerate(np.linspace(4.6, 7.0, 5)):
     out += bell([1174.7, 1318.5, 1568.0, 1760.0, 1975.5][k], st, 0.06, decay=4)
 
-# 7) ロゴの和音(12.0)— D メジャーの鐘と、低い音
+# 7) ロゴの和音(8.2)— D メジャーの鐘と、低い音
 for f, g in [(146.83, 0.12), (293.66, 0.14), (440.0, 0.11), (587.33, 0.09), (739.99, 0.07), (880.0, 0.05)]:
-    out += bell(f, 12.0, g, decay=0.55)
+    out += bell(f, 8.2, g, decay=0.55)
 
 # 仕上げ: やわらかく音量をそろえる
 out = np.tanh(out * 1.4) / np.tanh(1.4)
