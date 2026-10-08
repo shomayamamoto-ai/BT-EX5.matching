@@ -25,7 +25,8 @@ const REF_CATEGORY_GROUPS = [
       "SNS運用・集客",
       "動画編集・映像制作",
       "企業PR動画制作",
-      "音楽・作詞作曲・声",
+      "作詞作曲・音楽制作",
+      "声・司会・キャスティング",
       "デザイン・ブランディング",
       "EC・ネットショップ",
     ],
@@ -39,19 +40,20 @@ const REF_CATEGORY_GROUPS = [
 // 業種と話題の対応。業種で絞り込むと、その業種の人に加えて、この話題を扱う人も出る
 // (例: 本業がシステム開発でも、Web制作を扱う人は「Web制作」に出る)
 const REF_CATEGORY_TOPICS = {
-  "AI研修・AI活用": ["ai"],
-  "システム開発": ["efficiency"],
-  "Web制作": ["web"],
-  "SNS運用・集客": ["sns"],
+  "AI研修・AI活用": ["ai", "aitraining"],
+  "システム開発": ["efficiency", "line"],
+  "Web制作": ["web", "seo"],
+  "SNS運用・集客": ["sns", "line"],
   "動画編集・映像制作": ["video", "prvideo"],
   "企業PR動画制作": ["prvideo"],
-  "音楽・作詞作曲・声": ["music"],
-  "デザイン・ブランディング": ["design", "branding"],
+  "作詞作曲・音楽制作": ["music"],
+  "声・司会・キャスティング": ["voice", "mc", "recording", "casting"],
+  "デザイン・ブランディング": ["design", "branding", "photo"],
   "EC・ネットショップ": ["ec"],
 };
 
 // 前に使っていた業種名(保存済みの名簿は、読み込むときに新しい業種へ置き換える)
-const REF_LEGACY_CATEGORIES = ["IT・Web・クリエイティブ"];
+const REF_LEGACY_CATEGORIES = ["IT・Web・クリエイティブ", "音楽・作詞作曲・声"];
 
 function refInCategory(m, c) {
   if (m.category === c) return true;
@@ -66,7 +68,8 @@ const REF_CATEGORIES = [
   "SNS運用・集客",
   "動画編集・映像制作",
   "企業PR動画制作",
-  "音楽・作詞作曲・声",
+  "作詞作曲・音楽制作",
+  "声・司会・キャスティング",
   "デザイン・ブランディング",
   "EC・ネットショップ",
   "士業・専門家",
@@ -85,82 +88,121 @@ const REF_BASES = ["東京", "新潟", "未設定"];
 // 話題はグループごとに表示する。ほかのメンバーと重ならない具体的な話題があるほど、
 // その人が診断で上位に出やすくなる
 const TOPIC_GROUPS = [
-  { id: "biz", label: "仕事・集客" },
+  { id: "it", label: "IT・AI・Web" },
+  { id: "biz", label: "集客・販促・コンサル" },
+  { id: "create", label: "制作・クリエイティブ" },
+  { id: "stage", label: "声・司会・キャスト" },
   { id: "money", label: "お金・法律" },
   { id: "people", label: "人・組織・成長" },
   { id: "place", label: "住まい・地域" },
-  { id: "life", label: "健康・暮らし" },
+  { id: "life", label: "健康・美容・暮らし" },
   { id: "food", label: "食・イベント" },
 ];
 
+// ジャンル(話題)。1人に当てはまるものをいくつでも付けられ、カードにはタグ(tag)として並ぶ。
+// 紹介診断の「どんな話が出ましたか?」と「話題で探す」でも使う
 const TOPICS = [
-  { id: "efficiency", group: "biz", label: "システム開発・業務効率化" },
-  { id: "web", group: "biz", label: "ホームページ・Web制作" },
-  { id: "sns", group: "biz", label: "SNS運用・集客・公式LINE" },
-  { id: "ec", group: "biz", label: "ネットショップ・EC" },
-  { id: "ai", group: "biz", label: "AI活用・AI研修" },
-  { id: "video", group: "biz", label: "動画編集・撮影" },
-  { id: "prvideo", group: "biz", label: "企業PR動画・採用動画" },
-  { id: "music", group: "biz", label: "作詞作曲・音楽制作" },
-  { id: "design", group: "biz", label: "デザイン・印刷物" },
-  { id: "branding", group: "biz", label: "ブランディング・見せ方" },
-  { id: "tax", group: "money", label: "税金・会計" },
-  { id: "legal", group: "money", label: "契約・法律・許認可" },
-  { id: "funding", group: "money", label: "資金調達・補助金・融資" },
-  { id: "insurance", group: "money", label: "保険・資産・相続" },
-  { id: "hiring", group: "people", label: "採用・人材" },
-  { id: "org", group: "people", label: "組織づくり・社員研修" },
-  { id: "labor", group: "people", label: "労務・助成金" },
-  { id: "coaching", group: "people", label: "コーチング・人生相談" },
-  { id: "voice", group: "people", label: "声・話し方・司会" },
-  { id: "realestate", group: "place", label: "不動産・物件・空き家" },
-  { id: "reform", group: "place", label: "リフォーム・内装" },
-  { id: "inbound", group: "place", label: "インバウンド・海外・地方創生" },
-  { id: "health", group: "life", label: "健康・美容" },
-  { id: "spiritual", group: "life", label: "スピリチュアル・癒やし" },
-  { id: "life", group: "life", label: "暮らし(車・介護・家事・固定費)" },
-  { id: "family", group: "life", label: "結婚・子育て・家族" },
-  { id: "kids", group: "life", label: "子ども・学校・教育" },
-  { id: "food", group: "food", label: "食品・ギフト・仕入れ" },
-  { id: "catering", group: "food", label: "ケータリング・パーティー料理" },
-  { id: "event", group: "food", label: "イベント企画" },
-  { id: "venue", group: "food", label: "会場・レンタルスペース" },
+  { id: "efficiency", group: "it", label: "システム開発・業務効率化", tag: "システム開発" },
+  { id: "line", group: "it", label: "公式LINE・LINE Bot構築", tag: "公式LINE構築" },
+  { id: "web", group: "it", label: "ホームページ・LP制作", tag: "HP・LP制作" },
+  { id: "seo", group: "it", label: "SEO・MEO対策", tag: "SEO・MEO" },
+  { id: "ec", group: "it", label: "ネットショップ・EC", tag: "EC・ネットショップ" },
+  { id: "ai", group: "it", label: "AI活用・AI導入", tag: "AI導入" },
+  { id: "aitraining", group: "it", label: "AI研修・AI講座", tag: "AI研修" },
+  { id: "sns", group: "biz", label: "SNS運用・集客", tag: "SNS運用" },
+  { id: "ad", group: "biz", label: "広告・販促", tag: "広告・販促" },
+  { id: "consult", group: "biz", label: "経営・集客コンサル", tag: "コンサル" },
+  { id: "branding", group: "biz", label: "ブランディング・見せ方", tag: "ブランディング" },
+  { id: "video", group: "create", label: "動画編集・撮影", tag: "動画編集" },
+  { id: "prvideo", group: "create", label: "企業PR動画・採用動画", tag: "企業PR動画" },
+  { id: "photo", group: "create", label: "写真撮影", tag: "写真撮影" },
+  { id: "design", group: "create", label: "デザイン(ロゴ・チラシ・イラスト)", tag: "デザイン" },
+  { id: "music", group: "create", label: "作詞作曲・音楽制作", tag: "作詞作曲" },
+  { id: "ehon", group: "create", label: "絵本・AI絵本制作", tag: "絵本制作" },
+  { id: "voice", group: "stage", label: "ボイストレーニング・話し方", tag: "ボイトレ" },
+  { id: "mc", group: "stage", label: "司会・MC", tag: "司会・MC" },
+  { id: "recording", group: "stage", label: "レコーディング・音声収録", tag: "レコーディング" },
+  { id: "casting", group: "stage", label: "キャスティング(モデル・タレント・声優)", tag: "キャスティング" },
+  { id: "tax", group: "money", label: "税金・会計", tag: "税金・会計" },
+  { id: "legal", group: "money", label: "契約・法律・許認可", tag: "法律・許認可" },
+  { id: "funding", group: "money", label: "資金調達・補助金・融資", tag: "資金調達" },
+  { id: "insurance", group: "money", label: "保険・資産・相続", tag: "保険・資産" },
+  { id: "fixedcost", group: "money", label: "固定費の見直し(携帯・光熱費・家計)", tag: "固定費の見直し" },
+  { id: "hiring", group: "people", label: "採用・人材", tag: "採用・人材" },
+  { id: "org", group: "people", label: "組織づくり・社員研修", tag: "社員研修" },
+  { id: "labor", group: "people", label: "労務・助成金", tag: "労務" },
+  { id: "coaching", group: "people", label: "コーチング・人生相談", tag: "コーチング" },
+  { id: "tutoring", group: "people", label: "家庭教師・塾・学習", tag: "家庭教師" },
+  { id: "realestate", group: "place", label: "不動産・物件・空き家", tag: "不動産" },
+  { id: "reform", group: "place", label: "リフォーム・内装", tag: "リフォーム" },
+  { id: "inbound", group: "place", label: "インバウンド・海外", tag: "インバウンド" },
+  { id: "regional", group: "place", label: "地方創生・自治体", tag: "地方創生" },
+  { id: "beauty", group: "life", label: "美容・エステ・脱毛", tag: "美容・エステ" },
+  { id: "health", group: "life", label: "健康・体のケア", tag: "健康" },
+  { id: "color", group: "life", label: "パーソナルカラー・スタイリング", tag: "カラー診断" },
+  { id: "spiritual", group: "life", label: "スピリチュアル・癒やし", tag: "スピリチュアル" },
+  { id: "handmade", group: "life", label: "ハンドメイド・雑貨", tag: "ハンドメイド" },
+  { id: "life", group: "life", label: "暮らし(車・介護・家事)", tag: "暮らし" },
+  { id: "family", group: "life", label: "結婚・子育て・家族", tag: "子育て・家族" },
+  { id: "kids", group: "life", label: "子ども・学校・教育", tag: "子ども・教育" },
+  { id: "food", group: "food", label: "食品・ギフト・仕入れ", tag: "食品・ギフト" },
+  { id: "catering", group: "food", label: "ケータリング・パーティー料理", tag: "ケータリング" },
+  { id: "event", group: "food", label: "イベント企画", tag: "イベント企画" },
+  { id: "venue", group: "food", label: "会場・レンタルスペース", tag: "会場" },
+  { id: "social", group: "food", label: "社会貢献・子ども食堂・寄付", tag: "社会貢献" },
 ];
 
 // 話題ごとの言いかえ。診断のキーワードがこれに当たると、その話題を持つ人に一致する
 // (本人の説明文にその言葉がなくても見つかるように)
 const TOPIC_KEYWORDS = {
   efficiency: ["効率化", "システム", "自動化", "手作業", "Excel", "エクセル", "予約管理", "在庫", "DX", "アプリ", "開発"],
-  web: ["ホームページ", "HP", "Web", "ウェブ", "サイト", "LP", "SEO", "MEO"],
-  sns: ["SNS", "インスタ", "Instagram", "TikTok", "LINE", "集客", "フォロワー", "運用代行"],
+  line: ["LINE", "公式LINE", "LINE Bot", "LINEボット", "ステップ配信"],
+  web: ["ホームページ", "HP", "Web", "ウェブ", "サイト", "LP"],
+  seo: ["SEO", "MEO", "検索順位", "Googleマップ", "口コミ"],
   ec: ["EC", "ネットショップ", "通販", "楽天", "Amazon", "ネット販売"],
-  ai: ["AI", "ChatGPT", "生成AI", "AI研修"],
+  ai: ["AI", "ChatGPT", "生成AI", "AI導入"],
+  aitraining: ["AI研修", "AI講座", "AI講師", "AIセミナー", "AIを学びたい"],
+  sns: ["SNS", "インスタ", "Instagram", "TikTok", "集客", "フォロワー", "運用代行"],
+  ad: ["広告", "販促", "チラシ配布", "看板", "サイネージ"],
+  consult: ["コンサル", "経営相談", "売上を上げたい", "集客の相談"],
+  branding: ["ブランディング", "見せ方", "印象", "ブランド"],
   video: ["動画", "映像", "YouTube", "撮影", "編集", "ショート動画", "リール"],
   prvideo: ["PR動画", "企業PR", "会社紹介", "採用動画", "CM", "プロモーション", "PR"],
-  music: ["作詞", "作曲", "音楽", "BGM", "楽曲", "ジングル", "レコーディング"],
-  design: ["デザイン", "ロゴ", "チラシ", "ポスター", "バナー", "印刷", "名刺", "パンフレット"],
-  branding: ["ブランディング", "見せ方", "印象", "ブランド"],
+  photo: ["写真", "撮影", "カメラマン", "プロフィール写真"],
+  design: ["デザイン", "ロゴ", "チラシ", "ポスター", "バナー", "印刷", "名刺", "パンフレット", "イラスト"],
+  music: ["作詞", "作曲", "音楽制作", "BGM", "楽曲", "ジングル", "オリジナル曲"],
+  ehon: ["絵本", "自分史"],
+  voice: ["発声", "声が", "話し方", "ボイトレ", "ナレーション", "プレゼン", "喉"],
+  mc: ["司会", "MC", "進行"],
+  recording: ["レコーディング", "録音", "収録", "スタジオ"],
+  casting: ["キャスティング", "モデル", "タレント", "声優", "インフルエンサー", "キャスト"],
   tax: ["税金", "税理士", "会計", "確定申告", "経理", "節税"],
   legal: ["契約", "法律", "弁護士", "行政書士", "許認可", "許可"],
   funding: ["資金", "融資", "補助金", "助成", "借入", "借り換え", "資金繰り"],
-  insurance: ["保険", "資産", "相続", "年金", "老後", "ライフプラン", "家計"],
+  insurance: ["保険", "資産", "相続", "年金", "老後", "ライフプラン"],
+  fixedcost: ["固定費", "携帯料金", "格安SIM", "光熱費", "電気代", "ガス代", "Wi-Fi", "家計"],
   hiring: ["採用", "求人", "人材", "人手不足", "人が採れない"],
   org: ["研修", "組織", "社員教育", "チームづくり", "マネジメント"],
   labor: ["労務", "社労士", "就業規則", "給与計算"],
   coaching: ["コーチング", "目標", "人生相談", "自己成長", "メンタル", "マインド"],
-  voice: ["声優", "発声", "声が", "話し方", "ボイトレ", "司会", "MC", "ナレーション", "プレゼン"],
+  tutoring: ["家庭教師", "塾", "受験", "勉強", "学習"],
   realestate: ["不動産", "物件", "空き家", "テナント", "駐車場", "土地"],
   reform: ["リフォーム", "内装", "改装", "店舗工事"],
-  inbound: ["インバウンド", "外国人", "海外", "観光", "地方創生"],
-  health: ["健康", "美容", "サロン", "エステ", "リンパ", "肌", "脱毛"],
+  inbound: ["インバウンド", "外国人", "海外", "観光"],
+  regional: ["地方創生", "自治体", "町おこし", "税収", "地域活性"],
+  beauty: ["美容", "サロン", "エステ", "肌", "脱毛", "眉毛", "フェイスマスク"],
+  health: ["健康", "リンパ", "体のケア", "整体", "サプリ"],
+  color: ["パーソナルカラー", "似合う色", "カラー診断", "スタイリング", "骨格"],
+  handmade: ["ハンドメイド", "手作り", "雑貨", "オルゴナイト"],
   spiritual: ["スピリチュアル", "癒やし", "癒し", "波動", "パワーストーン", "占い"],
-  life: ["暮らし", "固定費", "格安SIM", "家事", "介護", "自動車", "車検"],
+  life: ["暮らし", "家事", "介護", "自動車", "車検"],
   family: ["結婚", "婚活", "子育て", "家族", "新婚", "出産"],
   kids: ["子ども", "子供", "学校", "教育", "絵本", "成人式"],
   food: ["食品", "ギフト", "仕入れ", "お菓子", "スイーツ", "特産品"],
   catering: ["ケータリング", "料理", "パーティー", "懇親会", "お弁当", "食事"],
   event: ["イベント", "パーティー", "交流会", "セミナー", "企画"],
   venue: ["会場", "レンタルスペース", "貸し会議室", "場所を借りたい"],
+  social: ["社会貢献", "子ども食堂", "寄付", "チャリティ"],
 };
 
 // 紹介し合える相手を探すときに見る「お客様・分野」の言葉。
@@ -261,7 +303,7 @@ const REF_SEED_MEMBERS = [
     face: "関東(東京拠点)",
     faceAreas: ["tokyo"],
     online: "all",
-    topics: ["efficiency", "web", "ai", "sns", "video", "prvideo", "music", "design", "org", "hiring", "event", "voice"],
+    topics: ["efficiency", "line", "web", "seo", "ai", "aitraining", "sns", "video", "prvideo", "music", "design", "casting", "org", "hiring", "event", "fixedcost", "tutoring"],
     targets: ["restaurant", "retail", "salon", "pro", "build", "it"],
     prospects: ["owner", "staff"],
     // 「紹介文をコピー」に入る本人の自己紹介(本人の依頼で原文のまま)
@@ -272,7 +314,7 @@ const REF_SEED_MEMBERS = [
       { type: "instagram", url: "https://www.instagram.com/showstagram.keio/", label: "@showstagram.keio" },
     ],
   },
-  Object.assign(rosterMember("m02", "あまみや 七音", "echo studio 代表/声優ボイス・ドクター", "Over", "音楽・作詞作曲・声", ["voice", "video", "music", "health"]), {
+  Object.assign(rosterMember("m02", "あまみや 七音", "echo studio 代表/声優ボイス・ドクター", "Over", "声・司会・キャスティング", ["voice", "mc", "recording", "casting", "video", "health"]), {
     business: "ボイストレーニング教室、レコーディングスタジオ、タレント・声優のキャスティング。",
     customers: "声優の卵、芸能プロダクション、カラオケ好きのビジネスマン、映像制作会社、TV局",
     note: "「長く喋ると喉が枯れる…原因は姿勢と口の開け方と呼吸量」",
@@ -281,7 +323,7 @@ const REF_SEED_MEMBERS = [
     targets: ["it", "personal"],
     prospects: ["individual", "owner", "staff"],
   }),
-  Object.assign(rosterMember("m03", "佐藤 志織", "アットハッピー/Canva・AI講師、LP・サイト制作", "All Win🏆", "AI研修・AI活用", ["ai", "web", "design"]), {
+  Object.assign(rosterMember("m03", "佐藤 志織", "アットハッピー/Canva・AI講師、LP・サイト制作", "All Win🏆", "AI研修・AI活用", ["ai", "aitraining", "web", "design"]), {
     business: "Canva・AI講師、LP・サイト制作、Webデザイン。",
     customers: "個人・フリーランス・事業主",
     wants: "いい活動をしているのに、発信・Web・LINE・申し込み導線がバラバラでうまく広がっていない人",
@@ -289,7 +331,7 @@ const REF_SEED_MEMBERS = [
     targets: ["any"],
     prospects: ["owner", "individual"],
   }),
-  Object.assign(rosterMember("m04", "吉澤 美和子", "新潟県/ハンドメイド", "SunnyUp🌞", "暮らし・サービス", ["spiritual", "health"], "新潟"), {
+  Object.assign(rosterMember("m04", "吉澤 美和子", "新潟県/ハンドメイド", "SunnyUp🌞", "暮らし・サービス", ["handmade", "spiritual", "health"], "新潟"), {
     business: "オルゴナイトの制作・販売。",
     customers: "スピリチュアルが好きな方、スピリチュアルのお仕事をされている方",
     wants: "スピリチュアルのお仕事をされている方",
@@ -297,7 +339,7 @@ const REF_SEED_MEMBERS = [
     targets: ["salon", "personal"],
     prospects: ["individual", "owner"],
   }),
-  Object.assign(rosterMember("m05", "大藤 誠", "SFGビューティ株式会社 代表取締役/世界初・ハラール認証フェイスマスク", "CANOW", "美容・健康", ["health", "food"], "東京"), {
+  Object.assign(rosterMember("m05", "大藤 誠", "SFGビューティ株式会社 代表取締役/世界初・ハラール認証フェイスマスク", "CANOW", "美容・健康", ["beauty", "food"], "東京"), {
     business: "meirune glutathione intensive seat mask(世界初・ハラール認証フェイスマスク)、JUST ONE オールインワンタオル。",
     customers: "美容室・エステサロン・ホテル・温浴施設・介護施設など、衛生面やタオルの洗濯・管理コストに課題を抱えている事業者",
     wants: "美容・宿泊・介護・温浴施設の経営者や仕入れ担当者、複数店舗を展開する企業の購買担当者",
@@ -305,7 +347,7 @@ const REF_SEED_MEMBERS = [
     targets: ["salon", "medical", "retail"],
     prospects: ["owner", "staff"],
   }),
-  Object.assign(rosterMember("m06", "吉原 優", "FJ 営業", "", "お金・保険", ["insurance", "family"]), {
+  Object.assign(rosterMember("m06", "吉原 優", "FJ 営業", "", "お金・保険", ["insurance", "fixedcost", "family"]), {
     business: "ライフプラン作成、保険提案、保険の見直し、家計の見直し。",
     customers: "誰でも",
     triggers: ["保険を見直したい", "家計を見直したい", "ライフプラン", "老後のお金が不安", "教育費の準備"],
@@ -322,14 +364,14 @@ const REF_SEED_MEMBERS = [
     targets: ["any"],
     prospects: ["owner", "staff"],
   }),
-  Object.assign(rosterMember("m09", "大場 雅俊", "Ghool株式会社/金融業界に特化したビジネスコンサルティング", "Over", "お金・保険", ["insurance"]), {
+  Object.assign(rosterMember("m09", "大場 雅俊", "Ghool株式会社/金融業界に特化したビジネスコンサルティング", "Over", "お金・保険", ["consult", "insurance"]), {
     business: "金融業界に特化したビジネスコンサルティング(集客・コンサル)。",
     wants: "生命保険営業の方",
     triggers: ["生命保険の営業をしている", "保険営業の集客", "金融業界のコンサル"],
     targets: ["pro"],
     prospects: ["owner", "staff"],
   }),
-  Object.assign(rosterMember("m10", "大枝 篤志", "マイプラBT 代表/売上動線も作れる公式LINE専門家", "Team Bloom∞🌸", "SNS運用・集客", ["sns", "hiring", "life"]), {
+  Object.assign(rosterMember("m10", "大枝 篤志", "マイプラBT 代表/売上動線も作れる公式LINE専門家", "Team Bloom∞🌸", "SNS運用・集客", ["sns", "line", "hiring", "fixedcost", "life"]), {
     business: "売上を増やす(売上動線作りのサポート・LINE・SNS)/収入を増やす(副業・紹介案件・人材紹介)/支出を減らす(格安SIM・ガス・Wi-Fiなど固定費の削減)。",
     customers: "30〜50代の男女(特に40代が中心)/個人事業主・フリーランス・中小企業経営者/子育て世代・共働き世帯/会社員で副収入を作りたい人",
     wants: "皆さんが定期的に通われている美容室のオーナー/起業して3年以内の経営者・個人事業主",
@@ -337,7 +379,7 @@ const REF_SEED_MEMBERS = [
     targets: ["salon", "any"],
     prospects: ["owner", "individual"],
   }),
-  rosterMember("m11", "品川 瑞樹", "株式会社アドバンス/集客・コンサル", "", "SNS運用・集客", ["sns", "web"]),
+  rosterMember("m11", "品川 瑞樹", "株式会社アドバンス/集客・コンサル", "", "SNS運用・集客", ["sns", "web", "consult"]),
   Object.assign(rosterMember("m12", "菅野 節子", "リンパレディアソック 代表者/誰でも健康アドバイザー", "Team Bloom∞🌸", "美容・健康", ["health"]), {
     business: "リンパレディ講座。",
     customers: "セラピスト、施術者、一般のお客様、OL、主婦",
@@ -347,7 +389,7 @@ const REF_SEED_MEMBERS = [
     prospects: ["individual", "owner"],
   }),
   rosterMember("m13", "佐藤 慎哉", "", "", "", []),
-  Object.assign(rosterMember("m14", "三村 隆", "株式会社エイレム・Guild Master株式会社 代表取締役", "Team Bloom∞🌸", "", ["health", "reform", "food"]), {
+  Object.assign(rosterMember("m14", "三村 隆", "株式会社エイレム・Guild Master株式会社 代表取締役", "Team Bloom∞🌸", "", ["beauty", "reform", "food"]), {
     business: "美容、リフォーム、飲食、プラットフォーム。",
     customers: "法人・個人問わず",
     wants: "幅広く対応可能です",
@@ -355,7 +397,7 @@ const REF_SEED_MEMBERS = [
     targets: ["any"],
     prospects: ["owner", "staff", "individual"],
   }),
-  Object.assign(rosterMember("m16", "桜羽 李果", "株式会社LEFANA/女性向けSNSブランディング", "Team Bloom∞🌸", "デザイン・ブランディング", ["branding", "sns", "web", "design", "video"]), {
+  Object.assign(rosterMember("m16", "桜羽 李果", "株式会社LEFANA/女性向けSNSブランディング", "Team Bloom∞🌸", "デザイン・ブランディング", ["branding", "sns", "web", "design", "video", "photo", "casting"]), {
     business: "女性向けに特化したデザイン会社。ブランディング、Web制作・運営・コンサルティング、グラフィックデザイン、SNS運用代行、インフルエンサー・モデルのキャスティング、写真・映像撮影、ビジネスマッチング。",
     customers: "女性向けの商材をお持ちの方、美容クリニック、お菓子・スイーツ業界、不動産",
     wants: "Webディレクター、Webデザイナー、SNS運用ディレクター、営業など(一緒に働く仲間)",
@@ -363,7 +405,7 @@ const REF_SEED_MEMBERS = [
     targets: ["salon", "medical", "retail", "restaurant"],
     prospects: ["owner", "staff"],
   }),
-  Object.assign(rosterMember("m17", "むらさき やえ", "COCOLOR(ココカラー)代表/波動を使った「あなた色ブランディング スタイリスト」", "", "美容・健康", ["branding", "health", "spiritual"]), {
+  Object.assign(rosterMember("m17", "むらさき やえ", "COCOLOR(ココカラー)代表/波動を使った「あなた色ブランディング スタイリスト」", "", "美容・健康", ["color", "branding", "beauty", "spiritual"]), {
     business: "あなた色ブランディングプログラム/(内面)バースカラー診断/(外見)似合う色・質感・柄・形診断/(表現)ブランディングコンサル/スタイリング・ショッピング同行/(プロ養成)CoCoカラースタイリスト養成講座。",
     customers: "「すでに経験も実力もある。でも、まだ自分を活かし切れていない方」。自分の経験や能力をさらに活かし、自分らしく次のステージへ進みたい40〜60代の起業家・経営者・専門職・講師業の方。外見・発信・ブランディングを整え、仕事でも人生でも「自分らしく選ばれる存在」になりたい方。",
     wants: "【法人】アパレル&デザイン&広告関係/結婚相談所/起業支援事業 【個人】「実力はあるのに、なぜか選ばれない」「今の見せ方が本当の自分と合っていない」「これからの人生や仕事を自分らしくステージアップしたい」と感じている40〜60代の起業家・経営者・専門家",
@@ -377,14 +419,14 @@ const REF_SEED_MEMBERS = [
     targets: ["retail"],
     prospects: ["owner", "staff"],
   }),
-  Object.assign(rosterMember("m19", "岡本 伸", "株式会社 心灯/目標達成コーチング", "Team Bloom∞🌸", "Web制作", ["coaching", "branding", "web", "sns", "video"]), {
+  Object.assign(rosterMember("m19", "岡本 伸", "株式会社 心灯/目標達成コーチング", "Team Bloom∞🌸", "Web制作", ["web", "seo", "sns", "video", "coaching", "branding", "consult"]), {
     business: "Web制作(HP・SNS運用・SEO・MEO対策・AI動画)、自己ブランディングビジネス(能力開発)。",
     customers: "10名前後の法人様/目標達成が苦手な人/3年目の個人事業主",
     triggers: ["HPを作りたい", "SNS運用を任せたい", "SEO・MEO対策", "AI動画", "目標が達成できない", "自分をブランディングしたい"],
     targets: ["any"],
     prospects: ["owner", "staff"],
   }),
-  Object.assign(rosterMember("m20", "柏木 本徳", "株式会社REVE 取締役/資金調達コンサル(融資・借換・金策)", "", "お金・保険", ["funding", "health"]), {
+  Object.assign(rosterMember("m20", "柏木 本徳", "株式会社REVE 取締役/資金調達コンサル(融資・借換・金策)", "", "お金・保険", ["funding", "beauty"]), {
     business: "資金調達(個人融資・事業融資・借金の借り換え)。脱毛・眉毛・エステ(大阪・心斎橋の都度払いサロン)。",
     customers: "資金調達:毎月の支払いが大変な人、まとまったお金がすぐ欲しい人、事業などで資金が必要な人、どこも審査が通らない人/サロン:清潔感が欲しい人、髭剃りが面倒な人、モテたい人",
     wants: "資金調達を希望の方/ブローカー(紹介業)の方/高単価商材を扱っている方",
@@ -400,7 +442,7 @@ const REF_SEED_MEMBERS = [
     targets: ["salon", "pro"],
     prospects: ["owner"],
   }),
-  Object.assign(rosterMember("m22", "小林 末季こばねぇ", "preseia 代表/心を整えるマインドコーチ", "SunnyUp🌞", "人材・組織", ["coaching", "health", "spiritual", "insurance"]), {
+  Object.assign(rosterMember("m22", "小林 末季こばねぇ", "preseia 代表/心を整えるマインドコーチ", "SunnyUp🌞", "人材・組織", ["coaching", "consult", "health", "spiritual", "insurance"]), {
     business: "個別コーチング、ビジネスコンサル、健康事業、共済保険。",
     customers: "新潟・長野の方/人生に迷いながらも進み出したい人/セミナーを作りたい方/コーチの方",
     wants: "新潟・長野の方/コーチングをグレードアップしたい方/健康事業に興味のある方/スピリチュアルに興味のある方",
@@ -408,21 +450,21 @@ const REF_SEED_MEMBERS = [
     targets: ["any"],
     prospects: ["owner", "individual"],
   }),
-  Object.assign(rosterMember("m23", "見上 恵", "ちきゅあそびくらぶ/AI絵本クリエイター、スクール講師、クリエイター募集", "Team Bloom∞🌸", "AI研修・AI活用", ["ai", "design", "kids"]), {
+  Object.assign(rosterMember("m23", "見上 恵", "ちきゅあそびくらぶ/AI絵本クリエイター、スクール講師、クリエイター募集", "Team Bloom∞🌸", "AI研修・AI活用", ["ai", "aitraining", "ehon", "design", "kids"]), {
     business: "AI絵本クリエイター、講座講師。",
     customers: "自分の想いを絵本にしたい方",
     triggers: ["想いを絵本にしたい", "自分史を絵本に残したい", "AI絵本", "クリエイターになりたい", "AIの講座を受けたい"],
     targets: ["any"],
     prospects: ["individual", "owner"],
   }),
-  Object.assign(rosterMember("m24", "柳橋 雅也", "合同会社フライコア 代表社員/地方創生", "Team Bloom∞🌸", "暮らし・サービス", ["inbound", "ai", "efficiency", "reform", "realestate"]), {
+  Object.assign(rosterMember("m24", "柳橋 雅也", "合同会社フライコア 代表社員/地方創生", "Team Bloom∞🌸", "暮らし・サービス", ["regional", "inbound", "ai", "efficiency", "reform", "realestate", "ad"]), {
     business: "地方創生コンサル、災害対策商材、AIシステム導入、内装造作費用0円、LED広告透過フィルム。",
     customers: "税収を上げるための働きかけ、余った駐車場スペースの活用、作業効率の向上、内装費用のコスト削減などを考えている方",
     triggers: ["地方創生", "税収を上げたい", "駐車場が余っている", "災害対策", "内装費用を抑えたい", "LED広告", "AIシステムを導入したい"],
     targets: ["any"],
     prospects: ["owner", "staff"],
   }),
-  Object.assign(rosterMember("m25", "松田 依子", "株式会社Lift 代表取締役/ちきゅうあそびくらぶ", "Team Bloom∞🌸", "暮らし・サービス", ["ai", "kids", "voice", "event", "insurance"]), {
+  Object.assign(rosterMember("m25", "松田 依子", "株式会社Lift 代表取締役/ちきゅうあそびくらぶ", "Team Bloom∞🌸", "暮らし・サービス", ["ehon", "ai", "aitraining", "mc", "voice", "event", "consult", "kids", "health", "insurance"]), {
     business: "AI絵本(自分史絵本・エンディング絵本・感謝の絵本・子育て・親子・技術をわかりやすく等)、司会・MC、コンサル・プロデュース、コミュニケーション・ボイトレ・朗読、芦屋スマートラジオの企画運営・番組、イベント・パーティー企画、コミュニケーション講座、AI講座・AI動画、潜在意識・波動アップ、詐欺に遭わないための金融アドバイザー(本物か見抜く・海外保険・海外銀行等・税金対策)、美容・健康(Life wave・コロイドヨード)。",
     customers: "会社や自身や商品をもっと世に広めたい人、次世代に残したい思いのある人、自分史を絵本にしたい人、販売促進・集客したい人、自分を変えたい人、AI絵本クリエイター資格を学びたい人、AIを学びたい人、健康に困っている人、人生を変えたい人、ちきゅうあそびくらぶの理念に賛同し世界に羽ばたく活動に興味を持ってくれる人",
     wants: "会社や自身や商品をもっと世に広めたい人/次世代に残したい技術・思いのある企業・社長等/終活ビジネス(エンディング絵本)/AI絵本クリエイター資格をとって一緒に活動してくれるクリエイターになりたい人/新しいビジネススキルが欲しい人/ラジオ番組を持ちたい人",
@@ -430,7 +472,7 @@ const REF_SEED_MEMBERS = [
     targets: ["any"],
     prospects: ["owner", "individual"],
   }),
-  Object.assign(rosterMember("m26", "坂上 智子", "OHANAの輪 代表/地域密着型", "All Win🏆", "食・地域産品", ["food", "kids", "event"]), {
+  Object.assign(rosterMember("m26", "坂上 智子", "OHANAの輪 代表/地域密着型", "All Win🏆", "食・地域産品", ["social", "food", "kids", "event"]), {
     business: "子ども食堂の寄付金付き商品の販売、子ども食堂のイベント。",
     wants: "子ども食堂の寄付金付き商品を探しています(商品をお持ちの方)",
     triggers: ["子ども食堂", "寄付金付きの商品", "社会貢献をしたい", "地域のイベント", "商品の販路を広げたい"],
@@ -487,6 +529,15 @@ const REF_SEED_REVISIONS = [
   // IT・Web・クリエイティブを細かい業種に分けたときの見直し。業種と話題だけを見る。
   // 未編集のメンバーは置き換え、編集済みのメンバーには新しい話題(addTopics)だけを足す
   { rev: "2026-10-it-split-1", ids: ["yamamoto", "m02", "m03", "m10", "m11", "m16", "m18", "m19", "m23"], fields: ["category", "topics"], addTopics: ["sns", "prvideo", "music"] },
+  // ジャンルをさらに細かく分け、1人に複数のジャンル(タグ)を付けたときの見直し。
+  // removeTopics は編集済みの人からも外す(あまみやさんは作詞作曲をしない、など)
+  {
+    rev: "2026-10-genres-1",
+    ids: ["yamamoto", "m02", "m03", "m04", "m05", "m06", "m09", "m10", "m11", "m14", "m16", "m17", "m19", "m20", "m22", "m23", "m24", "m25", "m26"],
+    fields: ["category", "topics"],
+    addTopics: ["line", "seo", "aitraining", "ad", "consult", "photo", "ehon", "mc", "recording", "casting", "fixedcost", "tutoring", "regional", "beauty", "color", "handmade", "social", "health"],
+    removeTopics: { yamamoto: ["voice"], m02: ["music"], m05: ["health"], m14: ["health"], m17: ["health"], m20: ["health"] },
+  },
 ];
 
 // 紹介に効く項目(重要な順)。足りない項目は管理者ページの「お願い文」と、

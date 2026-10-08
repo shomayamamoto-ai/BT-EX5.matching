@@ -219,7 +219,7 @@ var BtexServerCore = (function () {
     // 管理者ページ・本人が編集していないメンバーは初期名簿の内容に置き換え、
     // 編集済みのメンバーは空欄だけを埋める(force: true の更新は編集済みでも置き換える)。
     // fields があればその項目だけを見る。addTopics は、置き換えなかった(編集済みの)メンバーに
-    // 初期名簿のその話題だけを足す。削除済みのメンバーは戻さない
+    // 初期名簿のその話題だけを足す。removeTopics({id: [話題]})はその人から外す。削除済みのメンバーは戻さない
     function applySeedRevisions(db) {
       var revs = dataList("REF_SEED_REVISIONS");
       var seedMembers = dataList("REF_SEED_MEMBERS");
@@ -244,6 +244,10 @@ var BtexServerCore = (function () {
             next.topics = next.topics.concat((seedMember.topics || []).filter(function (t) {
               return r.addTopics.indexOf(t) !== -1 && next.topics.indexOf(t) === -1;
             }));
+          }
+          var removeTopics = r.removeTopics && r.removeTopics[id];
+          if (removeTopics && Array.isArray(next.topics)) {
+            next.topics = next.topics.filter(function (t) { return removeTopics.indexOf(t) === -1; });
           }
           db.referralMembers[index] = next;
         });

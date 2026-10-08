@@ -27,9 +27,11 @@
   }
 
   function checkboxes(container, name, options) {
-    $(container).innerHTML = options
-      .map((o) => `<label><input type="checkbox" name="${name}" value="${escapeHtml(o.id)}"> ${escapeHtml(o.label)}</label>`)
-      .join("");
+    const one = (o) => `<label><input type="checkbox" name="${name}" value="${escapeHtml(o.id)}"> ${escapeHtml(o.label)}</label>`;
+    // ジャンル(話題)は数が多いので、まとまりごとに見出しをつける
+    $(container).innerHTML = options === TOPICS && typeof TOPIC_GROUPS !== "undefined"
+      ? TOPIC_GROUPS.map((g) => `<p class="adm-check-group">${escapeHtml(g.label)}</p>${options.filter((o) => o.group === g.id).map(one).join("")}`).join("")
+      : options.map(one).join("");
   }
 
   function setupForm() {

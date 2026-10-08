@@ -154,6 +154,7 @@
             ${m.base && m.base !== "未設定" ? `<span class="ref-tag ${m.base === "新潟" ? "base-niigata" : "base-tokyo"}">${escapeHtml(m.base)}拠点</span>` : ""}
             ${m.team ? `<span class="ref-tag team">${escapeHtml(m.team)}</span>` : ""}
           </div>
+          ${genreTags(m, sc, 8)}
           ${linkBadges(m)}
         </div>
         <div class="ref-col ref-col-business">
@@ -221,6 +222,7 @@
           <span class="ref-tag">${escapeHtml(m.category)}</span>
           ${m.team ? `<span class="ref-tag team">${escapeHtml(m.team)}</span>` : ""}
         </div>
+        ${genreTags(m, scores && scores[m.id], 0)}
       </header>
       ${materials.length ? section("資料", materials.map((l) => `
         <a class="md-material" href="${escapeHtml(linkHref(l.url))}" target="_blank" rel="noopener noreferrer">
@@ -274,6 +276,22 @@
           ${!p.get.length && !p.give.length && !p.shared.length ? `<span class="pt-why">${escapeHtml(p.reasons[0] || "")}</span>` : ""}
         </li>`)
       .join("");
+  }
+
+  // できること(ジャンル)のタグ。押すとそのジャンルで探す。選んでいるジャンル・診断で合ったジャンルは色を変える
+  const topicTag = (id) => { const t = TOPICS.find((x) => x.id === id); return t ? t.tag || t.label : ""; };
+  function genreTags(m, sc, max) {
+    const ids = m.topics.filter((id) => TOPICS.some((t) => t.id === id));
+    if (!ids.length) return "";
+    const hit = (id) => filter.topic === id || (sc && sc.topicHits.includes(id));
+    // 並び: 探しているジャンル → 本業に近いジャンル → ジャンル一覧の順
+    const main = (typeof REF_CATEGORY_TOPICS !== "undefined" && REF_CATEGORY_TOPICS[m.category]) || [];
+    const order = (id) => TOPICS.findIndex((t) => t.id === id);
+    const ordered = ids.slice().sort((a, b) => hit(b) - hit(a) || main.includes(b) - main.includes(a) || order(a) - order(b));
+    const shown = max ? ordered.slice(0, max) : ordered;
+    return `<div class="ref-genres" aria-label="できること">${shown
+      .map((id) => `<button type="button" class="ref-genre${hit(id) ? " hit" : ""}" data-genre="${id}" title="「${escapeHtml(labelOf(TOPICS, id))}」で探す">${escapeHtml(topicTag(id))}</button>`)
+      .join("")}${ordered.length > shown.length ? `<button type="button" class="ref-genre more" data-detail="${m.id}">+${ordered.length - shown.length}</button>` : ""}</div>`;
   }
 
   // 代表・役職・役割のマーク(data.js の REF_BASE_POINTS)
@@ -382,7 +400,7 @@
   }
 
   function renderTopicSelect() {
-    $("#topicSelect").innerHTML = '<option value="all">すべての話題</option>' + TOPIC_GROUPS
+    $("#topicSelect").innerHTML = '<option value="all">すべてのジャンル</option>' + TOPIC_GROUPS
       .map((g) => `<optgroup label="${escapeHtml(g.label)}">${TOPICS.filter((t) => t.group === g.id)
         .map((t) => `<option value="${t.id}"${filter.topic === t.id ? " selected" : ""}>${escapeHtml(t.label)}(${members.filter((m) => m.topics.includes(t.id)).length}名)</option>`)
         .join("")}</optgroup>`)
@@ -600,6 +618,18 @@
       const m = members.find((x) => x.id === copyBtn.dataset.copy);
       const ok = await copyText(introText(m));
       toast(ok ? "紹介文をコピーしました" : "コピーできませんでした");
+      return;
+    }
+
+    // ジャンルのタグ: そのジャンルで探す(詳細から押したときは詳細を閉じる)
+    const genreBtn = t.closest("[data-genre]");
+    if (genreBtn) {
+      if (!$("#detailOverlay").hidden) closeDetail();
+      sortByScore = false;
+      filter.topic = genreBtn.dataset.genre;
+      renderTopicSelect();
+      renderList();
+      $("#refList").scrollIntoView({ behavior: "smooth", block: "start" });
       return;
     }
 

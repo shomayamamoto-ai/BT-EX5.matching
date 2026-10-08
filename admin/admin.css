@@ -151,3 +151,6 @@
   .lk-row .lk-remove { grid-column: 2; grid-row: 1; }
   .lk-row .lk-url, .lk-row .lk-label { grid-column: 1 / -1; }
 }
+/* ジャンルのまとまりの見出し(行を分ける) */
+.adm-check-group { flex-basis: 100%; margin: 8px 0 0; font-size: 12px; font-weight: 800; color: var(--text-light); }
+.adm-check-group:first-child { margin-top: 0; }
