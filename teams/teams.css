@@ -122,3 +122,15 @@
   .tm-fields li { grid-template-columns: minmax(0, 1fr) 4.8em; }
   .tm-field-bar { grid-column: 1 / -1; grid-row: 2; }
 }
+
+/* 全体のカード・必要な業種 */
+.tm-tags li small { margin-left: 6px; font-size: 11.5px; color: var(--text-light); font-family: "Inter", sans-serif; }
+.tm-more { display: inline-block; margin-top: 12px; font-size: 13.5px; font-weight: 800; color: var(--accent-dark); }
+.tm-needs-block { margin-top: 24px; }
+.tm-need-group { margin-top: 16px; }
+.tm-need-group-title { display: flex; align-items: baseline; gap: 8px; font-size: 15px; font-weight: 900; color: var(--accent-dark); margin-bottom: 8px; }
+.tm-need-group-title small { font-size: 12px; font-weight: 500; color: var(--text-light); }
+.tm-role-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr; gap: 10px; }
+.tm-role-card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; min-width: 0; }
+@media (min-width: 760px) { .tm-role-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (min-width: 1040px) { .tm-role-grid { grid-template-columns: repeat(3, 1fr); } }

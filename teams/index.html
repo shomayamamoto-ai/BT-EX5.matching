@@ -5,21 +5,21 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="referrer" content="no-referrer">
   <meta name="robots" content="noindex">
-  <title>チーム分析 | BT-EX5</title>
+  <title>コミュニティ分析 | BT-EX5</title>
   <style>html.guard-pending body { visibility: hidden; } html.guard-pending::after { content: "読み込み中…"; position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; font: 700 15px sans-serif; color: #a18a7e; background: #fff8f2; }</style>
-  <link rel="icon" type="image/svg+xml" href="../assets/bt-ex5-mark.svg?v=202610081036">
+  <link rel="icon" type="image/svg+xml" href="../assets/bt-ex5-mark.svg?v=202610081230">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" onload="this.onload=null;this.rel='stylesheet'">
   <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Noto+Sans+JP:wght@400;500;700;900&display=swap"></noscript>
-  <link rel="stylesheet" href="../referral/referral.css?v=202610081036">
-  <link rel="stylesheet" href="teams.css?v=202610081036">
+  <link rel="stylesheet" href="../referral/referral.css?v=202610081230">
+  <link rel="stylesheet" href="teams.css?v=202610081230">
 </head>
 <body>
 
   <header class="ref-header">
     <div class="ref-header-inner">
       <a href="../referral/" class="ref-logo">
-        <img class="brand-mark" src="../assets/bt-ex5-mark.svg?v=202610081036" alt="" width="40" height="40">
+        <img class="brand-mark" src="../assets/bt-ex5-mark.svg?v=202610081230" alt="" width="40" height="40">
         <span class="brand-word"><span class="brand-name">BT-<em>EX5</em></span><span class="brand-sub">新潟・東京 紹介者制コミュニティ</span></span>
       </a>
       <nav class="ref-header-nav">
@@ -31,9 +31,9 @@
 
   <main class="ref-main tm-main">
     <section class="ref-intro">
-      <p class="ref-eyebrow">TEAM ANALYSIS</p>
-      <h1 class="ref-title">チーム分析</h1>
-      <p class="ref-lead">紹介した仕事がチームの中で回るのは、<strong>同じお客様を持ち、別のサービスを出せる人</strong>が同じチームにいるときです。今の名簿をもとに、各チームで回る紹介と、迎えると仕事が回る人をまとめました。</p>
+      <p class="ref-eyebrow">COMMUNITY ANALYSIS</p>
+      <h1 class="ref-title">コミュニティ分析</h1>
+      <p class="ref-lead">紹介した仕事がメンバーの中で回るのは、<strong>同じお客様を持ち、別のサービスを出せる人</strong>が同じコミュニティにいるときです。BT-EX5 では系列に関係なく紹介し合うので、コミュニティ全体で回っている紹介と、迎えると仕事が回る業種をまとめました。</p>
       <p class="tm-date" id="tmDate"></p>
     </section>
 
@@ -41,13 +41,17 @@
 
     <section class="tm-block" aria-labelledby="tmFieldsTitle">
       <h2 class="tm-h2" id="tmFieldsTitle">業種ごとの人数</h2>
-      <p class="tm-sub">0名の業種は、どのチームに入っても紹介が回りやすい「空いている席」です。</p>
+      <p class="tm-sub">0名の業種は、入るとすぐに紹介が回りやすい「空いている席」です。</p>
       <ul class="tm-fields" id="tmFields"></ul>
     </section>
 
-    <nav class="tm-jump" aria-label="チームへ移動" id="tmJump"></nav>
+    <article class="tm-team" id="tmWhole" aria-label="BT-EX5 全体"></article>
 
-    <div class="tm-teams" id="tmTeams"></div>
+    <section class="tm-block tm-needs-block" aria-labelledby="tmNeedsTitle">
+      <h2 class="tm-h2" id="tmNeedsTitle">BT-EX5 に必要な業種</h2>
+      <p class="tm-sub">この職種の人が入ると、今のメンバーと紹介し合えます。新しいメンバーを誘うときの参考にしてください。</p>
+      <div id="tmNeeds"></div>
+    </section>
 
     <p class="tm-foot">分析は、名簿の「事業内容」「主なお客様」「求める紹介」をもとにしています。各メンバーの情報が増えたら見直します。</p>
   </main>
@@ -57,12 +61,13 @@
     <p>© 2026 BT-EX5</p>
   </footer>
 
-  <script src="../referral/data.js?v=202610081036"></script>
-  <script src="../auth/server-core.js?v=202610081036"></script>
-  <script src="../auth/mock-server.js?v=202610081036"></script>
-  <script src="../auth/api.js?v=202610081036"></script>
-  <script src="../auth/session.js?v=202610081036"></script>
-  <script src="analysis.js?v=202610081036"></script>
-  <script src="teams.js?v=202610081036"></script>
+  <script src="../referral/data.js?v=202610081230"></script>
+  <script src="../auth/server-core.js?v=202610081230"></script>
+  <script src="../auth/mock-server.js?v=202610081230"></script>
+  <script src="../auth/api.js?v=202610081230"></script>
+  <script src="../auth/session.js?v=202610081230"></script>
+  <script src="../referral/partners.js?v=202610081230"></script>
+  <script src="analysis.js?v=202610081230"></script>
+  <script src="teams.js?v=202610081230"></script>
 </body>
 </html>

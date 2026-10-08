@@ -257,6 +257,14 @@
     return out;
   }
 
+  // 検索・診断の前の並び: 1番目は利用者本人、2番目はサイトの作成者(山本 捷真)、ほかは日替わり
+  const CREATOR_ID = "yamamoto";
+  function viewerOrder(list) {
+    const pinned = [myMemberId, CREATOR_ID].filter((id, i, a) => id && a.indexOf(id) === i);
+    const head = pinned.map((id) => list.find((m) => m.id === id)).filter(Boolean);
+    return [...head, ...list.filter((m) => !pinned.includes(m.id))];
+  }
+
   let detailReturnFocus = null;
   function openDetail(id) {
     const m = members.find((x) => x.id === id);
@@ -317,6 +325,8 @@
       .map(([v, l]) => chipHtml("area", v, l, filter.area === v))
       .join("");
     const offerCount = members.filter((m) => m.offer).length;
+    // 特典を登録している人がいないうちは、絞り込みを出さない
+    $("#offerFilter").hidden = offerCount === 0;
     $("#offerChip").innerHTML = `<button type="button" class="ref-chip" data-offer aria-pressed="${filter.offer}">紹介特典あり(${offerCount}名)</button>`;
   }
 
@@ -559,13 +569,13 @@
     const session = await AuthSession.guardPage({ next: "referral", loginPath: "../login/" });
     if (!session) return;
     const res = await AuthApi.listReferralMembers(AuthSession.getToken());
-    members = dailyOrder(res.success ? res.data.members : []);
+    myMemberId = session.memberId || "";
+    members = viewerOrder(dailyOrder(res.success ? res.data.members : []));
     $("#communityLabel").textContent = COMMUNITY.label;
     const notice = $("#pendingNotice");
     notice.textContent = COMMUNITY.pendingNote;
     notice.hidden = !members.some((m) => !isProfileComplete(m));
     $("#adminLink").hidden = !session.user.isAdmin;
-    myMemberId = session.memberId || "";
     $("#demoNote").hidden = AuthApi.isShared();
     renderNudge();
     renderPartners();
