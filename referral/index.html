@@ -36,6 +36,7 @@
       <h1 class="ref-title">紹介先早見表</h1>
       <p class="ref-lead">会話の中で「こんな話が出たら、この人へ」をすぐ探せる一覧です。キーワード検索・業種・エリアで絞り込めます。</p>
       <p class="ref-notice" id="pendingNotice"></p>
+      <p class="ref-demo-note" id="demoNote" hidden>※ 現在はお試し版のため、自分の情報の編集はこの端末のブラウザの中にだけ保存されます(他のメンバーには届きません)。</p>
     </section>
 
     <!-- 自分の情報の記入のお願い -->
@@ -46,18 +47,6 @@
       </span>
       <span class="prof-nudge-go">自分の情報を入力する →</span>
     </a>
-
-    <!-- あなたへの紹介 -->
-    <section class="inbox" id="inbox" aria-labelledby="inboxTitle">
-      <div class="inbox-head">
-        <h2 class="inbox-title" id="inboxTitle">あなたへの紹介</h2>
-        <span class="inbox-badge" id="inboxBadge" hidden></span>
-      </div>
-      <p class="inbox-lead">メンバーがあなたに紹介してくれた方です。対応したら状況を更新しておくと、対応漏れを防げます。</p>
-      <ul class="inbox-list" id="inboxList"></ul>
-      <p class="ref-demo-note" id="demoNote" hidden>※ 現在はお試し版のため、紹介の記録や編集はこの端末のブラウザの中にだけ保存されます(他のメンバーには届きません)。</p>
-    </section>
-
 
     <!-- 紹介診断への入口 -->
     <button type="button" class="diag-cta" data-open-diag>
@@ -146,34 +135,6 @@
             </div>
           </div>
         </section>
-    </div>
-  </div>
-
-  <!-- 紹介の記録 -->
-  <div class="diag-overlay rec-overlay" id="recOverlay" hidden>
-    <div class="rec-dialog" role="dialog" aria-modal="true" aria-labelledby="recTitle">
-      <button type="button" class="rec-close" id="recClose" aria-label="閉じる">×</button>
-      <h2 class="rec-title" id="recTitle">紹介を記録</h2>
-      <p class="rec-lead" id="recLead"></p>
-      <form id="recForm" novalidate>
-        <label class="rec-field" for="recProspect">紹介した相手(任意)</label>
-        <input type="text" id="recProspect" class="rec-input" maxlength="60" autocomplete="off">
-        <label class="rec-field" for="recMemo">メモ(任意)</label>
-        <textarea id="recMemo" class="rec-input" rows="3" maxlength="300"></textarea>
-        <p class="rec-note">メモ(相手のご要望・連絡のタイミングなど)は、紹介先のメンバーとあなただけが見られます。記録すると、紹介先のメンバーの「あなたへの紹介」に届きます。</p>
-        <div class="rec-actions">
-          <button type="button" class="ref-btn ghost" id="recCancel">キャンセル</button>
-          <button type="submit" class="ref-diag-btn">記録する</button>
-        </div>
-      </form>
-      <div class="rec-done" id="recDone" hidden>
-        <p class="rec-done-title">記録しました。ありがとうございます!</p>
-        <p class="rec-note" id="recDoneLead"></p>
-        <div class="rec-actions">
-          <button type="button" class="ref-btn ghost" id="recDoneClose">閉じる</button>
-          <button type="button" class="ref-btn line" id="recNotify">LINEで知らせる</button>
-        </div>
-      </div>
     </div>
   </div>
 

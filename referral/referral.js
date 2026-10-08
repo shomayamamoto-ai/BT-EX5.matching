@@ -3,7 +3,6 @@
 // ・業種/エリア/キーワードでの絞り込み
 // ・紹介診断:5つの質問の回答からメンバーごとの一致度(0〜100%)を計算
 // ・紹介文のコピー/LINEで送る
-// ・紹介の記録(メモつき)と、紹介を受けた本人による対応状況の更新
 // ============================================
 
 (function () {
@@ -26,12 +25,8 @@
   let scores = null;       // { [memberId]: { score, reasons, topicHits, keywordHits } }
   let sortByScore = false;
   let members = [];        // サーバーから取得した名簿
-  let stats = null;        // 紹介の実績(サーバー集計)
-  let recordingId = null;  // 記録ダイアログの対象メンバー
   let myMemberId = "";     // ログイン中の本人(名簿のID)
-  let lastRecord = null;   // 直前に記録した紹介(LINEで知らせる用)
 
-  const STATUS_LABELS = { new: "未対応", contacted: "連絡済み", won: "成約", lost: "見送り" };
 
   // ---------- 一致度の計算 ----------
   // 配点: 話題50 + 業種15 + 相手のタイプ10 + 会い方・エリア25 = 100
@@ -198,7 +193,6 @@
             ${m.id === myMemberId ? '<span class="ref-tag me">あなた</span>' : ""}
             ${complete ? "" : '<span class="ref-tag pending">準備中</span>'}
           </div>
-          ${stats && stats.received[m.id] ? `<p class="ref-received">受けた紹介 <strong>${stats.received[m.id]}</strong>件</p>` : ""}
         </div>
         <div class="ref-col ref-col-business">
           <p class="ref-label">事業内容</p>
@@ -220,7 +214,7 @@
           <div class="ref-actions">
             <button type="button" class="ref-btn" data-copy="${m.id}">紹介文をコピー</button>
             <button type="button" class="ref-btn line" data-line="${m.id}">LINEで送る</button>
-            ${m.id === myMemberId ? '<a href="../profile/" class="ref-btn record">自分の情報を編集</a>' : `<button type="button" class="ref-btn record" data-record="${m.id}">紹介を記録</button>`}
+            ${m.id === myMemberId ? '<a href="../profile/" class="ref-btn record">自分の情報を編集</a>' : ""}
           </div>
         </div>
       </article>`;
@@ -364,7 +358,6 @@
           <span class="rank-actions">
             <button type="button" class="ref-btn" data-copy="${m.id}">紹介文をコピー</button>
             <button type="button" class="ref-btn line" data-line="${m.id}">LINEで送る</button>
-            ${m.id === myMemberId ? "" : `<button type="button" class="ref-btn record" data-record="${m.id}">紹介を記録</button>`}
             <button type="button" class="ref-btn ghost" data-goto="${m.id}">カードを見る</button>
           </span>
         </li>`)
@@ -413,44 +406,6 @@
     setTimeout(() => card.classList.remove("is-highlight"), 2200);
   }
 
-  // ---------- 紹介の実績・記録 ----------
-  function fmtDate(ms) {
-    const d = new Date(ms);
-    return `${d.getMonth() + 1}/${d.getDate()}`;
-  }
-
-  async function loadStats() {
-    const res = await AuthApi.getReferralStats(AuthSession.getToken());
-    if (!res.success) return;
-    stats = res.data;
-    renderInbox();
-  }
-
-  // ---------- あなたへの紹介 ----------
-  function renderInbox() {
-    const items = stats ? stats.inbox : [];
-    const badge = $("#inboxBadge");
-    badge.hidden = !(stats && stats.inboxNewCount);
-    badge.textContent = stats ? `未対応 ${stats.inboxNewCount}件` : "";
-    $("#inboxList").innerHTML = items.length
-      ? items
-          .map((l) => `
-        <li class="inbox-item${l.status === "new" ? " is-new" : ""}">
-          <div class="inbox-main">
-            <p class="inbox-who"><span class="inbox-date">${fmtDate(l.at)}</span><strong>${escapeHtml(l.fromName)}</strong>さんから${l.prospect ? `「${escapeHtml(l.prospect)}」さんの` : ""}ご紹介</p>
-            ${l.topics.length ? `<p class="inbox-topics">${l.topics.map((t) => `<span>${escapeHtml(labelOf(TOPICS, t))}</span>`).join("")}</p>` : ""}
-            ${l.memo ? `<p class="inbox-memo">${escapeHtml(l.memo)}</p>` : ""}
-          </div>
-          <div class="inbox-status" role="group" aria-label="対応状況">
-            ${Object.keys(STATUS_LABELS)
-              .map((st) => `<button type="button" class="status-btn status-${st}" data-status-id="${escapeHtml(l.id)}" data-status-value="${st}" aria-pressed="${l.status === st}">${STATUS_LABELS[st]}</button>`)
-              .join("")}
-          </div>
-        </li>`)
-          .join("")
-      : '<li class="inbox-empty">まだありません。「求める紹介」や「こんな話が出たら」を具体的に書いておくと、紹介が届きやすくなります。</li>';
-  }
-
   // ---------- 自分の情報の記入状況 ----------
   function renderNudge() {
     const me = members.find((m) => m.id === myMemberId);
@@ -462,67 +417,8 @@
       if (me.triggers.length < 3) missing.push("こんな話が出たら");
     }
     $("#profileNudge").hidden = !missing.length;
-    $("#profileNudgeItems").textContent = `未入力:${missing.join("・")}。入力すると紹介が届きやすくなります。`;
+    $("#profileNudgeItems").textContent = `未入力:${missing.join("・")}。入力すると紹介されやすくなります。`;
   }
-
-  function openRecord(id) {
-    const m = members.find((x) => x.id === id);
-    if (!m) return;
-    recordingId = id;
-    $("#recLead").textContent = `${m.name}さんを紹介したことを記録します。`;
-    $("#recProspect").value = "";
-    $("#recMemo").value = "";
-    $("#recForm").hidden = false;
-    $("#recDone").hidden = true;
-    $("#recOverlay").hidden = false;
-    document.body.style.overflow = "hidden";
-    $("#recProspect").focus();
-  }
-
-  function closeRecord() {
-    $("#recOverlay").hidden = true;
-    recordingId = null;
-    if ($("#diagOverlay").hidden) document.body.style.overflow = "";
-  }
-
-  $("#recForm").addEventListener("submit", async (e) => {
-    e.preventDefault();
-    if (!recordingId) return;
-    const m = members.find((x) => x.id === recordingId);
-    const sc = scores && scores[recordingId];
-    const prospect = $("#recProspect").value.trim();
-    const memo = $("#recMemo").value.trim();
-    const res = await AuthApi.recordReferral(
-      AuthSession.getToken(),
-      recordingId,
-      prospect,
-      sc ? sc.topicHits : [],
-      memo
-    );
-    if (!res.success) { closeRecord(); toast(res.error.userMessage); return; }
-    lastRecord = { m, prospect, memo };
-    $("#recForm").hidden = true;
-    $("#recDone").hidden = false;
-    $("#recDoneLead").textContent = `${m.name}さんの「あなたへの紹介」に表示されます。LINEでも直接知らせておくと、すぐに動いてもらえます。`;
-    $("#recNotify").focus();
-    await loadStats();
-    renderList();
-  });
-
-  function notifyText(r) {
-    const lines = [`【ご紹介のお知らせ】${r.m.name}さん`, `${r.prospect ? `${r.prospect}さん` : "お客様"}をご紹介しました。`];
-    if (r.memo) lines.push("", r.memo);
-    lines.push("", "BT-EX5 紹介先早見表の「あなたへの紹介」で、対応状況を更新できます。", new URL("./", location.href).href);
-    return lines.join("\n");
-  }
-  $("#recNotify").addEventListener("click", () => {
-    if (!lastRecord) return;
-    window.open("https://line.me/R/share?text=" + encodeURIComponent(notifyText(lastRecord)), "_blank", "noopener");
-  });
-  $("#recDoneClose").addEventListener("click", closeRecord);
-  $("#recClose").addEventListener("click", closeRecord);
-  $("#recCancel").addEventListener("click", closeRecord);
-  $("#recOverlay").addEventListener("click", (e) => { if (e.target.id === "recOverlay") closeRecord(); });
 
   // ---------- イベント ----------
   document.addEventListener("click", async (e) => {
@@ -541,7 +437,7 @@
     if (copyBtn) {
       const m = members.find((x) => x.id === copyBtn.dataset.copy);
       const ok = await copyText(introText(m));
-      toast(ok ? "紹介文をコピーしました。紹介したら「紹介を記録」で相手に届けられます" : "コピーできませんでした");
+      toast(ok ? "紹介文をコピーしました" : "コピーできませんでした");
       return;
     }
 
@@ -550,18 +446,6 @@
       const m = members.find((x) => x.id === lineBtn.dataset.line);
       const url = "https://line.me/R/share?text=" + encodeURIComponent(introText(m));
       window.open(url, "_blank", "noopener");
-      return;
-    }
-
-    const recBtn = t.closest("[data-record]");
-    if (recBtn) { openRecord(recBtn.dataset.record); return; }
-
-    const statusBtn = t.closest("[data-status-id]");
-    if (statusBtn) {
-      const res = await AuthApi.updateReferralStatus(AuthSession.getToken(), statusBtn.dataset.statusId, statusBtn.dataset.statusValue);
-      if (!res.success) { toast(res.error.userMessage); return; }
-      await loadStats();
-      toast(res.data.status === "won" ? "成約おめでとうございます!" : `対応状況を「${STATUS_LABELS[res.data.status]}」にしました`);
       return;
     }
 
@@ -574,8 +458,7 @@
   $("#diagOverlay").addEventListener("click", (e) => { if (e.target.id === "diagOverlay") closeDiag(); });
   document.addEventListener("keydown", (e) => {
     if (e.key !== "Escape") return;
-    if (!$("#recOverlay").hidden) closeRecord();
-    else if (!$("#diagOverlay").hidden) closeDiag();
+    if (!$("#diagOverlay").hidden) closeDiag();
   });
   $("#diagStart").addEventListener("click", startDiagnosis);
   $("#diagRetry").addEventListener("click", startDiagnosis);
@@ -605,7 +488,7 @@
   (async function init() {
     const session = await AuthSession.guardPage({ next: "referral", loginPath: "../login/" });
     if (!session) return;
-    const [res] = await Promise.all([AuthApi.listReferralMembers(AuthSession.getToken()), loadStats()]);
+    const res = await AuthApi.listReferralMembers(AuthSession.getToken());
     members = res.success ? res.data.members : [];
     $("#communityLabel").textContent = COMMUNITY.label;
     const notice = $("#pendingNotice");
