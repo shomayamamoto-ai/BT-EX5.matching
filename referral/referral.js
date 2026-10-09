@@ -19,7 +19,7 @@
   const labelOf = (list, id) => (list.find((x) => x.id === id) || {}).label || "";
 
   // ---------- 状態 ----------
-  const filter = { category: "all", area: "all", search: "", topic: "all", offer: false };
+  const filter = { category: "all", area: "all", search: "", topic: "all", offer: false, fav: false };
   // need: 困りごと(REF_NEEDS の id) / methods: 選んだ方法の番号 / anyTopic: 「まだ分からない」
   // topics・topicGroups は選んだ方法から作る(「その他」のときはジャンルを直接選ぶ)
   const answers = { need: null, methods: new Set(), anyTopic: false, topics: new Set(), topicGroups: [], keyword: "", who: null, industry: null, area: null, meeting: null };
@@ -95,7 +95,28 @@
   }
 
   // ---------- 一覧 ----------
+  // キーワードに当たるジャンル(ジャンル名・タグ・言いかえ)。「人が辞める」→ 離職防止 など
+  function genresForWord(word) {
+    const w = String(word || "").trim().toLowerCase();
+    if (w.length < 2) return [];
+    return TOPICS.filter((t) =>
+      `${t.label} ${t.tag || ""}`.toLowerCase().includes(w) ||
+      (TOPIC_KEYWORDS[t.id] || []).some((k) => { const kk = k.toLowerCase(); return w.includes(kk) || kk.includes(w); })
+    ).map((t) => t.id);
+  }
+
+  // ---------- お気に入り(この端末に保存。ログインした人ごと) ----------
+  let favs = new Set();
+  const favKey = () => `btex5-favorites-${myMemberId || "guest"}`;
+  function loadFavs() {
+    try { favs = new Set(JSON.parse(localStorage.getItem(favKey()) || "[]")); } catch { favs = new Set(); }
+  }
+  function saveFavs() {
+    try { localStorage.setItem(favKey(), JSON.stringify([...favs])); } catch { /* 保存できなくても画面は動かす */ }
+  }
+
   function matchesFilter(m) {
+    if (filter.fav && !favs.has(m.id)) return false;
     if (filter.topic !== "all" && !m.topics.includes(filter.topic)) return false;
     if (filter.offer && !m.offer) return false;
     if (filter.category !== "all" && !refInCategory(m, filter.category)) return false;
@@ -105,7 +126,8 @@
     if (filter.search) {
       const tokens = keywordTokens(filter.search).length ? keywordTokens(filter.search) : [filter.search.trim()];
       const hay = haystack(m).toLowerCase();
-      if (!tokens.every((t) => hay.includes(t.toLowerCase()))) return false;
+      // 本人の説明にその言葉があるか、その言葉に当たるジャンルを持っていれば一致
+      if (!tokens.every((t) => hay.includes(t.toLowerCase()) || genresForWord(t).some((g) => m.topics.includes(g)))) return false;
     }
     return true;
   }
@@ -150,7 +172,10 @@
               ${roleMark(m.id)}
               <p class="ref-company">${escapeHtml(m.company)}</p>
             </div>
-            ${sc ? `<div class="ref-match"><strong>${sc.score}%</strong><small>一致度</small></div>` : ""}
+            <div class="ref-card-side">
+              ${sc ? `<div class="ref-match"><strong>${sc.score}%</strong><small>一致度</small></div>` : ""}
+              <button type="button" class="ref-fav" data-fav="${m.id}" aria-pressed="${favs.has(m.id)}" aria-label="${escapeHtml(m.name)}さんをお気に入りに${favs.has(m.id) ? "登録済み" : "追加"}" title="お気に入り">${favs.has(m.id) ? "★" : "☆"}</button>
+            </div>
           </div>
           <div class="ref-tags">
             ${m.id === myMemberId ? '<span class="ref-tag me">あなた</span>' : ""}
@@ -388,11 +413,23 @@
       filter.offer ? "紹介特典あり" : "",
     ].filter(Boolean);
     $("#moreFiltersActive").textContent = more.length ? `選択中:${more.join("・")}` : "";
-    $("#clearFilters").hidden = !(more.length || filter.search || filter.topic !== "all");
+    $("#clearFilters").hidden = !(more.length || filter.search || filter.topic !== "all" || filter.fav);
+    // お気に入りの絞り込み(登録した人がいるときだけ出す)
+    const favChip = $("#favFilter");
+    favChip.hidden = !favs.size && !filter.fav;
+    favChip.setAttribute("aria-pressed", String(filter.fav));
+    favChip.textContent = `★ お気に入り(${favs.size})`;
+    // キーワードに当たるジャンルを候補として出す(押すとそのジャンルで探す)
+    const words = keywordTokens(filter.search).length ? keywordTokens(filter.search) : [filter.search.trim()];
+    const genres = filter.search ? [...new Set(words.flatMap(genresForWord))].filter((id) => id !== filter.topic).slice(0, 5) : [];
+    $("#searchSuggest").hidden = !genres.length;
+    $("#searchSuggest").innerHTML = genres.length
+      ? `<span>関連するジャンル:</span>${genres.map((id) => `<button type="button" class="ref-genre" data-genre="${id}">${escapeHtml(topicTag(id))}(${members.filter((m) => m.topics.includes(id)).length})</button>`).join("")}`
+      : "";
   }
 
   function clearFilters() {
-    Object.assign(filter, { category: "all", area: "all", search: "", topic: "all", offer: false });
+    Object.assign(filter, { category: "all", area: "all", search: "", topic: "all", offer: false, fav: false });
     $("#refSearch").value = "";
     renderTopicSelect();
     renderChips();
@@ -695,9 +732,23 @@
       if (!$("#detailOverlay").hidden) closeDetail();
       sortByScore = false;
       filter.topic = genreBtn.dataset.genre;
+      // ジャンル全体を見せる(キーワードとの掛け合わせで0人にならないように)
+      filter.search = "";
+      $("#refSearch").value = "";
       renderTopicSelect();
       renderList();
       $("#refList").scrollIntoView({ behavior: "smooth", block: "start" });
+      return;
+    }
+
+    const favBtn = t.closest("[data-fav]");
+    if (favBtn) {
+      const id = favBtn.dataset.fav;
+      if (favs.has(id)) favs.delete(id); else favs.add(id);
+      saveFavs();
+      if (filter.fav && !favs.size) filter.fav = false;
+      renderList();
+      toast(favs.has(id) ? "お気に入りに追加しました" : "お気に入りから外しました");
       return;
     }
 
@@ -748,6 +799,11 @@
   });
 
   $("#clearFilters").addEventListener("click", clearFilters);
+  $("#favFilter").addEventListener("click", () => { filter.fav = !filter.fav; renderList(); });
+  // 長い一覧で上に戻るボタン
+  const toTop = $("#toTop");
+  window.addEventListener("scroll", () => { toTop.hidden = window.scrollY < 1200; }, { passive: true });
+  toTop.addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
   $("#topicSelect").addEventListener("change", (e) => {
     filter.topic = e.target.value;
     renderList();
@@ -764,6 +820,7 @@
     if (!session) return;
     const res = await AuthApi.listReferralMembers(AuthSession.getToken());
     myMemberId = session.memberId || "";
+    loadFavs();
     members = viewerOrder(dailyOrder(res.success ? res.data.members : []));
     $("#communityLabel").textContent = COMMUNITY.label;
     // 業種・エリアの絞り込みは、広い画面では最初から開いておく
