@@ -1,25 +1,24 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="BT-EX5">
-  <!-- 5つの点を1本の糸で結んだ五角形。頂点の光は「ひとつの出会い」。オープニングムービーの最後に出る形 -->
+  <!-- 5つの縁(点)を結ぶ輪。輪の切れ目に5人がいて、内側の細い線が5人を結ぶ。頂点の光は「ひとつの出会い」 -->
   <defs>
-    <linearGradient id="mk-gold" x1="10" y1="10" x2="54" y2="54" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#e2bf7c"/>
-      <stop offset="0.5" stop-color="#a8742c"/>
-      <stop offset="1" stop-color="#d9b06a"/>
+    <linearGradient id="mk-gold" x1="8" y1="8" x2="56" y2="56" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ecd29b"/>
+      <stop offset="0.45" stop-color="#b98a45"/>
+      <stop offset="1" stop-color="#e3c48a"/>
     </linearGradient>
-    <radialGradient id="mk-spark" cx="32" cy="14" r="7" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#fff6df"/>
-      <stop offset="1" stop-color="#d6a85a"/>
+    <radialGradient id="mk-light" cx="32" cy="11" r="7" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fff3d6" stop-opacity="0.9"/>
+      <stop offset="1" stop-color="#e0b86e" stop-opacity="0"/>
     </radialGradient>
   </defs>
-  <path d="M32 14 51.02 27.82 43.76 50.18H20.24L12.98 27.82Z" fill="none" stroke="url(#mk-gold)" stroke-width="2.6" stroke-linejoin="miter"/>
-  <path d="M32 19.5 45.79 29.52 40.52 45.73H23.48L18.21 29.52Z" fill="none" stroke="url(#mk-gold)" stroke-width="0.9" opacity="0.55"/>
+  <path d="M35.29 11.26A21 21 0 0 1 50.71 22.47 M52.74 28.71A21 21 0 0 1 46.85 46.85 M41.53 50.71A21 21 0 0 1 22.47 50.71 M17.15 46.85A21 21 0 0 1 11.26 28.71 M13.29 22.47A21 21 0 0 1 28.71 11.26" fill="none" stroke="url(#mk-gold)" stroke-width="2.2" stroke-linecap="round"/>
+  <path d="M32 11 51.97 25.51 44.34 48.99H19.66L12.03 25.51Z" fill="none" stroke="url(#mk-gold)" stroke-width="0.8" opacity="0.55"/>
   <g fill="url(#mk-gold)">
-    <circle cx="51.02" cy="27.82" r="2.4"/>
-    <circle cx="43.76" cy="50.18" r="2.4"/>
-    <circle cx="20.24" cy="50.18" r="2.4"/>
-    <circle cx="12.98" cy="27.82" r="2.4"/>
+    <circle cx="51.97" cy="25.51" r="1.8"/>
+    <circle cx="44.34" cy="48.99" r="1.8"/>
+    <circle cx="19.66" cy="48.99" r="1.8"/>
+    <circle cx="12.03" cy="25.51" r="1.8"/>
   </g>
-  <!-- 頂点の光(4方向に伸びるきらめき) -->
-  <path d="M32 6.2 33.4 12.6 39.8 14 33.4 15.4 32 21.8 30.6 15.4 24.2 14 30.6 12.6Z" fill="url(#mk-spark)"/>
-  <circle cx="32" cy="14" r="1.5" fill="#fffaf0"/>
+  <circle cx="32" cy="11" r="7" fill="url(#mk-light)"/>
+  <circle cx="32" cy="11" r="2.4" fill="#fbecc8"/>
 </svg>
