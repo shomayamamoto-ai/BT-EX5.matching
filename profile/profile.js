@@ -75,7 +75,8 @@
       face: v("face"),
       faceAreas: checked("faceAreas"),
       online: v("online"),
-      topics: checked("topics"),
+      // ジャンルは登録してあった順(主な仕事が先)を保ち、新しく選んだものを後ろに足す
+      topics: ((picked, before) => [...before.filter((t) => picked.includes(t)), ...picked.filter((t) => !before.includes(t))])(checked("topics"), (me && me.topics) || []),
       targets: checked("targets"),
       prospects: checked("prospects"),
       links: LinksEditor.read($("#fLinks")).links,

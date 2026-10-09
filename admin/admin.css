@@ -154,3 +154,28 @@
 /* ジャンルのまとまりの見出し(行を分ける) */
 .adm-check-group { flex-basis: 100%; margin: 8px 0 0; font-size: 12px; font-weight: 800; color: var(--text-light); }
 .adm-check-group:first-child { margin-top: 0; }
+
+/* 一覧: 記入率・更新日・ジャンル・並び順 */
+.adm-fill { margin-left: 8px; font-size: 12px; font-weight: 800; color: #b4442c; background: #fde6df; border-radius: 999px; padding: 1px 8px; vertical-align: 2px; }
+.adm-fill.full { color: #1f7a45; background: #e9f7ee; }
+.adm-edited { margin-left: 8px; font-size: 11.5px; font-weight: 500; color: var(--text-light); }
+.adm-row-genres { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+.adm-row-genres span { font-size: 11.5px; font-weight: 700; color: #6b4a3a; background: #f6efe9; border-radius: 999px; padding: 1px 8px; }
+.adm-row-actions { flex-wrap: wrap; justify-content: flex-end; }
+.adm-row-actions a.ref-btn { text-decoration: none; display: inline-flex; align-items: center; }
+.adm-sort-row { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; font-size: 13px; color: var(--text-sub); }
+.adm-sort-row label { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; }
+.adm-sort-row select { font: inherit; padding: 5px 8px; border-radius: 10px; border: 1px solid var(--line-strong); background: #fff; }
+
+/* 編集フォーム: 保存ボタンは画面の下に固定 */
+.adm-form-actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+  margin: 12px -20px -24px;
+  padding: 12px 20px calc(14px + env(safe-area-inset-bottom, 0px));
+  background: rgba(255, 255, 255, 0.96);
+  border-top: 1px solid var(--line);
+  border-radius: 0 0 var(--radius) var(--radius);
+}
+.adm-dialog { overflow: clip; }

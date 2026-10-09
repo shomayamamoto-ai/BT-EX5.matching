@@ -7,20 +7,20 @@
   <meta name="robots" content="noindex">
   <title>名簿の管理 | BT-EX5</title>
   <style>html.guard-pending body { visibility: hidden; } html.guard-pending::after { content: "読み込み中…"; position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; font: 700 15px sans-serif; color: #a18a7e; background: #fff8f2; }</style>
-  <link rel="icon" type="image/svg+xml" href="../assets/bt-ex5-mark.svg?v=202610090538">
+  <link rel="icon" type="image/svg+xml" href="../assets/bt-ex5-mark.svg?v=202610090611">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" onload="this.onload=null;this.rel='stylesheet'">
   <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Noto+Sans+JP:wght@400;500;700;900&display=swap"></noscript>
-  <link rel="stylesheet" href="../referral/referral.css?v=202610090538">
-  <link rel="stylesheet" href="admin.css?v=202610090538">
-  <link rel="stylesheet" href="../opening/intro.css?v=202610090538">
+  <link rel="stylesheet" href="../referral/referral.css?v=202610090611">
+  <link rel="stylesheet" href="admin.css?v=202610090611">
+  <link rel="stylesheet" href="../opening/intro.css?v=202610090611">
 </head>
 <body>
 
   <header class="ref-header">
     <div class="ref-header-inner">
       <a href="../referral/" class="ref-logo">
-        <img class="brand-mark" src="../assets/bt-ex5-mark.svg?v=202610090538" alt="" width="40" height="40">
+        <img class="brand-mark" src="../assets/bt-ex5-mark.svg?v=202610090611" alt="" width="40" height="40">
         <span class="brand-word"><span class="brand-name">BT-<em>EX5</em></span><span class="brand-sub">新潟・東京 紹介者制コミュニティ</span></span>
       </a>
       <nav class="ref-header-nav">
@@ -35,7 +35,7 @@
     <section class="ref-intro">
       <p class="ref-eyebrow">ADMIN</p>
       <h1 class="ref-title">名簿の管理</h1>
-      <p class="ref-lead">紹介先早見表に載るメンバーの追加・編集・削除ができます。「準備中」のメンバーは、求める紹介や活動範囲を追加すると早見表と紹介診断に反映されます。</p>
+      <p class="ref-lead">紹介先早見表に載るメンバーの追加・編集・削除ができます。記入率の低い人は「お願い文をコピー」で足りない情報を聞けます。「Excel用に書き出す」で一覧表にもできます。</p>
     </section>
 
     <section class="adm-denied" id="denied" hidden>
@@ -49,13 +49,25 @@
         <div class="adm-stats" id="stats"></div>
         <div class="adm-tools">
           <button type="button" class="ref-diag-btn" id="addMember">+ メンバーを追加</button>
+          <button type="button" class="ref-btn ghost" id="exportCsv">Excel用に書き出す(CSV)</button>
           <button type="button" class="ref-btn ghost" id="exportJson">JSONを書き出す</button>
           <button type="button" class="ref-btn ghost" id="importJsonBtn">JSONを読み込む</button>
           <input type="file" id="importJson" accept="application/json,.json" hidden>
         </div>
-        <label class="visually-hidden" for="admSearch">名前・肩書き・チームで検索</label>
-        <input type="search" id="admSearch" class="ref-search" placeholder="名前・肩書き・チームで検索" autocomplete="off">
+        <label class="visually-hidden" for="admSearch">名前・肩書き・ジャンル・事業内容で検索</label>
+        <input type="search" id="admSearch" class="ref-search" placeholder="名前・肩書き・ジャンル・事業内容で検索" autocomplete="off">
         <div class="ref-chips" id="statusChips"></div>
+        <div class="adm-sort-row">
+          <span id="admCount"></span>
+          <label>並び順
+            <select id="admSort">
+              <option value="default">名簿の順</option>
+              <option value="missing">記入が少ない順</option>
+              <option value="recent">最近更新した順</option>
+              <option value="name">名前順</option>
+            </select>
+          </label>
+        </div>
       </section>
 
       <section class="adm-list" id="memberList" aria-live="polite"></section>
@@ -139,13 +151,13 @@
 
   <div class="ref-toast" id="refToast" role="status" hidden></div>
 
-  <script src="../auth/server-core.js?v=202610090538"></script>
-  <script src="../auth/mock-server.js?v=202610090538"></script>
-  <script src="../auth/api.js?v=202610090538"></script>
-  <script src="../auth/session.js?v=202610090538"></script>
-  <script src="../referral/data.js?v=202610090538"></script>
-  <script src="../referral/links-editor.js?v=202610090538"></script>
-  <script src="admin.js?v=202610090538"></script>
-  <script src="../opening/intro.js?v=202610090538"></script>
+  <script src="../auth/server-core.js?v=202610090611"></script>
+  <script src="../auth/mock-server.js?v=202610090611"></script>
+  <script src="../auth/api.js?v=202610090611"></script>
+  <script src="../auth/session.js?v=202610090611"></script>
+  <script src="../referral/data.js?v=202610090611"></script>
+  <script src="../referral/links-editor.js?v=202610090611"></script>
+  <script src="admin.js?v=202610090611"></script>
+  <script src="../opening/intro.js?v=202610090611"></script>
 </body>
 </html>
