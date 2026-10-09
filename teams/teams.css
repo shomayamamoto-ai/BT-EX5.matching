@@ -134,3 +134,10 @@
 .tm-role-card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; min-width: 0; }
 @media (min-width: 760px) { .tm-role-grid { grid-template-columns: repeat(2, 1fr); } }
 @media (min-width: 1040px) { .tm-role-grid { grid-template-columns: repeat(3, 1fr); } }
+
+/* 名前は早見表の詳細へのリンク */
+a.tm-person { text-decoration: none; }
+a.tm-person:hover { text-decoration: underline; }
+/* 知り合いを誘う文 */
+.tm-invite { margin-top: 10px; border: 1px solid var(--accent); background: #fff; color: var(--accent-dark); border-radius: 999px; padding: 6px 14px; font: inherit; font-size: 12.5px; font-weight: 800; cursor: pointer; }
+.tm-invite:hover { background: #fff4ee; }

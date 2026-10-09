@@ -61,7 +61,36 @@
 
     statusEl.hidden = true;
     contentEl.hidden = false;
+    setupInstall();
   })();
+
+  // ---------- ホーム画面に追加 ----------
+  let installPrompt = null;
+  window.addEventListener("beforeinstallprompt", (e) => {
+    e.preventDefault();
+    installPrompt = e;
+    setupInstall();
+  });
+  function setupInstall() {
+    const box = document.getElementById("portal-install");
+    const standalone = (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) || navigator.standalone === true;
+    if (standalone) { box.hidden = true; return; }
+    box.hidden = false;
+    const btn = document.getElementById("portal-install-btn");
+    btn.hidden = !installPrompt;
+    const ua = navigator.userAgent;
+    document.getElementById("portal-install-how").textContent = installPrompt ? ""
+      : /iPhone|iPad|iPod/.test(ua) ? "iPhone:Safari で下の共有ボタン(□に↑)→「ホーム画面に追加」を押してください。"
+      : /Android/.test(ua) ? "Android:Chrome の右上のメニュー(︙)→「ホーム画面に追加」を押してください。"
+      : "スマホで開き、iPhone は共有ボタン →「ホーム画面に追加」、Android は Chrome のメニュー(︙)→「ホーム画面に追加」を押してください。";
+  }
+  document.getElementById("portal-install-btn").addEventListener("click", async () => {
+    if (!installPrompt) return;
+    installPrompt.prompt();
+    await installPrompt.userChoice.catch(() => null);
+    installPrompt = null;
+    setupInstall();
+  });
 
   document.getElementById("logout-button").addEventListener("click", async () => {
     const token = AuthSession.getToken();

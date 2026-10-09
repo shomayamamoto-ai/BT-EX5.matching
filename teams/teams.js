@@ -12,10 +12,47 @@
   let members = [];
   const byId = (id) => members.find((m) => m.id === id);
 
+  // 名前を押すと、紹介先早見表でその人の詳細が開く
   function person(id) {
     const m = byId(id);
-    return m ? `<span class="tm-person">${esc(m.name)}</span>` : "";
+    return m ? `<a class="tm-person" href="../referral/#member=${encodeURIComponent(m.id)}">${esc(m.name)}</a>` : "";
   }
+
+  // ---------- 誘う文(その業種の知り合いに BT-EX5 を紹介する) ----------
+  function inviteText(n) {
+    const names = n.gives.map(byId).filter(Boolean).slice(0, 4);
+    return [
+      "BT-EX5(新潟・東京の紹介者制の経営者コミュニティ)では、いま",
+      `「${n.role}」の方を探しています。`,
+      "",
+      n.why,
+      "",
+      names.length ? `メンバーには${names.map((m) => `${m.name}さん(${(m.company || m.category).split("/")[0]})`).join("、")}などがいて、入るとお互いにお客様を紹介し合えます。` : "入るとメンバーどうしでお客様を紹介し合えます。",
+      "よければ一度、見学に来てみませんか?",
+    ].join("\n");
+  }
+  async function copyText(text) {
+    try { await navigator.clipboard.writeText(text); return true; } catch {
+      const ta = document.createElement("textarea");
+      ta.value = text; ta.setAttribute("readonly", ""); ta.style.position = "fixed"; ta.style.opacity = "0";
+      document.body.appendChild(ta); ta.select();
+      let ok = false; try { ok = document.execCommand("copy"); } catch { ok = false; }
+      ta.remove(); return ok;
+    }
+  }
+  let toastTimer = null;
+  function toast(msg) {
+    const el = $("#refToast");
+    el.textContent = msg; el.hidden = false;
+    clearTimeout(toastTimer); toastTimer = setTimeout(() => { el.hidden = true; }, 2800);
+  }
+  document.addEventListener("click", async (e) => {
+    const b = e.target.closest("[data-invite]");
+    if (!b) return;
+    const n = NEEDED_ROLES[Number(b.dataset.invite)];
+    const ok = await copyText(inviteText(n));
+    toast(ok ? `「${n.role}」の方を誘う文をコピーしました` : "コピーできませんでした");
+  });
   function people(ids) {
     return ids.map(person).filter(Boolean).join("");
   }
@@ -128,6 +165,7 @@
                 <p class="tm-role">${esc(n.role)}</p>
                 <p class="tm-why">${esc(n.why)}</p>
                 ${n.gives.some(byId) ? `<p class="tm-gives"><span>紹介し合える人</span>${people(n.gives)}</p>` : ""}
+                <button type="button" class="tm-invite" data-invite="${NEEDED_ROLES.indexOf(n)}">知り合いを誘う文をコピー</button>
               </li>`).join("")}
           </ul>
         </section>`;

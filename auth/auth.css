@@ -364,3 +364,5 @@ a.site-maker:hover span { text-decoration: underline; color: var(--accent); }
 .portal-empty[hidden] { display: none; }
 .portal-expires { margin-top: 12px; font-size: 11px; color: var(--text-light); text-align: center; }
 .portal-action:last-child { grid-column: 1 / -1; }
+.portal-install-btn { border: none; border-radius: 999px; padding: 9px 16px; background: linear-gradient(135deg, #f4694b, #f9a03f); color: #fff; font: inherit; font-weight: 800; font-size: 13.5px; cursor: pointer; margin-bottom: 6px; }
+.portal-install-btn[hidden] { display: none; }
