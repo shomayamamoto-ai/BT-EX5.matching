@@ -110,12 +110,14 @@
     return true;
   }
 
-  // カードに出す一致度: 診断の一致度順のときは診断、話題で探すときはその話題の一致度
+  // カードに出す一致度: 診断の一致度順のときは診断、ジャンルで探すときはそのジャンルの一致度。
+  // 一致度は、その順に並んでいるときだけ出す(並び順と%が食い違って見えないように。
+  // 代表・役職・役割の基礎ポイントは一致度の中に足してあり、別に上へ上げることはしない)
   let topicScores = null;
   function shownScores() {
     if (sortByScore && scores) return scores;
     if (topicScores) return topicScores;
-    return scores;
+    return null;
   }
 
   function cardHtml(m) {
