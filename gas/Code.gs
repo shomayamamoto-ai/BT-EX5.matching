@@ -139,6 +139,8 @@ const TOPICS = [
   { id: "hiring", group: "people", label: "採用・人材", tag: "採用・人材" },
   { id: "org", group: "people", label: "組織づくり・社員研修", tag: "社員研修" },
   { id: "labor", group: "people", label: "労務・助成金", tag: "労務" },
+  { id: "retention", group: "people", label: "離職防止・社員の定着", tag: "離職防止" },
+  { id: "mindset", group: "people", label: "マインドセット・思考整理", tag: "思考整理" },
   { id: "coaching", group: "people", label: "コーチング・人生相談", tag: "コーチング" },
   { id: "tutoring", group: "people", label: "家庭教師・塾・学習", tag: "家庭教師" },
   { id: "realestate", group: "place", label: "不動産・物件・空き家", tag: "不動産" },
@@ -167,6 +169,7 @@ const TOPICS = [
 const REF_NEEDS = [
   { id: "hire", label: "人を採用したい・人手が足りない", desc: "求人・採用・人手不足", methods: [
     { label: "採用・人材紹介の相談", topics: ["hiring"] },
+    { label: "社員の離職を減らす(定着)", desc: "辞めない職場・人が続く組織にする", topics: ["retention"] },
     { label: "求人ページ・採用サイトを作る", topics: ["web"] },
     { label: "SNSで採用を強くする", topics: ["sns"] },
     { label: "採用動画を作る", topics: ["prvideo"] },
@@ -175,7 +178,8 @@ const REF_NEEDS = [
   ] },
   { id: "grow", label: "人を育てたい・組織を強くしたい", desc: "社員教育・マインド・チームづくり", methods: [
     { label: "AI研修", desc: "社員がAIを使えるように", topics: ["aitraining"] },
-    { label: "マインドセット・コーチング", topics: ["coaching"] },
+    { label: "マインドセット・思考整理", desc: "考えを整理して前に進めるようにする", topics: ["mindset", "coaching"] },
+    { label: "離職を減らす・定着させる", topics: ["retention"] },
     { label: "ビジネスコンサル", topics: ["consult"] },
     { label: "社員研修・組織づくり", topics: ["org"] },
     { label: "話し方・プレゼン", topics: ["voice"] },
@@ -251,6 +255,7 @@ const REF_NEEDS = [
     { label: "美容・エステ・脱毛", topics: ["beauty"] },
     { label: "健康・体のケア", topics: ["health"] },
     { label: "コーチング・人生相談", topics: ["coaching"] },
+    { label: "思考の整理・マインドセット", topics: ["mindset"] },
     { label: "癒やし・スピリチュアル", topics: ["spiritual"] },
     { label: "パーソナルカラー・スタイリング", topics: ["color"] },
     { label: "ボイストレーニング", topics: ["voice"] },
@@ -299,7 +304,9 @@ const TOPIC_KEYWORDS = {
   hiring: ["採用", "求人", "人材", "人手不足", "人が採れない"],
   org: ["研修", "組織", "社員教育", "チームづくり", "マネジメント"],
   labor: ["労務", "社労士", "就業規則", "給与計算"],
-  coaching: ["コーチング", "目標", "人生相談", "自己成長", "メンタル", "マインド"],
+  retention: ["離職", "定着", "辞めない", "辞めてしまう", "退職", "すぐ辞める", "人が続かない"],
+  mindset: ["マインドセット", "思考整理", "考えがまとまらない", "頭の中を整理", "モヤモヤ", "マインド"],
+  coaching: ["コーチング", "目標", "人生相談", "自己成長", "メンタル"],
   tutoring: ["家庭教師", "塾", "受験", "勉強", "学習"],
   realestate: ["不動産", "物件", "空き家", "テナント", "駐車場", "土地"],
   reform: ["リフォーム", "内装", "改装", "店舗工事"],
@@ -557,11 +564,11 @@ const REF_SEED_MEMBERS = [
     targets: ["salon", "pro"],
     prospects: ["owner"],
   }),
-  Object.assign(rosterMember("m22", "小林 末季こばねぇ", "preseia 代表/心を整えるマインドコーチ", "SunnyUp🌞", "人材・組織", ["coaching", "consult", "health", "spiritual", "insurance"]), {
-    business: "個別コーチング、ビジネスコンサル、健康事業、共済保険。",
-    customers: "新潟・長野の方/人生に迷いながらも進み出したい人/セミナーを作りたい方/コーチの方",
-    wants: "新潟・長野の方/コーチングをグレードアップしたい方/健康事業に興味のある方/スピリチュアルに興味のある方",
-    triggers: ["人生に迷っている", "セミナーを作りたい", "コーチング", "健康に興味がある", "スピリチュアル", "新潟・長野"],
+  Object.assign(rosterMember("m22", "小林 末季こばねぇ", "preseia 代表/心を整えるマインドコーチ", "SunnyUp🌞", "人材・組織", ["retention", "mindset", "coaching", "org", "consult", "health", "spiritual", "insurance"]), {
+    business: "社員の離職率を下げる支援(辞めない職場・人が定着する組織づくり)、思考を整理するマインドセット(個別コーチング)、ビジネスコンサル、健康事業、共済保険。",
+    customers: "社員の離職・定着に悩む経営者/頭の中を整理して前に進みたい人/人生に迷いながらも進み出したい人/セミナーを作りたい方/コーチの方/新潟・長野の方",
+    wants: "社員がすぐ辞めてしまう・離職率を下げたい経営者/考えがまとまらず一歩が踏み出せない方/新潟・長野の方/コーチングをグレードアップしたい方/健康事業に興味のある方/スピリチュアルに興味のある方",
+    triggers: ["社員がすぐ辞める", "離職率を下げたい", "人が定着しない", "頭の中を整理したい", "考えがまとまらない", "人生に迷っている", "セミナーを作りたい", "コーチング", "健康に興味がある", "スピリチュアル", "新潟・長野"],
     targets: ["any"],
     prospects: ["owner", "individual"],
   }),
@@ -655,6 +662,8 @@ const REF_SEED_REVISIONS = [
   },
   // 本人の依頼で、山本さんのジャンルから「デザイン」を外す
   { rev: "2026-10-yamamoto-design", ids: ["yamamoto"], fields: ["topics"], removeTopics: { yamamoto: ["design"] } },
+  // こばねぇとの面談で分かった内容(離職率を下げる・思考整理のマインドセット)を反映(編集済みでも置き換える)
+  { rev: "2026-10-kobane-1", ids: ["m22"], fields: ["business", "customers", "wants", "triggers", "topics"], force: true },
 ];
 
 // 紹介に効く項目(重要な順)。足りない項目は管理者ページの「お願い文」と、

@@ -288,9 +288,9 @@
     const ids = m.topics.filter((id) => TOPICS.some((t) => t.id === id));
     if (!ids.length) return "";
     const hit = (id) => filter.topic === id || (sc && sc.topicHits.includes(id));
-    // 並び: 探しているジャンル → 本業に近いジャンル → ジャンル一覧の順
+    // 並び: 探しているジャンル → 本業に近いジャンル → 本人が登録した順(先に書いたものほど主な仕事)
     const main = (typeof REF_CATEGORY_TOPICS !== "undefined" && REF_CATEGORY_TOPICS[m.category]) || [];
-    const order = (id) => TOPICS.findIndex((t) => t.id === id);
+    const order = (id) => m.topics.indexOf(id);
     const ordered = ids.slice().sort((a, b) => hit(b) - hit(a) || main.includes(b) - main.includes(a) || order(a) - order(b));
     const shown = max ? ordered.slice(0, max) : ordered;
     return `<div class="ref-genres" aria-label="できること">${shown
