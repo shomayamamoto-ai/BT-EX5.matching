@@ -1,41 +1,53 @@
 // ============================================
-// BT-EX5 オープニングムービー
+// BT-EX5 オープニングムービー(13秒)
 // render(t) が時刻 t(秒)の画面を作る(同じ t なら同じ画面)。
-// サイトでは requestAnimationFrame で再生し、動画(MP4)は1コマずつ書き出して作る。
+// 動画(MP4)は、1コマずつ画面を撮って書き出して作る(opening/src/README.md)。
 //
-//  0.0〜2.0  ひとつの光がともる                       「出会いは、ひとつの光から。」
-//  2.0〜3.2  光が5つに分かれ、五角形に並ぶ(紹介・信頼・仲間・仕事・感謝)
-//  3.2〜4.8  赤い糸で5つを結ぶ                         「信頼で、つながる。」
-//  4.8〜7.2  糸の上を光が巡る                          「ご縁が巡る、BT-EX5。」
-//  7.2〜12.0 結び目がロゴになり、名前が出る             「BT-EX5」
+// 方針: 黒と金だけの色、細い線、広い字間、余白。霧・粒子・フィルムの粒・周辺減光で空気を作り、
+// 光の筋とピント送りでロゴを見せる。音はロゴが決まる瞬間(9.0秒)に合わせる。
+//
+//  0.0〜3.4  暗やみにひとつの光がともる            「出会いは、ひとつの光から。」
+//  3.0〜4.4  光が5つに分かれ、軌跡を残して五角形に並ぶ(出会い・信頼・紹介・仕事・感謝)
+//  4.4〜6.6  金の糸で5つを結ぶ                        「信頼で、つながる。」
+//  5.9〜8.4  糸の上を光が巡る                         「ご縁が巡る、BT-EX5。」
+//  8.2〜9.0  五角形が集まり、光がためられる
+//  9.0       光の筋とともにロゴが決まる
+//  9.4〜13.0 名前と一言が出て、静かに終わる
 // ============================================
 
 const BtexOpening = (function () {
   "use strict";
 
-  const DURATION = 12;
+  const DURATION = 13;
   const W = 1920;
   const H = 1080;
   const CX = W / 2;
-  const CY = H / 2 - 40;
+  const CY = 500; // 物語の五角形の中心
   const NS = "http://www.w3.org/2000/svg";
-  const R = 300; // 五角形の大きさ
+  const R = 290; // 物語の五角形の大きさ
   const VALUES = ["出会い", "信頼", "紹介", "仕事", "感謝"];
-  const SPLIT = [2.0, 2.15, 2.3, 2.45, 2.6]; // 光が分かれて飛び出す時刻
-  const FLY = 0.6;
+  const SPLIT = 3.0; // 光が分かれる時刻
+  const FLY = 0.9;
+  const HIT = 9.0; // ロゴが決まる時刻
 
-  // ロゴ(assets/bt-ex5-mark.svg と同じ形)。64×64 の座標で、五角形の中心は (32, 32.44)、半径 18.24
-  const MARK_SIZE = 380;
-  const MARK_K = MARK_SIZE / 64;
-  const MARK_R = 18.24 * MARK_K;
-  const MARK_X = CX - 475; // ロゴの中心(名前と合わせて画面の中央に来る位置)
-  const MARK_DY = (32.44 - 32) * MARK_K;
+  // ロゴ(assets/bt-ex5-mark.svg と同じ形。64×64 の座標で五角形の中心は (32,34)、半径 20)
+  const MK = 5.0; // ロゴの拡大率
+  const MARK_CY = 352; // ロゴの五角形の中心(画面上)
+  const MARK_R = 20 * MK;
+  const WORD_Y = 640;
+  const RULE_Y = 700;
+  const TAG_Y = 768;
+
+  const GOLD = "#d9b77a";
+  const GOLD_LIGHT = "#f3dfb3";
+  const INK = "#f2ead9";
 
   const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
   const prog = (t, a, b) => clamp((t - a) / (b - a));
   const easeOut = (x) => 1 - Math.pow(1 - x, 3);
   const easeInOut = (x) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
   const easeIn = (x) => x * x * x;
+  const lerp = (a, b, x) => a + (b - a) * x;
   // 区間 [a,b] で 0→1、[c,d] で 1→0
   const fadeInOut = (t, a, b, c, d) => Math.min(easeOut(prog(t, a, b)), 1 - easeIn(prog(t, c, d)));
 
@@ -46,11 +58,22 @@ const BtexOpening = (function () {
     return e;
   }
 
-  function pentagon(r) {
+  function pentagon(cx, cy, r) {
     return [0, 1, 2, 3, 4].map((k) => {
       const a = -Math.PI / 2 + (k * 2 * Math.PI) / 5;
-      return [CX + r * Math.cos(a), CY + r * Math.sin(a)];
+      return [cx + r * Math.cos(a), cy + r * Math.sin(a)];
     });
+  }
+  const pathOf = (pts) => `M${pts.map((p) => `${p[0].toFixed(1)} ${p[1].toFixed(1)}`).join(" L")} Z`;
+
+  // 周の上の位置(0〜1、上の頂点から時計回り)
+  function onPerimeter(pts, u) {
+    const x = ((u % 1) + 1) % 1 * 5;
+    const i = Math.floor(x);
+    const f = x - i;
+    const a = pts[i];
+    const b = pts[(i + 1) % 5];
+    return [lerp(a[0], b[0], f), lerp(a[1], b[1], f)];
   }
 
   function seeded(seed) {
@@ -58,238 +81,314 @@ const BtexOpening = (function () {
     return () => { s = (s * 16807) % 2147483647; return (s - 1) / 2147483646; };
   }
 
-  const MARK_SVG = `
-    <rect x="1" y="1" width="62" height="62" rx="15" fill="url(#op-mk-tile)"/>
-    <rect x="1.6" y="1.6" width="60.8" height="60.8" rx="14.4" fill="none" stroke="url(#op-mk-edge)" stroke-width="1.2"/>
-    <circle cx="32" cy="14.2" r="11" fill="url(#op-mk-glow)"/>
-    <path d="M32 14.2 49.3 26.8 42.7 47.2H21.3L14.7 26.8Z" fill="none" stroke="url(#op-mk-thread)" stroke-width="3.4" stroke-linejoin="round"/>
-    <path d="M49.3 26.8 42.7 47.2" stroke="url(#op-mk-streak)" stroke-width="3.4" stroke-linecap="round"/>
-    <g fill="#fff8ec" stroke="#1c100c" stroke-width="1.2">
-      <circle cx="49.3" cy="26.8" r="3.5"/><circle cx="42.7" cy="47.2" r="3.5"/><circle cx="21.3" cy="47.2" r="3.5"/><circle cx="14.7" cy="26.8" r="3.5"/>
-    </g>
-    <circle cx="32" cy="14.2" r="4.6" fill="#fff8ec" stroke="#ffbe4d" stroke-width="1.6"/>`;
+  // 漂う粒子(手前ほど大きくぼける)
+  const rnd = seeded(20261009);
+  const DUST = Array.from({ length: 90 }, () => {
+    const z = rnd();
+    return { x: rnd() * W, y: rnd() * H, z, r: 1 + z * z * 9, sp: 6 + z * 22, ph: rnd() * Math.PI * 2, a: 0.25 + rnd() * 0.55 };
+  });
 
-  // ---------- 舞台を組み立てる ----------
   function mount(container, opts) {
     const o = Object.assign({ fit: "slice" }, opts);
     const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, preserveAspectRatio: `xMidYMid ${o.fit}`, class: "op-stage", role: "img", "aria-label": "BT-EX5 オープニングムービー" });
     svg.innerHTML = `
       <defs>
-        <radialGradient id="op-bg" cx="50%" cy="45%" r="75%">
-          <stop offset="0" stop-color="#3a2219"/>
-          <stop offset="0.55" stop-color="#1f1310"/>
-          <stop offset="1" stop-color="#0d0807"/>
-        </radialGradient>
-        <radialGradient id="op-node" cx="50%" cy="50%" r="50%">
-          <stop offset="0" stop-color="#fffbe8"/>
-          <stop offset="0.35" stop-color="#ffd27a"/>
-          <stop offset="1" stop-color="#ff7a3c" stop-opacity="0"/>
-        </radialGradient>
-        <linearGradient id="op-thread" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stop-color="#ff7a52"/>
-          <stop offset="0.55" stop-color="#f4694b"/>
-          <stop offset="1" stop-color="#ffbe4d"/>
-        </linearGradient>
-        <filter id="op-glow" x="-50%" y="-50%" width="200%" height="200%">
-          <feGaussianBlur stdDeviation="6" result="b"/>
-          <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+        <radialGradient id="op-haze1" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#4a2c16" stop-opacity="0.55"/><stop offset="1" stop-color="#4a2c16" stop-opacity="0"/></radialGradient>
+        <radialGradient id="op-haze2" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#2a1d2e" stop-opacity="0.5"/><stop offset="1" stop-color="#2a1d2e" stop-opacity="0"/></radialGradient>
+        <radialGradient id="op-vig" cx="0.5" cy="0.48" r="0.72"><stop offset="0.55" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity="0.85"/></radialGradient>
+        <radialGradient id="op-glow" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#fff6e2" stop-opacity="1"/><stop offset="0.25" stop-color="${GOLD_LIGHT}" stop-opacity="0.55"/><stop offset="1" stop-color="${GOLD}" stop-opacity="0"/></radialGradient>
+        <radialGradient id="op-dust" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#f6e3bd" stop-opacity="0.9"/><stop offset="1" stop-color="#f6e3bd" stop-opacity="0"/></radialGradient>
+        <linearGradient id="op-gold" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f0d397"/><stop offset="0.5" stop-color="#b88a45"/><stop offset="1" stop-color="#ead09a"/></linearGradient>
+        <linearGradient id="op-mk-gold" x1="10" y1="10" x2="54" y2="54" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#f3d89e"/><stop offset="0.5" stop-color="#bf8f45"/><stop offset="1" stop-color="#f0d6a0"/></linearGradient>
+        <radialGradient id="op-mk-spark" cx="32" cy="14" r="7" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#fffaf0"/><stop offset="1" stop-color="#e2b866"/></radialGradient>
+        <linearGradient id="op-streak" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#ffd9a0" stop-opacity="0"/><stop offset="0.5" stop-color="#fff4dc" stop-opacity="1"/><stop offset="1" stop-color="#ffd9a0" stop-opacity="0"/></linearGradient>
+        <linearGradient id="op-rule" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="${GOLD}" stop-opacity="0"/><stop offset="0.5" stop-color="${GOLD_LIGHT}"/><stop offset="1" stop-color="${GOLD}" stop-opacity="0"/></linearGradient>
+        <linearGradient id="op-sheen" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset="0.5" stop-color="#fff" stop-opacity="0.85"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+        <filter id="op-blur-near" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="5"/></filter>
+        <filter id="op-soft" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="7"/></filter>
+        <filter id="op-line-blur" x="-20%" y="-50%" width="140%" height="200%"><feGaussianBlur id="op-line-blur-v" stdDeviation="0"/></filter>
+        <filter id="op-mark-blur" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur id="op-mark-blur-v" stdDeviation="0"/></filter>
+        <filter id="op-word-blur" x="-10%" y="-50%" width="120%" height="200%"><feGaussianBlur id="op-word-blur-v" stdDeviation="0"/></filter>
+        <filter id="op-grain" x="0" y="0" width="100%" height="100%">
+          <feTurbulence id="op-grain-noise" type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="1"/>
+          <feColorMatrix type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.09 0"/>
         </filter>
-        <linearGradient id="op-mk-tile" x1="8" y1="2" x2="56" y2="62" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#3a2219"/><stop offset="1" stop-color="#140b09"/></linearGradient>
-        <linearGradient id="op-mk-thread" x1="12" y1="12" x2="52" y2="52" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#ff7a52"/><stop offset="0.55" stop-color="#f4694b"/><stop offset="1" stop-color="#ffbe4d"/></linearGradient>
-        <radialGradient id="op-mk-glow" cx="32" cy="14.2" r="11" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#ffd27a" stop-opacity="0.75"/><stop offset="1" stop-color="#ffd27a" stop-opacity="0"/></radialGradient>
-        <linearGradient id="op-mk-streak" x1="49.3" y1="26.8" x2="42.7" y2="47.2" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#fff4dc" stop-opacity="0"/><stop offset="0.75" stop-color="#fff4dc" stop-opacity="0.95"/><stop offset="1" stop-color="#fff4dc"/></linearGradient>
-        <linearGradient id="op-mk-edge" x1="32" y1="0" x2="32" y2="64" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#fff" stop-opacity="0.22"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+        <mask id="op-sheen-mask"><g id="op-sheen-shapes"></g></mask>
       </defs>
-      <rect width="${W}" height="${H}" fill="url(#op-bg)"/>
-      <g class="op-stars"></g>
-      <g class="op-mark" opacity="0">${MARK_SVG}</g>
-      <g class="op-web"></g>
-      <g class="op-runners"></g>
-      <g class="op-seed">
-        <circle r="120" fill="url(#op-node)"/>
-        <circle r="26" fill="#fff8ec" stroke="#ffbe4d" stroke-width="6"/>
+      <rect width="${W}" height="${H}" fill="#060508"/>
+      <g id="op-haze">
+        <ellipse id="op-haze-a" cx="${CX}" cy="${CY}" rx="900" ry="620" fill="url(#op-haze1)"/>
+        <ellipse id="op-haze-b" cx="${CX}" cy="${CY}" rx="760" ry="520" fill="url(#op-haze2)"/>
       </g>
-      <g class="op-brand">
-        <text class="op-wordmark" x="0" y="0" text-anchor="start"><tspan class="op-bt">BT-</tspan><tspan class="op-ex5">EX5</tspan></text>
-        <text class="op-tagline" x="0" y="0" text-anchor="start">新潟・東京　日本海側最大の経営者コミュニティ</text>
-        <text class="op-area" x="0" y="0" text-anchor="start">NIIGATA ・ TOKYO</text>
-      </g>
-      <text class="op-line" x="${CX}" y="${H - 150}" text-anchor="middle"></text>`;
+      <g id="op-dust-far"></g>
+      <g id="op-world"></g>
+      <g id="op-final"></g>
+      <g id="op-dust-near" filter="url(#op-blur-near)"></g>
+      <g id="op-flash"></g>
+      <text class="op-line" id="op-line" x="${CX}" y="${H - 170}" text-anchor="middle" filter="url(#op-line-blur)"></text>
+      <rect width="${W}" height="${H}" fill="url(#op-vig)"/>
+      <rect width="${W}" height="${H}" filter="url(#op-grain)" style="mix-blend-mode:overlay"/>
+      <rect id="op-fade" width="${W}" height="${H}" fill="#000" opacity="0"/>`;
     container.appendChild(svg);
 
-    const q = (s) => svg.querySelector(s);
+    const q = (sel) => svg.querySelector(sel);
     const parts = {
-      stars: [],
-      mark: q(".op-mark"),
-      web: q(".op-web"),
-      runners: q(".op-runners"),
-      seed: q(".op-seed"),
-      brand: q(".op-brand"),
-      wordmark: q(".op-wordmark"),
-      tagline: q(".op-tagline"),
-      area: q(".op-area"),
-      line: q(".op-line"),
-      pts: pentagon(R),
-      nodes: [],
-      labels: [],
-      thread: null,
-      threadLen: 5 * 2 * R * Math.sin(Math.PI / 5),
-      runnerDots: [],
+      svg,
+      hazeA: q("#op-haze-a"), hazeB: q("#op-haze-b"),
+      dustFar: q("#op-dust-far"), dustNear: q("#op-dust-near"),
+      world: q("#op-world"), final: q("#op-final"), flash: q("#op-flash"),
+      line: q("#op-line"), lineBlur: q("#op-line-blur-v"),
+      markBlur: q("#op-mark-blur-v"), wordBlur: q("#op-word-blur-v"),
+      grain: q("#op-grain-noise"), fade: q("#op-fade"),
     };
 
-    const rnd = seeded(5);
-    const starG = q(".op-stars");
-    for (let i = 0; i < 90; i++) {
-      const s = el("circle", { cx: rnd() * W, cy: rnd() * H, r: 0.8 + rnd() * 2.4, fill: rnd() < 0.7 ? "#ffd98a" : "#ff9d6b" }, starG);
-      parts.stars.push({ e: s, phase: rnd() * Math.PI * 2, speed: 0.6 + rnd() * 1.6, base: 0.15 + rnd() * 0.45, drift: (rnd() - 0.5) * 14 });
-    }
+    // 粒子
+    parts.dust = DUST.map((d) => el("circle", { r: d.r.toFixed(1), fill: "url(#op-dust)" }, d.z > 0.72 ? parts.dustNear : parts.dustFar));
 
-    const d = parts.pts.map((p, i) => `${i ? "L" : "M"}${p[0].toFixed(1)} ${p[1].toFixed(1)}`).join(" ") + "Z";
-    parts.thread = el("path", { d, fill: "none", stroke: "url(#op-thread)", "stroke-width": 9, "stroke-linejoin": "round", "stroke-linecap": "round", filter: "url(#op-glow)" }, parts.web);
-    parts.thread.setAttribute("stroke-dasharray", `${parts.threadLen} ${parts.threadLen}`);
-    parts.pts.forEach((p, i) => {
-      const g = el("g", {}, parts.web);
-      el("circle", { r: 70, fill: "url(#op-node)" }, g);
-      el("circle", { r: i === 0 ? 28 : 22, fill: "#fff8ec", stroke: i === 0 ? "#ffbe4d" : "#1c100c", "stroke-width": i === 0 ? 7 : 5 }, g);
-      parts.nodes.push(g);
-      const out = [p[0] - CX, p[1] - CY];
-      const len = Math.hypot(out[0], out[1]);
-      const lx = p[0] + (out[0] / len) * 92 + Math.sign(out[0]) * (Math.abs(out[0]) > 100 ? 34 : 0);
-      const ly = p[1] + (out[1] / len) * 74 + 14;
-      const label = el("text", { x: lx, y: ly, "text-anchor": "middle", class: "op-value" }, parts.web);
-      label.textContent = VALUES[i];
-      parts.labels.push(label);
+    // ---- 物語の層(光・軌跡・糸・巡る光・言葉) ----
+    const w = parts.world;
+    parts.threadGlow = el("path", { fill: "none", stroke: GOLD, "stroke-width": "10", opacity: "0", filter: "url(#op-soft)" }, w);
+    parts.thread = el("path", { fill: "none", stroke: "url(#op-gold)", "stroke-width": "2.4", "stroke-linejoin": "miter" }, w);
+    parts.threadHead = el("circle", { r: "26", fill: "url(#op-glow)", opacity: "0" }, w);
+    parts.trails = VALUES.map(() => Array.from({ length: 14 }, () => el("circle", { fill: GOLD_LIGHT, opacity: "0" }, w)));
+    parts.nodes = VALUES.map(() => {
+      const g = el("g", { opacity: "0" }, w);
+      el("circle", { r: "60", fill: "url(#op-glow)", opacity: "0.55" }, g);
+      el("circle", { r: "5", fill: "#fff8ea" }, g);
+      return g;
     });
-    for (let i = 0; i < 5; i++) {
-      const g = el("g", {}, parts.runners);
-      for (let k = 0; k < 6; k++) el("circle", { r: 9 - k * 1.3, fill: k ? "#ffcf80" : "#fffbe8", opacity: 1 - k * 0.15 }, g);
-      parts.runnerDots.push(g);
-    }
+    parts.labels = VALUES.map((v) => { const t = el("text", { class: "op-label", "text-anchor": "middle", opacity: "0" }, w); t.textContent = v; return t; });
+    parts.pulses = [0, 1, 2, 3, 4].map(() => el("circle", { r: "22", fill: "url(#op-glow)", opacity: "0" }, w));
+    parts.seed = el("g", { opacity: "0" }, w);
+    parts.seedGlow = el("circle", { cx: CX, cy: CY, r: "140", fill: "url(#op-glow)" }, parts.seed);
+    el("circle", { cx: CX, cy: CY, r: "7", fill: "#fffaf0" }, parts.seed);
 
-    const style = document.createElement("style");
+    // ---- 最後の層(ロゴ・名前・一言) ----
+    const f = parts.final;
+    parts.lockup = el("g", {}, f);
+    const mx = CX - 32 * MK;
+    const my = MARK_CY - 34 * MK;
+    parts.mark = el("g", { filter: "url(#op-mark-blur)", opacity: "0" }, parts.lockup);
+    parts.mark.innerHTML = `
+      <g transform="translate(${mx.toFixed(1)} ${my.toFixed(1)}) scale(${MK})">
+        <path d="M32 14 51.02 27.82 43.76 50.18H20.24L12.98 27.82Z" fill="none" stroke="url(#op-mk-gold)" stroke-width="1.15" stroke-linejoin="miter"/>
+        <path d="M32 19.5 45.79 29.52 40.52 45.73H23.48L18.21 29.52Z" fill="none" stroke="url(#op-mk-gold)" stroke-width="0.4" opacity="0.6"/>
+        <g fill="url(#op-mk-gold)"><circle cx="51.02" cy="27.82" r="1.25"/><circle cx="43.76" cy="50.18" r="1.25"/><circle cx="20.24" cy="50.18" r="1.25"/><circle cx="12.98" cy="27.82" r="1.25"/></g>
+      </g>`;
+    // 頂点のきらめき(回りながら光る)
+    parts.spark = el("g", { opacity: "0" }, parts.lockup);
+    el("circle", { cx: CX, cy: MARK_CY - MARK_R, r: "46", fill: "url(#op-glow)", opacity: "0.65" }, parts.spark);
+    parts.sparkStar = el("path", { d: "M0 -34 4.2 -4.2 34 0 4.2 4.2 0 34 -4.2 4.2 -34 0 -4.2 -4.2Z", fill: "#fff6e0" }, parts.spark);
+    el("circle", { cx: CX, cy: MARK_CY - MARK_R, r: "4.5", fill: "#fff" }, parts.spark);
+
+    parts.word = el("text", { class: "op-word", x: CX, y: WORD_Y, "text-anchor": "middle", filter: "url(#op-word-blur)" }, parts.lockup);
+    parts.letters = [..."BT-EX5"].map((ch) => { const s = el("tspan", { "fill-opacity": "0" }, parts.word); s.textContent = ch; return s; });
+    parts.rule = el("rect", { x: CX, y: RULE_Y, width: "0", height: "1.6", fill: "url(#op-rule)" }, parts.lockup);
+    parts.tag = el("text", { class: "op-tag", x: CX, y: TAG_Y, "text-anchor": "middle", opacity: "0" }, parts.lockup);
+    parts.tag.textContent = "新潟・東京 日本海側最大の経営者コミュニティ";
+
+    // ロゴと名前をなでる光(ロゴと文字の形で切り抜く)
+    const shapes = q("#op-sheen-shapes");
+    shapes.innerHTML = `
+      <g transform="translate(${mx.toFixed(1)} ${my.toFixed(1)}) scale(${MK})" fill="none" stroke="#fff" stroke-width="1.6"><path d="M32 14 51.02 27.82 43.76 50.18H20.24L12.98 27.82Z"/></g>
+      <text class="op-word" x="${CX}" y="${WORD_Y}" text-anchor="middle" fill="#fff">BT-EX5</text>`;
+    parts.sheen = el("rect", { x: "0", y: String(MARK_CY - MARK_R - 60), width: "260", height: String(WORD_Y - MARK_CY + MARK_R + 100), fill: "url(#op-sheen)", mask: "url(#op-sheen-mask)", opacity: "0", transform: "skewX(-18)" }, f);
+
+    // 光の筋(アナモルフィック・フレア)と、ロゴが決まる瞬間の閃光
+    parts.bloom = el("circle", { cx: CX, cy: MARK_CY - MARK_R, r: "420", fill: "url(#op-glow)", opacity: "0" }, parts.flash);
+    parts.streak = el("ellipse", { cx: CX, cy: MARK_CY - MARK_R, rx: "900", ry: "10", fill: "url(#op-streak)", opacity: "0" }, parts.flash);
+    parts.streakCore = el("rect", { x: CX - 700, y: MARK_CY - MARK_R - 1, width: "1400", height: "2", fill: "url(#op-streak)", opacity: "0" }, parts.flash);
+
+    const style = el("style", {}, svg);
     style.textContent = `
-      .op-stage { display: block; width: 100%; height: 100%; background: #0d0807; }
-      .op-line { font-family: "Shippori Mincho", "Noto Serif JP", serif; font-weight: 700; font-size: 76px; letter-spacing: 0.12em; fill: #fff3dc; }
-      .op-value { font-family: "Shippori Mincho", "Noto Serif JP", serif; font-weight: 700; font-size: 40px; letter-spacing: 0.1em; fill: #ffe2b0; }
-      .op-wordmark { font-family: "Inter", "Noto Sans JP", sans-serif; font-weight: 800; font-size: 150px; letter-spacing: 0.04em; }
-      .op-bt { fill: #fff3dc; }
-      .op-ex5 { fill: #ff8a5c; }
-      .op-tagline { font-family: "Shippori Mincho", "Noto Serif JP", serif; font-weight: 700; font-size: 38px; letter-spacing: 0.08em; fill: #ffe2b0; }
-      .op-area { font-family: "Inter", sans-serif; font-weight: 700; font-size: 26px; letter-spacing: 0.5em; fill: #c99a6a; }`;
-    svg.prepend(style);
-
-    return { svg, render: (t) => render(parts, t) };
+      .op-line { font-family: "Shippori Mincho", "Noto Serif JP", serif; font-weight: 500; font-size: 56px; fill: ${INK}; }
+      .op-label { font-family: "Shippori Mincho", "Noto Serif JP", serif; font-weight: 500; font-size: 25px; letter-spacing: 0.32em; fill: ${GOLD}; }
+      .op-word { font-family: "Montserrat", "Inter", sans-serif; font-weight: 300; font-size: 118px; letter-spacing: 0.34em; fill: ${INK}; }
+      .op-tag { font-family: "Shippori Mincho", "Noto Serif JP", serif; font-weight: 500; font-size: 32px; letter-spacing: 0.24em; fill: #cdb489; }`;
+    return parts;
   }
 
-  // ---------- 時刻 t の画面 ----------
+  // 字間をとると最後の字の後ろにも空きができるので、そのぶん中央をずらす
+  function centerTracked(text, cx, em, size) {
+    text.setAttribute("x", (cx + (em * size) / 2).toFixed(1));
+  }
+
   function render(p, t) {
-    t = clamp(t, 0, DURATION);
-
-    p.stars.forEach((s) => {
-      const tw = s.base + 0.35 * Math.sin(t * s.speed + s.phase);
-      s.e.setAttribute("opacity", clamp(tw).toFixed(3));
-      s.e.setAttribute("transform", `translate(0 ${(s.drift * t).toFixed(1)})`);
+    // ---- 空気: 霧・粒子・フィルムの粒 ----
+    p.hazeA.setAttribute("cx", (CX + Math.sin(t * 0.25) * 120).toFixed(1));
+    p.hazeA.setAttribute("cy", (CY + Math.cos(t * 0.2) * 60).toFixed(1));
+    p.hazeB.setAttribute("cx", (CX - Math.sin(t * 0.18) * 160).toFixed(1));
+    p.grain.setAttribute("seed", String(Math.floor(t * 24) + 1));
+    const dustIn = easeOut(prog(t, 0.2, 2.5));
+    DUST.forEach((d, i) => {
+      const y = ((d.y - t * d.sp) % H + H) % H;
+      const x = d.x + Math.sin(t * 0.4 + d.ph) * 18 * (0.4 + d.z);
+      const tw = 0.6 + 0.4 * Math.sin(t * 1.3 + d.ph * 3);
+      const c = p.dust[i];
+      c.setAttribute("cx", x.toFixed(1));
+      c.setAttribute("cy", y.toFixed(1));
+      c.setAttribute("opacity", (d.a * tw * dustIn * (d.z > 0.72 ? 0.5 : 0.75)).toFixed(3));
     });
 
-    // ---- 場面1: ひとつの光(0〜2.4)
-    const seedIn = easeOut(prog(t, 0.3, 1.1));
-    const seedPulse = 1 + 0.08 * Math.sin(t * 4);
-    const seedOut = 1 - easeIn(prog(t, 2.0, 2.5));
-    p.seed.setAttribute("transform", `translate(${CX} ${CY}) scale(${(seedIn * seedPulse * (0.6 + 0.4 * seedOut)).toFixed(3)})`);
+    // ---- 物語の層 ----
+    // ゆっくり寄るカメラ。8.2秒からは五角形を集めてロゴの位置へ
+    const conv = easeInOut(prog(t, 8.2, 8.95));
+    const radius = lerp(R, MARK_R, conv);
+    const cy = lerp(CY, MARK_CY, conv);
+    const push = 1 + 0.045 * easeInOut(prog(t, 0, 8.2)) * (1 - conv);
+    p.world.setAttribute("transform", `translate(${CX} ${cy}) scale(${push.toFixed(4)}) translate(${-CX} ${-CY})`);
+    const story = 1 - prog(t, HIT, HIT + 0.05);
+    p.world.setAttribute("opacity", story.toFixed(3));
+    const pts = pentagon(CX, CY, radius);
+
+    // ひとつの光
+    const seedIn = easeOut(prog(t, 0.5, 1.8));
+    const seedOut = 1 - easeIn(prog(t, SPLIT, SPLIT + 0.35));
     p.seed.setAttribute("opacity", (seedIn * seedOut).toFixed(3));
+    p.seedGlow.setAttribute("r", (110 + 30 * Math.sin(t * 2.2) + 60 * prog(t, 2.4, SPLIT)).toFixed(1));
 
-    // ---- 場面5で結び目がロゴの位置・大きさへ縮む(7.2〜8.4)
-    const shrink = easeInOut(prog(t, 7.2, 8.4));
-    const webScale = 1 - shrink * (1 - MARK_R / R);
-    const webTx = (MARK_X - CX) * shrink;
-    const webTy = MARK_DY * shrink;
-    p.web.style.display = t >= 2.0 ? "" : "none";
-    p.web.setAttribute("transform", `translate(${(CX + webTx).toFixed(1)} ${(CY + webTy).toFixed(1)}) scale(${webScale.toFixed(4)}) translate(${-CX} ${-CY})`);
-
-    // ---- 場面2: 光が5つに分かれる(2.0〜3.2)
-    p.nodes.forEach((n, i) => {
-      const f = easeOut(prog(t, SPLIT[i], SPLIT[i] + FLY));
-      const [px, py] = p.pts[i];
-      const x = CX + (px - CX) * f;
-      const y = CY + (py - CY) * f;
-      const pulse = 1 + 0.08 * Math.sin((t - SPLIT[i]) * 5) * (t > 4.8 && t < 7.2 ? 1 : 0);
-      const a = t >= SPLIT[i] ? clamp(0.3 + f) : 0;
-      n.setAttribute("transform", `translate(${x.toFixed(1)} ${y.toFixed(1)}) scale(${((0.5 + 0.5 * f) * pulse * (1 - 0.25 * shrink)).toFixed(3)})`);
-      n.setAttribute("opacity", Math.min(1, a).toFixed(3));
-    });
-    p.labels.forEach((l, i) => l.setAttribute("opacity", (fadeInOut(t, SPLIT[i] + FLY, SPLIT[i] + FLY + 0.4, 7.0, 7.4)).toFixed(3)));
-
-    // ---- 場面3: 赤い糸で結ぶ(3.2〜4.4)
-    const draw = easeInOut(prog(t, 3.2, 4.4));
-    p.thread.setAttribute("stroke-dashoffset", (p.threadLen * (1 - draw)).toFixed(1));
-
-    // ---- 場面4: 光が巡る(4.4〜7.4)
-    const run = t >= 4.4 && t <= 7.6;
-    p.runners.style.display = run ? "" : "none";
-    if (run) {
-      const fade = fadeInOut(t, 4.4, 4.8, 7.0, 7.4);
-      p.runnerDots.forEach((g, i) => {
-        [...g.children].forEach((c, k) => {
-          const u = ((t - 4.4) * 0.55 + i / 5 - k * 0.012 + 10) % 1;
-          const pt = p.thread.getPointAtLength(u * p.threadLen);
-          c.setAttribute("cx", pt.x.toFixed(1));
-          c.setAttribute("cy", pt.y.toFixed(1));
-        });
-        g.setAttribute("opacity", fade.toFixed(3));
+    // 5つに分かれて、曲線の軌跡を残しながら頂点へ
+    const flyPos = (k, u) => {
+      const [tx, ty] = pts[k];
+      const sx = CX, sy = CY;
+      const mxp = (sx + tx) / 2, myp = (sy + ty) / 2;
+      const nx = -(ty - sy), ny = tx - sx;
+      const bend = 0.28;
+      const qx = mxp + nx * bend, qy = myp + ny * bend;
+      const a = (1 - u) * (1 - u), b = 2 * (1 - u) * u, c = u * u;
+      return [a * sx + b * qx + c * tx, a * sy + b * qy + c * ty];
+    };
+    VALUES.forEach((_, k) => {
+      const start = SPLIT + k * 0.12;
+      const u = easeInOut(prog(t, start, start + FLY));
+      const [x, y] = flyPos(k, u);
+      const on = t >= start;
+      p.nodes[k].setAttribute("transform", `translate(${x.toFixed(1)} ${y.toFixed(1)})`);
+      p.nodes[k].setAttribute("opacity", on ? String(1 - 0.35 * conv) : "0");
+      p.trails[k].forEach((c, j) => {
+        const back = (j + 1) * 0.022;
+        const uu = easeInOut(prog(t - back, start, start + FLY));
+        const [tx, ty] = flyPos(k, uu);
+        const visible = on && u < 1 ? (1 - j / 14) * 0.7 : u >= 1 ? Math.max(0, 0.7 * (1 - j / 14) * (1 - prog(t, start + FLY, start + FLY + 0.35))) : 0;
+        c.setAttribute("cx", tx.toFixed(1));
+        c.setAttribute("cy", ty.toFixed(1));
+        c.setAttribute("r", (5 * (1 - j / 16)).toFixed(2));
+        c.setAttribute("opacity", visible.toFixed(3));
       });
-    }
+      const arrive = start + FLY;
+      const out = 1 - easeIn(prog(t, 7.8, 8.3));
+      const [lx, ly] = pts[k];
+      const lyOff = k === 0 ? -58 : ly > CY ? 62 : -40;
+      const lxOff = k === 1 ? 70 : k === 4 ? -70 : 0;
+      const lab = p.labels[k];
+      lab.setAttribute("x", (lx + lxOff + 4).toFixed(1));
+      lab.setAttribute("y", (ly + lyOff).toFixed(1));
+      lab.setAttribute("opacity", (easeOut(prog(t, arrive + 0.1, arrive + 0.7)) * out * 0.9).toFixed(3));
+    });
 
-    // ---- 場面5: ロゴと名前(7.2〜12)
-    const markIn = easeOut(prog(t, 8.0, 8.8));
-    p.mark.setAttribute("opacity", markIn.toFixed(3));
-    p.mark.setAttribute("transform", `translate(${(MARK_X - 32 * MARK_K).toFixed(1)} ${(CY - 32 * MARK_K).toFixed(1)}) scale(${MARK_K.toFixed(4)})`);
-    // 動く結び目から、ロゴの形へ入れかえる
-    p.web.setAttribute("opacity", (1 - easeInOut(prog(t, 8.4, 9.0))).toFixed(3));
-    const brandIn = easeOut(prog(t, 8.6, 9.6));
-    p.brand.setAttribute("opacity", brandIn.toFixed(3));
-    const bx = MARK_X + MARK_SIZE / 2 + 50 + (1 - brandIn) * 60;
-    p.wordmark.setAttribute("x", bx.toFixed(1));
-    p.wordmark.setAttribute("y", (CY + 40).toFixed(1));
-    p.tagline.setAttribute("x", bx.toFixed(1));
-    p.tagline.setAttribute("y", (CY + 122).toFixed(1));
-    p.tagline.setAttribute("opacity", easeOut(prog(t, 9.2, 10.0)).toFixed(3));
-    p.area.setAttribute("x", (bx + 6).toFixed(1));
-    p.area.setAttribute("y", (CY - 110).toFixed(1));
-    p.area.setAttribute("opacity", easeOut(prog(t, 9.6, 10.4)).toFixed(3));
+    // 金の糸を一筆で結ぶ
+    const draw = easeInOut(prog(t, 4.4, 5.8));
+    const d = pathOf(pts);
+    const perim = 5 * 2 * radius * Math.sin(Math.PI / 5);
+    [p.thread, p.threadGlow].forEach((path) => {
+      path.setAttribute("d", d);
+      path.setAttribute("stroke-dasharray", `${(perim * draw).toFixed(1)} ${perim.toFixed(1)}`);
+    });
+    p.thread.setAttribute("stroke-width", (2.4 + 1.2 * conv).toFixed(2));
+    p.threadGlow.setAttribute("opacity", (draw > 0 ? 0.35 + 0.35 * conv : 0).toFixed(3));
+    const head = onPerimeter(pts, draw);
+    p.threadHead.setAttribute("cx", head[0].toFixed(1));
+    p.threadHead.setAttribute("cy", head[1].toFixed(1));
+    p.threadHead.setAttribute("opacity", (draw > 0 && draw < 1 ? 1 : 0).toFixed(2));
 
-    // ---- 字幕
-    const lines = [
-      [0.7, 1.1, 1.9, 2.3, "出会いは、ひとつの光から。"],
-      [3.3, 3.7, 4.5, 4.9, "信頼で、つながる。"],
-      [5.0, 5.4, 6.6, 7.0, "ご縁が巡る、BT-EX5。"],
+    // 糸の上を巡る光
+    const flow = fadeInOut(t, 5.9, 6.4, 7.9, 8.6);
+    p.pulses.forEach((c, k) => {
+      const [x, y] = onPerimeter(pts, k / 5 + (t - 5.9) * 0.22);
+      c.setAttribute("cx", x.toFixed(1));
+      c.setAttribute("cy", y.toFixed(1));
+      c.setAttribute("opacity", flow.toFixed(3));
+    });
+
+    // 字幕: ぼかしから合い、字間がゆっくり詰まる
+    const LINES = [
+      [0.9, 2.0, 2.9, 3.4, "出会いは、ひとつの光から。"],
+      [4.6, 5.6, 6.1, 6.6, "信頼で、つながる。"],
+      [6.8, 7.7, 8.0, 8.4, "ご縁が巡る、BT-EX5。"],
     ];
-    const cur = lines.find((l) => t >= l[0] && t < l[3]);
+    const cur = LINES.find(([a, , , dd]) => t >= a && t <= dd);
     if (cur) {
-      p.line.textContent = cur[4];
-      p.line.setAttribute("opacity", fadeInOut(t, cur[0], cur[1], cur[2], cur[3]).toFixed(3));
-      p.line.setAttribute("transform", `translate(0 ${((1 - easeOut(prog(t, cur[0], cur[1]))) * 24).toFixed(1)})`);
+      const [a, b, c, dd, text] = cur;
+      const inn = easeOut(prog(t, a, b));
+      const op = fadeInOut(t, a, b, c, dd);
+      if (p.line.textContent !== text) p.line.textContent = text;
+      const em = lerp(0.42, 0.2, inn);
+      p.line.style.letterSpacing = `${em.toFixed(3)}em`;
+      centerTracked(p.line, CX, em, 56);
+      p.line.setAttribute("opacity", op.toFixed(3));
+      p.lineBlur.setAttribute("stdDeviation", (9 * (1 - inn) + 6 * prog(t, c, dd)).toFixed(2));
     } else {
       p.line.setAttribute("opacity", "0");
     }
+
+    // ---- ロゴが決まる瞬間 ----
+    const flash = Math.max(0, 1 - prog(t, HIT, HIT + 0.7)) * (t >= HIT ? 1 : 0);
+    const charge = easeIn(prog(t, 8.3, HIT)) * (t < HIT ? 1 : 0);
+    p.bloom.setAttribute("opacity", Math.max(flash * 0.9, charge * 0.35).toFixed(3));
+    p.bloom.setAttribute("r", (300 + 260 * (1 - flash)).toFixed(1));
+    const streak = t >= HIT ? Math.max(0, 1 - prog(t, HIT, HIT + 1.3)) : charge * 0.25;
+    p.streak.setAttribute("opacity", streak.toFixed(3));
+    p.streak.setAttribute("rx", (700 + 500 * prog(t, HIT, HIT + 1.3)).toFixed(1));
+    p.streakCore.setAttribute("opacity", (streak * 0.9).toFixed(3));
+
+    // ロゴ: ピントが合いながら現れ、ゆっくり寄る
+    const markIn = t >= HIT ? easeOut(prog(t, HIT, HIT + 0.45)) : 0;
+    p.mark.setAttribute("opacity", markIn.toFixed(3));
+    p.markBlur.setAttribute("stdDeviation", (14 * (1 - easeOut(prog(t, HIT, HIT + 0.8)))).toFixed(2));
+    const hold = 1 + 0.03 * easeOut(prog(t, HIT, DURATION));
+    p.lockup.setAttribute("transform", `translate(${CX} ${(MARK_CY + WORD_Y) / 2}) scale(${hold.toFixed(4)}) translate(${-CX} ${-(MARK_CY + WORD_Y) / 2})`);
+    const sp = t >= HIT ? easeOut(prog(t, HIT, HIT + 0.6)) : 0;
+    const spin = (t - HIT) * 12;
+    p.spark.setAttribute("opacity", (sp * (0.85 + 0.15 * Math.sin(t * 3))).toFixed(3));
+    const sscale = lerp(1.8, 0.62, easeOut(prog(t, HIT, HIT + 0.9)));
+    p.sparkStar.setAttribute("transform", `translate(${CX} ${(MARK_CY - MARK_R).toFixed(1)}) rotate(${spin.toFixed(1)}) scale(${sscale.toFixed(3)})`);
+
+    // 名前: 一文字ずつ
+    const wordIn = prog(t, HIT + 0.35, HIT + 1.4);
+    p.letters.forEach((s, i) => s.setAttribute("fill-opacity", easeOut(prog(t, HIT + 0.35 + i * 0.09, HIT + 0.95 + i * 0.09)).toFixed(3)));
+    const wem = lerp(0.5, 0.34, easeOut(wordIn));
+    p.word.style.letterSpacing = `${wem.toFixed(3)}em`;
+    centerTracked(p.word, CX, wem, 118);
+    p.wordBlur.setAttribute("stdDeviation", (6 * (1 - easeOut(wordIn))).toFixed(2));
+    // 細い金の線と一言
+    const ruleW = 560 * easeInOut(prog(t, HIT + 0.9, HIT + 1.7));
+    p.rule.setAttribute("x", (CX - ruleW / 2).toFixed(1));
+    p.rule.setAttribute("width", ruleW.toFixed(1));
+    p.tag.setAttribute("opacity", easeOut(prog(t, HIT + 1.3, HIT + 2.2)).toFixed(3));
+    centerTracked(p.tag, CX, 0.24, 32);
+    // ロゴと名前をなでる光
+    const sh = prog(t, HIT + 1.7, HIT + 2.7);
+    p.sheen.setAttribute("x", (CX - 700 + 1500 * easeInOut(sh)).toFixed(1));
+    p.sheen.setAttribute("opacity", (sh > 0 && sh < 1 ? 0.9 : 0).toFixed(2));
+
+    // 終わり: 静かに暗くなる
+    p.fade.setAttribute("opacity", easeIn(prog(t, 12.35, DURATION)).toFixed(3));
   }
 
-  // ---------- サイトでの再生 ----------
   function play(container, opts) {
-    const o = Object.assign({ onEnd: null }, opts);
-    const stage = mount(container, o);
-    let start = null;
+    const stage = mount(container, opts);
+    const t0 = performance.now();
     let raf = 0;
-    function frame(now) {
-      if (start === null) start = now;
-      const t = (now - start) / 1000;
-      stage.render(t);
-      if (t < DURATION) raf = requestAnimationFrame(frame);
-      else if (o.onEnd) o.onEnd();
-    }
-    stage.render(0);
-    raf = requestAnimationFrame(frame);
+    const tick = (now) => {
+      const t = (now - t0) / 1000;
+      render(stage, Math.min(t, DURATION));
+      if (t < DURATION) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
     return { stop() { cancelAnimationFrame(raf); }, stage };
   }
 
-  return { DURATION, W, H, mount, play, render };
+  return { DURATION, W, H, mount: (c, o) => { const parts = mount(c, o); return { svg: parts.svg, render: (t) => render(parts, t) }; }, play, render };
 })();
+
+if (typeof window !== "undefined") window.BtexOpening = BtexOpening;

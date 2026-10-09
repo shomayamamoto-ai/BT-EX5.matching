@@ -366,3 +366,14 @@ a.site-maker:hover span { text-decoration: underline; color: var(--accent); }
 .portal-action:last-child { grid-column: 1 / -1; }
 .portal-install-btn { border: none; border-radius: 999px; padding: 9px 16px; background: linear-gradient(135deg, #f4694b, #f9a03f); color: #fff; font: inherit; font-weight: 800; font-size: 13.5px; cursor: pointer; margin-bottom: 6px; }
 .portal-install-btn[hidden] { display: none; }
+
+/* ロゴマーク: 金の細い線が映えるよう、黒い台の上に置く */
+.brand-mark {
+  box-sizing: border-box;
+  padding: 4px;
+  border-radius: 11px;
+  background: radial-gradient(circle at 50% 40%, #2c1f17, #0d0a0b 75%);
+  filter: none;
+  box-shadow: 0 4px 12px rgba(30, 18, 10, 0.22);
+}
+a:hover > .brand-mark { transform: none; }

@@ -1,40 +1,25 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="BT-EX5">
-  <!-- 5つの点を1本の糸で結んだ五角形。紹介が人から人へ巡る様子(オープニングムービーの結び目) -->
+  <!-- 5つの点を1本の糸で結んだ五角形。頂点の光は「ひとつの出会い」。オープニングムービーの最後に出る形 -->
   <defs>
-    <linearGradient id="mk-tile" x1="8" y1="2" x2="56" y2="62" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#3a2219"/>
-      <stop offset="1" stop-color="#140b09"/>
+    <linearGradient id="mk-gold" x1="10" y1="10" x2="54" y2="54" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#e2bf7c"/>
+      <stop offset="0.5" stop-color="#a8742c"/>
+      <stop offset="1" stop-color="#d9b06a"/>
     </linearGradient>
-    <linearGradient id="mk-thread" x1="12" y1="12" x2="52" y2="52" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#ff7a52"/>
-      <stop offset="0.55" stop-color="#f4694b"/>
-      <stop offset="1" stop-color="#ffbe4d"/>
-    </linearGradient>
-    <radialGradient id="mk-glow" cx="32" cy="14.2" r="11" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#ffd27a" stop-opacity="0.75"/>
-      <stop offset="1" stop-color="#ffd27a" stop-opacity="0"/>
+    <radialGradient id="mk-spark" cx="32" cy="14" r="7" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fff6df"/>
+      <stop offset="1" stop-color="#d6a85a"/>
     </radialGradient>
-    <linearGradient id="mk-streak" x1="49.3" y1="26.8" x2="42.7" y2="47.2" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#fff4dc" stop-opacity="0"/>
-      <stop offset="0.75" stop-color="#fff4dc" stop-opacity="0.95"/>
-      <stop offset="1" stop-color="#fff4dc" stop-opacity="1"/>
-    </linearGradient>
-    <linearGradient id="mk-edge" x1="32" y1="0" x2="32" y2="64" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#fff" stop-opacity="0.22"/>
-      <stop offset="1" stop-color="#fff" stop-opacity="0"/>
-    </linearGradient>
   </defs>
-  <rect x="1" y="1" width="62" height="62" rx="15" fill="url(#mk-tile)"/>
-  <rect x="1.6" y="1.6" width="60.8" height="60.8" rx="14.4" fill="none" stroke="url(#mk-edge)" stroke-width="1.2"/>
-  <circle cx="32" cy="14.2" r="11" fill="url(#mk-glow)"/>
-  <path d="M32 14.2 49.3 26.8 42.7 47.2H21.3L14.7 26.8Z" fill="none" stroke="url(#mk-thread)" stroke-width="3.4" stroke-linejoin="round"/>
-  <!-- 糸の上を巡る光 -->
-  <path d="M49.3 26.8 42.7 47.2" stroke="url(#mk-streak)" stroke-width="3.4" stroke-linecap="round"/>
-  <g fill="#fff8ec" stroke="#1c100c" stroke-width="1.2">
-    <circle cx="49.3" cy="26.8" r="3.5"/>
-    <circle cx="42.7" cy="47.2" r="3.5"/>
-    <circle cx="21.3" cy="47.2" r="3.5"/>
-    <circle cx="14.7" cy="26.8" r="3.5"/>
+  <path d="M32 14 51.02 27.82 43.76 50.18H20.24L12.98 27.82Z" fill="none" stroke="url(#mk-gold)" stroke-width="2.6" stroke-linejoin="miter"/>
+  <path d="M32 19.5 45.79 29.52 40.52 45.73H23.48L18.21 29.52Z" fill="none" stroke="url(#mk-gold)" stroke-width="0.9" opacity="0.55"/>
+  <g fill="url(#mk-gold)">
+    <circle cx="51.02" cy="27.82" r="2.4"/>
+    <circle cx="43.76" cy="50.18" r="2.4"/>
+    <circle cx="20.24" cy="50.18" r="2.4"/>
+    <circle cx="12.98" cy="27.82" r="2.4"/>
   </g>
-  <circle cx="32" cy="14.2" r="4.6" fill="#fff8ec" stroke="#ffbe4d" stroke-width="1.6"/>
+  <!-- 頂点の光(4方向に伸びるきらめき) -->
+  <path d="M32 6.2 33.4 12.6 39.8 14 33.4 15.4 32 21.8 30.6 15.4 24.2 14 30.6 12.6Z" fill="url(#mk-spark)"/>
+  <circle cx="32" cy="14" r="1.5" fill="#fffaf0"/>
 </svg>

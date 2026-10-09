@@ -1250,3 +1250,14 @@ a.site-maker:hover span { text-decoration: underline; color: var(--accent-dark);
 /* 診断結果: 上位をまとめてコピー */
 #diagCopyTop { background: #fff; color: var(--accent-dark); }
 .diag-sort[hidden] { display: none; }
+
+/* ロゴマーク: 金の細い線が映えるよう、黒い台の上に置く(オープニングの最後・アプリのアイコンと同じ見え方) */
+.brand-mark {
+  box-sizing: border-box;
+  padding: 4px;
+  border-radius: 11px;
+  background: radial-gradient(circle at 50% 40%, #2c1f17, #0d0a0b 75%);
+  filter: none;
+  box-shadow: 0 4px 12px rgba(30, 18, 10, 0.22);
+}
+a:hover > .brand-mark { transform: none; }
