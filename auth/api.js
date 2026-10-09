@@ -119,3 +119,14 @@ const AuthApi = (function () {
     NETWORK_MESSAGE,
   };
 })();
+
+// 電波の弱い会場でも開けるよう、サービスワーカー(/sw.js)を登録する
+(function () {
+  if (!("serviceWorker" in navigator)) return;
+  const script = document.currentScript;
+  if (!script) return;
+  const swUrl = new URL("../sw.js", script.src);
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register(swUrl.href, { scope: new URL("../", script.src).pathname }).catch(() => {});
+  });
+})();

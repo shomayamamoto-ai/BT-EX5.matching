@@ -1262,3 +1262,10 @@ a.site-maker:hover span { text-decoration: underline; color: var(--accent-dark);
   box-shadow: 0 4px 12px rgba(30, 18, 10, 0.22);
 }
 a:hover > .brand-mark { transform: none; }
+
+/* 自分だけのメモ */
+.ref-tag.memo { cursor: pointer; background: #fff8e6; color: #9a6a12; border-color: #f2d58f; font: inherit; font-size: 12px; font-weight: 700; }
+.md-memo h3 small { display: block; font-size: 11.5px; font-weight: 500; color: var(--text-light); margin-top: 2px; }
+.md-memo textarea { width: 100%; box-sizing: border-box; font: inherit; font-size: 14px; line-height: 1.7; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--line-strong); background: #fffdf9; resize: vertical; }
+.md-memo textarea:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+.md-memo-state { margin: 4px 0 0; font-size: 11.5px; color: var(--text-light); min-height: 1em; }

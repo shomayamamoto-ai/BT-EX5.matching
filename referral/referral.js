@@ -162,6 +162,18 @@
     try { localStorage.setItem(favKey(), JSON.stringify([...favs])); } catch { /* 保存できなくても画面は動かす */ }
   }
 
+  let memoTimer = null;
+  // ---------- 自分だけのメモ(この端末に、ログインした人ごとに保存。本人や他の会員には見えない) ----------
+  let memos = {};
+  const memoKey = () => `btex5-memos-${myMemberId || "guest"}`;
+  function loadMemos() {
+    try { memos = JSON.parse(localStorage.getItem(memoKey()) || "{}") || {}; } catch { memos = {}; }
+  }
+  function saveMemo(id, text) {
+    if (text.trim()) memos[id] = text; else delete memos[id];
+    try { localStorage.setItem(memoKey(), JSON.stringify(memos)); } catch { /* 保存できなくても画面は動かす */ }
+  }
+
   function matchesFilter(m) {
     if (filter.fav && !favs.has(m.id)) return false;
     if (filter.topic !== "all" && !m.topics.includes(filter.topic)) return false;
@@ -172,7 +184,7 @@
     if (filter.area === "online" && m.online === "none") return false;
     if (filter.search) {
       const tokens = keywordTokens(filter.search).length ? keywordTokens(filter.search) : [filter.search.trim()];
-      const hay = haystack(m).toLowerCase();
+      const hay = `${haystack(m)} ${memos[m.id] || ""}`.toLowerCase();
       // 本人の説明にその言葉があるか、その言葉に当たるジャンルを持っていれば一致
       if (!tokens.every((t) => hay.includes(t.toLowerCase()) || genresForWord(t).some((g) => m.topics.includes(g)))) return false;
     }
@@ -229,6 +241,7 @@
             <span class="ref-tag">${escapeHtml(m.category)}</span>
             ${m.base && m.base !== "未設定" ? `<span class="ref-tag ${m.base === "新潟" ? "base-niigata" : "base-tokyo"}">${escapeHtml(m.base)}拠点</span>` : ""}
             ${m.team ? `<span class="ref-tag team">${escapeHtml(m.team)}</span>` : ""}
+            ${memos[m.id] ? `<button type="button" class="ref-tag memo" data-detail="${m.id}" title="${escapeHtml(memos[m.id])}">メモあり</button>` : ""}
           </div>
           ${genreTags(m, sc, 8)}
           ${linkBadges(m)}
@@ -316,6 +329,11 @@
       ${m.triggers.length ? section("こんな話が出たら", `<div class="ref-triggers">${m.triggers.map((t) => `<span class="ref-trigger">「${escapeHtml(t)}」</span>`).join("")}</div>`) : ""}
       ${m.note ? section("補足", text(m.note)) : ""}
       ${section("活動範囲", text(range, "未入力"))}
+      <section class="md-sec md-memo">
+        <h3>あなたのメモ<small>この端末だけに保存。本人や他の会員には見えません</small></h3>
+        <textarea id="memoText" data-memo="${m.id}" rows="3" maxlength="1000" placeholder="例:10/9 の交流会で話した。来月に飲食店の開業予定。名刺交換済み">${escapeHtml(memos[m.id] || "")}</textarea>
+        <p class="md-memo-state" id="memoState" aria-live="polite"></p>
+      </section>
       ${partnersSection(m)}
       <div class="md-actions">
         <button type="button" class="ref-btn" data-copy="${m.id}">紹介文をコピー</button>
@@ -421,9 +439,24 @@
     $("#detailClose").focus();
   }
   function closeDetail() {
+    // 入力途中のメモを保存し、「メモあり」を一覧に反映する
+    const ta = $("#memoText");
+    let changed = false;
+    if (ta) {
+      clearTimeout(memoTimer);
+      const before = memos[ta.dataset.memo] || "";
+      saveMemo(ta.dataset.memo, ta.value);
+      changed = (memos[ta.dataset.memo] || "") !== before || Boolean(before) !== Boolean(ta.value.trim());
+      changed = changed || Boolean(memos[ta.dataset.memo]) !== Boolean(document.querySelector(`#member-${ta.dataset.memo} .ref-tag.memo`));
+    }
     $("#detailOverlay").hidden = true;
     document.body.style.overflow = "";
-    if (detailReturnFocus && detailReturnFocus.focus) detailReturnFocus.focus();
+    if (changed && ta) {
+      renderList();
+      const btn = document.querySelector(`#member-${ta.dataset.memo} .ref-name-btn`);
+      if (btn) { btn.focus(); return; }
+    }
+    if (detailReturnFocus && detailReturnFocus.isConnected && detailReturnFocus.focus) detailReturnFocus.focus();
   }
 
   function renderList() {
@@ -911,6 +944,28 @@
 
   $("#clearFilters").addEventListener("click", clearFilters);
   $("#favFilter").addEventListener("click", () => { filter.fav = !filter.fav; renderList(); });
+  // メモは入力するたびに保存(memoTimer は closeDetail でも使う)
+  document.addEventListener("input", (e) => {
+    const ta = e.target.closest("[data-memo]");
+    if (!ta) return;
+    clearTimeout(memoTimer);
+    memoTimer = setTimeout(() => {
+      saveMemo(ta.dataset.memo, ta.value);
+      const st = $("#memoState");
+      if (st) st.textContent = "保存しました";
+    }, 400);
+  });
+
+  // パソコン: 「/」でキーワード検索へ
+  document.addEventListener("keydown", (e) => {
+    if (e.key !== "/" || e.ctrlKey || e.metaKey || e.altKey) return;
+    if (e.target.closest("input, textarea, select, [contenteditable]")) return;
+    if (!$("#detailOverlay").hidden || !$("#diagOverlay").hidden) return;
+    e.preventDefault();
+    $("#refSearch").focus();
+    $("#refSearch").scrollIntoView({ behavior: "smooth", block: "center" });
+  });
+
   // 長い一覧で上に戻るボタン
   const toTop = $("#toTop");
   window.addEventListener("scroll", () => { toTop.hidden = window.scrollY < 1200; }, { passive: true });
@@ -934,6 +989,7 @@
     const res = await AuthApi.listReferralMembers(AuthSession.getToken());
     myMemberId = session.memberId || "";
     loadFavs();
+    loadMemos();
     members = viewerOrder(dailyOrder(res.success ? res.data.members : []));
     $("#communityLabel").textContent = COMMUNITY.label;
     // 業種・エリアの絞り込みは、広い画面では最初から開いておく
