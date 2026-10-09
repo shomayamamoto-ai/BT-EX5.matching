@@ -28,7 +28,38 @@
       data.expiresAt
     ).toLocaleString("ja-JP");
 
-    statusEl.textContent = "ログイン中です。";
+    // 自分の情報の記入状況とお気に入り(名簿は会員限定の API から読む)
+    const res = await AuthApi.listReferralMembers(AuthSession.getToken());
+    const members = res.success ? res.data.members : [];
+    const me = members.find((m) => m.id === data.memberId);
+    if (me && typeof PROFILE_ITEMS !== "undefined") {
+      const items = [...PROFILE_ITEMS, { label: "できること(ジャンル)", ok: (m) => m.topics.length > 0 }];
+      const done = items.filter((it) => it.ok(me)).length;
+      const pct = Math.round((done / items.length) * 100);
+      document.getElementById("portal-percent").textContent = `${pct}%`;
+      document.getElementById("portal-bar").style.width = `${pct}%`;
+      const missing = items.filter((it) => !it.ok(me)).map((it) => it.label);
+      document.getElementById("portal-missing").textContent = missing.length
+        ? `まだ入っていない項目:${missing.join("・")}。入れるほど紹介されやすくなります。`
+        : "すべて入力済みです。内容が変わったら更新してください。";
+    }
+    let favIds = [];
+    try { favIds = JSON.parse(localStorage.getItem(`btex5-favorites-${data.memberId || "guest"}`) || "[]"); } catch { favIds = []; }
+    const favs = favIds.map((id) => members.find((m) => m.id === id)).filter(Boolean);
+    const list = document.getElementById("portal-favs");
+    list.replaceChildren(...favs.map((m) => {
+      const li = document.createElement("li");
+      const a = document.createElement("a");
+      a.href = `../referral/#member=${encodeURIComponent(m.id)}`;
+      a.textContent = m.name;
+      const sub = document.createElement("span");
+      sub.textContent = m.company || "";
+      li.append(a, sub);
+      return li;
+    }));
+    document.getElementById("portal-favs-empty").hidden = favs.length > 0;
+
+    statusEl.hidden = true;
     contentEl.hidden = false;
   })();
 

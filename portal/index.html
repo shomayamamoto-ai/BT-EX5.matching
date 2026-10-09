@@ -5,17 +5,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="referrer" content="no-referrer">
   <title>マイページ | BT-EX5</title>
-  <link rel="icon" type="image/svg+xml" href="../assets/bt-ex5-mark.svg?v=202610090521">
+  <link rel="icon" type="image/svg+xml" href="../assets/bt-ex5-mark.svg?v=202610090538">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Noto+Sans+JP:wght@400;700;900&display=swap" onload="this.onload=null;this.rel='stylesheet'">
   <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Noto+Sans+JP:wght@400;700;900&display=swap"></noscript>
-  <link rel="stylesheet" href="../auth/auth.css?v=202610090521">
+  <link rel="stylesheet" href="../auth/auth.css?v=202610090538">
 </head>
 <body>
   <main class="auth-main">
     <div class="auth-card">
       <a href="../referral/" class="auth-logo">
-        <img class="brand-mark" src="../assets/bt-ex5-mark.svg?v=202610090521" alt="" width="40" height="40">
+        <img class="brand-mark" src="../assets/bt-ex5-mark.svg?v=202610090538" alt="" width="40" height="40">
         <span class="brand-word"><span class="brand-name">BT-<em>EX5</em></span><span class="brand-sub">新潟・東京 紹介者制コミュニティ</span></span>
       </a>
 
@@ -23,17 +23,36 @@
       <p class="auth-lead" id="portal-status" role="status">ログイン状態を確認しています…</p>
 
       <div id="portal-content" hidden>
-        <dl class="portal-user">
-          <dt>お名前</dt>
-          <dd id="portal-name"></dd>
-          <dt>会員区分</dt>
-          <dd id="portal-role"></dd>
-          <dt>セッション有効期限</dt>
-          <dd id="portal-expires"></dd>
-        </dl>
-        <p class="auth-lead"><a href="../referral/">紹介先早見表へ →</a></p>
-        <p class="auth-lead"><a href="../profile/">自分の情報を編集する →</a></p>
+        <p class="portal-hello"><strong id="portal-name"></strong>さん<span class="portal-role" id="portal-role"></span></p>
+
+        <!-- よく使う操作 -->
+        <nav class="portal-actions" aria-label="よく使う操作">
+          <a href="../referral/#diag" class="portal-action primary"><b>紹介診断をはじめる</b><span>相手の困りごとから紹介先を探す</span></a>
+          <a href="../referral/" class="portal-action"><b>紹介先早見表</b><span>メンバーの一覧・検索</span></a>
+          <a href="../teams/" class="portal-action"><b>全体分析</b><span>仕事が回る業種・紹介の流れ</span></a>
+          <a href="../opening/" class="portal-action"><b>オープニングムービー</b><span>BT-EX5 の紹介動画</span></a>
+        </nav>
+
+        <!-- 自分の情報の記入状況 -->
+        <section class="portal-box" aria-labelledby="portalProfileTitle">
+          <div class="portal-box-head">
+            <h2 id="portalProfileTitle">あなたの情報の記入状況</h2>
+            <strong id="portal-percent">0%</strong>
+          </div>
+          <div class="portal-bar" aria-hidden="true"><span id="portal-bar"></span></div>
+          <p class="portal-missing" id="portal-missing"></p>
+          <a href="../profile/" class="portal-edit">自分の情報を編集する →</a>
+        </section>
+
+        <!-- お気に入り -->
+        <section class="portal-box" aria-labelledby="portalFavTitle">
+          <h2 id="portalFavTitle">お気に入りのメンバー</h2>
+          <ul class="portal-favs" id="portal-favs"></ul>
+          <p class="portal-empty" id="portal-favs-empty">早見表のカード右上の☆を押すと、ここに並びます。</p>
+        </section>
+
         <button type="button" id="logout-button" class="auth-secondary">ログアウト</button>
+        <p class="portal-expires">ログインの有効期限:<span id="portal-expires"></span></p>
       </div>
 
       <div id="portal-message" class="auth-message"></div>
@@ -44,14 +63,15 @@
     <a href="../terms/">利用規約</a>
     <p class="site-copy">© 2026 BT-EX5</p>
     <p class="site-credit">Created by <a href="https://lumenium.net/?utm_source=bt-ex5&amp;utm_medium=referral&amp;utm_campaign=credit" target="_blank" rel="noopener">Shoma Yamamoto</a></p>
-    <a class="site-maker" href="https://lumenium.net/?utm_source=bt-ex5&amp;utm_medium=referral&amp;utm_campaign=footer_logo" target="_blank" rel="noopener"><img src="../assets/lumenium-logo.svg?v=202610090521" alt="Lumenium" width="115" height="24"><span>Webサイト・システム制作のご相談はこちら</span></a>
+    <a class="site-maker" href="https://lumenium.net/?utm_source=bt-ex5&amp;utm_medium=referral&amp;utm_campaign=footer_logo" target="_blank" rel="noopener"><img src="../assets/lumenium-logo.svg?v=202610090538" alt="Lumenium" width="115" height="24"><span>Webサイト・システム制作のご相談はこちら</span></a>
   </footer>
 
-  <script src="../auth/server-core.js?v=202610090521"></script>
-  <script src="../auth/mock-server.js?v=202610090521"></script>
-  <script src="../auth/api.js?v=202610090521"></script>
-  <script src="../auth/session.js?v=202610090521"></script>
-  <script src="../auth/ui.js?v=202610090521"></script>
-  <script src="../auth/portal.js?v=202610090521"></script>
+  <script src="../referral/data.js?v=202610090538"></script>
+  <script src="../auth/server-core.js?v=202610090538"></script>
+  <script src="../auth/mock-server.js?v=202610090538"></script>
+  <script src="../auth/api.js?v=202610090538"></script>
+  <script src="../auth/session.js?v=202610090538"></script>
+  <script src="../auth/ui.js?v=202610090538"></script>
+  <script src="../auth/portal.js?v=202610090538"></script>
 </body>
 </html>

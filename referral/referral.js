@@ -723,6 +723,12 @@
       if (!hash) hash = sessionStorage.getItem("btex5-pending-hash") || "";
       sessionStorage.removeItem("btex5-pending-hash");
     } catch { /* noop */ }
+    // #diag はマイページなどから「紹介診断をはじめる」で来たとき
+    if (hash === "#diag") {
+      history.replaceState(null, "", location.pathname);
+      openDiag();
+      return;
+    }
     const mm = /^#member=([\w-]+)$/.exec(hash);
     if (mm && members.some((m) => m.id === mm[1])) {
       gotoCard(mm[1]);

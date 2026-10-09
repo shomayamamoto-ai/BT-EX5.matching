@@ -83,9 +83,11 @@
   }
 
   // 紹介に効く項目の記入状況(referral/data.js の PROFILE_ITEMS と、診断用の話題)
+  // jump: まだの項目を押したときに移動する入力欄
+  const JUMP = { range: "#pfRange", wants: 'textarea[name="wants"]', business: 'textarea[name="business"]', triggers: 'textarea[name="triggers"]', customers: 'textarea[name="customers"]', offer: 'textarea[name="offer"]' };
   const CHECKS = [
-    ...PROFILE_ITEMS.map((it) => ({ label: it.key === "triggers" ? `${it.label}(3つ以上)` : it.label, ok: it.ok })),
-    { label: "対応できる話題", ok: (p) => p.topics.length > 0 },
+    ...PROFILE_ITEMS.map((it) => ({ label: it.key === "triggers" ? `${it.label}(3つ以上)` : it.label, ok: it.ok, jump: JUMP[it.key] })),
+    { label: "できること(ジャンル)", ok: (p) => p.topics.length > 0, jump: "#pfDiag" },
   ];
 
   function renderProgress() {
@@ -95,9 +97,31 @@
     $("#profPercent").textContent = `${pct}%`;
     $("#profBar").style.width = `${pct}%`;
     $("#profTodo").innerHTML = CHECKS
-      .map((c) => `<li class="${c.ok(p) ? "is-done" : ""}">${escapeHtml(c.label)}</li>`)
+      .map((c, i) => `<li class="${c.ok(p) ? "is-done" : ""}">${c.ok(p) ? escapeHtml(c.label) : `<button type="button" data-jump="${i}">${escapeHtml(c.label)}</button>`}</li>`)
       .join("");
+    $("#topicCount").textContent = `(${p.topics.length}個選択中)`;
+    renderDirty();
   }
+
+  // 未保存の変更: 保存ボタンの横に出し、ページを離れるときは確認する
+  let saved = "";
+  const snapshot = () => JSON.stringify(readForm());
+  const isDirty = () => !!saved && snapshot() !== saved;
+  function renderDirty() { $("#profDirty").hidden = !isDirty(); }
+  window.addEventListener("beforeunload", (e) => {
+    if (isDirty()) { e.preventDefault(); e.returnValue = ""; }
+  });
+
+  // まだの項目を押すと、その入力欄へ移動する
+  $("#profTodo").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-jump]");
+    if (!b) return;
+    const target = document.querySelector(CHECKS[Number(b.dataset.jump)].jump);
+    if (!target) return;
+    target.scrollIntoView({ behavior: "smooth", block: "center" });
+    const field = target.matches("textarea, input, select") ? target : target.querySelector("input, textarea, select");
+    if (field) setTimeout(() => field.focus({ preventScroll: true }), 350);
+  });
 
   form.addEventListener("input", renderProgress);
   form.addEventListener("change", renderProgress);
@@ -118,6 +142,7 @@
     }
     me = res.data.member;
     fill(me);
+    saved = snapshot();
     renderProgress();
     toast("保存しました。紹介先早見表に反映されています");
   });
@@ -131,10 +156,12 @@
     if (me) {
       $("#profName").textContent = me.name;
       fill(me);
+      $("#profView").href = `../referral/#member=${encodeURIComponent(me.id)}`;
     } else {
       $("#profileError").textContent = "名簿にあなたの情報が見つかりませんでした。運営者にご連絡ください。";
       $("#profileSave").disabled = true;
     }
+    saved = snapshot();
     renderProgress();
     document.documentElement.classList.remove("guard-pending");
   })();
