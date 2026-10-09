@@ -1246,3 +1246,7 @@ a.site-maker:hover span { text-decoration: underline; color: var(--accent-dark);
   cursor: pointer;
 }
 .ref-to-top[hidden] { display: none; }
+
+/* 診断結果: 上位をまとめてコピー */
+#diagCopyTop { background: #fff; color: var(--accent-dark); }
+.diag-sort[hidden] { display: none; }

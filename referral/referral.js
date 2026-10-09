@@ -38,6 +38,19 @@
   }
 
   // ---------- 紹介文 ----------
+  // 診断で選んだ困りごと・方法(紹介文・打診文に入れる)
+  function diagContext() {
+    const need = needOf();
+    if (!scores || !need) return null;
+    const methods = need.methods
+      ? (answers.anyTopic ? [] : [...answers.methods].sort((a, b) => a - b).map((i) => need.methods[i].label))
+      : [...answers.topics].map((t) => labelOf(TOPICS, t));
+    return { need: need.methods ? need.label : "", methods };
+  }
+  const shortText = (t, n) => (t.length > n ? t.slice(0, n) + "…" : t);
+  // できること(相談に合ったジャンルを先に)
+  const mainTags = (m, n, hits) => [...new Set([...(hits || []), ...m.topics])].slice(0, n).map(topicTag).filter(Boolean);
+
   function introText(m) {
     const sc = scores && scores[m.id];
     const lines = [`【ご紹介】${m.name}さん${m.company ? `(${m.company})` : ""}`];
@@ -63,6 +76,40 @@
     if (m.online !== "unknown") range.push(`オンライン:${ONLINE_LABELS[m.online]}`);
     if (range.length) lines.push(range.join("/"));
     lines.push("ぜひ一度お話ししてみてください。");
+    return lines.join("\n");
+  }
+
+  // 診断の上位をまとめた紹介文(困っている相手に、候補を一度に送る)
+  function topIntroText(list) {
+    const ctx = diagContext();
+    const head = ctx && ctx.need ? `「${ctx.need}」のご相談に合いそうな、BT-EX5のメンバーをご紹介します。` : "ご相談に合いそうな、BT-EX5のメンバーをご紹介します。";
+    const lines = ["【ご紹介】", head];
+    if (ctx && ctx.methods.length) lines.push(`(${ctx.methods.join("・")})`);
+    list.forEach(({ m, sc }, i) => {
+      lines.push("", `${i + 1}. ${m.name}さん${m.company ? `(${m.company})` : ""}`);
+      const tags = mainTags(m, 4, sc && sc.topicHits);
+      if (tags.length) lines.push(`   できること:${tags.join("・")}`);
+      if (m.business) lines.push(`   ${shortText(m.business, 70)}`);
+      if (m.offer) lines.push(`   紹介特典:${m.offer}`);
+    });
+    lines.push("", "気になる方がいれば、おつなぎします。");
+    return lines.join("\n");
+  }
+
+  // メンバーへの打診文(紹介してよいかを先に聞く)
+  function askText(m) {
+    const me = members.find((x) => x.id === myMemberId);
+    const ctx = diagContext();
+    const sc = scores && scores[m.id];
+    const lines = [`${m.name}さん`, `BT-EX5の${me ? me.name : ""}です。`];
+    if (ctx && (ctx.need || ctx.methods.length)) {
+      const what = [ctx.need ? `「${ctx.need}」` : "", ctx.methods.length ? `(${ctx.methods.join("・")})` : ""].join("");
+      lines.push(`${what}でお困りの方がいて、${m.name}さんをご紹介できそうです。`);
+    } else {
+      const tags = (sc && sc.topicHits.length ? sc.topicHits : m.topics.slice(0, 2)).map(topicTag).filter(Boolean);
+      lines.push(`${tags.length ? `「${tags.join("・")}」のお仕事に` : ""}合いそうな方がいて、${m.name}さんをご紹介できそうです。`);
+    }
+    lines.push("ご紹介してもよろしいでしょうか?", "", "【相手の方について】", "・お名前/会社:", "・ご相談の内容:");
     return lines.join("\n");
   }
 
@@ -272,6 +319,8 @@
       ${partnersSection(m)}
       <div class="md-actions">
         <button type="button" class="ref-btn" data-copy="${m.id}">紹介文をコピー</button>
+        <button type="button" class="ref-btn ghost" data-ask="${m.id}">打診文をコピー</button>
+        <button type="button" class="ref-btn ghost" data-link="${m.id}">この人のリンクをコピー</button>
         <button type="button" class="ref-btn ghost" data-close-detail>閉じる</button>
       </div>`;
   }
@@ -615,6 +664,10 @@
     $("#diagSummary").innerHTML = summary.map((s) => `<span>${escapeHtml(s)}</span>`).join("");
 
     const ranked = RefScoring.rankMembers(members, answers);
+    lastRanked = ranked;
+    $("#diagCopyTop").hidden = ranked.length < 2;
+    $("#diagCopyTop").textContent = `上位${Math.min(3, ranked.length)}名をまとめてコピー`;
+    saveDiagnosis();
 
     $("#diagRanking").innerHTML = ranked.length
       ? ranked
@@ -628,6 +681,7 @@
           <span class="rank-reasons">${sc.reasons.slice(0, 4).map((r) => `<span>${escapeHtml(r)}</span>`).join("")}</span>
           <span class="rank-actions">
             <button type="button" class="ref-btn" data-copy="${m.id}">紹介文をコピー</button>
+            <button type="button" class="ref-btn ghost" data-ask="${m.id}">打診文をコピー</button>
             <button type="button" class="ref-btn ghost" data-goto="${m.id}">カードを見る</button>
           </span>
         </li>`)
@@ -640,6 +694,40 @@
     $("#diagResults .diag-title").focus({ preventScroll: true });
     scrollDiagTop();
     renderList();
+  }
+
+  // 診断の結果はこのタブを閉じるまで残す(再読み込みしても「紹介診断」を開くと前回の結果が出る)
+  let lastRanked = [];
+  const DIAG_KEY = "btex5-last-diagnosis";
+  function saveDiagnosis() {
+    try {
+      sessionStorage.setItem(DIAG_KEY, JSON.stringify({ ...answers, methods: [...answers.methods], topics: [...answers.topics] }));
+    } catch { /* 保存できなくても動かす */ }
+  }
+  function restoreDiagnosis() {
+    try {
+      const saved = JSON.parse(sessionStorage.getItem(DIAG_KEY) || "null");
+      if (!saved || !saved.need) return false;
+      Object.assign(answers, saved, { methods: new Set(saved.methods || []), topics: new Set(saved.topics || []) });
+      if (!REF_NEEDS.some((n) => n.id === answers.need)) return false;
+      syncTopics();
+      return true;
+    } catch { return false; }
+  }
+
+  // メンバーへのリンク(開くとその人の詳細が出る。ログイン前に開いたときもログイン後に出す)
+  const memberLink = (id) => `${location.origin}${location.pathname}#member=${encodeURIComponent(id)}`;
+  function openFromHash() {
+    let hash = location.hash;
+    try {
+      if (!hash) hash = sessionStorage.getItem("btex5-pending-hash") || "";
+      sessionStorage.removeItem("btex5-pending-hash");
+    } catch { /* noop */ }
+    const mm = /^#member=([\w-]+)$/.exec(hash);
+    if (mm && members.some((m) => m.id === mm[1])) {
+      gotoCard(mm[1]);
+      openDetail(mm[1]);
+    }
   }
 
   function onOptionClick(id) {
@@ -725,6 +813,19 @@
       toast(ok ? "紹介文をコピーしました" : "コピーできませんでした");
       return;
     }
+    const askBtn = t.closest("[data-ask]");
+    if (askBtn) {
+      const m = members.find((x) => x.id === askBtn.dataset.ask);
+      const ok = await copyText(askText(m));
+      toast(ok ? `${m.name}さんへの打診文をコピーしました` : "コピーできませんでした");
+      return;
+    }
+    const linkBtn = t.closest("[data-link]");
+    if (linkBtn) {
+      const ok = await copyText(memberLink(linkBtn.dataset.link));
+      toast(ok ? "リンクをコピーしました(ログインした会員だけが開けます)" : "コピーできませんでした");
+      return;
+    }
 
     // ジャンルのタグ: そのジャンルで探す(詳細から押したときは詳細を閉じる)
     const genreBtn = t.closest("[data-genre]");
@@ -775,6 +876,10 @@
   });
   $("#diagStart").addEventListener("click", startDiagnosis);
   $("#diagRetry").addEventListener("click", startDiagnosis);
+  $("#diagCopyTop").addEventListener("click", async () => {
+    const ok = await copyText(topIntroText(lastRanked.slice(0, 3)));
+    toast(ok ? "上位の候補をまとめてコピーしました" : "コピーできませんでした");
+  });
   $("#diagBack").addEventListener("click", () => { if (step > 0) goStep(step - 1); });
   $("#diagNext").addEventListener("click", () => {
     if (!isAnswered(STEPS[step])) return;
@@ -816,6 +921,8 @@
 
   // ---------- 初期化(会員限定) ----------
   (async function init() {
+    // ログイン前にメンバーのリンクを開いたときは、ログイン後に開けるように覚えておく
+    try { if (/^#member=/.test(location.hash)) sessionStorage.setItem("btex5-pending-hash", location.hash); } catch { /* noop */ }
     const session = await AuthSession.guardPage({ next: "referral", loginPath: "../login/" });
     if (!session) return;
     const res = await AuthApi.listReferralMembers(AuthSession.getToken());
@@ -832,6 +939,10 @@
     renderTopicSelect();
     renderChips();
     renderList();
+    // 前回の診断(このタブ)を戻す
+    if (restoreDiagnosis()) { $("#diagKeyword").value = answers.keyword || ""; showResults(); }
     document.documentElement.classList.remove("guard-pending");
+    openFromHash();
+    window.addEventListener("hashchange", openFromHash);
   })();
 })();
