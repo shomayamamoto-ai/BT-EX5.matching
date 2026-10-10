@@ -8,13 +8,16 @@
   "use strict";
   const { h } = App;
 
+  // 並びは順位の優先順(ありがとうマイル > リファーラル > 1on1 > ビジター招待 > 出席)。
+  // 最初の項目(ありがとうマイル)が既定の並べ替え。同じ値のときは、この順で次の項目を比べる
   const COLS = [
-    { id: "attended", label: "出席", fmt: (n) => String(n) },
-    { id: "referrals", label: "リファーラル", fmt: (n) => String(n) },
     { id: "miles", label: "ありがとうマイル", fmt: man },
+    { id: "referrals", label: "リファーラル", fmt: (n) => String(n) },
     { id: "oneOnOnes", label: "1on1", fmt: (n) => String(n) },
     { id: "visitors", label: "ビジター", fmt: (n) => String(n) },
+    { id: "attended", label: "出席", fmt: (n) => String(n) },
   ];
+  const DEFAULT_SORT = COLS[0].id;
 
   // 100.9万 のような表記
   function man(n) { return `${(Number(n || 0) / 10000).toFixed(1)}万`; }
@@ -49,7 +52,7 @@
 
   App.renderStats = async function (el, params) {
     const per = periodOf(params);
-    const sortKey = COLS.some((c) => c.id === params.get("s")) ? params.get("s") : "referrals";
+    const sortKey = COLS.some((c) => c.id === params.get("s")) ? params.get("s") : DEFAULT_SORT;
     const d = await App.api("getStats", { from: per.from, to: per.to });
     if (!d) return;
     const cur = ymOf(d.today);
@@ -59,7 +62,7 @@
       if (next.p === "month") { p.set("p", "month"); p.set("ym", next.ym || cur); }
       else if (next.p === "custom") { p.set("p", "custom"); p.set("from", next.from); p.set("to", next.to); }
       else p.set("p", next.p);
-      if (next.s && next.s !== "referrals") p.set("s", next.s);
+      if (next.s && next.s !== DEFAULT_SORT) p.set("s", next.s);
       return `log/stats?${p}`;
     };
 
@@ -106,7 +109,17 @@
       "入会者数:そのうち入会した方。直近の期間は、これから入会する方がいるため少なめに出ます。"));
 
     // ---------- メンバー別の数字 ----------
-    const rows = d.members.slice().sort((a, b) => b[sortKey] - a[sortKey] || (a.name || "").localeCompare(b.name || "", "ja"));
+    // 選んだ項目 → 残りを優先順で比べる(すべて同じなら同じ順位)
+    const order = [sortKey, ...COLS.map((c) => c.id).filter((id) => id !== sortKey)];
+    const cmp = (a, b) => { for (const k of order) { if (b[k] !== a[k]) return b[k] - a[k]; } return 0; };
+    const rows = d.members.slice().sort((a, b) => cmp(a, b) || (a.name || "").localeCompare(b.name || "", "ja"));
+    // 順位(どの項目も0の人は順位なし)
+    const rowRank = new Map();
+    rows.forEach((r, i) => {
+      const zero = order.every((k) => !r[k]);
+      const prev = rows[i - 1];
+      rowRank.set(r, zero ? 0 : prev && cmp(prev, r) === 0 ? rowRank.get(prev) : i + 1);
+    });
     // 項目ごとの順位(同じ値は同じ順位。0 は順位なし)
     const rankIn = {};
     COLS.forEach((c) => {
@@ -115,7 +128,6 @@
     });
     const max = {};
     COLS.forEach((c) => { max[c.id] = Math.max(1, ...d.members.map((r) => r[c.id])); });
-    const sortRank = rankIn[sortKey];
 
     const th = (c) => h("th", { scope: "col", class: `st-num${c.id === sortKey ? " is-sort" : ""}`, "aria-sort": c.id === sortKey ? "descending" : "none" },
       h("button", { type: "button", onclick: () => App.go(link({ s: c.id })) }, c.label, c.id === sortKey ? " ▼" : ""));
@@ -130,16 +142,16 @@
     el.append(h("section", { class: "st-table-card" },
       h("div", { class: "st-table-head" },
         h("div", null, h("h2", null, `メンバー別の数字(${per.title})`),
-          h("small", null, "項目ごとに 1位・2位・3位・4位 を色分けしています。見出しを押すと並べ替えできます。")),
+          h("small", null, "順位は ありがとうマイル > リファーラル > 1on1 > ビジター招待 > 出席 の順に比べます。項目ごとに 1位・2位・3位・4位 を色分けしています。見出しを押すと、その項目を先に比べて並べ替えます。")),
         h("b", null, per.mode === "month" ? ymLabel(per.ym) : `${d.from.replace(/-/g, "/")}〜${d.to.replace(/-/g, "/")}`)),
       h("div", { class: "st-totals" },
-        [["リファーラル(全体)", String(t.referrals)], ["ありがとうマイル(全体)", man(t.miles)], ["1on1(全体)", String(t.oneOnOnes)], ["ビジター(全体)", String(t.visitors)], ["出席(のべ)", String(t.attended)]]
+        [["ありがとうマイル(全体)", man(t.miles)], ["リファーラル(全体)", String(t.referrals)], ["1on1(全体)", String(t.oneOnOnes)], ["ビジター(全体)", String(t.visitors)], ["出席(のべ)", String(t.attended)]]
           .map(([k, v]) => h("div", null, h("small", null, k), h("b", null, v)))),
       h("div", { class: "st-scroll" },
         h("table", { class: "st-table" },
           h("thead", null, h("tr", null, h("th", { scope: "col" }, "順位"), h("th", { scope: "col" }, "メンバー"), COLS.map(th))),
           h("tbody", null, rows.map((r) => {
-            const rk = sortRank(r[sortKey]);
+            const rk = rowRank.get(r);
             return h("tr", { class: r.isMe ? "is-me" : "" },
               h("td", null, h("span", { class: `st-rank${rk && rk <= 4 ? ` st-r${rk}` : ""}` }, rk ? String(rk) : "—")),
               h("td", { class: "st-name" }, h("a", { href: `../referral/#member=${encodeURIComponent(r.id)}` }, r.name), r.isMe ? h("span", { class: "st-me" }, "あなた") : null),
