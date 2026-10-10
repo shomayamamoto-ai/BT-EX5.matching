@@ -633,3 +633,4 @@ html.big-text body { zoom: 1.15; }
 .notify-ios { margin: 0 0 12px; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--line-strong); background: #fff; font-size: 13.5px; }
 .notify-ios ol { margin: 6px 0; padding-left: 1.4em; display: grid; gap: 4px; }
 .notify-ios small { color: var(--text-sub); }
+.one-end { margin: -6px 0 12px; font-weight: 700; color: var(--text-sub); }

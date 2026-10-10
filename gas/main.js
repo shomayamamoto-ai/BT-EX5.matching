@@ -102,7 +102,8 @@ var CALENDAR_ = typeof Calendar === "undefined" ? null : {
       description: x.description,
       location: x.location || "",
       start: x.start ? calTime_(x.date, x.start) : { date: x.date },
-      end: x.start ? calTime_(x.date, x.end) : { date: nextDay(x.date) },
+      // 日付をまたぐ 1on1(22:30〜翌3:00 など)は、終わりの日付 x.endDate を使う
+      end: x.start ? calTime_(x.endDate || x.date, x.end) : { date: nextDay(x.date) },
       attendees: (x.guests || []).map(function (e) { return { email: e }; }),
       reminders: { useDefault: false, overrides: [{ method: "popup", minutes: 60 }] },
     };

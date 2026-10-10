@@ -223,7 +223,7 @@
     }
     const planned = d.items.filter((o) => o.status === "planned").reverse();
     const done = d.items.filter((o) => o.status !== "planned");
-    const when = (o) => `${App.fmtDate(o.date)} ${o.time ? `${o.time}〜${o.end}` : "時刻未定"}`;
+    const when = (o) => `${App.fmtDate(o.date)} ${o.time ? `${o.time}〜${o.endDate && o.endDate !== o.date ? "翌" : ""}${o.end}` : "時刻未定"}`;
     const where = (o) => (o.mode === "meet" ? "Google Meet" : o.place || "場所未定");
     const row = (o) => h("li", null, h("button", { type: "button", class: "app-row", onclick: () => oneForm(o) },
       App.avatar(o.withName),
@@ -234,7 +234,7 @@
       li.append(h("div", { class: "one-cal" },
         o.meetUrl ? h("a", { class: "app-btn small", href: o.meetUrl, target: "_blank", rel: "noopener" }, "Meet に参加") : null,
         o.synced && o.calLink ? h("a", { class: "app-btn ghost small", href: o.calLink, target: "_blank", rel: "noopener" }, "カレンダーで開く")
-          : App.calendarButtons({ uid: o.id, title: `1on1:${o.withName}さん`, date: o.date, start: o.time, end: o.end, place: o.mode === "meet" ? o.meetUrl || "Google Meet" : o.place })));
+          : App.calendarButtons({ uid: o.id, title: `1on1:${o.withName}さん`, date: o.date, start: o.time, end: o.end, endDate: o.endDate, place: o.mode === "meet" ? o.meetUrl || "Google Meet" : o.place })));
       return li;
     })) : App.empty("予定はありません。")));
     el.append(recommendSection(d.items));
@@ -281,9 +281,15 @@
     el.setValue = (v) => { current = v; draw(); };
     return el;
   }
+  function durLabel(n) {
+    const hh = Math.floor(n / 60), mm = n % 60;
+    if (!hh) return `${mm}分`;
+    return `${hh}時間${mm === 30 ? "半" : mm ? `${mm}分` : ""}`;
+  }
+  // 0:00〜23:30 を30分きざみで(夜遅く・深夜の 1on1 も選べるように)
   function timeOptions() {
     const out = [h("option", { value: "" }, "未定")];
-    for (let m = 7 * 60; m <= 22 * 60; m += 30) {
+    for (let m = 0; m < 24 * 60; m += 30) {
       const t = `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
       out.push(h("option", { value: t }, t));
     }
@@ -305,8 +311,22 @@
       const time = h("select", { "aria-label": "開始時刻" }, timeOptions());
       time.value = o ? o.time : "";
       if (o && o.time && time.value !== o.time) time.append(h("option", { value: o.time }, o.time)), time.value = o.time;
-      const duration = h("select", { "aria-label": "時間" }, [30, 45, 60, 90, 120].map((n) => h("option", { value: String(n) }, n < 60 ? `${n}分` : n === 60 ? "1時間" : n === 90 ? "1時間半" : "2時間")));
+      // 30分きざみで5時間まで(以前の 45分 の記録はそのまま出す)
+      const durs = [30, 60, 90, 120, 150, 180, 210, 240, 270, 300];
+      if (o && o.duration && !durs.includes(o.duration)) durs.push(o.duration), durs.sort((a, b) => a - b);
+      const duration = h("select", { "aria-label": "時間" }, durs.map((n) => h("option", { value: String(n) }, durLabel(n))));
       duration.value = String(o ? o.duration : 60);
+      // 終わりの時刻(日付をまたぐときは「翌」)
+      const endNote = h("p", { class: "app-field-hint one-end", "aria-live": "polite" });
+      const drawEnd = () => {
+        if (!time.value) { endNote.textContent = ""; return; }
+        const [hh, mm] = time.value.split(":").map(Number);
+        const m = hh * 60 + mm + Number(duration.value);
+        endNote.textContent = `終わり:${m >= 24 * 60 ? "翌" : ""}${String(Math.floor(m / 60) % 24).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
+      };
+      time.addEventListener("change", drawEnd);
+      duration.addEventListener("change", drawEnd);
+      drawEnd();
 
       // 場所: 現地(対面)か Google Meet
       const place = h("input", { type: "text", maxlength: "80", placeholder: "例:新潟駅前のカフェ", value: o && o.mode !== "meet" ? o.place : "" });
@@ -357,7 +377,7 @@
       } },
       o ? null : App.field("相手", picker),
       App.field("日付", h("div", null, date, quick)),
-      h("div", { class: "app-grid2" }, App.field("開始時刻", time), App.field("時間", duration)),
+      h("div", { class: "app-grid2" }, App.field("開始時刻", time), App.field("時間", duration)), endNote,
       App.field("場所", h("div", null, mode, onsiteBox, meetBox)),
       App.field("状況", status, "予定の時刻を過ぎると、自動で「実施」になります(中止したときは「中止」に)"),
       App.field("メモ", note),

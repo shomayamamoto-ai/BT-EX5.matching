@@ -172,7 +172,7 @@ const App = (function () {
   }
 
   // ---------- カレンダーに追加(Google カレンダー / iPhone などの .ics) ----------
-  // item: { title, date: "YYYY-MM-DD", start: "HH:MM", end, place, body }
+  // item: { title, date: "YYYY-MM-DD", start: "HH:MM", end, endDate(日付をまたぐとき), place, body }
   function calStamp(date, time) {
     return `${date.replace(/-/g, "")}T${(time || "00:00").replace(":", "").padStart(4, "0")}00`;
   }
@@ -183,7 +183,14 @@ const App = (function () {
       const [hh, mm] = start.split(":").map(Number);
       end = `${String(Math.min(23, hh + 1)).padStart(2, "0")}:${String(mm).padStart(2, "0")}`;
     }
-    return [calStamp(item.date, start), calStamp(item.date, end)];
+    // 終わりが始まりより前の時刻なら翌日(22:30〜3:00 など)
+    let endDate = item.endDate || item.date;
+    if (!item.endDate && end <= start) {
+      const d = new Date(`${item.date}T12:00:00`);
+      d.setDate(d.getDate() + 1);
+      endDate = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    }
+    return [calStamp(item.date, start), calStamp(endDate, end)];
   }
   function googleCalUrl(item) {
     const [a, b] = calRange(item);

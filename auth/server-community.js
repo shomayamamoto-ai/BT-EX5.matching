@@ -906,17 +906,15 @@
       // ============================================
       // 1on1(予定と記録)。メモは書いた本人だけが読める
       // ============================================
-      var DURATIONS = [30, 45, 60, 90, 120];
+      // 30分きざみで5時間まで(45分は以前の記録のため残す)
+      var DURATIONS = [30, 45, 60, 90, 120, 150, 180, 210, 240, 270, 300];
       function toMin(t) { var p = String(t || "").split(":"); return Number(p[0]) * 60 + Number(p[1] || 0); }
-      function nowMinJst() { var d = new Date(c.nowMs() + JST); return d.getUTCHours() * 60 + d.getUTCMinutes(); }
       // 予定の時刻(時刻がなければその日)を過ぎた 1on1 は、中止にしていなければ自動で「実施」にする
       function autoComplete(db) {
         var changed = false;
-        var t = today(), nowMin = nowMinJst();
         (db.oneOnOnes || []).forEach(function (o) {
           if (o.status !== "planned") return;
-          var end = o.time ? toMin(o.time) + (o.duration || 60) : 24 * 60;
-          if (o.date < t || (o.date === t && nowMin >= end)) {
+          if (c.nowMs() >= oneEndMs(o)) {
             o.status = "done";
             o.autoDone = true;
             o.doneAt = c.nowMs();
@@ -930,10 +928,20 @@
         var m = toMin(o.time) + (o.duration || 60);
         return ("0" + Math.floor(m / 60) % 24).slice(-2) + ":" + ("0" + (m % 60)).slice(-2);
       }
+      // 終わりが日付をまたぐ(例:22:30 から 4時間半 → 翌 3:00)とき、終わりの日付
+      function endDate(o) {
+        if (!o.time || toMin(o.time) + (o.duration || 60) < 24 * 60) return o.date;
+        return dateKey(Date.parse(o.date + "T12:00:00+09:00") + DAY);
+      }
+      // 終わる時刻(時刻がなければその日の終わり)
+      function oneEndMs(o) {
+        var min = o.time ? toMin(o.time) + (o.duration || 60) : 24 * 60;
+        return Date.parse(o.date + "T00:00:00+09:00") + min * 60000;
+      }
       function oneView(db, o, me) {
         var other = o.a === me ? o.b : o.a;
         return {
-          id: o.id, with: other, withName: nameOf(db, other), date: o.date, time: o.time || "", end: endTime(o), duration: o.duration || 60,
+          id: o.id, with: other, withName: nameOf(db, other), date: o.date, time: o.time || "", end: endTime(o), endDate: endDate(o), duration: o.duration || 60,
           mode: o.mode || "onsite", place: o.place || "", meetUrl: o.meetUrl || "", calLink: o.calLink || "", synced: !!o.calId,
           status: o.status, autoDone: !!o.autoDone, note: (o.notes || {})[me] || "", next: (o.nexts || {})[me] || "", by: o.by, at: o.at,
         };
@@ -956,7 +964,7 @@
           var r = c.calendar.upsert({
             id: o.calId || "",
             title: "1on1:" + nameOf(db, o.a) + " × " + nameOf(db, o.b) + "(BT-EX5)",
-            date: o.date, start: o.time || "", end: endTime(o),
+            date: o.date, start: o.time || "", end: endTime(o), endDate: endDate(o),
             meet: o.mode === "meet", location: o.mode === "meet" ? "" : o.place,
             description: "BT-EX5 の 1on1 です。" + (appUrl ? "\n会員サイト:" + appUrl : ""),
             guests: guests,
@@ -1003,7 +1011,7 @@
         var manualMeet = c.cleanStr(body.meetUrl, 200);
         if (o.mode === "meet" && /^https:\/\/meet\.google\.com\/[\w-]+$/.test(manualMeet)) o.meetUrl = manualMeet;
         if (o.mode !== "meet") o.meetUrl = "";
-        var past = date < today() || (date === today() && o.time && nowMinJst() >= toMin(o.time) + o.duration);
+        var past = c.nowMs() >= oneEndMs(o);
         o.status = oneOf(body.status, ["planned", "done", "cancelled"], past ? "done" : "planned");
         if (o.status !== "done") { o.autoDone = false; }
         o.notes = o.notes || {};
