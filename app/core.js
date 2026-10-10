@@ -208,6 +208,17 @@ const App = (function () {
         h("button", { type: "button", class: "app-btn ghost small", onclick: () => icsFile(item) }, "iPhone・Outlook(.ics)")));
   }
 
+  // ---------- QR コード(app/vendor/qrcode.js。MIT ライセンス) ----------
+  function qrImage(text, label) {
+    if (typeof qrcode === "undefined") return h("p", { class: "app-field-hint" }, text);
+    qrcode.stringToBytes = qrcode.stringToBytesFuncs["UTF-8"];
+    const q = qrcode(0, "M");
+    q.addData(text, "Byte");
+    q.make();
+    const cell = Math.max(3, Math.floor(240 / q.getModuleCount()));
+    return h("img", { class: "qr-img", src: q.createDataURL(cell, cell * 2), alt: label || "QRコード", width: String(q.getModuleCount() * cell + cell * 4) });
+  }
+
   // ---------- 通信 ----------
   async function api(action, payload, opt) {
     const res = await AuthApi.call(action, payload);
@@ -255,6 +266,22 @@ const App = (function () {
     const btn = top.querySelector(".app-sheet-close");
     if (btn) btn.click();
   });
+
+  // 記録したあとに「LINE などでも知らせる」(サイトの通知に気づかない人もいるため)
+  function doneSheet(title, lead, text) {
+    openSheet(title, (body, close) => {
+      const box = h("textarea", { rows: "7", readonly: true, class: "invite-text" });
+      box.value = text;
+      body.append(
+        h("p", { class: "done-check", "aria-hidden": "true" }, "✓"),
+        h("p", { class: "app-lead" }, lead),
+        box,
+        h("div", { class: "app-btn-row" },
+          btn("LINE などで送る", () => shareText(text), "primary"),
+          btn("コピー", () => copyText(text), "ghost")),
+        btn("閉じる", close, "ghost wide"));
+    }, { noFocus: true });
+  }
 
   // ---------- 入力欄 ----------
   function field(label, input, hint) {
@@ -345,15 +372,19 @@ const App = (function () {
     const parts = path.split("/").filter(Boolean);
     return { view: parts[0] || "home", parts: parts.slice(1), params: new URLSearchParams(query || "") };
   }
+  // 画面を移る。描き終わるまで待てる(移ったあとにシートを出すときに使う)
   function go(hash) {
-    if (location.hash === `#${hash}`) route();
-    else location.hash = hash;
+    if (location.hash !== `#${hash}`) history.pushState(null, "", `#${hash}`);
+    return route();
   }
 
   async function route() {
     const r = parseHash();
     const view = views[r.view] ? r.view : "home";
     if (cleanup) { try { cleanup(); } catch { /* noop */ } cleanup = null; }
+    // 開いていたシートは閉じる(書きかけは下書きに残っている)
+    sheetStack.splice(0).forEach((w) => w.remove());
+    document.body.classList.remove("app-sheet-open");
     current = { view, parts: r.parts, params: r.params };
     const tabId = views[view].tab || view;
     document.querySelectorAll(".app-tab").forEach((t) => {
@@ -413,13 +444,33 @@ const App = (function () {
   function setBadges(b) {
     badgesAt = Date.now();
     badges = b || {};
+    const bell = document.getElementById("appBellCount");
+    if (bell) {
+      const n = badges.feed || 0;
+      bell.hidden = !n;
+      bell.textContent = n > 99 ? "99+" : String(n);
+      document.getElementById("appBell").setAttribute("aria-label", n ? `お知らせ(新着 ${n} 件)` : "お知らせ");
+    }
+    // ホーム画面に追加したアイコンにも未読の数を出す(対応している端末のみ)
+    const total = (badges.announcements || 0) + (badges.messages || 0) + (badges.inbox || 0);
+    try {
+      if (navigator.setAppBadge) { if (total) navigator.setAppBadge(total).catch(() => {}); else navigator.clearAppBadge().catch(() => {}); }
+    } catch { /* noop */ }
     try { sessionStorage.setItem("btex5-badges", JSON.stringify({ at: Date.now(), badges })); } catch { /* noop */ }
     renderTabs();
   }
 
   async function start() {
+    // QR などで開いたリンク(#events?checkin=… など)を、ログインをはさんでも失わないようにする
+    const PENDING = "btex5-app-pending-hash";
+    try { if (location.hash.length > 1) sessionStorage.setItem(PENDING, location.hash); } catch { /* noop */ }
     const data = await AuthSession.guardPage({ next: "home" });
     if (!data) return;
+    try {
+      const pending = sessionStorage.getItem(PENDING);
+      sessionStorage.removeItem(PENDING);
+      if (pending && location.hash.length <= 1) history.replaceState(null, "", pending);
+    } catch { /* noop */ }
     session = data;
     const res = await AuthApi.listReferralMembers(AuthSession.getToken());
     members = res.success ? res.data.members : [];
@@ -442,7 +493,7 @@ const App = (function () {
 
   return {
     h, append, fill, fmtDate, fmtDateLong, fmtTime, yen, daysUntil, todayKey, chip, avatar, richText, toast, copyText, shareText,
-    icon, draft, clearDraft, calendarButtons, googleCalUrl, api, openSheet, field, btn, segmented, empty, section, memberPicker,
+    icon, qrImage, draft, clearDraft, calendarButtons, googleCalUrl, api, openSheet, doneSheet, field, btn, segmented, empty, section, memberPicker,
     AREA_LABELS, REF_STATUS, VISITOR_STATUS,
     views, go, route, setBadges, start,
     get members() { return members; },

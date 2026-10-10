@@ -20,6 +20,7 @@
         menu("../profile/", "プロフィール・1on1シートを編集", "紹介されるための情報。入れるほど紹介が届きます"),
         menu(me ? `../referral/#member=${encodeURIComponent(me.id)}` : "../referral/", "ほかのメンバーからの見え方", "早見表のあなたのカード"),
         menu("#me/password", s.hasPassword ? "パスワードを変える" : "パスワードを決める", s.hasPassword ? "" : "共通パスコードの代わりに、あなた専用のパスワードで入れます", !s.hasPassword),
+        menu("#me/qr", "あなたのプロフィールの QR コード", "交流会でメンバーに読み取ってもらうと、あなたの詳細が開きます"),
         menu("#me/feedback", "バグ・要望を送る", "使いにくいところ・ほしい機能を運営へ"),
         menu("../teams/", "全体分析", "仕事が回る業種・紹介の流れ"),
         menu("#me/install", "スマホのホーム画面に追加", "アプリのようにすぐ開けます"),
@@ -49,6 +50,14 @@
       if (parts[0] === "password") passwordForm();
       if (parts[0] === "feedback") feedbackSheet();
       if (parts[0] === "install") installSheet();
+      if (parts[0] === "qr") {
+        const url = App.siteUrl(`../referral/#member=${encodeURIComponent(s.memberId)}`);
+        App.openSheet("あなたのプロフィールの QR コード", (body) => {
+          body.append(h("div", { class: "qr-box" }, App.qrImage(url, "プロフィールの QR コード"),
+            h("p", null, "BT-EX5 のメンバーがスマホのカメラで読み取ると、早見表であなたの詳細が開きます(メンバーだけが見られます)。")),
+            h("div", { class: "app-btn-row" }, App.btn("リンクをコピー", () => App.copyText(url), "ghost")));
+        }, { noFocus: true, onClose: () => { if (location.hash === "#me/qr") history.replaceState(null, "", "#me"); } });
+      }
     },
   };
 
@@ -214,7 +223,7 @@
       notActive.length ? h("div", { class: "app-cta-row" }, App.btn(`まだの ${notActive.length} 名に招待コードをまとめて発行`, async () => {
         if (!confirm(`${notActive.length} 名分の招待コードを発行します。招待中の人のコードは新しいものに変わります。`)) return;
         const r = await App.api("adminIssueInvite", { memberIds: notActive.map((a) => a.memberId) });
-        if (r) { showInvites(r.invites); App.route(); }
+        if (r) { await App.route(); showInvites(r.invites); }
       }, "primary wide")) : null,
       h("ul", { class: "app-list acc-list" }, d.accounts.map((a) => {
         const st = ACCOUNT_STATUS[a.status];
@@ -227,7 +236,7 @@
             h("div", { class: "acc-menu" },
               App.btn(a.status === "active" ? "パスワード再設定のコードを発行" : "招待コードを発行", async () => {
                 const r = await App.api("adminIssueInvite", { memberId: a.memberId });
-                if (r) { showInvites(r.invites); App.route(); }
+                if (r) { await App.route(); showInvites(r.invites); }
               }, "small"),
               a.locked ? App.btn("ロックを解除", async () => { if (await App.api("adminResetAccount", { memberId: a.memberId })) { App.toast("解除しました"); App.route(); } }, "ghost small") : null,
               a.status === "active" ? App.btn("すべての端末からログアウトさせる", async () => {

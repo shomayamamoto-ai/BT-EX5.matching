@@ -124,8 +124,16 @@
         if (!res.success) { err.textContent = res.error.userMessage; return; }
         App.clearDraft("ref-prospect", "ref-contact", "ref-memo");
         close();
-        App.toast(`${App.memberById(to).name}さんに紹介を記録しました`);
-        App.go("log/ref");
+        const toName = App.memberById(to).name;
+        await App.go("log/ref");
+        App.doneSheet("紹介を記録しました", `${toName}さんのホームに届きました。LINE などでもひと言送っておくと確実です。`, [
+          `${toName}さん`,
+          `${prospect.value.trim()}様をご紹介させていただきました。`,
+          memo.value.trim() ? `ご相談の内容:${memo.value.trim()}` : "",
+          contact.value.trim() ? `連絡先:${contact.value.trim()}` : "",
+          "会員サイトの「記録」にも入れています。どうぞよろしくお願いします!",
+          App.siteUrl("#log/ref"),
+        ].filter(Boolean).join("\n"));
       } },
       App.field("紹介先のメンバー", picker),
       App.field("紹介した方", prospect, "会社名・お名前"),
@@ -185,8 +193,14 @@
         if (!d || d.success === false) { err.textContent = d ? d.error.userMessage : "送れませんでした。"; return; }
         App.clearDraft("thanks-msg");
         close();
-        App.toast("ありがとうを送りました");
-        if (opt.onDone) opt.onDone(d.thanks); else App.route();
+        if (opt.onDone) opt.onDone(d.thanks); else await App.route();
+        const t = d.thanks;
+        App.doneSheet("ありがとうを送りました", `${t.toName}さんに届きました。LINE などでも直接お礼を伝えましょう。`, [
+          `${t.toName}さん`,
+          r ? `ご紹介いただいた${r.prospect ? `${r.prospect}様の` : ""}件、成約しました!` : "おかげさまで、お仕事につながりました!",
+          t.message || "本当にありがとうございます。",
+          "これからもよろしくお願いします。",
+        ].join("\n"));
       } },
       r ? h("p", { class: "app-lead" }, `${r.fromName}さんからの紹介(${r.prospect || "お相手"})が成約になったことを記録し、お礼を送ります。`) : App.field("お礼を送る相手(紹介してくれた人)", picker),
       App.field("成約金額(円)", amount, "わかる範囲で。0円でも送れます"), shown,

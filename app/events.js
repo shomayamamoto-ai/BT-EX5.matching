@@ -12,6 +12,13 @@
     autoRefresh: (parts) => parts[0] !== "manage",
     async render(el, parts, params) {
       if (parts[0] === "manage" && parts[1]) return renderManage(el, parts[1]);
+      // 会場の QR コードで開いたとき(#events?checkin=1234): そのまま出席にする
+      const qrCode = (params.get("checkin") || "").replace(/\D/g, "");
+      if (qrCode.length === 4) {
+        history.replaceState(null, "", "#events");
+        const r = await App.api("checkIn", { code: qrCode });
+        if (r) App.toast(`${r.event.title} に出席しました`);
+      }
       const d = await App.api("listEvents");
       if (!d) return;
       const upcoming = d.events.filter((e) => !e.past);
@@ -21,8 +28,9 @@
       const open = upcoming.some((e) => e.checkInOpen && !e.attended);
       el.append(h("section", { class: `checkin-box${open ? " is-open" : ""}` },
         h("h2", null, open ? "受付中:出席コードを入れてください" : "出席コード"),
-        h("p", null, "会場で案内される4桁の数字を入れると、出席が記録されます。"),
-        App.checkInForm()));
+        h("p", null, "会場の QR コードをスマホのカメラで読み取るか、案内される4桁の数字を入れると、出席が記録されます。"),
+        App.checkInForm(),
+        past.length ? h("p", { class: "checkin-rate" }, `あなたの出席率(最近 ${past.length} 回):${Math.round((past.filter((e) => e.attended).length / past.length) * 100)}%(${past.filter((e) => e.attended).length}回出席)`) : null));
 
       if (App.isAdmin()) el.append(h("div", { class: "app-cta-row" }, App.btn("＋ 定例会を作る(管理者)", () => eventForm(null), "ghost wide")));
 
@@ -98,6 +106,8 @@
             h("div", { class: "app-btn-row" },
               App.btn("送る(共有)", () => App.shareText(text, "BT-EX5 定例会のご招待"), "primary"),
               App.btn("コピー", () => App.copyText(text), "ghost")),
+            h("details", { class: "qr-details" }, h("summary", null, "目の前の相手に QR コードで見せる"),
+              h("div", { class: "qr-box" }, App.qrImage(url, "ビジター招待の QR コード"), h("p", null, "相手のスマホのカメラで読み取ると、申し込みのページが開きます。"))),
             App.btn("閉じる", () => { close(); App.route(); }, "ghost wide"));
         } }, App.field("相手のお名前(任意)", name), make, result));
     });
@@ -176,7 +186,8 @@
     function drawCode(code) {
       App.fill(codeBox, 
         code ? h("p", { class: "code-big", "aria-label": `出席コード ${code}` }, code) : h("p", { class: "code-off" }, "受付は閉じています"),
-        h("p", { class: "app-field-hint" }, code ? "この数字を会場で見せてください(当日だけ有効)。スマホを横にすると大きく見せられます。" : "当日、受付を開くと4桁の出席コードが出ます。"),
+        code ? App.qrImage(App.siteUrl(`#events?checkin=${code}`), "出席の QR コード") : null,
+        h("p", { class: "app-field-hint" }, code ? "数字か QR コードを会場で見せてください(当日だけ有効)。QR をスマホのカメラで読み取ると、そのまま出席になります。" : "当日、受付を開くと4桁の出席コードと QR コードが出ます。"),
         h("div", { class: "app-btn-row" },
           code ? App.btn("受付を閉じる", async () => { const r = await App.api("adminOpenCheckIn", { id, open: false }); if (r) drawCode(""); }, "ghost")
             : App.btn("受付を開く(コードを出す)", async () => { const r = await App.api("adminOpenCheckIn", { id, open: true }); if (r) drawCode(r.code); }, "primary"),

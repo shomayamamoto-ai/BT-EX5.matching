@@ -1828,7 +1828,7 @@ var BtexServerCore = (function () {
 // auth/server-core.js に registerModule で足す操作のまとまり。
 // ブラウザ内のデモと共有サーバー(GAS)の両方で同じコードが動く(同期処理のみ)。
 //
-//   ホーム         getHome(未読・次の定例会・今月の数字をまとめて返す)
+//   ホーム         getHome(未読・次の定例会・今月の数字をまとめて返す)/ getActivity(自分に関係する出来事)
 //   定例会         listEvents / rsvpEvent / checkIn / adminSaveEvent / adminDeleteEvent / adminOpenCheckIn / adminEventDetail / adminMarkAttendance
 //   ビジター招待   createVisitorInvite / listMyVisitors / updateVisitor / visitorInfo(公開)/ visitorApply(公開)
 //   紹介・マイル   listMyReferrals / reportThanks / deleteThanks / getRankings
@@ -2598,6 +2598,57 @@ var BtexServerCore = (function () {
       }
 
       // ============================================
+      // お知らせ(自分に関係する出来事)。保存はせず、記録から毎回組み立てる
+      // ============================================
+      function activityItems(db, me) {
+        var items = [];
+        db.referralLogs.forEach(function (l) {
+          var giver = memberIdOfUser(db, l.fromUserId);
+          if (l.toMemberId === me && giver !== me) {
+            items.push({ type: "refIn", at: l.at, who: giver, whoName: nameOf(db, giver), text: l.prospect || "", link: "log/ref" });
+          }
+          if (giver === me && l.statusAt && l.status !== "new") {
+            items.push({ type: "refStatus", at: l.statusAt, who: l.toMemberId, whoName: nameOf(db, l.toMemberId), status: l.status, text: l.prospect || "", link: "log/ref" });
+          }
+        });
+        db.thanks.forEach(function (t) {
+          if (t.to === me) items.push({ type: "thanks", at: t.at, who: t.from, whoName: nameOf(db, t.from), amount: t.amount, text: t.message || "", link: "log/miles" });
+        });
+        db.posts.forEach(function (p) {
+          (p.comments || []).forEach(function (cm) {
+            if (cm.by === me) return;
+            var mine = p.by === me;
+            var joined = !mine && (p.comments || []).some(function (x) { return x.by === me && x.at < cm.at; });
+            if (mine || joined) items.push({ type: mine ? "comment" : "reply", at: cm.at, who: cm.by, whoName: nameOf(db, cm.by), text: cm.body.slice(0, 60), link: "talk/board" });
+          });
+        });
+        db.oneOnOnes.forEach(function (o) {
+          if ((o.a === me || o.b === me) && o.by !== me) items.push({ type: "oneNew", at: o.at, who: o.by, whoName: nameOf(db, o.by), date: o.date, link: "log/1on1" });
+        });
+        db.visitors.forEach(function (v) {
+          if (v.by === me && v.appliedAt) items.push({ type: "visitor", at: v.appliedAt, text: v.name, link: "events" });
+        });
+        db.announcements.forEach(function (a) {
+          items.push({ type: "ann", at: a.at, text: a.title, link: "talk/news?open=" + a.id });
+        });
+        db.events.forEach(function (e) {
+          if (e.createdAt && e.date >= today()) items.push({ type: "event", at: e.createdAt, text: e.title, date: e.date, link: "events" });
+        });
+        var from = c.nowMs() - 60 * DAY;
+        return items.filter(function (x) { return x.at >= from; }).sort(function (a, b) { return b.at - a.at; });
+      }
+
+      function getActivity(body) {
+        var w = who(body);
+        if (w.error) return w.error;
+        var s = seen(w.db, w.id);
+        var lastSeen = s.feed || 0;
+        var items = activityItems(w.db, w.id).slice(0, 50).map(function (x) { x.isNew = x.at > lastSeen; return x; });
+        if (body.markSeen !== false) { s.feed = c.nowMs(); c.saveDb(w.db); }
+        return c.ok({ items: items });
+      }
+
+      // ============================================
       // ホーム: 1回の通信で、やること・未読・予定・数字をまとめて返す
       // ============================================
       function getHome(body) {
@@ -2659,6 +2710,7 @@ var BtexServerCore = (function () {
             board: newPosts,
             inbox: inbox.filter(function (l) { return l.status === "new"; }).length,
             rsvp: upcoming.filter(function (e) { return !(e.rsvps || {})[w.id]; }).length,
+            feed: activityItems(db, w.id).filter(function (x) { return x.at > (seen(db, w.id).feed || 0); }).length,
           },
           stats: {
             given: myLogs.filter(function (l) { return monthMs(l.at); }).length,
@@ -2680,7 +2732,7 @@ var BtexServerCore = (function () {
       return {
         migrate: migrate,
         actions: {
-          getHome: getHome,
+          getHome: getHome, getActivity: getActivity,
           listEvents: listEvents, rsvpEvent: rsvpEvent, checkIn: checkIn,
           adminSaveEvent: adminSaveEvent, adminDeleteEvent: adminDeleteEvent, adminOpenCheckIn: adminOpenCheckIn,
           adminEventDetail: adminEventDetail, adminMarkAttendance: adminMarkAttendance,
