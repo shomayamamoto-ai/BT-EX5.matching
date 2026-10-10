@@ -345,7 +345,7 @@ a.app-row:active, button.app-row:active { background: #fff3ea; }
 .app-field-label { font-size: 13px; font-weight: 800; color: var(--text); }
 .app-field-hint { font-size: 12px; color: var(--text-light); }
 .app-form input[type="text"], .app-form input[type="search"], .app-form input[type="date"], .app-form input[type="time"],
-.app-form input[type="url"], .app-form input[type="password"], .app-form select, .app-form textarea, .app-picker input {
+.app-form input[type="url"], .app-form input[type="password"], .app-form input[type="email"], .app-form select, .app-form textarea, .app-picker input {
   width: 100%; min-height: 46px; padding: 10px 12px; border: 1.5px solid var(--line-strong); border-radius: 12px; background: #fff;
   font-size: 16px; /* iPhone で拡大されないよう 16px */
 }
@@ -534,3 +534,37 @@ html.big-text body { zoom: 1.15; }
 .att-row { flex-wrap: wrap; }
 .att-toggle { flex: 1 1 100%; }
 .att-toggle button { min-height: 34px; font-size: 12.5px; }
+
+/* ---------- ビジター招待 ---------- */
+.inv-rules { margin: 14px 0; padding: 14px 16px; border-radius: var(--radius); background: #fff8e6; border: 1.5px solid #f2d27a; color: #6b4e00; font-size: 13.5px; }
+.inv-rules summary { cursor: pointer; font-weight: 900; font-size: 15px; color: #8a6400; }
+.inv-rules h3 { font-size: 13.5px; margin: 12px 0 4px; color: #9a6b1f; }
+.inv-rules ul { padding-left: 1.2em; }
+.inv-rules li { margin: 3px 0; }
+.inv-rules p { margin-top: 8px; }
+.inv-why { font-size: 12.5px; }
+.inv-tip { font-weight: 800; }
+.inv-unit { font-size: 13px; color: var(--text-sub); }
+.inv-sub { font-size: 13px; font-weight: 800; margin-top: 4px; }
+.inv-result:empty { display: none; }
+.inv-result { margin-top: 6px; padding: 14px; border-radius: var(--radius); background: #fff; border: 1.5px solid var(--good); }
+.inv-done { color: var(--good); font-weight: 900; }
+.inv-form .app-toggle { flex-direction: column; }
+@media (min-width: 520px) { .inv-form .app-toggle { flex-direction: row; } }
+.tpl-list { display: grid; gap: 14px; }
+.tpl-group-title { font-size: 12.5px; font-weight: 800; color: var(--text-light); margin-bottom: 6px; }
+.tpl-item { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 10px 12px; }
+.tpl-item + .tpl-item { margin-top: 8px; }
+.tpl-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+.tpl-head b { font-size: 14px; }
+.tpl-btns { display: flex; gap: 6px; }
+.tpl-preview { white-space: pre-wrap; font-family: inherit; font-size: 13px; background: #fbf5f0; border-radius: 10px; padding: 10px; margin-top: 8px; }
+.inv-date { font-size: 13px; color: var(--text-light); font-weight: 700; }
+.inv-name { display: flex; align-items: center; gap: 8px; margin: 2px 0; }
+.inv-name b { font-size: 16px; }
+.inv-company { font-size: 13px; color: var(--text-sub); }
+.inv-event { font-size: 13px; margin: 6px 0; color: var(--text-sub); }
+.inv-event b { color: var(--text); }
+.inv-detail { margin-top: 8px; }
+.inv-detail summary { cursor: pointer; font-weight: 800; font-size: 13px; }
+.ref-card.is-cancelled { opacity: 0.6; }

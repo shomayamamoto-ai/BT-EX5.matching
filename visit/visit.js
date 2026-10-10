@@ -6,6 +6,7 @@
   "use strict";
   const $ = (id) => document.getElementById(id);
   const token = new URLSearchParams(location.search).get("t") || "";
+  let isLink = false;
   const WEEK = ["日", "月", "火", "水", "木", "金", "土"];
   const AREA = { niigata: "新潟", tokyo: "東京", online: "オンライン", other: "" };
 
@@ -36,6 +37,10 @@
     $("visit-body").textContent = e.body || "";
     if (e.url) { $("visit-url").href = e.url; $("visit-url").hidden = false; }
     if (d.name) $("v-name").value = d.name;
+    if (d.company) $("v-company").value = d.company;
+    if (d.inviteMessage) { $("visit-msg").textContent = d.inviteMessage; $("visit-msg").hidden = false; }
+    isLink = d.kind === "link";
+    $("v-link").hidden = !isLink;
     $("visit-status").hidden = true;
     $("visit-content").hidden = false;
     if (d.past) {
@@ -64,6 +69,7 @@
     const res = await post("visitorApply", {
       name, company: $("v-company").value.trim(), business: $("v-business").value.trim(),
       contact: $("v-contact").value.trim(), message: $("v-message").value.trim(),
+      linkTeam: isLink ? $("v-team").value.trim() : "", linkUp: isLink ? $("v-up").value.trim() : "", linkAdvance: isLink ? $("v-advance").value.trim() : "",
     });
     $("visit-submit").disabled = false;
     if (!res.success) { $("visit-message").textContent = res.error.userMessage; return; }

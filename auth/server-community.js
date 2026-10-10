@@ -24,7 +24,8 @@
   var DAY = 24 * 60 * 60 * 1000;
   var BOARD_CATS = ["紹介依頼", "イベント・募集", "成約・お礼", "質問・相談", "雑談"];
   var ANNOUNCE_CATS = ["お知らせ", "定例会", "重要", "その他"];
-  var VISITOR_STATUSES = ["invited", "applied", "attended", "joined", "declined"];
+  // invited 招待中 / applied 参加申込 / confirmed 参加確定 / attended 参加済み / joined 入会 / declined キャンセル
+  var VISITOR_STATUSES = ["invited", "applied", "confirmed", "attended", "joined", "declined"];
   var FEEDBACK_KINDS = ["bug", "idea", "other"];
   var FEEDBACK_STATUSES = ["new", "doing", "done"];
   var LIMITS = { posts: 400, comments: 100, msgs: 500, threads: 2000, announcements: 300, events: 300, feedback: 500 };
@@ -506,6 +507,7 @@
         var out = {
           id: v.id, eventId: v.eventId, name: v.name, company: v.company, business: v.business, message: v.message,
           status: v.status, at: v.at, appliedAt: v.appliedAt || 0, by: v.by, byName: nameOf(db, v.by), token: v.token, kind: v.kind || "general",
+          inviteMessage: v.inviteMessage || "", linkTeam: v.linkTeam || "", linkUp: v.linkUp || "", linkAdvance: v.linkAdvance || "",
         };
         var e = c.find(db.events, function (x) { return x.id === v.eventId; });
         out.eventTitle = e ? e.title : "";
@@ -521,8 +523,11 @@
         if (!e || e.date < today()) return c.fail("NOT_FOUND");
         var v = {
           id: newId("v_"), token: c.randomToken().slice(0, 22), eventId: e.id, by: w.id,
-          name: c.cleanStr(body.name, 40), company: "", business: "", contact: "", message: "",
+          name: c.cleanStr(body.name, 40), company: c.cleanStr(body.company, 80), business: "", contact: c.cleanStr(body.contact, 120), message: "",
+          // 招待する人から相手へのひとこと(申込ページに出す)
+          inviteMessage: cleanText(body.inviteMessage, 500),
           note: c.cleanStr(body.note, 200), status: "invited", at: c.nowMs(),
+          // general 一般の方(LINK 以外) / link LINK BT 会員の方(申込で所属チーム・アップ・アドバンスを聞く)
           kind: oneOf(body.kind, ["general", "link"], "general"),
         };
         w.db.visitors.push(v);
@@ -534,7 +539,7 @@
         var w = who(body);
         if (w.error) return w.error;
         var list = w.db.visitors
-          .filter(function (v) { return w.isAdmin || v.by === w.id; })
+          .filter(function (v) { return v.by === w.id || (w.isAdmin && !body.mine); })
           .slice().reverse().slice(0, 200)
           .map(function (v) { return visitorView(w.db, v, true); });
         return c.ok({ visitors: list });
@@ -565,6 +570,9 @@
           event: { title: e.title, date: e.date, start: e.start, end: e.end, place: e.place, area: e.area, fee: e.fee, body: e.body, url: e.url || "" },
           inviter: nameOf(db, v.by),
           name: v.name,
+          company: v.company || "",
+          kind: v.kind || "general",
+          inviteMessage: v.inviteMessage || "",
           status: v.status,
           past: e.date < today(),
         });
@@ -583,6 +591,11 @@
         v.business = c.cleanStr(body.business, 300);
         v.contact = c.cleanStr(body.contact, 120);
         v.message = c.cleanStr(body.message, 300);
+        if (v.kind === "link") {
+          v.linkTeam = c.cleanStr(body.linkTeam, 60);
+          v.linkUp = c.cleanStr(body.linkUp, 40);
+          v.linkAdvance = c.cleanStr(body.linkAdvance, 40);
+        }
         if (v.status === "invited" || v.status === "declined") v.status = "applied";
         v.appliedAt = c.nowMs();
         c.saveDb(db);

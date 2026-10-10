@@ -51,7 +51,7 @@
             card.extra = (e) => h("div", { class: "ev-extra" },
               e.yesNames.length ? h("p", { class: "ev-names" }, `出席予定:${e.yesNames.join("、")}`) : null,
               h("div", { class: "ev-actions" },
-                App.btn("ビジターを招待", () => inviteForm(e), "small"),
+                App.btn("ビジターを招待", () => App.go(`invite?event=${e.id}`), "small"),
                 App.isAdmin() ? App.btn("管理", () => App.go(`events/manage/${e.id}`), "ghost small") : null));
             card.redraw();
             return card;
@@ -69,59 +69,9 @@
               App.isAdmin() ? App.btn("管理", () => App.go(`events/manage/${e.id}`), "ghost small") : null))))));
       }
 
-      if (params.has("invite")) {
-        const target = upcoming[0];
-        if (target) inviteForm(target); else App.toast("招待できる定例会がまだありません");
-      }
+      if (params.has("invite")) App.go("invite");
     },
   };
-
-  // ---------- ビジター招待 ----------
-  function inviteText(url, ev, guest) {
-    return [
-      `${guest ? `${guest}様\n` : ""}BT-EX5 の定例会にご招待します。`,
-      `新潟・東京の経営者が集まり、お互いに仕事を紹介し合う会です。`,
-      ``,
-      `■ ${ev.title}`,
-      `日時:${App.fmtDateLong(ev.date)} ${ev.start || ""}${ev.end ? `〜${ev.end}` : ""}`,
-      ev.place ? `場所:${ev.place}` : "",
-      ev.fee ? `参加費:${ev.fee}` : "",
-      ``,
-      `参加のお申し込みはこちら(1分で終わります)`,
-      url,
-    ].filter((x, i, a) => x !== "" || a[i - 1] !== "").join("\n");
-  }
-
-  function inviteForm(ev) {
-    App.openSheet("ビジターを招待", (body, close) => {
-      const name = h("input", { type: "text", maxlength: "40", placeholder: "例:佐藤様(あとで相手が入力するので空でも可)" });
-      const kind = App.toggle([{ id: "general", label: "一般" }, { id: "link", label: "LINK会員(ほかのユニット)" }], "general");
-      const result = h("div");
-      const make = h("button", { type: "submit", class: "app-btn primary wide" }, "招待URLを作る");
-      body.append(h("p", { class: "app-lead" }, `${ev.title}(${App.fmtDate(ev.date)})に招待します。URL を送るだけで、相手はスマホから申し込めます。申込状況はここで見られます。`),
-        h("form", { class: "app-form", onsubmit: async (e) => {
-          e.preventDefault();
-          make.disabled = true;
-          const d = await App.api("createVisitorInvite", { eventId: ev.id, name: name.value.trim(), kind: kind.getValue() });
-          make.disabled = false;
-          if (!d) return;
-          const url = App.siteUrl(`../visit/?t=${encodeURIComponent(d.visitor.token)}`);
-          const text = inviteText(url, ev, name.value.trim());
-          make.hidden = true;
-          const box = h("textarea", { rows: "9", readonly: true, class: "invite-text" });
-          box.value = text;
-          App.fill(result, 
-            h("p", { class: "app-field-label" }, "この文を LINE などで送ってください"),
-            box,
-            h("div", { class: "app-btn-row" },
-              App.btn("送る(共有)", () => App.shareText(text, "BT-EX5 定例会のご招待"), "primary"),
-              App.btn("コピー", () => App.copyText(text), "ghost")),
-            h("details", { class: "qr-details" }, h("summary", null, "目の前の相手に QR コードで見せる"),
-              h("div", { class: "qr-box" }, App.qrImage(url, "ビジター招待の QR コード"), h("p", null, "相手のスマホのカメラで読み取ると、申し込みのページが開きます。"))),
-            App.btn("閉じる", () => { close(); App.route(); }, "ghost wide"));
-        } }, App.field("相手のお名前(任意)", name), App.field("種別", kind), make, result));
-    });
-  }
 
   async function renderVisitors(el) {
     const d = await App.api("listMyVisitors", {}, { quiet: true });
@@ -375,7 +325,7 @@
     el.append(card);
 
     el.append(h("div", { class: "app-btn-row" },
-      ev.past ? null : App.btn("ビジターを招待", () => inviteForm(ev), "small"),
+      ev.past ? null : App.btn("ビジターを招待", () => App.go(`invite?event=${ev.id}`), "small"),
       d.isAdmin ? App.btn("受付・出欠の管理", () => App.go(`events/manage/${ev.id}`), "ghost small") : null,
       d.isAdmin ? App.btn("編集", () => eventForm(ev), "ghost small") : null));
 

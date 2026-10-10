@@ -17,3 +17,4 @@
 .visit-done { text-align: center; padding: 18px; background: #e8f4ee; color: #2f7a5b; border-radius: 14px; }
 .visit-done p { font-size: 13.5px; margin-top: 6px; color: #3a2b25; }
 [hidden] { display: none !important; }
+.visit-msg { white-space: pre-wrap; margin: 10px 0 14px; padding: 12px 14px; border-radius: 12px; background: #fff3ea; font-size: 14px; }

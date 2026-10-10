@@ -91,9 +91,10 @@ const App = (function () {
   const VISITOR_STATUS = {
     invited: { label: "招待中", tone: "mute" },
     applied: { label: "参加申込", tone: "info" },
+    confirmed: { label: "参加確定", tone: "good" },
     attended: { label: "参加済み", tone: "good" },
     joined: { label: "入会", tone: "good" },
-    declined: { label: "見送り", tone: "mute" },
+    declined: { label: "キャンセル", tone: "mute" },
   };
   function chip(label, tone) { return h("span", { class: `app-chip tone-${tone || "mute"}` }, label); }
   function initial(name) { return String(name || "?").replace(/\s/g, "").slice(0, 1); }
