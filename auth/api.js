@@ -112,8 +112,12 @@ const AuthApi = (function () {
   }
 
   // ---------- 会員アカウント ----------
-  function accountLogin(name, password, remember) {
-    return post("accountLogin", { name, password, remember: remember === true });
+  // memberId(名簿から選んだ人)かお名前のどちらかで入る
+  function accountLogin(nameOrId, password, remember, byId) {
+    return post("accountLogin", byId ? { memberId: nameOrId, password, remember: remember === true } : { name: nameOrId, password, remember: remember === true });
+  }
+  function loginMembers() {
+    return post("loginMembers", {});
   }
   function inviteInfo(code) {
     return post("inviteInfo", { code });
@@ -134,7 +138,7 @@ const AuthApi = (function () {
 
   return {
     passcodeLogin, verifySession, logout,
-    accountLogin, inviteInfo, activateAccount, loginOptions, call,
+    accountLogin, loginMembers, inviteInfo, activateAccount, loginOptions, call,
     listReferralMembers, updateMyProfile,
     adminSaveReferralMember, adminDeleteReferralMember, adminImportReferralMembers,
     recordReferral, deleteReferral, updateReferralStatus, getReferralStats,

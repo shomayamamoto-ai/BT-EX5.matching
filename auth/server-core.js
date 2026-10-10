@@ -559,13 +559,53 @@ var BtexServerCore = (function () {
       return issueSession(db, user, { remember: body.remember === true, userAgent: body.userAgent, via: "account" });
     }
 
+    // ログイン画面の「お名前」の選択肢(名簿の名前だけ。名簿は早見表と同じもの)
+    function loginMembers() {
+      var db = ensureDb();
+      return ok({
+        members: (db.referralMembers || []).map(function (m) { return { id: m.id, name: m.name }; }),
+        memberPasscode: db.settings.memberPasscode !== false,
+      });
+    }
+
+    // お名前(名簿から選ぶ。memberId)+ パスワード。
+    // まだパスワードを決めていない人は、移行期間のあいだ共通パスコードでも入れる
     function accountLogin(body) {
       var db = ensureDb();
-      var key = normalizeName(body.name);
       var password = String(body.password || "");
+      var memberId = cleanStr(body.memberId, 40);
+      if (memberId) {
+        var mem = find(db.referralMembers || [], function (m) { return m.id === memberId; });
+        if (!mem || !password) return fail("ACCOUNT_FAILED");
+        var u0 = find(db.users, function (u) { return u.memberId === mem.id; });
+        if (!u0 || !u0.pw) {
+          if (db.passcodeGuard.lockedUntil > nowMs()) return fail("LOCKED");
+          var role = db.settings.memberPasscode !== false ? matchPasscode(password) : null;
+          if (role !== "member" && role !== "admin") {
+            db.passcodeGuard.failures += 1;
+            if (db.passcodeGuard.failures >= LOGIN_FAILURE_LIMIT) {
+              db.passcodeGuard.lockedUntil = nowMs() + LOCK_DURATION_MINUTES * 60 * 1000;
+              db.passcodeGuard.failures = 0;
+              saveDb(db);
+              return fail("LOCKED");
+            }
+            saveDb(db);
+            return fail("ACCOUNT_FAILED", db.settings.memberPasscode !== false
+              ? "パスワード(まだ決めていない方は共通パスコード)が正しくありません。"
+              : "まだパスワードが決まっていません。運営者から届く招待コードで、パスワードを決めてください。");
+          }
+          db.passcodeGuard.failures = 0;
+          var user0 = userForMember(db, mem);
+          // ここは会員としてのログイン(管理者用パスコードでも、管理者にはしない)
+          return issueSession(db, user0, { remember: body.remember === true, userAgent: body.userAgent, via: "passcode" });
+        }
+        body.name = mem.name;
+        body._only = mem.id;
+      }
+      var key = normalizeName(body.name);
       if (!key || !password) return fail("ACCOUNT_FAILED");
       var candidates = (db.referralMembers || [])
-        .filter(function (m) { return normalizeName(m.name) === key; })
+        .filter(function (m) { return normalizeName(m.name) === key && (!body._only || m.id === body._only); })
         .map(function (m) { return find(db.users, function (u) { return u.memberId === m.id && u.pw; }); })
         .filter(Boolean);
       if (!candidates.length) return fail("ACCOUNT_FAILED");
@@ -1029,6 +1069,7 @@ var BtexServerCore = (function () {
       updateReferralStatus: updateReferralStatus,
       getReferralStats: getReferralStats,
       loginOptions: loginOptions,
+      loginMembers: loginMembers,
       inviteInfo: inviteInfo,
       activateAccount: activateAccount,
       accountLogin: accountLogin,

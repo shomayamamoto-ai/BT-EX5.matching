@@ -463,6 +463,7 @@ const App = (function () {
     }));
     const tabId = views[current.view] ? views[current.view].tab || current.view : "";
     nav.querySelectorAll(".app-tab").forEach((t) => t.classList.toggle("is-on", t.dataset.tab === tabId));
+    if (typeof TabDock !== "undefined") TabDock.attach(nav);
   }
   function icon(d) {
     const NS = "http://www.w3.org/2000/svg";

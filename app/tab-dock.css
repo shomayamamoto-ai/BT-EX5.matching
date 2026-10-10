@@ -1,0 +1,78 @@
+/* ============================================
+   メニュー(タブ)の位置: 上・左・右(下はふつうの表示)
+   左右は縦に並べる。本文がメニューに隠れないよう、余白も合わせる
+   ============================================ */
+:root { --dock-w: 78px; --dock-top: calc(60px + env(safe-area-inset-top, 0px)); }
+
+.tab-grip {
+  position: absolute; top: 50%; right: 6px; transform: translateY(-50%);
+  width: 22px; height: 34px; border: none; border-radius: 8px; background: transparent;
+  color: #c4ad9f; cursor: grab; display: flex; align-items: center; justify-content: center; padding: 0;
+  touch-action: none;
+}
+.tab-grip svg { width: 12px; height: 12px; fill: currentColor; }
+.tab-grip:hover { background: #f6e9de; color: #a18a7e; }
+.app-tabs { touch-action: none; }
+/* 上下のときは、つまみの分だけ右をあける */
+body:not(.tabs-left):not(.tabs-right) .app-tabs { padding-right: 30px; }
+.app-tabs.is-dragging { cursor: grabbing; opacity: 0.92; box-shadow: 0 16px 40px rgba(60, 30, 10, 0.25); transition: none; }
+.app-tabs.is-dragging .app-tab { pointer-events: none; }
+/* 位置を変えたときだけ動かす(ページを開いたときは、はじめから保存した位置に出す) */
+body.dock-ready .app-tabs:not(.is-dragging) { transition: top 0.2s, left 0.2s, right 0.2s, bottom 0.2s; }
+.app-tabs { -webkit-user-select: none; user-select: none; }
+body.dock-dragging { -webkit-user-select: none; user-select: none; cursor: grabbing; }
+
+/* ドラッグ中: 離したときに行く辺をうっすら示す */
+body[data-dock-preview]::after { content: ""; position: fixed; z-index: 44; background: rgba(244, 105, 75, 0.12); pointer-events: none; }
+body[data-dock-preview="top"]::after { left: 0; right: 0; top: 0; height: 90px; }
+body[data-dock-preview="bottom"]::after { left: 0; right: 0; bottom: 0; height: 90px; }
+body[data-dock-preview="left"]::after { left: 0; top: 0; bottom: 0; width: 100px; }
+body[data-dock-preview="right"]::after { right: 0; top: 0; bottom: 0; width: 100px; }
+
+/* ---------- 上 ---------- */
+body.tabs-top .app-tabs {
+  top: var(--dock-top); bottom: auto; height: 62px; padding-bottom: 0;
+  border-top: none; border-bottom: 1px solid #f3e2d4;
+}
+body.tabs-top .app-main { padding-top: 84px; padding-bottom: 30px; }
+body.tabs-top.has-app-tabs { padding-bottom: 0; padding-top: 70px; }
+body.tabs-top .app-footer { padding-bottom: 30px; }
+body.tabs-top .tab-grip { right: 6px; }
+
+/* ---------- 左右(縦に並べる) ---------- */
+body.tabs-left .app-tabs, body.tabs-right .app-tabs {
+  top: 50%; bottom: auto; transform: translateY(-50%);
+  width: var(--dock-w); height: auto; padding: 8px 0 30px;
+  grid-template-columns: 1fr; grid-auto-rows: 64px;
+  border: 1px solid #f3e2d4; border-radius: 20px;
+  box-shadow: 0 10px 30px rgba(60, 30, 10, 0.12);
+}
+body.tabs-left .app-tabs { left: 8px; right: auto; }
+body.tabs-right .app-tabs { right: 8px; left: auto; }
+body.tabs-left .tab-grip, body.tabs-right .tab-grip { top: auto; bottom: 4px; right: 50%; transform: translateX(50%); width: 34px; height: 22px; }
+body.tabs-left .app-tab .app-badge, body.tabs-right .app-tab .app-badge { top: 4px; left: calc(50% + 6px); }
+
+body.tabs-left .app-main, body.tabs-left .app-footer { padding-left: calc(var(--dock-w) + 22px); }
+body.tabs-right .app-main, body.tabs-right .app-footer { padding-right: calc(var(--dock-w) + 22px); }
+body.tabs-left .app-main, body.tabs-right .app-main { padding-bottom: 30px; }
+body.tabs-left .app-footer, body.tabs-right .app-footer { padding-bottom: 30px; }
+body.tabs-left.has-app-tabs { padding-bottom: 0; padding-left: calc(var(--dock-w) + 12px); }
+body.tabs-right.has-app-tabs { padding-bottom: 0; padding-right: calc(var(--dock-w) + 12px); }
+
+/* メニューが下にないときは、下に固定していたもの(保存ボタンなど)を下端へ戻す */
+body.tabs-top .prof-actions, body.tabs-left .prof-actions, body.tabs-right .prof-actions { bottom: 0 !important; }
+body.tabs-top .ref-to-top, body.tabs-left .ref-to-top, body.tabs-right .ref-to-top { bottom: 18px !important; }
+body.tabs-top .msg-form, body.tabs-left .msg-form, body.tabs-right .msg-form { bottom: 8px; }
+body.tabs-top .app-toast, body.tabs-left .app-toast, body.tabs-right .app-toast { bottom: 24px; }
+
+@media (min-width: 900px) {
+  /* パソコン: 上は中央に浮かせる */
+  body.tabs-top .app-tabs { left: 50%; right: auto; transform: translateX(-50%); width: 560px; top: calc(var(--dock-top) + 8px); border: 1px solid #f3e2d4; border-radius: 20px; }
+  body.tabs-left .app-tabs, body.tabs-right .app-tabs { transform: translateY(-50%); }
+  body.tabs-left .app-tabs { left: 14px; }
+  body.tabs-right .app-tabs { right: 14px; }
+}
+@media (max-width: 899px) {
+  :root { --dock-w: 64px; }
+  body.tabs-left .app-tab span, body.tabs-right .app-tab span { font-size: 10px; }
+}

@@ -387,3 +387,6 @@ a:hover > .brand-mark { transform: none; }
 .setpw-name { font-weight: 800; font-size: 16px; margin-bottom: var(--space-2); }
 .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 #login-name, #invite-code, #setpw-password2 { width: 100%; }
+.auth-admin-link { margin-top: 10px; text-align: center; font-size: 12px; }
+.auth-admin-link a { color: var(--text-light); }
+#login-member { width: 100%; }

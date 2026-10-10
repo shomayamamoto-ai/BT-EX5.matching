@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="referrer" content="no-referrer">
+  <title>運営者ログイン | BT-EX5</title>
+  <meta name="robots" content="noindex">
+  <link rel="icon" type="image/svg+xml" href="../assets/bt-ex5-mark.svg?v=202610100507">
+  <link rel="manifest" href="../manifest.webmanifest">
+  <link rel="apple-touch-icon" href="../assets/icon-180.png">
+  <meta name="theme-color" content="#1a0f0c">
+  <meta name="apple-mobile-web-app-title" content="BT-EX5">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Noto+Sans+JP:wght@400;700;900&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Noto+Sans+JP:wght@400;700;900&display=swap"></noscript>
+  <link rel="stylesheet" href="../auth/auth.css?v=202610100507">
+  <link rel="stylesheet" href="../opening/intro.css?v=202610100507">
+</head>
+<body>
+  <main class="auth-main">
+    <div class="auth-card">
+      <a href="../referral/" class="auth-logo">
+        <img class="brand-mark" src="../assets/bt-ex5-mark.svg?v=202610100507" alt="" width="40" height="40">
+        <span class="brand-word"><span class="brand-name">BT-<em>EX5</em></span><span class="brand-sub">新潟・東京 紹介者制コミュニティ</span></span>
+      </a>
+
+      <h1>運営者ログイン</h1>
+      <p class="auth-lead" id="login-lead">運営者用のパスコードを入力してください。</p>
+
+      <!-- 手順1: 運営者用パスコード -->
+      <form id="login-form" novalidate>
+        <div class="auth-field">
+          <label for="login-passcode">パスコード</label>
+          <div class="password-row">
+            <input type="password" id="login-passcode" name="passcode" autocomplete="off" autocapitalize="off" spellcheck="false" required>
+            <button type="button" class="password-toggle" data-toggle="login-passcode" aria-pressed="false" aria-label="表示する">表示</button>
+          </div>
+        </div>
+
+        <div class="remember-row">
+          <input type="checkbox" id="login-remember" name="remember">
+          <label for="login-remember">ログイン状態を保持する</label>
+          <span class="remember-note">(オフ:12時間 / オン:30日)</span>
+        </div>
+
+        <button type="submit" id="login-submit" class="auth-submit" aria-busy="false">次へ</button>
+      </form>
+
+      <!-- 手順2: 名前を選ぶ -->
+      <form id="member-form" novalidate hidden>
+        <div class="auth-field">
+          <label for="login-member">あなたのお名前</label>
+          <select id="login-member" name="member" required></select>
+        </div>
+        <p class="member-note">選んだお名前で、紹介の記録と実績が集計されます。</p>
+        <button type="submit" id="member-submit" class="auth-submit" aria-busy="false">はじめる</button>
+        <button type="button" id="member-back" class="auth-text-btn">パスコードを入れ直す</button>
+      </form>
+
+      <div id="login-message" class="auth-message"></div>
+
+      <p class="auth-help">名簿の管理・会員の招待・定例会の作成などを行う運営者のためのログインです。</p>
+      <p class="auth-admin-link"><a href="../login/">会員の方のログインはこちら</a></p>
+    </div>
+  </main>
+
+  <footer class="auth-footer">
+    <a href="../opening/">オープニングムービー</a><a href="../terms/">利用規約</a>
+    <p class="site-copy">© 2026 BT-EX5</p>
+    <p class="site-credit">Created by <a href="https://lumenium.net/?utm_source=bt-ex5&amp;utm_medium=referral&amp;utm_campaign=credit" target="_blank" rel="noopener">Shoma Yamamoto</a></p>
+    <a class="site-maker" href="https://lumenium.net/?utm_source=bt-ex5&amp;utm_medium=referral&amp;utm_campaign=footer_logo" target="_blank" rel="noopener"><img src="../assets/lumenium-logo.svg?v=202610100507" alt="Lumenium" width="115" height="24"><span>Webサイト・システム制作のご相談はこちら</span></a>
+  </footer>
+
+  <script src="../referral/data.js?v=202610100507"></script>
+  <script src="../auth/server-core.js?v=202610100507"></script>
+  <script src="../auth/server-community.js?v=202610100507"></script>
+  <script src="../auth/mock-server.js?v=202610100507"></script>
+  <script src="../auth/api.js?v=202610100507"></script>
+  <script src="../auth/session.js?v=202610100507"></script>
+  <script src="../auth/ui.js?v=202610100507"></script>
+  <script src="../auth/login.js?v=202610100507"></script>
+  <script src="../opening/intro.js?v=202610100507"></script>
+</body>
+</html>

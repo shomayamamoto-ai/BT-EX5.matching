@@ -54,6 +54,7 @@
       }
       return a;
     }));
+    if (typeof TabDock !== "undefined") TabDock.attach(nav);
   }
 
   function cached() {
