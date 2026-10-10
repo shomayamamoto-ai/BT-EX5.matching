@@ -681,3 +681,15 @@ html.big-text body { zoom: 1.15; }
 .one-ask .app-row { padding: 0; }
 .one-ask-btns { margin-top: 8px; }
 .one-ask-note { margin: 0 0 8px; padding: 10px 12px; border-radius: 12px; background: var(--warn-bg); color: var(--warn); font-size: 13px; font-weight: 700; }
+
+/* 検索での表示 */
+.st-search { margin: 10px 0 0; padding: 12px 14px; border: 1px solid var(--line); border-radius: 14px; background: var(--card); display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; }
+.st-search > span { font-size: 12.5px; color: var(--text-sub); }
+.st-search > b { font-size: 20px; }
+.st-search > b small { font-size: 12px; font-weight: 600; color: var(--text-sub); margin-left: 4px; }
+.st-search > a { flex-basis: 100%; font-size: 12.5px; font-weight: 700; }
+.dash-table tr.is-warn th, .dash-table tr.is-warn td { color: var(--warn); }
+.dash-hidden { margin-top: 10px; padding: 10px 12px; border-radius: 12px; background: var(--warn-bg); font-size: 13px; }
+.dash-hidden p { margin: 0 0 6px; }
+.dash-misses { margin-top: 10px; }
+.dash-misses summary { cursor: pointer; font-weight: 800; font-size: 13.5px; padding: 6px 0; }

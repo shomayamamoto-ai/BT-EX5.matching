@@ -105,19 +105,41 @@ const RefScoring = (function () {
     return { score: Math.round(Math.min(100, s)), raw: s, reasons, topicHits, keywordHits };
   }
 
+  // 日替わりの並び用(同じ日・同じ人は同じ値)
+  function dayHash(text) {
+    let h = 2166136261;
+    for (let i = 0; i < text.length; i++) { h ^= text.charCodeAt(i); h = Math.imul(h, 16777619); }
+    return (h >>> 0) / 4294967296;
+  }
+  function todayKey() {
+    const d = new Date();
+    return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+  }
+
   // 診断結果の順位。同点のときは、選んだ話題に絞った専門の人(扱う話題が少ない人)、
-  // キーワードが多く一致した人の順。名簿の並び順では決めない
+  // キーワードが多く一致した人の順。名簿の並び順では決めない。
+  // 公平に出るように: 上位2名は一致度の順のまま、3位から下の枠は「3位との差が5点以内の人」から
+  // 日替わりで選ぶ(合う人が多いときに、毎回同じ人ばかりが出ないようにする。選んだ人は一致度の順に並べる)
+  const FAIR_KEEP = 2;
+  const FAIR_MARGIN = 5;
   function rankMembers(members, a, opts) {
-    const o = Object.assign({ min: 40, limit: 5 }, opts);
-    return members
+    const o = Object.assign({ min: 40, limit: 5, fair: true, day: todayKey() }, opts);
+    const byScore = (x, y) =>
+      y.sc.raw - x.sc.raw ||
+      y.sc.keywordHits.length - x.sc.keywordHits.length ||
+      x.m.topics.length - y.m.topics.length;
+    const all = members
       .map((m) => ({ m, sc: scoreMember(m, a) }))
       .filter((x) => x.sc.score >= o.min)
-      .sort((x, y) =>
-        y.sc.raw - x.sc.raw ||
-        y.sc.keywordHits.length - x.sc.keywordHits.length ||
-        x.m.topics.length - y.m.topics.length
-      )
-      .slice(0, o.limit);
+      .sort(byScore);
+    if (!o.fair || all.length <= o.limit || o.limit <= FAIR_KEEP) return all.slice(0, o.limit);
+    const head = all.slice(0, FAIR_KEEP);
+    const cut = all[FAIR_KEEP].sc.score - FAIR_MARGIN;
+    const pool = all.slice(FAIR_KEEP).filter((x) => x.sc.score >= cut)
+      .sort((x, y) => dayHash(x.m.id + o.day) - dayHash(y.m.id + o.day));
+    const rest = all.slice(FAIR_KEEP).filter((x) => x.sc.score < cut);
+    const tail = [...pool, ...rest].slice(0, o.limit - FAIR_KEEP).sort(byScore);
+    return [...head, ...tail];
   }
 
   // 話題で探すときの一致度。その話題だけを選んだ診断と同じ計算(相手のタイプ・業種・エリアは
@@ -126,5 +148,5 @@ const RefScoring = (function () {
     return { topics: new Set([topicId]), industry: "unknown", who: "unknown", area: "any", meeting: "any", keyword: keyword || "" };
   }
 
-  return { keywordTokens, haystack, scoreMember, rankMembers, topicAnswers };
+  return { keywordTokens, haystack, scoreMember, rankMembers, topicAnswers, dayHash, todayKey };
 })();

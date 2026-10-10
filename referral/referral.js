@@ -208,6 +208,7 @@
   // 一致度は、その順に並んでいるときだけ出す(並び順と%が食い違って見えないように。
   // 代表・役職・役割の基礎ポイントは一致度の中に足してあり、別に上へ上げることはしない)
   let topicScores = null;
+  let lastLoggedTopic = "";
   function shownScores() {
     if (sortByScore && scores) return scores;
     if (topicScores) return topicScores;
@@ -508,7 +509,13 @@
       const answers = RefScoring.topicAnswers(filter.topic, filter.search);
       topicScores = {};
       list.forEach((m) => { topicScores[m.id] = scoreMember(m, answers); });
-      list = list.slice().sort((a, b) => topicScores[b.id].raw - topicScores[a.id].raw || a.topics.length - b.topics.length);
+      // 一致度(%)が同じ人どうしは日替わりの順(毎日同じ人ばかりが上に出ないように)
+      const day = RefScoring.todayKey();
+      list = list.slice().sort((a, b) => topicScores[b.id].score - topicScores[a.id].score
+        || RefScoring.dayHash(a.id + day) - RefScoring.dayHash(b.id + day));
+      if (lastLoggedTopic !== filter.topic) { lastLoggedTopic = filter.topic; logSearch("genre", list.slice(0, 5).map((m) => m.id)); }
+    } else {
+      lastLoggedTopic = "";
     }
     $("#refList").innerHTML = list.length
       ? list.map(cardHtml).join("")
@@ -717,7 +724,12 @@
     scrollDiagTop();
   }
 
-  function showResults() {
+  // 検索の結果に出た人を記録する(管理者のダッシュボードと、本人の「数字」に出る)。失敗しても画面は止めない
+  function logSearch(kind, ids) {
+    try { AuthApi.call("logSearch", { kind, shown: ids.slice(0, 10) }).catch(() => {}); } catch { /* noop */ }
+  }
+
+  function showResults(fromRestore) {
     answers.keyword = $("#diagKeyword").value.trim();
     computeScores();
 
@@ -742,6 +754,7 @@
 
     const ranked = RefScoring.rankMembers(members, answers);
     lastRanked = ranked;
+    if (!fromRestore) logSearch(answers.consult ? "consult" : "diag", ranked.map((x) => x.m.id));
     renderTeam();
     $("#diagCopyTop").hidden = ranked.length < 2;
     $("#diagCopyTop").textContent = `上位${Math.min(3, ranked.length)}名をまとめてコピー`;
@@ -808,6 +821,8 @@
     if (!text) { note.textContent = "相談の内容を入れてください。"; $("#csText").focus(); return; }
     const a = RefConsult.analyze(text);
     if (!a.groups.length) {
+      // 読み取れなかった相談は運営に届ける(言葉の辞書を足すため)
+      try { AuthApi.call("logSearch", { kind: "consult", miss: true, text }).catch(() => {}); } catch { /* noop */ }
       note.textContent = "困りごとを読み取れませんでした。「集客に困っている」「税理士を探している」のように、したいこと・困っていることを入れてください。";
       return;
     }
@@ -1192,7 +1207,7 @@
     renderChips();
     renderList();
     // 前回の診断(このタブ)を戻す
-    if (restoreDiagnosis()) { $("#diagKeyword").value = answers.keyword || ""; showResults(); }
+    if (restoreDiagnosis()) { $("#diagKeyword").value = answers.keyword || ""; showResults(true); }
     document.documentElement.classList.remove("guard-pending");
     openFromHash();
     window.addEventListener("hashchange", openFromHash);

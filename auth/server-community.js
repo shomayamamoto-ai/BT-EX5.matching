@@ -85,10 +85,11 @@
 
       function migrate(db) {
         var changed = false;
-        ["events", "visitors", "thanks", "oneOnOnes", "announcements", "posts", "threads", "feedback", "pushSubs"].forEach(function (k) {
+        ["events", "visitors", "thanks", "oneOnOnes", "announcements", "posts", "threads", "feedback", "pushSubs", "searchMisses"].forEach(function (k) {
           if (!Array.isArray(db[k])) { db[k] = []; changed = true; }
         });
         if (!db.seen || typeof db.seen !== "object") { db.seen = {}; changed = true; }
+        if (!db.searchLog || typeof db.searchLog !== "object") { db.searchLog = {}; changed = true; }
         // 掲示板の「雑談」は「告知」に変えた
         db.posts.forEach(function (p) { if (p.cat === "雑談") { p.cat = "告知"; changed = true; } });
         if (autoComplete(db)) changed = true;
@@ -901,6 +902,12 @@
           }
         });
         var list = Object.keys(rows).map(function (k) { return rows[k]; });
+        var sc = searchCounts(db, from, to);
+        if (rows[w.id]) {
+          rows[w.id].searchShown = (sc.m[w.id] || [0, 0])[0];
+          rows[w.id].searchTop = (sc.m[w.id] || [0, 0])[1];
+          rows[w.id].searchTotal = sc.n;
+        }
         return c.ok({
           from: from, to: to, today: today(),
           me: rows[w.id] || null,
@@ -909,6 +916,58 @@
           }),
           total: total,
         });
+      }
+
+      // ============================================
+      // 検索の記録(だれが何回、検索結果に出たか)
+      // 紹介診断・相談アシスタント・ジャンルで探す の結果に出た人を、日ごとに数える。
+      // searchLog: { "YYYY-MM-DD": { n: 検索の回数, m: { メンバーID: [出た回数, 1位の回数] } } }(400日分)
+      // 読み取れなかった相談は searchMisses(最新100件。管理者が言葉の辞書を足すのに使う)
+      // ============================================
+      var SEARCH_KINDS = ["diag", "consult", "genre"];
+      function logSearch(body) {
+        var w = who(body);
+        if (w.error) return w.error;
+        var db = w.db;
+        var kind = oneOf(body.kind, SEARCH_KINDS, "");
+        if (!kind) return c.fail("INVALID_REQUEST");
+        if (body.miss) {
+          var text = c.cleanStr(body.text, 120);
+          if (text) {
+            db.searchMisses.push({ at: c.nowMs(), by: w.id, text: text });
+            trim(db.searchMisses, 100);
+          }
+          c.saveDb(db);
+          return c.ok({});
+        }
+        var ids = c.cleanList(body.shown, null, 10).filter(function (id) { return member(db, id); });
+        var day = db.searchLog[today()] || (db.searchLog[today()] = { n: 0, m: {} });
+        day.n += 1;
+        ids.forEach(function (id, i) {
+          var row = day.m[id] || (day.m[id] = [0, 0]);
+          row[0] += 1;
+          if (i === 0) row[1] += 1;
+        });
+        // 古い日を消す
+        var keys = Object.keys(db.searchLog).sort();
+        if (keys.length > 400) keys.slice(0, keys.length - 400).forEach(function (k) { delete db.searchLog[k]; });
+        c.saveDb(db);
+        return c.ok({});
+      }
+      // 期間の、メンバーごとの [出た回数, 1位の回数] と検索の回数
+      function searchCounts(db, from, to) {
+        var out = { n: 0, m: {} };
+        Object.keys(db.searchLog || {}).forEach(function (k) {
+          if (k < from || k > to) return;
+          var d = db.searchLog[k];
+          out.n += d.n || 0;
+          Object.keys(d.m || {}).forEach(function (id) {
+            var r = out.m[id] || (out.m[id] = [0, 0]);
+            r[0] += d.m[id][0];
+            r[1] += d.m[id][1];
+          });
+        });
+        return out;
       }
 
       function getTeamRanking(body) {
@@ -1382,7 +1441,17 @@
             lastActivityAt: lastAct,
           };
         });
-        return c.ok({ month: month, prevMonth: prev, totals: totals(month), prevTotals: totals(prev), events: monthEvents, members: members, now: c.nowMs() });
+        var sc = searchCounts(db, month + "-01", month + "-31");
+        members.forEach(function (row) {
+          var m = member(db, row.id);
+          row.topicCount = m && Array.isArray(m.topics) ? m.topics.length : 0;
+          row.searchShown = (sc.m[row.id] || [0, 0])[0];
+          row.searchTop = (sc.m[row.id] || [0, 0])[1];
+        });
+        return c.ok({
+          month: month, prevMonth: prev, totals: totals(month), prevTotals: totals(prev), events: monthEvents, members: members, now: c.nowMs(),
+          search: { total: sc.n, misses: db.searchMisses.slice(-20).reverse().map(function (x) { return { at: x.at, text: x.text, byName: nameOf(db, x.by) }; }) },
+        });
       }
 
       // データの書き出し(管理者)。紹介した相手の連絡先は当事者だけのものなので含めない
@@ -1726,7 +1795,7 @@
           adminSyncMeetAttendance: adminSyncMeetAttendance, adminMapMeetName: adminMapMeetName,
           createVisitorInvite: createVisitorInvite, listMyVisitors: listMyVisitors, updateVisitor: updateVisitor,
           visitorInfo: visitorInfo, visitorApply: visitorApply,
-          listMyReferrals: listMyReferrals, reportThanks: reportThanks, deleteThanks: deleteThanks, getRankings: getRankings, getTeamRanking: getTeamRanking, getStats: getStats, adminSetTeamGoals: adminSetTeamGoals,
+          listMyReferrals: listMyReferrals, reportThanks: reportThanks, deleteThanks: deleteThanks, getRankings: getRankings, getTeamRanking: getTeamRanking, getStats: getStats, logSearch: logSearch, adminSetTeamGoals: adminSetTeamGoals,
           list1on1: list1on1, save1on1: save1on1, delete1on1: delete1on1, confirm1on1: confirm1on1,
           getMySettings: getMySettings, updateMySettings: updateMySettings,
           listAnnouncements: listAnnouncements, markAnnouncementsRead: markAnnouncementsRead,

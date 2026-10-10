@@ -104,6 +104,11 @@
       card("ありがとうマイル(贈った)", App.yen(m.milesReceived), "", "メンバーの紹介・協力で自分が成約できた分"),
       card("招待したビジター", String(m.visitors), "人", `一般 ${m.visitorsGeneral} / LINK BT ${m.visitorsLink}`),
       card("入会者数", String(m.joined), "人", `招待したビジターのうち入会 / 入会率 ${m.visitors ? `${Math.round((m.joined / m.visitors) * 100)}%` : "—"}`)));
+    // 検索での表示(この期間に「探す」の結果に出た回数)
+    el.append(h("div", { class: "st-search" },
+      h("span", null, "🔎 この期間、あなたがメンバーの検索結果に出た回数"),
+      h("b", null, `${m.searchShown || 0}回`, h("small", null, `(うち1位 ${m.searchTop || 0}回 / みんなの検索 ${m.searchTotal || 0}回)`)),
+      (m.searchShown || 0) === 0 ? h("a", { href: "../profile/" }, "扱うジャンル・事業内容を入れると、検索に出やすくなります →") : null));
     el.append(h("p", { class: "st-note" },
       "招待したビジター:ビジター招待の URL から申し込み、参加が決まった方(日付は参加する定例会の開催日。同じ方は何回来ても1人)。", h("br"),
       "入会者数:そのうち入会した方。直近の期間は、これから入会する方がいるため少なめに出ます。"));

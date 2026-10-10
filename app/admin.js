@@ -126,6 +126,35 @@
           h("td", null, m.monthMiles ? App.yen(m.monthMiles) : "0"), h("td", null, String(m.monthOnes)),
           h("td", null, m.attendRate === null ? "—" : `${m.attendRate}%`))))))));
 
+    // 検索での表示(紹介診断・相談アシスタント・ジャンルで探す の結果に出た回数)
+    const s = d.search || { total: 0, misses: [] };
+    const bySearch = d.members.slice().sort((a, b) => b.searchShown - a.searchShown || b.searchTop - a.searchTop);
+    const hidden = d.members.filter((m) => !m.topicCount || (s.total >= 10 && !m.searchShown));
+    const profileAsk = [
+      "【BT-EX5 運営より】プロフィールのお願い",
+      "会員サイトの「探す」(紹介診断・相談アシスタント)で、あなたが紹介先の候補に出るように、",
+      "マイページ →「プロフィール・1on1シートを編集」から、扱うジャンル・事業内容・求める紹介を入れてください(5分ほどです)。",
+      App.siteUrl("../profile/"),
+    ].join("\n");
+    el.append(App.section(`検索での表示(この月 ・ 検索 ${s.total} 回)`,
+      h("p", { class: "app-field-hint" }, "メンバーが「探す」で紹介診断・相談アシスタント・ジャンルで探したとき、結果に出た回数です。合う人が多いときは、3位から下を一致度の近い人の中から日替わりで出し、同じ人ばかりが出ないようにしています。"),
+      h("div", { class: "dash-table-wrap" }, h("table", { class: "dash-table" },
+        h("thead", null, h("tr", null, ["名前", "結果に出た", "1位", "ジャンル数"].map((t) => h("th", { scope: "col" }, t)))),
+        h("tbody", null, bySearch.map((m) => h("tr", { class: !m.topicCount ? "is-warn" : "" },
+          h("th", { scope: "row" }, m.name),
+          h("td", null, String(m.searchShown)), h("td", null, String(m.searchTop)),
+          h("td", null, m.topicCount ? String(m.topicCount) : "未登録")))))),
+      hidden.length ? h("div", { class: "dash-hidden" },
+        h("p", null, h("b", null, `検索に出ていないメンバー(${hidden.length}名)`), ":", hidden.map((m) => `${m.name}${m.topicCount ? "" : "(ジャンル未登録)"}`).join("、")),
+        h("div", { class: "app-btn-row" }, App.btn("プロフィール入力のお願い文をコピー", () => App.copyText(profileAsk, "コピーしました。LINE などで送ってください"), "small"))) : null,
+      h("details", { class: "dash-misses" },
+        h("summary", null, `読み取れなかった相談(最新 ${s.misses.length} 件)`),
+        s.misses.length
+          ? h("ul", { class: "app-list" }, s.misses.map((x) => h("li", null, h("div", { class: "app-row" },
+            h("span", { class: "app-row-main" }, h("b", null, x.text), h("small", null, `${App.fmtTime(x.at)} ・ ${x.byName}`))))))
+          : App.empty("ありません。"),
+        h("p", { class: "app-field-hint" }, "相談アシスタントが困りごとを読み取れなかった文です。よく出る言い方は、言葉の辞書(referral/data.js の CONSULT_PHRASES)に足すと次から読み取れます。"))));
+
     // メンバーから届いたプロフィール(お試し版でそれぞれの端末に入力したもの)を取り込む
     const paste = h("textarea", { rows: "4", placeholder: "メンバーから届いた「【BT-EX5 プロフィールの送付】」の文を、そのまま貼り付けてください(何人分でも)" });
     el.append(App.section("プロフィールを取り込む",
