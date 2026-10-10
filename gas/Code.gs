@@ -272,6 +272,47 @@ const REF_NEEDS = [
   { id: "other", label: "その他・ジャンルから選ぶ", desc: "すべてのジャンルの一覧から選ぶ", methods: null },
 ];
 
+// 相談アシスタント(文章・音声で入れた相談を読み取る)で使う言葉
+// CONSULT_PHRASES: 困りごとの言い方 → そのとき役に立つジャンル(どれか1つできればよい)
+const CONSULT_PHRASES = [
+  { label: "集客", words: ["集客", "お客様を増やしたい", "お客さんを増やしたい", "客が来ない", "お客が来ない", "新規客", "問い合わせを増やしたい", "売上が伸びない", "知名度"], topics: ["seo", "web", "sns", "consult", "ad"] },
+  { label: "採用・人手不足", words: ["人が採れない", "人が足りない", "人手が足りない", "人手不足", "スタッフが足りない", "スタッフ採用", "求人", "採用したい"], topics: ["hiring", "sns", "prvideo", "efficiency"] },
+  { label: "離職・定着", words: ["辞める", "辞めて", "離職", "定着しない", "人が続かない"], topics: ["retention", "org", "coaching"] },
+  { label: "人材育成", words: ["育たない", "育てたい", "社員教育", "研修したい", "人材育成"], topics: ["org", "aitraining", "mindset", "coaching"] },
+  { label: "単価アップ", words: ["高く売りたい", "単価", "値上げ", "安売り", "価格競争", "付加価値"], topics: ["branding", "consult", "design"] },
+  { label: "業務効率化", words: ["効率化", "手作業", "忙しすぎ", "残業", "人手をかけずに", "Excel管理", "エクセル管理", "自動化したい"], topics: ["efficiency", "ai", "line"] },
+  { label: "開業・独立", words: ["開業", "独立", "起業", "創業", "お店を出したい", "店を出す"], topics: ["funding", "tax", "legal", "realestate", "reform", "web"] },
+  { label: "資金", words: ["資金繰り", "お金が足りない", "融資", "借入", "補助金", "助成金"], topics: ["funding", "labor"] },
+  { label: "SNS発信", words: ["発信したい", "インスタを伸ばしたい", "フォロワーを増やしたい", "SNSを始めたい"], topics: ["sns", "video", "photo", "casting"] },
+  { label: "AI活用", words: ["AIを使いたい", "AIを導入", "ChatGPT", "生成AI"], topics: ["ai", "aitraining"] },
+  { label: "悩み・迷い", words: ["迷って", "悩んで", "モヤモヤ", "考えがまとまらない", "一歩が踏み出せない"], topics: ["mindset", "coaching"] },
+  { label: "固定費", words: ["固定費", "携帯代", "携帯料金", "電気代", "光熱費", "節約"], topics: ["fixedcost"] },
+  { label: "イベント", words: ["イベント", "パーティー", "懇親会", "周年", "式典", "結婚式", "二次会", "セミナーを開きたい"], topics: ["event", "mc", "catering", "venue"] },
+];
+const CONSULT_INDUSTRY_WORDS = {
+  restaurant: ["飲食", "レストラン", "カフェ", "居酒屋", "ラーメン", "焼肉", "バー", "料理店"],
+  retail: ["小売", "雑貨", "物販", "ショップ", "アパレル", "ネットショップ"],
+  salon: ["サロン", "美容室", "美容院", "ヘアサロン"],
+  pro: ["士業", "会計事務所", "法律事務所", "税理士事務所"],
+  build: ["製造", "工場", "建設", "工務店", "建築", "リフォーム会社"],
+  it: ["IT企業", "システム会社", "Web制作会社", "SaaS", "IT会社"],
+  medical: ["医療", "クリニック", "病院", "介護", "歯科", "整骨院"],
+  personal: ["主婦", "家庭", "夫婦", "子育て中", "家族のこと"],
+};
+const CONSULT_PROSPECT_WORDS = {
+  owner: ["経営者", "社長", "代表", "オーナー", "個人事業主", "店主", "開業", "起業"],
+  staff: ["担当者", "部長", "課長", "管理職", "人事部", "総務部", "会社員の方"],
+  individual: ["主婦", "家族", "家庭", "夫婦", "子育て", "個人的に"],
+};
+const CONSULT_AREA_WORDS = {
+  niigata: ["新潟", "長岡", "上越", "県央", "燕三条", "柏崎", "新発田"],
+  tokyo: ["東京", "関東", "神奈川", "横浜", "埼玉", "千葉", "都内"],
+};
+const CONSULT_MEETING_WORDS = {
+  online: ["オンライン", "Zoom", "リモート", "遠方"],
+  face: ["対面", "直接会", "会いに行"],
+};
+
 // 話題ごとの言いかえ。診断のキーワードがこれに当たると、その話題を持つ人に一致する
 // (本人の説明文にその言葉がなくても見つかるように)
 const TOPIC_KEYWORDS = {

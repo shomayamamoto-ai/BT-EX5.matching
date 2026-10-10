@@ -40,6 +40,7 @@
   // ---------- 紹介文 ----------
   // 診断で選んだ困りごと・方法(紹介文・打診文に入れる)
   function diagContext() {
+    if (scores && answers.consult) return { need: answers.consult.groups.map((g) => g.label).join("、"), methods: [] };
     const need = needOf();
     if (!scores || !need) return null;
     const methods = need.methods
@@ -49,7 +50,7 @@
   }
   const shortText = (t, n) => (t.length > n ? t.slice(0, n) + "…" : t);
   // できること(相談に合ったジャンルを先に)
-  const mainTags = (m, n, hits) => [...new Set([...(hits || []), ...m.topics])].slice(0, n).map(topicTag).filter(Boolean);
+  const mainTags = (m, n, hits) => [...new Set([...(hits || []).filter((t) => m.topics.includes(t)), ...m.topics])].slice(0, n).map(topicTag).filter(Boolean);
 
   function introText(m) {
     const sc = scores && scores[m.id];
@@ -668,6 +669,7 @@
     answers.methods = new Set();
     answers.anyTopic = false;
     answers.topicGroups = [];
+    answers.consult = null;
     answers.keyword = "";
     answers.who = answers.industry = answers.area = answers.meeting = null;
     $("#diagKeyword").value = "";
@@ -683,7 +685,12 @@
     computeScores();
 
     const need = needOf();
-    const summary = [
+    const summary = answers.consult ? [
+      ...answers.consult.groups.map((g) => g.label),
+      answers.who === "unknown" ? null : labelOf(PROSPECTS, answers.who),
+      answers.industry === "unknown" ? null : labelOf(INDUSTRIES, answers.industry),
+      labelOf(AREAS, answers.area),
+    ].filter(Boolean) : [
       need && need.methods ? need.label : null,
       ...(need && need.methods
         ? (answers.anyTopic ? ["方法はおまかせ"] : [...answers.methods].sort((a, b) => a - b).map((i) => need.methods[i].label))
@@ -698,6 +705,7 @@
 
     const ranked = RefScoring.rankMembers(members, answers);
     lastRanked = ranked;
+    renderTeam();
     $("#diagCopyTop").hidden = ranked.length < 2;
     $("#diagCopyTop").textContent = `上位${Math.min(3, ranked.length)}名をまとめてコピー`;
     saveDiagnosis();
@@ -729,6 +737,83 @@
     renderList();
   }
 
+  // ---------- 相談アシスタント(文章・音声で入れた相談から探す) ----------
+  let lastTeam = [];
+  function renderTeam() {
+    const box = $("#diagTeam");
+    lastTeam = answers.consult ? RefConsult.team(members, answers.consult, answers) : [];
+    box.hidden = lastTeam.length < 2;
+    if (box.hidden) { box.innerHTML = ""; return; }
+    box.innerHTML = `
+      <h3 class="diag-team-title">この組み合わせで、まとめて解決できます</h3>
+      <ul class="diag-team-list">${lastTeam.map((x) => `
+        <li><span class="diag-team-need">${escapeHtml(x.group.label)}</span>
+          <button type="button" class="diag-team-name" data-goto="${x.m.id}">${escapeHtml(x.m.name)}</button>
+          <span class="diag-team-sub">${escapeHtml(mainTags(x.m, 3, x.group.topics).join("・"))}</span></li>`).join("")}
+      </ul>
+      <button type="button" class="diag-sort" id="diagCopyTeam">チームの紹介文をコピー</button>`;
+  }
+  function teamText() {
+    const lines = ["【ご紹介】", `ご相談の内容(${answers.consult.groups.map((g) => g.label).join("、")})に合わせて、BT-EX5のメンバーをご紹介します。`];
+    lastTeam.forEach((x) => {
+      lines.push("", `■ ${x.group.label}:${x.m.name}さん${x.m.company ? `(${x.m.company})` : ""}`);
+      if (x.m.business) lines.push(`   ${shortText(x.m.business, 70)}`);
+      if (x.m.offer) lines.push(`   紹介特典:${x.m.offer}`);
+    });
+    lines.push("", "それぞれおつなぎできますので、気になる方を教えてください。");
+    return lines.join("\n");
+  }
+
+  function runConsult() {
+    const text = $("#csText").value.trim();
+    const note = $("#csNote");
+    if (!text) { note.textContent = "相談の内容を入れてください。"; $("#csText").focus(); return; }
+    const a = RefConsult.analyze(text);
+    if (!a.groups.length) {
+      note.textContent = "困りごとを読み取れませんでした。「集客に困っている」「税理士を探している」のように、したいこと・困っていることを入れてください。";
+      return;
+    }
+    note.textContent = "";
+    Object.assign(answers, RefConsult.toAnswers(a), { consult: a });
+    $("#diagKeyword").value = answers.keyword;
+    $("#diagOverlay").hidden = false;
+    document.body.style.overflow = "hidden";
+    $("#diagIntro").hidden = true;
+    showResults();
+    // 合う人がいないジャンルは、迎えたい業種として案内する
+    if (!lastRanked.length) {
+      $("#diagRanking").innerHTML = `<p class="diag-empty">この相談(${escapeHtml(a.groups.map((g) => g.label).join("、"))})に対応できるメンバーは、まだいません。<br><a href="../teams/">全体分析の「BT-EX5 に必要な業種」</a>から、知り合いを誘う文を送れます。</p>`;
+    }
+  }
+
+  // 音声入力(対応しているブラウザだけ)
+  function setupMic() {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const btn = $("#csMic");
+    if (!SR) return;
+    btn.hidden = false;
+    let rec = null;
+    btn.addEventListener("click", () => {
+      if (rec) { rec.stop(); return; }
+      rec = new SR();
+      rec.lang = "ja-JP";
+      rec.interimResults = true;
+      rec.continuous = false;
+      const base = $("#csText").value.trim();
+      rec.onresult = (e) => {
+        const said = [...e.results].map((r) => r[0].transcript).join("");
+        $("#csText").value = (base ? base + " " : "") + said;
+      };
+      const end = () => { rec = null; btn.setAttribute("aria-pressed", "false"); btn.querySelector("span").textContent = "話して入力"; $("#csNote").textContent = ""; };
+      rec.onend = end;
+      rec.onerror = (e) => { end(); $("#csNote").textContent = e.error === "not-allowed" ? "マイクの使用が許可されていません。ブラウザの設定で許可してください。" : "音声を聞き取れませんでした。もう一度お試しください。"; };
+      btn.setAttribute("aria-pressed", "true");
+      btn.querySelector("span").textContent = "聞いています…(押すと止める)";
+      $("#csNote").textContent = "相談の内容を話してください。";
+      rec.start();
+    });
+  }
+
   // 診断の結果はこのタブを閉じるまで残す(再読み込みしても「紹介診断」を開くと前回の結果が出る)
   let lastRanked = [];
   const DIAG_KEY = "btex5-last-diagnosis";
@@ -740,8 +825,9 @@
   function restoreDiagnosis() {
     try {
       const saved = JSON.parse(sessionStorage.getItem(DIAG_KEY) || "null");
-      if (!saved || !saved.need) return false;
+      if (!saved || (!saved.need && !saved.consult)) return false;
       Object.assign(answers, saved, { methods: new Set(saved.methods || []), topics: new Set(saved.topics || []) });
+      if (answers.consult) return true; // 相談アシスタントの結果
       if (!REF_NEEDS.some((n) => n.id === answers.need)) return false;
       syncTopics();
       return true;
@@ -915,6 +1001,14 @@
   });
   $("#diagStart").addEventListener("click", startDiagnosis);
   $("#diagRetry").addEventListener("click", startDiagnosis);
+  $("#csGo").addEventListener("click", runConsult);
+  $("#csText").addEventListener("keydown", (e) => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) runConsult(); });
+  document.addEventListener("click", async (e) => {
+    if (!e.target.closest("#diagCopyTeam")) return;
+    const ok = await copyText(teamText());
+    toast(ok ? "チームの紹介文をコピーしました" : "コピーできませんでした");
+  });
+  setupMic();
   $("#diagCopyTop").addEventListener("click", async () => {
     const ok = await copyText(topIntroText(lastRanked.slice(0, 3)));
     toast(ok ? "上位の候補をまとめてコピーしました" : "コピーできませんでした");

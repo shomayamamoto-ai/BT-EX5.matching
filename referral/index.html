@@ -6,7 +6,7 @@
   <meta name="referrer" content="no-referrer">
   <title>紹介先早見表 | BT-EX5</title>
   <style>html.guard-pending body { visibility: hidden; } html.guard-pending::after { content: "読み込み中…"; position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; font: 700 15px sans-serif; color: #a18a7e; background: #fff8f2; }</style>
-  <link rel="icon" type="image/svg+xml" href="../assets/bt-ex5-mark.svg?v=202610090915">
+  <link rel="icon" type="image/svg+xml" href="../assets/bt-ex5-mark.svg?v=202610100031">
   <link rel="manifest" href="../manifest.webmanifest">
   <link rel="apple-touch-icon" href="../assets/icon-180.png">
   <meta name="theme-color" content="#1a0f0c">
@@ -14,15 +14,15 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" onload="this.onload=null;this.rel='stylesheet'">
   <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Noto+Sans+JP:wght@400;500;700;900&display=swap"></noscript>
-  <link rel="stylesheet" href="referral.css?v=202610090915">
-  <link rel="stylesheet" href="../opening/intro.css?v=202610090915">
+  <link rel="stylesheet" href="referral.css?v=202610100031">
+  <link rel="stylesheet" href="../opening/intro.css?v=202610100031">
 </head>
 <body>
 
   <header class="ref-header">
     <div class="ref-header-inner">
       <a href="./" class="ref-logo">
-        <img class="brand-mark" src="../assets/bt-ex5-mark.svg?v=202610090915" alt="" width="40" height="40">
+        <img class="brand-mark" src="../assets/bt-ex5-mark.svg?v=202610100031" alt="" width="40" height="40">
         <span class="brand-word"><span class="brand-name">BT-<em>EX5</em></span><span class="brand-sub">新潟・東京 紹介者制コミュニティ</span></span>
       </a>
       <nav class="ref-header-nav">
@@ -43,11 +43,24 @@
       <h1 class="ref-title">紹介先早見表</h1>
       <p class="ref-lead">会話で「こんな話が出たら、この人へ」をすぐ探せる一覧です。</p>
       <ol class="ref-steps" aria-label="使い方">
-        <li><b>1</b>紹介診断で探す</li>
+        <li><b>1</b>聞いた相談を入れる(または紹介診断)</li>
         <li><b>2</b>キーワード・ジャンルで絞る</li>
         <li><b>3</b>「紹介文をコピー」して送る</li>
       </ol>
       <p class="ref-demo-note" id="demoNote" hidden>※ 現在はお試し版のため、自分の情報の編集はこの端末のブラウザの中にだけ保存されます(他のメンバーには届きません)。</p>
+    </section>
+
+    <!-- 相談アシスタント: 聞いた相談を文章・音声で入れるだけ -->
+    <section class="cs-box" aria-labelledby="csTitle">
+      <h2 class="cs-title" id="csTitle">聞いた相談を入れるだけで、紹介先がわかる</h2>
+      <p class="cs-lead">会話で聞いた困りごとを、そのまま文章か音声で入れてください。必要なジャンル・業種・エリアを読み取り、合う人と「この組み合わせで解決できる」チームを出します。</p>
+      <label class="visually-hidden" for="csText">相談の内容</label>
+      <textarea id="csText" class="cs-text" rows="3" maxlength="600" placeholder="例:新潟で飲食店を開業予定の社長。集客とスタッフ採用に困っていて、補助金も使いたい"></textarea>
+      <div class="cs-actions">
+        <button type="button" class="cs-mic" id="csMic" hidden aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-2.08A7 7 0 0 0 19 12h-2Z"/></svg><span>話して入力</span></button>
+        <button type="button" class="cs-go" id="csGo">紹介先を探す</button>
+      </div>
+      <p class="cs-note" id="csNote" aria-live="polite"></p>
     </section>
 
     <!-- 紹介診断への入口 -->
@@ -133,7 +146,7 @@
     <nav class="ref-footer-nav"><a href="../terms/">利用規約</a></nav>
     <p>© 2026 BT-EX5</p>
     <p class="site-credit">Created by <a href="https://lumenium.net/?utm_source=bt-ex5&amp;utm_medium=referral&amp;utm_campaign=credit" target="_blank" rel="noopener">Shoma Yamamoto</a></p>
-    <a class="site-maker" href="https://lumenium.net/?utm_source=bt-ex5&amp;utm_medium=referral&amp;utm_campaign=footer_logo" target="_blank" rel="noopener"><img src="../assets/lumenium-logo.svg?v=202610090915" alt="Lumenium" width="115" height="24"><span>Webサイト・システム制作のご相談はこちら</span></a>
+    <a class="site-maker" href="https://lumenium.net/?utm_source=bt-ex5&amp;utm_medium=referral&amp;utm_campaign=footer_logo" target="_blank" rel="noopener"><img src="../assets/lumenium-logo.svg?v=202610100031" alt="Lumenium" width="115" height="24"><span>Webサイト・システム制作のご相談はこちら</span></a>
   </footer>
 
   <!-- 紹介診断(ポップアップ) -->
@@ -168,6 +181,7 @@
             <p class="diag-eyebrow">RESULT</p>
             <h2 class="diag-title">紹介先の候補</h2>
             <div class="diag-summary" id="diagSummary"></div>
+            <section class="diag-team" id="diagTeam" hidden></section>
             <ol class="diag-ranking" id="diagRanking"></ol>
             <div class="diag-result-actions">
               <button type="button" class="diag-sort" id="diagCopyTop" hidden>上位3名をまとめてコピー</button>
@@ -189,14 +203,15 @@
 
   <div class="ref-toast" id="refToast" role="status" hidden></div>
 
-  <script src="../auth/server-core.js?v=202610090915"></script>
-  <script src="../auth/mock-server.js?v=202610090915"></script>
-  <script src="../auth/api.js?v=202610090915"></script>
-  <script src="../auth/session.js?v=202610090915"></script>
-  <script src="data.js?v=202610090915"></script>
-  <script src="partners.js?v=202610090915"></script>
-  <script src="scoring.js?v=202610090915"></script>
-  <script src="referral.js?v=202610090915"></script>
-  <script src="../opening/intro.js?v=202610090915"></script>
+  <script src="../auth/server-core.js?v=202610100031"></script>
+  <script src="../auth/mock-server.js?v=202610100031"></script>
+  <script src="../auth/api.js?v=202610100031"></script>
+  <script src="../auth/session.js?v=202610100031"></script>
+  <script src="data.js?v=202610100031"></script>
+  <script src="partners.js?v=202610100031"></script>
+  <script src="consult.js?v=202610100031"></script>
+  <script src="scoring.js?v=202610100031"></script>
+  <script src="referral.js?v=202610100031"></script>
+  <script src="../opening/intro.js?v=202610100031"></script>
 </body>
 </html>

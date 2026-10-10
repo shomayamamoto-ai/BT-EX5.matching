@@ -1269,3 +1269,58 @@ a:hover > .brand-mark { transform: none; }
 .md-memo textarea { width: 100%; box-sizing: border-box; font: inherit; font-size: 14px; line-height: 1.7; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--line-strong); background: #fffdf9; resize: vertical; }
 .md-memo textarea:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
 .md-memo-state { margin: 4px 0 0; font-size: 11.5px; color: var(--text-light); min-height: 1em; }
+
+/* ---------- 相談アシスタント ---------- */
+.cs-box {
+  margin-bottom: 14px;
+  padding: 18px 18px 16px;
+  border-radius: var(--radius);
+  background: linear-gradient(160deg, #1d1411, #2b1c15 60%, #3a2518);
+  color: #f3eadb;
+  box-shadow: 0 16px 36px rgba(58, 30, 20, 0.18);
+  border: 1px solid rgba(217, 183, 122, 0.25);
+}
+.cs-title { font-size: 18px; font-weight: 900; margin: 0 0 4px; color: #f6e7c7; }
+.cs-lead { font-size: 13px; line-height: 1.7; color: #d8c6ab; margin: 0 0 10px; }
+.cs-text {
+  width: 100%;
+  box-sizing: border-box;
+  font: inherit;
+  font-size: 15px;
+  line-height: 1.7;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(217, 183, 122, 0.45);
+  background: rgba(255, 255, 255, 0.96);
+  color: var(--text);
+  resize: vertical;
+}
+.cs-text:focus { outline: 2px solid #d9b77a; outline-offset: 2px; }
+.cs-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; margin-top: 10px; }
+.cs-mic, .cs-go { border-radius: 999px; font: inherit; font-weight: 800; font-size: 14px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+.cs-mic { border: 1px solid rgba(217, 183, 122, 0.6); background: transparent; color: #f3dfb3; padding: 9px 14px; }
+.cs-mic svg { width: 18px; height: 18px; fill: currentColor; }
+.cs-mic[aria-pressed="true"] { background: #d9b77a; color: #1d1411; animation: cs-pulse 1.2s ease-in-out infinite; }
+.cs-mic[hidden] { display: none; }
+@keyframes cs-pulse { 50% { box-shadow: 0 0 0 6px rgba(217, 183, 122, 0.25); } }
+.cs-go { border: none; padding: 10px 20px; background: linear-gradient(135deg, #f0d397, #c99a52); color: #241811; }
+.cs-go:hover { filter: brightness(1.05); }
+.cs-note { margin: 8px 0 0; font-size: 12.5px; color: #f3dfb3; min-height: 1em; }
+
+/* 診断結果: チームの提案 */
+.diag-team { margin: 0 0 14px; padding: 14px; border-radius: 14px; background: rgba(255, 255, 255, 0.07); border: 1px solid rgba(255, 255, 255, 0.16); }
+.diag-team[hidden] { display: none; }
+.diag-team-title { font-size: 15px; font-weight: 800; margin: 0 0 8px; }
+.diag-team-list { list-style: none; margin: 0 0 10px; padding: 0; display: grid; gap: 8px; }
+.diag-team-list li { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; }
+.diag-team-need { font-size: 11.5px; font-weight: 800; padding: 1px 9px; border-radius: 999px; background: rgba(255, 255, 255, 0.16); }
+.diag-team-name { border: none; background: none; padding: 0; color: #fff; font: inherit; font-weight: 800; font-size: 15px; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.diag-team-sub { font-size: 12px; opacity: 0.75; flex-basis: 100%; }
+.diag-team small { font-size: 11px; opacity: 0.75; }
+.diag-empty a { color: #fff; }
+@media (min-width: 960px) {
+  .cs-box { display: grid; grid-template-columns: 1fr auto; column-gap: 14px; align-items: end; }
+  .cs-title, .cs-lead, .cs-note { grid-column: 1 / -1; }
+  .cs-text { min-height: 72px; height: 72px; }
+  .cs-actions { margin-top: 0; flex-direction: column; align-items: stretch; }
+}
