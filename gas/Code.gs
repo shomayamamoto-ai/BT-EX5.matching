@@ -1996,7 +1996,7 @@ var BtexServerCore = (function () {
       "rsvpEvent", "checkIn", "adminSaveEvent", "adminDeleteEvent", "adminOpenCheckIn", "adminMarkAttendance",
       "adminSyncMeetAttendance", "adminMapMeetName",
       "createVisitorInvite", "updateVisitor", "visitorApply",
-      "reportThanks", "deleteThanks", "save1on1", "delete1on1",
+      "reportThanks", "deleteThanks", "save1on1", "delete1on1", "confirm1on1",
     ],
     // 書き込みのあとに、通知(プッシュ)を送るか確かめる操作(mutating に加えて)
     notifying: ["createPost", "commentPost", "adminSaveAnnouncement"],
@@ -2942,20 +2942,11 @@ var BtexServerCore = (function () {
       // 30分きざみで5時間まで(45分は以前の記録のため残す)
       var DURATIONS = [30, 45, 60, 90, 120, 150, 180, 210, 240, 270, 300];
       function toMin(t) { var p = String(t || "").split(":"); return Number(p[0]) * 60 + Number(p[1] || 0); }
-      // 予定の時刻(時刻がなければその日)を過ぎた 1on1 は、中止にしていなければ自動で「実施」にする
-      function autoComplete(db) {
-        var changed = false;
-        (db.oneOnOnes || []).forEach(function (o) {
-          if (o.status !== "planned") return;
-          if (c.nowMs() >= oneEndMs(o)) {
-            o.status = "done";
-            o.autoDone = true;
-            o.doneAt = c.nowMs();
-            changed = true;
-          }
-        });
-        return changed;
-      }
+      // 予定の時刻(時刻がなければその日)を過ぎた 1on1 は「確認待ち」。2人のどちらかが
+      // 「実施した」と答えると実施になり、1on1 の回数に数える(「実施しなかった」なら中止)。
+      // 以前は自動で実施にしていた(その記録は autoDone のまま残す)
+      function autoComplete() { return false; }
+      function awaitingConfirm(o) { return o.status === "planned" && c.nowMs() >= oneEndMs(o); }
       function endTime(o) {
         if (!o.time) return "";
         var m = toMin(o.time) + (o.duration || 60);
@@ -2976,7 +2967,7 @@ var BtexServerCore = (function () {
         return {
           id: o.id, with: other, withName: nameOf(db, other), date: o.date, time: o.time || "", end: endTime(o), endDate: endDate(o), duration: o.duration || 60,
           mode: o.mode || "onsite", place: o.place || "", meetUrl: o.meetUrl || "", calLink: o.calLink || "", synced: !!o.calId,
-          status: o.status, autoDone: !!o.autoDone, note: (o.notes || {})[me] || "", next: (o.nexts || {})[me] || "", by: o.by, at: o.at,
+          status: o.status, autoDone: !!o.autoDone, awaiting: awaitingConfirm(o), confirmedByName: o.confirmedBy ? nameOf(db, o.confirmedBy) : "", note: (o.notes || {})[me] || "", next: (o.nexts || {})[me] || "", by: o.by, at: o.at,
         };
       }
       function userOf(db, memberId) { return c.find(db.users, function (u) { return u.memberId === memberId; }); }
@@ -3057,6 +3048,29 @@ var BtexServerCore = (function () {
         c.saveDb(db);
         return c.ok({ item: oneView(db, o, w.id), calendar: cal });
       }
+      // 時刻を過ぎた 1on1 に「実施した / 実施しなかった」と答える(2人のどちらでもよい)
+      function confirm1on1(body) {
+        var w = who(body);
+        if (w.error) return w.error;
+        var o = c.find(w.db.oneOnOnes, function (x) { return x.id === body.id && (x.a === w.id || x.b === w.id); });
+        if (!o) return c.fail("NOT_FOUND");
+        if (o.status !== "planned") return c.ok({ item: oneView(w.db, o, w.id), already: true });
+        if (body.held === true) {
+          o.status = "done";
+          o.autoDone = false;
+          o.doneAt = c.nowMs();
+          o.confirmedBy = w.id;
+        } else if (body.held === false) {
+          o.status = "cancelled";
+          o.confirmedBy = w.id;
+          if (o.calId && c.calendar) syncCalendar(w.db, o, "");
+        } else {
+          return c.fail("INVALID_REQUEST");
+        }
+        c.saveDb(w.db);
+        return c.ok({ item: oneView(w.db, o, w.id) });
+      }
+
       function delete1on1(body) {
         var w = who(body);
         if (w.error) return w.error;
@@ -3395,6 +3409,11 @@ var BtexServerCore = (function () {
         });
         db.oneOnOnes.forEach(function (o) {
           if ((o.a === me || o.b === me) && o.by !== me) items.push({ type: "oneNew", at: o.at, who: o.by, whoName: nameOf(db, o.by), date: o.date, link: "log/1on1" });
+          // 時刻を過ぎた 1on1: 実施したかの確認
+          if ((o.a === me || o.b === me) && awaitingConfirm(o)) {
+            var other = o.a === me ? o.b : o.a;
+            items.push({ type: "oneAsk", at: oneEndMs(o), who: other, whoName: nameOf(db, other), date: o.date, link: "log/1on1?confirm=" + o.id });
+          }
         });
         db.visitors.forEach(function (v) {
           if (v.by === me && v.appliedAt) items.push({ type: "visitor", at: v.appliedAt, text: v.name, link: "events" });
@@ -3464,11 +3483,12 @@ var BtexServerCore = (function () {
         ones.forEach(function (o) {
           if (o.status !== "planned") return;
           var other = o.a === w.id ? o.b : o.a;
-          if (o.date === t) followUps.push({ type: "oneToday", id: o.id, with: other, withName: nameOf(db, other), time: o.time || "", place: o.place || "", meetUrl: o.meetUrl || "" });
+          if (awaitingConfirm(o)) followUps.push({ type: "oneConfirm", id: o.id, with: other, withName: nameOf(db, other), date: o.date, time: o.time || "" });
+          else if (o.date === t) followUps.push({ type: "oneToday", id: o.id, with: other, withName: nameOf(db, other), time: o.time || "", place: o.place || "", meetUrl: o.meetUrl || "" });
         });
         // 時刻を過ぎて自動で「実施」になった 1on1(1週間以内・自分のメモがまだ)
         ones.forEach(function (o) {
-          if (!o.autoDone || (o.notes || {})[w.id] || c.nowMs() - (o.doneAt || 0) > 7 * DAY) return;
+          if (!(o.autoDone || o.confirmedBy) || (o.notes || {})[w.id] || c.nowMs() - (o.doneAt || 0) > 7 * DAY) return;
           var other = o.a === w.id ? o.b : o.a;
           followUps.push({ type: "oneMemo", id: o.id, with: other, withName: nameOf(db, other), date: o.date });
         });
@@ -3597,6 +3617,7 @@ var BtexServerCore = (function () {
           case "comment": return { title: "💬 " + n + "があなたの投稿にコメント", body: x.text };
           case "reply": return { title: "💬 " + n + "も掲示板でコメント", body: x.text };
           case "oneNew": return { title: "☕ " + n + "と1on1の予定", body: x.date || "" };
+          case "oneAsk": return { title: "☕ " + n + "との1on1 は実施しましたか?", body: "「実施した」を押すと 1on1 の回数に数えます" };
           case "visitor": return { title: "🙋 ビジターの申込がありました", body: x.text + " さん" };
           case "ann": return { title: "📣 運営からのお知らせ", body: x.text };
           case "event": return { title: "📅 定例会の予定が出ました", body: (x.date || "") + " " + x.text };
@@ -3665,7 +3686,7 @@ var BtexServerCore = (function () {
           createVisitorInvite: createVisitorInvite, listMyVisitors: listMyVisitors, updateVisitor: updateVisitor,
           visitorInfo: visitorInfo, visitorApply: visitorApply,
           listMyReferrals: listMyReferrals, reportThanks: reportThanks, deleteThanks: deleteThanks, getRankings: getRankings, getTeamRanking: getTeamRanking, getStats: getStats, adminSetTeamGoals: adminSetTeamGoals,
-          list1on1: list1on1, save1on1: save1on1, delete1on1: delete1on1,
+          list1on1: list1on1, save1on1: save1on1, delete1on1: delete1on1, confirm1on1: confirm1on1,
           getMySettings: getMySettings, updateMySettings: updateMySettings,
           listAnnouncements: listAnnouncements, markAnnouncementsRead: markAnnouncementsRead,
           adminSaveAnnouncement: adminSaveAnnouncement, adminDeleteAnnouncement: adminDeleteAnnouncement,
@@ -4200,17 +4221,21 @@ function doGet() {
 }
 
 // ---------- 定期実行(1時間ごと) ----------
-// 定例会が終わったあと、Google Meet の参加記録から出欠をつける
+// 定例会が終わったあと、Google Meet の参加記録から出欠をつける。
+// あわせて、時刻を過ぎた 1on1 の「実施しましたか?」などをスマホに通知する
 function syncMeetAttendanceJob() {
   var lock = LockService.getScriptLock();
   lock.waitLock(30000);
+  var r, pushJob = null;
   try {
-    var r = SERVER_.runJob("syncMeet");
+    r = SERVER_.runJob("syncMeet");
     if (r[0] && r[0].synced) refreshSheets_();
-    return r;
+    try { pushJob = SERVER_.runJob("takePushOutbox")[0]; } catch (err) { console.error(err); }
   } finally {
     lock.releaseLock();
   }
+  try { sendPushes_(pushJob); } catch (err) { console.error(err); }
+  return r;
 }
 function installTriggers_() {
   ScriptApp.getProjectTriggers().forEach(function (t) {
@@ -4224,10 +4249,8 @@ function setup() {
   SERVER_.handle({ action: "loginOptions" });
   // Google Calendar API を追加していれば、1on1 用のカレンダーを作っておく(権限の確認もここで出る)
   if (CALENDAR_) oneOnOneCalendarId_();
-  // Meet の参加記録から出欠をつける処理を、1時間ごとに動かす(カレンダー連携を設定したときだけ)
-  if (CALENDAR_) {
-    try { installTriggers_(); } catch (err) { console.error("トリガーを入れられませんでした: " + err); }
-  }
+  // 1時間ごとの処理(Meet の参加記録から出欠をつける・時刻を過ぎた 1on1 の確認を通知する)を入れる
+  try { installTriggers_(); } catch (err) { console.error("トリガーを入れられませんでした: " + err); }
   SERVER_.handle({ action: "verifySession", sessionToken: "" });
   refreshSheets_();
   return "準備できました。名簿 " + (loadDb_().referralMembers || []).length + " 名";

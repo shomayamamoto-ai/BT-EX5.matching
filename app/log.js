@@ -217,7 +217,7 @@
     const d = await App.api("list1on1");
     if (!d) return;
     oneMeta = { calendar: d.calendar, hasCalendarEmail: d.hasCalendarEmail };
-    el.append(h("p", { class: "app-lead" }, "1on1 は、メンバー同士がお互いの仕事を深く知るための面談です。予定を入れておくと、時刻を過ぎたときに自動で「実施」になり、回数に数えられます。メモはあなただけが見られます。"));
+    el.append(h("p", { class: "app-lead" }, "1on1 は、メンバー同士がお互いの仕事を深く知るための面談です。予定の時刻を過ぎると「実施しましたか?」と確認が届き、「実施した」と答えると2人の回数に数えられます。メモはあなただけが見られます。"));
     el.append(h("div", { class: "app-cta-row" }, App.btn("＋ 1on1 を予定・記録する", () => oneForm(null, params.get("with")), "primary wide")));
     if (d.calendar && !d.hasCalendarEmail) {
       el.append(h("a", { class: "home-alert", href: "#me/calendar" }, h("b", null, "Google カレンダーと連携しましょう"), h("span", null, "メールアドレスを登録すると、1on1 の予定と Meet の招待があなたのカレンダーに自動で入ります")));
@@ -229,8 +229,16 @@
     const row = (o) => h("li", null, h("button", { type: "button", class: "app-row", onclick: () => oneForm(o) },
       App.avatar(o.withName),
       h("span", { class: "app-row-main" }, h("b", null, `${o.withName}さん`), h("small", null, `${when(o)} ・ ${where(o)}${o.note ? " ・ メモあり" : ""}`)),
-      o.status === "cancelled" ? App.chip("中止", "mute") : o.status === "done" ? App.chip(o.autoDone ? "実施(自動)" : "実施", "good") : App.chip(App.daysUntil(o.date, d.today) === 0 ? "今日" : "予定", "info")));
-    el.append(App.section(`予定(${planned.length})`, planned.length ? h("ul", { class: "app-list" }, planned.map((o) => {
+      o.status === "cancelled" ? App.chip("中止", "mute") : o.status === "done" ? App.chip(o.autoDone ? "実施(自動)" : "実施", "good") : o.awaiting ? App.chip("確認待ち", "warn") : App.chip(App.daysUntil(o.date, d.today) === 0 ? "今日" : "予定", "info")));
+    // 時刻を過ぎた予定: 実施したかを聞く
+    const asking = planned.filter((o) => o.awaiting);
+    if (asking.length) {
+      el.append(App.section(`実施しましたか?(${asking.length})`, h("ul", { class: "app-list" }, asking.map((o) => h("li", { class: "one-ask", id: `ask-${o.id}` },
+        h("div", { class: "app-row" }, App.avatar(o.withName),
+          h("span", { class: "app-row-main" }, h("b", null, `${o.withName}さんとの 1on1`), h("small", null, `${when(o)} ・ ${where(o)}`))),
+        askButtons(o))))));
+    }
+    el.append(App.section(`予定(${planned.length - asking.length})`, planned.length > asking.length ? h("ul", { class: "app-list" }, planned.filter((o) => !o.awaiting).map((o) => {
       const li = row(o);
       li.append(h("div", { class: "one-cal" },
         o.meetUrl ? h("a", { class: "app-btn small", href: o.meetUrl, target: "_blank", rel: "noopener" }, "Meet に参加") : null,
@@ -241,9 +249,37 @@
     el.append(recommendSection(d.items));
     el.append(App.section(`これまで(${done.length})`, done.length ? h("ul", { class: "app-list" }, done.map(row)) : App.empty("まだ記録がありません。")));
     if (params.has("new")) oneForm(null, params.get("with"));
+    // お知らせ・通知から来たとき: その 1on1 の確認を前に出す
+    const ask = params.get("confirm") && d.items.find((o) => o.id === params.get("confirm"));
+    if (ask) {
+      history.replaceState(null, "", "#log/1on1");
+      if (ask.awaiting) askSheet(ask, when(ask));
+      else App.toast(ask.status === "done" ? "この 1on1 は「実施」になっています" : "この 1on1 は確認済みです");
+    }
     // プロフィールから戻ってきたとき、開いていた 1on1 をもう一度開く
     const reopen = params.get("open") && d.items.find((o) => o.id === params.get("open"));
     if (reopen) { history.replaceState(null, "", "#log/1on1"); oneForm(reopen); }
+  }
+
+  // 「実施した / 実施しなかった」のボタン(どちらかが答えれば2人とも反映)
+  function askButtons(o, after) {
+    const answer = async (held) => {
+      const d = await App.api("confirm1on1", { id: o.id, held });
+      if (!d) return;
+      App.toast(held ? `${o.withName}さんとの 1on1 を「実施」にしました(回数に数えました)` : "「中止」にしました");
+      if (after) after();
+      App.route();
+    };
+    return h("div", { class: "app-btn-row one-ask-btns" },
+      App.btn("実施した", () => answer(true), "primary small"),
+      App.btn("実施しなかった", () => answer(false), "ghost small"));
+  }
+  function askSheet(o, whenText) {
+    App.openSheet("1on1 は実施しましたか?", (body, close) => {
+      body.append(h("p", { class: "app-lead" }, `${o.withName}さんとの 1on1(${whenText})の時刻を過ぎました。実施しましたか?`),
+        h("p", { class: "app-field-hint" }, "「実施した」を押すと、2人の 1on1 の回数に数えます。相手が先に答えた場合は、あなたも答える必要はありません。"),
+        askButtons(o, close));
+    }, { noFocus: true });
   }
 
   // 次に 1on1 するとよい人: まだ会っていない人のうち、紹介し合えそうな人を先に
@@ -352,7 +388,7 @@
       onsiteBox.hidden = mode.getValue() !== "onsite";
       meetBox.hidden = mode.getValue() !== "meet";
 
-      // 状況: 予定の時刻を過ぎると自動で「実施」になる
+      // 状況: 予定の時刻を過ぎると「実施しましたか?」と確認する(「実施した」で回数に数える)
       const isPast = () => date.value < today;
       const status = toggleGroup([{ id: "planned", label: "予定" }, { id: "done", label: "実施した" }, { id: "cancelled", label: "中止" }], o ? o.status : "planned");
       date.addEventListener("change", () => { if (!o) status.setValue(isPast() ? "done" : "planned"); });
@@ -384,7 +420,8 @@
       App.field("日付", h("div", null, date, quick)),
       h("div", { class: "app-grid2" }, App.field("開始時刻", time), App.field("時間", duration)), endNote,
       App.field("場所", h("div", null, mode, onsiteBox, meetBox)),
-      App.field("状況", status, "予定の時刻を過ぎると、自動で「実施」になります(中止したときは「中止」に)"),
+      o && o.awaiting ? h("p", { class: "one-ask-note" }, "予定の時刻を過ぎました。実施したら「実施した」を選んで保存してください(1on1 の回数に数えます)。") : null,
+      App.field("状況", status, "予定の時刻を過ぎると「実施しましたか?」と確認が届きます。「実施した」と答えると 1on1 の回数に数えます(行わなかったときは「中止」に)"),
       App.field("メモ", note),
       App.field("次にやること", next),
       err,

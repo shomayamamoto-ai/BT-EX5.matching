@@ -43,11 +43,13 @@
           todo.push(alertLink("#log/ref", `${f.withName}さんからの紹介に ${f.days} 日返事をしていません`, `${f.prospect || "紹介された方"}へ連絡したら「連絡済み」にしてください`, "is-warn"));
         } else if (f.type === "thanksMissing") {
           todo.push(alertLink("#log/ref", `成約おめでとうございます。${f.withName}さんへお礼を送りましょう`, `${f.prospect || "紹介された方"}の件。「成約 → お礼」で金額を記録できます`, "is-good"));
+        } else if (f.type === "oneConfirm") {
+          todo.push(alertLink(`#log/1on1?confirm=${encodeURIComponent(f.id)}`, `${f.withName}さんとの 1on1 は実施しましたか?`, `${App.fmtDate(f.date)}${f.time ? ` ${f.time}` : ""} の予定。押して「実施した」を選ぶと回数に数えます`, "is-warn"));
         } else if (f.type === "oneToday") {
-          todo.push(alertLink(f.meetUrl || "#log/1on1", `今日は ${f.withName}さんと 1on1 です`, f.meetUrl ? `${f.time} から Google Meet(押すと参加できます)` : [f.time, f.place].filter(Boolean).join(" ・ ") || "終わると自動で「実施」になります"));
+          todo.push(alertLink(f.meetUrl || "#log/1on1", `今日は ${f.withName}さんと 1on1 です`, f.meetUrl ? `${f.time} から Google Meet(押すと参加できます)` : [f.time, f.place].filter(Boolean).join(" ・ ") || "終わったら「実施した」を押してください"));
           if (f.meetUrl) { const a = todo[todo.length - 1]; a.target = "_blank"; a.rel = "noopener"; }
         } else if (f.type === "oneMemo") {
-          todo.push(alertLink("#log/1on1", `${f.withName}さんとの 1on1 を「実施」にしました`, "忘れないうちにメモを残しましょう(行わなかったときは「中止」に)", "is-good"));
+          todo.push(alertLink("#log/1on1", `${f.withName}さんとの 1on1 を「実施」にしました`, "忘れないうちにメモを残しましょう", "is-good"));
         }
       });
       if (!d.me.hasPassword) {

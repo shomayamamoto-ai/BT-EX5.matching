@@ -675,3 +675,9 @@ html.big-text body { zoom: 1.15; }
 .meet-howto summary { cursor: pointer; padding: 9px 12px; font-weight: 800; color: var(--accent-dark); }
 .meet-howto ol { margin: 0; padding: 0 14px 4px 2.2em; display: grid; gap: 5px; line-height: 1.6; }
 .meet-howto .app-field-hint { padding: 4px 12px 10px; margin: 0; }
+
+/* 時刻を過ぎた 1on1 の確認 */
+.one-ask { padding: 10px 12px; }
+.one-ask .app-row { padding: 0; }
+.one-ask-btns { margin-top: 8px; }
+.one-ask-note { margin: 0 0 8px; padding: 10px 12px; border-radius: 12px; background: var(--warn-bg); color: var(--warn); font-size: 13px; font-weight: 700; }

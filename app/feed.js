@@ -16,6 +16,7 @@
       case "thanks": return { icon: "💐", title: `${x.whoName}さんからありがとうが届きました`, sub: `${App.yen(x.amount)}${x.text ? ` ・ ${x.text}` : ""}` };
       case "comment": return { icon: "💬", title: `${x.whoName}さんがあなたの投稿にコメントしました`, sub: x.text };
       case "reply": return { icon: "💬", title: `${x.whoName}さんも同じ投稿にコメントしました`, sub: x.text };
+      case "oneAsk": return { icon: "☕", title: `${x.whoName}さんとの 1on1 は実施しましたか?`, sub: "押して「実施した」を選ぶと回数に数えます" };
       case "oneNew": return { icon: "👥", title: `${x.whoName}さんが 1on1 を記録しました`, sub: App.fmtDate(x.date) };
       case "visitor": return { icon: "🙋", title: `${x.text || "ビジター"}さんが定例会に申し込みました`, sub: "あなたの招待から" };
       case "ann": return { icon: "📣", title: "運営連絡", sub: x.text };

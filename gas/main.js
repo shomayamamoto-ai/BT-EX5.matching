@@ -370,17 +370,21 @@ function doGet() {
 }
 
 // ---------- 定期実行(1時間ごと) ----------
-// 定例会が終わったあと、Google Meet の参加記録から出欠をつける
+// 定例会が終わったあと、Google Meet の参加記録から出欠をつける。
+// あわせて、時刻を過ぎた 1on1 の「実施しましたか?」などをスマホに通知する
 function syncMeetAttendanceJob() {
   var lock = LockService.getScriptLock();
   lock.waitLock(30000);
+  var r, pushJob = null;
   try {
-    var r = SERVER_.runJob("syncMeet");
+    r = SERVER_.runJob("syncMeet");
     if (r[0] && r[0].synced) refreshSheets_();
-    return r;
+    try { pushJob = SERVER_.runJob("takePushOutbox")[0]; } catch (err) { console.error(err); }
   } finally {
     lock.releaseLock();
   }
+  try { sendPushes_(pushJob); } catch (err) { console.error(err); }
+  return r;
 }
 function installTriggers_() {
   ScriptApp.getProjectTriggers().forEach(function (t) {
@@ -394,10 +398,8 @@ function setup() {
   SERVER_.handle({ action: "loginOptions" });
   // Google Calendar API を追加していれば、1on1 用のカレンダーを作っておく(権限の確認もここで出る)
   if (CALENDAR_) oneOnOneCalendarId_();
-  // Meet の参加記録から出欠をつける処理を、1時間ごとに動かす(カレンダー連携を設定したときだけ)
-  if (CALENDAR_) {
-    try { installTriggers_(); } catch (err) { console.error("トリガーを入れられませんでした: " + err); }
-  }
+  // 1時間ごとの処理(Meet の参加記録から出欠をつける・時刻を過ぎた 1on1 の確認を通知する)を入れる
+  try { installTriggers_(); } catch (err) { console.error("トリガーを入れられませんでした: " + err); }
   SERVER_.handle({ action: "verifySession", sessionToken: "" });
   refreshSheets_();
   return "準備できました。名簿 " + (loadDb_().referralMembers || []).length + " 名";
