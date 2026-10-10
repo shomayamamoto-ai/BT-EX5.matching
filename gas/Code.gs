@@ -509,6 +509,10 @@ const REF_SEED_MEMBERS = [
     triggers: ["声優になりたい", "ナレーションの仕事を増やしたい", "歌の活動をしたい", "喋ると声が枯れる", "録音スタジオを探している", "声優・タレントを起用したい"],
     targets: ["it", "personal"],
     prospects: ["individual", "owner", "staff"],
+    links: [
+      { type: "website", url: "https://fsmk.co/t/BpzLxF-dknqxc?openExternalBrowser=1", label: "BVB(ビジネスボイスブースター)" },
+      { type: "website", url: "https://sites.google.com/view/echo-studio/ikespa", label: "イケボスパルタ塾" },
+    ],
   }),
   Object.assign(rosterMember("m03", "佐藤 志織", "アットハッピー/Canva・AI講師、LP・サイト制作", "All Win🏆", "AI研修・AI活用", ["ai", "aitraining", "web", "design"]), {
     business: "Canva・AI講師、LP・サイト制作、Webデザイン。",
@@ -733,6 +737,8 @@ const REF_SEED_REVISIONS = [
   { rev: "2026-10-yamamoto-4", ids: ["yamamoto"], force: true },
   // 本人の依頼で、山本 捷真の LINE を連絡先に追加(本人が足したリンクは消さず、ないものだけを足す)
   { rev: "2026-10-yamamoto-line", ids: ["yamamoto"], fields: ["links"], addLinks: ["line"] },
+  // 本人の依頼で、あまみや 七音さんのサービスのページ(BVB・イケボスパルタ塾)を追加(ほかのリンクはそのまま)
+  { rev: "2026-10-amamiya-lp", ids: ["m02"], fields: ["links"], addLinks: ["website"] },
 ];
 
 // 紹介に効く項目(重要な順)。足りない項目は管理者ページの「お願い文」と、
