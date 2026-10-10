@@ -43,6 +43,10 @@
           todo.push(alertLink("#log/ref", `${f.withName}さんからの紹介に ${f.days} 日返事をしていません`, `${f.prospect || "紹介された方"}へ連絡したら「連絡済み」にしてください`, "is-warn"));
         } else if (f.type === "thanksMissing") {
           todo.push(alertLink("#log/ref", `成約おめでとうございます。${f.withName}さんへお礼を送りましょう`, `${f.prospect || "紹介された方"}の件。「成約 → お礼」で金額を記録できます`, "is-good"));
+        } else if (f.type === "rsvpSoon") {
+          todo.push(alertLink(`#events/detail/${encodeURIComponent(f.id)}`, `${App.fmtDate(f.date)}${f.start ? ` ${f.start}` : ""} の定例会の出欠がまだです`, `${f.title}。押して「出席する」「欠席する」を選んでください`, "is-warn"));
+        } else if (f.type === "visitorFollow") {
+          todo.push(alertLink("#invite", `${f.name}さん(ビジター)が定例会に参加しました`, "熱いうちに入会のご案内を。入会が決まったら招待履歴で「入会」にしてください", "is-good"));
         } else if (f.type === "oneConfirm") {
           todo.push(alertLink(`#log/1on1?confirm=${encodeURIComponent(f.id)}`, `${f.withName}さんとの 1on1 は実施しましたか?`, `${App.fmtDate(f.date)}${f.time ? ` ${f.time}` : ""} の予定。押して「実施した」を選ぶと回数に数えます`, "is-warn"));
         } else if (f.type === "oneToday") {

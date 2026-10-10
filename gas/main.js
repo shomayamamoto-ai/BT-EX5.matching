@@ -386,11 +386,66 @@ function syncMeetAttendanceJob() {
   try { sendPushes_(pushJob); } catch (err) { console.error(err); }
   return r;
 }
+// ---------- 毎日のバックアップ(午前3時ごろ) ----------
+// 「_data」シート(全データ)を、曜日ごとの非表示シート「_backup_日」〜「_backup_土」に写す(7日分)。
+// 間違えて消した・壊れたときは、Apps Script のエディタで restoreLatestBackup を実行すると、
+// いちばん新しいバックアップに戻る(戻す前の状態も「_backup_戻す前」に残す)
+var BACKUP_DAYS = ["日", "月", "火", "水", "木", "金", "土"];
+function copySheetValues_(from, toName) {
+  var ss = spreadsheet_();
+  var to = ss.getSheetByName(toName);
+  if (!to) {
+    to = ss.insertSheet(toName);
+    to.getRange("A:A").setNumberFormat("@");
+    to.hideSheet();
+  }
+  to.clearContents();
+  var last = from.getLastRow();
+  if (last < 1) return 0;
+  to.getRange(1, 1, last, 1).setValues(from.getRange(1, 1, last, 1).getValues());
+  return last;
+}
+function backupJob() {
+  var lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  try {
+    var name = "_backup_" + BACKUP_DAYS[new Date().getDay()];
+    var rows = copySheetValues_(dataSheet_(), name);
+    PropertiesService.getScriptProperties().setProperty("BTEX5_LAST_BACKUP", JSON.stringify({ sheet: name, at: Date.now(), rows: rows }));
+    return name;
+  } finally {
+    lock.releaseLock();
+  }
+}
+// いちばん新しいバックアップに戻す(エディタから手で実行する)
+function restoreLatestBackup() {
+  var info = JSON.parse(PropertiesService.getScriptProperties().getProperty("BTEX5_LAST_BACKUP") || "null");
+  if (!info) throw new Error("バックアップがまだありません");
+  var ss = spreadsheet_();
+  var from = ss.getSheetByName(info.sheet);
+  if (!from) throw new Error("バックアップのシートが見つかりません: " + info.sheet);
+  var lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  try {
+    copySheetValues_(dataSheet_(), "_backup_戻す前");
+    var sh = dataSheet_();
+    sh.clearContents();
+    copySheetValues_(from, DATA_SHEET);
+    loadDb_(); // 読めるか確かめる(壊れていたら例外)
+  } finally {
+    lock.releaseLock();
+  }
+  refreshSheets_();
+  return Utilities.formatDate(new Date(info.at), "Asia/Tokyo", "yyyy/MM/dd HH:mm") + " のバックアップに戻しました";
+}
+
 function installTriggers_() {
   ScriptApp.getProjectTriggers().forEach(function (t) {
-    if (t.getHandlerFunction() === "syncMeetAttendanceJob") ScriptApp.deleteTrigger(t);
+    var fn = t.getHandlerFunction();
+    if (fn === "syncMeetAttendanceJob" || fn === "backupJob") ScriptApp.deleteTrigger(t);
   });
   ScriptApp.newTrigger("syncMeetAttendanceJob").timeBased().everyHours(1).create();
+  ScriptApp.newTrigger("backupJob").timeBased().everyDays(1).atHour(3).create();
 }
 
 // 初回に Apps Script のエディタから一度だけ実行する(権限の承認と、名簿の作成)
@@ -398,7 +453,8 @@ function setup() {
   SERVER_.handle({ action: "loginOptions" });
   // Google Calendar API を追加していれば、1on1 用のカレンダーを作っておく(権限の確認もここで出る)
   if (CALENDAR_) oneOnOneCalendarId_();
-  // 1時間ごとの処理(Meet の参加記録から出欠をつける・時刻を過ぎた 1on1 の確認を通知する)を入れる
+  // 1時間ごとの処理(Meet の参加記録から出欠をつける・時刻を過ぎた 1on1 の確認を通知する)と、
+  // 毎日のバックアップを入れる
   try { installTriggers_(); } catch (err) { console.error("トリガーを入れられませんでした: " + err); }
   SERVER_.handle({ action: "verifySession", sessionToken: "" });
   refreshSheets_();

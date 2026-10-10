@@ -315,7 +315,7 @@
     const del = e.target.closest("[data-delete]");
     if (del) {
       const m = members.find((x) => x.id === del.dataset.delete);
-      if (!m || !confirm(`${m.name}さんを名簿から削除します。よろしいですか?`)) return;
+      if (!m || !confirm(`${m.name}さんを名簿から削除します。\nこの方のログイン(アカウント・ログイン中の端末・通知)も止まります。紹介やマイルの記録は残ります。よろしいですか?`)) return;
       const res = await AuthApi.adminDeleteReferralMember(AuthSession.getToken(), m.id);
       if (!res.success) { toast(res.error.userMessage); return; }
       await load();

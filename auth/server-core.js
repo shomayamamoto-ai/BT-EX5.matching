@@ -330,6 +330,17 @@ var BtexServerCore = (function () {
 
     // メンバーを名簿から消し、そのメンバーとして作られたログイン情報・セッション・
     // 紹介の記録もあわせて消す
+    // 名簿から外した人は、ログインできないようにする(アカウント・ログイン中の端末・通知の登録を消す)。
+    // 紹介・マイル・1on1 などの記録は残す(名前は「退会したメンバー」と出る)
+    function revokeMemberAccess(db, id) {
+      var userIds = db.users.filter(function (u) { return u.memberId === id; }).map(function (u) { return u.userId; });
+      db.users = db.users.filter(function (u) { return u.memberId !== id; });
+      Object.keys(db.sessions).forEach(function (t) {
+        if (userIds.indexOf(db.sessions[t].userId) !== -1) delete db.sessions[t];
+      });
+      if (Array.isArray(db.pushSubs)) db.pushSubs = db.pushSubs.filter(function (s) { return s.memberId !== id; });
+    }
+
     function removeMember(db, id) {
       var userIds = db.users.filter(function (u) { return u.memberId === id; }).map(function (u) { return u.userId; });
       db.referralMembers = db.referralMembers.filter(function (m) { return m.id !== id; });
@@ -340,6 +351,7 @@ var BtexServerCore = (function () {
       db.referralLogs = db.referralLogs.filter(function (l) {
         return l.toMemberId !== id && userIds.indexOf(l.fromUserId) === -1;
       });
+      if (Array.isArray(db.pushSubs)) db.pushSubs = db.pushSubs.filter(function (s) { return s.memberId !== id; });
     }
 
     function findIndex(list, fn) {
@@ -912,6 +924,7 @@ var BtexServerCore = (function () {
       var before = (db.referralMembers || []).length;
       db.referralMembers = (db.referralMembers || []).filter(function (x) { return x.id !== id; });
       if (db.referralMembers.length === before) return fail("INVALID_REQUEST");
+      revokeMemberAccess(db, id);
       saveDb(db);
       return ok({});
     }

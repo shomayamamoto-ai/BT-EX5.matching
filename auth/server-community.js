@@ -456,6 +456,16 @@
         }
       }
       // 終わった時刻(日本時間のミリ秒)
+      function eventStartMs(e) {
+        var p = e.date.split("-").map(Number);
+        var hm = (e.start || "00:00").split(":").map(Number);
+        return Date.UTC(p[0], p[1] - 1, p[2], hm[0], hm[1]) - JST;
+      }
+      // 2日以内に始まり、出欠の締切前の定例会
+      function eventSoon(e) {
+        var start = eventStartMs(e);
+        return c.nowMs() >= start - 2 * DAY && c.nowMs() < start && !deadlinePassed(e);
+      }
       function eventEndMs(e) {
         var t = e.end || e.start || "23:59";
         var p = e.date.split("-").map(Number);
@@ -942,6 +952,10 @@
         }
         var ids = c.cleanList(body.shown, null, 10).filter(function (id) { return member(db, id); });
         var day = db.searchLog[today()] || (db.searchLog[today()] = { n: 0, m: {} });
+        // 1人1日200回まで数える(押しすぎ・いたずらで数字がふくらまないように)
+        day.u = day.u || {};
+        day.u[w.id] = (day.u[w.id] || 0) + 1;
+        if (day.u[w.id] > 200) return c.ok({ skipped: true });
         day.n += 1;
         ids.forEach(function (id, i) {
           var row = day.m[id] || (day.m[id] = [0, 0]);
@@ -1533,6 +1547,8 @@
         });
         db.events.forEach(function (e) {
           if (e.createdAt && e.date >= today()) items.push({ type: "event", at: e.createdAt, text: e.title, date: e.date, link: "events" });
+          // 2日前になっても出欠がまだ → 確認(スマホにも通知)
+          if (eventSoon(e) && !(e.rsvps || {})[me]) items.push({ type: "rsvpSoon", at: eventStartMs(e) - 2 * DAY, text: e.title, date: e.date, link: "events/detail/" + e.id });
         });
         var from = c.nowMs() - 60 * DAY;
         return items.filter(function (x) { return x.at >= from; }).sort(function (a, b) { return b.at - a.at; });
@@ -1595,6 +1611,18 @@
           var other = o.a === w.id ? o.b : o.a;
           if (awaitingConfirm(o)) followUps.push({ type: "oneConfirm", id: o.id, with: other, withName: nameOf(db, other), date: o.date, time: o.time || "" });
           else if (o.date === t) followUps.push({ type: "oneToday", id: o.id, with: other, withName: nameOf(db, other), time: o.time || "", place: o.place || "", meetUrl: o.meetUrl || "" });
+        });
+        // 自分が招いたビジターが参加した(入会・見送りがまだ・参加から14日以内) → 入会の声かけ
+        db.visitors.forEach(function (v) {
+          if (v.by !== w.id || v.status !== "attended") return;
+          var e = c.find(db.events, function (x) { return x.id === v.eventId; });
+          if (!e || e.date > t || c.nowMs() - eventEndMs(e) > 14 * DAY) return;
+          followUps.push({ type: "visitorFollow", id: v.id, name: v.name || "ビジター", date: e.date });
+        });
+        // 定例会が近いのに出欠がまだ(2日以内・締切前)
+        db.events.forEach(function (e) {
+          if (!eventSoon(e) || (e.rsvps || {})[w.id]) return;
+          followUps.push({ type: "rsvpSoon", id: e.id, title: e.title, date: e.date, start: e.start || "" });
         });
         // 時刻を過ぎて自動で「実施」になった 1on1(1週間以内・自分のメモがまだ)
         ones.forEach(function (o) {
@@ -1727,6 +1755,7 @@
           case "comment": return { title: "💬 " + n + "があなたの投稿にコメント", body: x.text };
           case "reply": return { title: "💬 " + n + "も掲示板でコメント", body: x.text };
           case "oneNew": return { title: "☕ " + n + "と1on1の予定", body: x.date || "" };
+          case "rsvpSoon": return { title: "📅 " + (x.date || "") + " の定例会の出欠がまだです", body: x.text + "(押して出席・欠席を選んでください)" };
           case "oneAsk": return { title: "☕ " + n + "との1on1 は実施しましたか?", body: "「実施した」を押すと 1on1 の回数に数えます" };
           case "visitor": return { title: "🙋 ビジターの申込がありました", body: x.text + " さん" };
           case "ann": return { title: "📣 運営からのお知らせ", body: x.text };

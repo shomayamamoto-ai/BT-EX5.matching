@@ -1147,6 +1147,17 @@ var BtexServerCore = (function () {
 
     // メンバーを名簿から消し、そのメンバーとして作られたログイン情報・セッション・
     // 紹介の記録もあわせて消す
+    // 名簿から外した人は、ログインできないようにする(アカウント・ログイン中の端末・通知の登録を消す)。
+    // 紹介・マイル・1on1 などの記録は残す(名前は「退会したメンバー」と出る)
+    function revokeMemberAccess(db, id) {
+      var userIds = db.users.filter(function (u) { return u.memberId === id; }).map(function (u) { return u.userId; });
+      db.users = db.users.filter(function (u) { return u.memberId !== id; });
+      Object.keys(db.sessions).forEach(function (t) {
+        if (userIds.indexOf(db.sessions[t].userId) !== -1) delete db.sessions[t];
+      });
+      if (Array.isArray(db.pushSubs)) db.pushSubs = db.pushSubs.filter(function (s) { return s.memberId !== id; });
+    }
+
     function removeMember(db, id) {
       var userIds = db.users.filter(function (u) { return u.memberId === id; }).map(function (u) { return u.userId; });
       db.referralMembers = db.referralMembers.filter(function (m) { return m.id !== id; });
@@ -1157,6 +1168,7 @@ var BtexServerCore = (function () {
       db.referralLogs = db.referralLogs.filter(function (l) {
         return l.toMemberId !== id && userIds.indexOf(l.fromUserId) === -1;
       });
+      if (Array.isArray(db.pushSubs)) db.pushSubs = db.pushSubs.filter(function (s) { return s.memberId !== id; });
     }
 
     function findIndex(list, fn) {
@@ -1729,6 +1741,7 @@ var BtexServerCore = (function () {
       var before = (db.referralMembers || []).length;
       db.referralMembers = (db.referralMembers || []).filter(function (x) { return x.id !== id; });
       if (db.referralMembers.length === before) return fail("INVALID_REQUEST");
+      revokeMemberAccess(db, id);
       saveDb(db);
       return ok({});
     }
@@ -2435,6 +2448,16 @@ var BtexServerCore = (function () {
         }
       }
       // 終わった時刻(日本時間のミリ秒)
+      function eventStartMs(e) {
+        var p = e.date.split("-").map(Number);
+        var hm = (e.start || "00:00").split(":").map(Number);
+        return Date.UTC(p[0], p[1] - 1, p[2], hm[0], hm[1]) - JST;
+      }
+      // 2日以内に始まり、出欠の締切前の定例会
+      function eventSoon(e) {
+        var start = eventStartMs(e);
+        return c.nowMs() >= start - 2 * DAY && c.nowMs() < start && !deadlinePassed(e);
+      }
       function eventEndMs(e) {
         var t = e.end || e.start || "23:59";
         var p = e.date.split("-").map(Number);
@@ -2921,6 +2944,10 @@ var BtexServerCore = (function () {
         }
         var ids = c.cleanList(body.shown, null, 10).filter(function (id) { return member(db, id); });
         var day = db.searchLog[today()] || (db.searchLog[today()] = { n: 0, m: {} });
+        // 1人1日200回まで数える(押しすぎ・いたずらで数字がふくらまないように)
+        day.u = day.u || {};
+        day.u[w.id] = (day.u[w.id] || 0) + 1;
+        if (day.u[w.id] > 200) return c.ok({ skipped: true });
         day.n += 1;
         ids.forEach(function (id, i) {
           var row = day.m[id] || (day.m[id] = [0, 0]);
@@ -3512,6 +3539,8 @@ var BtexServerCore = (function () {
         });
         db.events.forEach(function (e) {
           if (e.createdAt && e.date >= today()) items.push({ type: "event", at: e.createdAt, text: e.title, date: e.date, link: "events" });
+          // 2日前になっても出欠がまだ → 確認(スマホにも通知)
+          if (eventSoon(e) && !(e.rsvps || {})[me]) items.push({ type: "rsvpSoon", at: eventStartMs(e) - 2 * DAY, text: e.title, date: e.date, link: "events/detail/" + e.id });
         });
         var from = c.nowMs() - 60 * DAY;
         return items.filter(function (x) { return x.at >= from; }).sort(function (a, b) { return b.at - a.at; });
@@ -3574,6 +3603,18 @@ var BtexServerCore = (function () {
           var other = o.a === w.id ? o.b : o.a;
           if (awaitingConfirm(o)) followUps.push({ type: "oneConfirm", id: o.id, with: other, withName: nameOf(db, other), date: o.date, time: o.time || "" });
           else if (o.date === t) followUps.push({ type: "oneToday", id: o.id, with: other, withName: nameOf(db, other), time: o.time || "", place: o.place || "", meetUrl: o.meetUrl || "" });
+        });
+        // 自分が招いたビジターが参加した(入会・見送りがまだ・参加から14日以内) → 入会の声かけ
+        db.visitors.forEach(function (v) {
+          if (v.by !== w.id || v.status !== "attended") return;
+          var e = c.find(db.events, function (x) { return x.id === v.eventId; });
+          if (!e || e.date > t || c.nowMs() - eventEndMs(e) > 14 * DAY) return;
+          followUps.push({ type: "visitorFollow", id: v.id, name: v.name || "ビジター", date: e.date });
+        });
+        // 定例会が近いのに出欠がまだ(2日以内・締切前)
+        db.events.forEach(function (e) {
+          if (!eventSoon(e) || (e.rsvps || {})[w.id]) return;
+          followUps.push({ type: "rsvpSoon", id: e.id, title: e.title, date: e.date, start: e.start || "" });
         });
         // 時刻を過ぎて自動で「実施」になった 1on1(1週間以内・自分のメモがまだ)
         ones.forEach(function (o) {
@@ -3706,6 +3747,7 @@ var BtexServerCore = (function () {
           case "comment": return { title: "💬 " + n + "があなたの投稿にコメント", body: x.text };
           case "reply": return { title: "💬 " + n + "も掲示板でコメント", body: x.text };
           case "oneNew": return { title: "☕ " + n + "と1on1の予定", body: x.date || "" };
+          case "rsvpSoon": return { title: "📅 " + (x.date || "") + " の定例会の出欠がまだです", body: x.text + "(押して出席・欠席を選んでください)" };
           case "oneAsk": return { title: "☕ " + n + "との1on1 は実施しましたか?", body: "「実施した」を押すと 1on1 の回数に数えます" };
           case "visitor": return { title: "🙋 ビジターの申込がありました", body: x.text + " さん" };
           case "ann": return { title: "📣 運営からのお知らせ", body: x.text };
@@ -4326,11 +4368,66 @@ function syncMeetAttendanceJob() {
   try { sendPushes_(pushJob); } catch (err) { console.error(err); }
   return r;
 }
+// ---------- 毎日のバックアップ(午前3時ごろ) ----------
+// 「_data」シート(全データ)を、曜日ごとの非表示シート「_backup_日」〜「_backup_土」に写す(7日分)。
+// 間違えて消した・壊れたときは、Apps Script のエディタで restoreLatestBackup を実行すると、
+// いちばん新しいバックアップに戻る(戻す前の状態も「_backup_戻す前」に残す)
+var BACKUP_DAYS = ["日", "月", "火", "水", "木", "金", "土"];
+function copySheetValues_(from, toName) {
+  var ss = spreadsheet_();
+  var to = ss.getSheetByName(toName);
+  if (!to) {
+    to = ss.insertSheet(toName);
+    to.getRange("A:A").setNumberFormat("@");
+    to.hideSheet();
+  }
+  to.clearContents();
+  var last = from.getLastRow();
+  if (last < 1) return 0;
+  to.getRange(1, 1, last, 1).setValues(from.getRange(1, 1, last, 1).getValues());
+  return last;
+}
+function backupJob() {
+  var lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  try {
+    var name = "_backup_" + BACKUP_DAYS[new Date().getDay()];
+    var rows = copySheetValues_(dataSheet_(), name);
+    PropertiesService.getScriptProperties().setProperty("BTEX5_LAST_BACKUP", JSON.stringify({ sheet: name, at: Date.now(), rows: rows }));
+    return name;
+  } finally {
+    lock.releaseLock();
+  }
+}
+// いちばん新しいバックアップに戻す(エディタから手で実行する)
+function restoreLatestBackup() {
+  var info = JSON.parse(PropertiesService.getScriptProperties().getProperty("BTEX5_LAST_BACKUP") || "null");
+  if (!info) throw new Error("バックアップがまだありません");
+  var ss = spreadsheet_();
+  var from = ss.getSheetByName(info.sheet);
+  if (!from) throw new Error("バックアップのシートが見つかりません: " + info.sheet);
+  var lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  try {
+    copySheetValues_(dataSheet_(), "_backup_戻す前");
+    var sh = dataSheet_();
+    sh.clearContents();
+    copySheetValues_(from, DATA_SHEET);
+    loadDb_(); // 読めるか確かめる(壊れていたら例外)
+  } finally {
+    lock.releaseLock();
+  }
+  refreshSheets_();
+  return Utilities.formatDate(new Date(info.at), "Asia/Tokyo", "yyyy/MM/dd HH:mm") + " のバックアップに戻しました";
+}
+
 function installTriggers_() {
   ScriptApp.getProjectTriggers().forEach(function (t) {
-    if (t.getHandlerFunction() === "syncMeetAttendanceJob") ScriptApp.deleteTrigger(t);
+    var fn = t.getHandlerFunction();
+    if (fn === "syncMeetAttendanceJob" || fn === "backupJob") ScriptApp.deleteTrigger(t);
   });
   ScriptApp.newTrigger("syncMeetAttendanceJob").timeBased().everyHours(1).create();
+  ScriptApp.newTrigger("backupJob").timeBased().everyDays(1).atHour(3).create();
 }
 
 // 初回に Apps Script のエディタから一度だけ実行する(権限の承認と、名簿の作成)
@@ -4338,7 +4435,8 @@ function setup() {
   SERVER_.handle({ action: "loginOptions" });
   // Google Calendar API を追加していれば、1on1 用のカレンダーを作っておく(権限の確認もここで出る)
   if (CALENDAR_) oneOnOneCalendarId_();
-  // 1時間ごとの処理(Meet の参加記録から出欠をつける・時刻を過ぎた 1on1 の確認を通知する)を入れる
+  // 1時間ごとの処理(Meet の参加記録から出欠をつける・時刻を過ぎた 1on1 の確認を通知する)と、
+  // 毎日のバックアップを入れる
   try { installTriggers_(); } catch (err) { console.error("トリガーを入れられませんでした: " + err); }
   SERVER_.handle({ action: "verifySession", sessionToken: "" });
   refreshSheets_();
