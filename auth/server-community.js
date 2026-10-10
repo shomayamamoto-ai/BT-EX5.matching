@@ -86,6 +86,22 @@
         });
         if (!db.seen || typeof db.seen !== "object") { db.seen = {}; changed = true; }
         if (autoComplete(db)) changed = true;
+        // 初めの定例会(REF_SEED_EVENTS)を一度だけ入れる
+        if (typeof REF_SEED_EVENTS !== "undefined") {
+          if (!Array.isArray(db.eventSeeds)) { db.eventSeeds = []; changed = true; }
+          REF_SEED_EVENTS.forEach(function (se) {
+            if (db.eventSeeds.indexOf(se.seedId) !== -1) return;
+            db.eventSeeds.push(se.seedId);
+            var ev = {
+              id: newId("ev_"), title: se.title, date: se.date, start: se.start, end: se.end, place: se.place || "", area: se.area,
+              body: se.body || "", agenda: se.agenda || "", fee: se.fee || "", capacity: 0, url: "", deadline: se.deadline || "",
+              meet: se.meet !== false, party: { enabled: false }, rsvps: {}, attended: [], createdAt: c.nowMs(), seed: true,
+            };
+            syncEventCalendar(db, ev); // 共有サーバーでカレンダーが使えれば、Meet もここで作る
+            db.events.push(ev);
+            changed = true;
+          });
+        }
         return changed;
       }
       function seen(db, id) { return db.seen[id] || (db.seen[id] = { board: 0 }); }
@@ -93,22 +109,68 @@
       // ============================================
       // 定例会
       // ============================================
+      // いまの日本時間 "YYYY-MM-DDTHH:MM"(申込締切と比べる)
+      function nowStamp() {
+        var d = new Date(c.nowMs() + JST);
+        return dateKey(c.nowMs()) + "T" + ("0" + d.getUTCHours()).slice(-2) + ":" + ("0" + d.getUTCMinutes()).slice(-2);
+      }
+      function cleanStamp(v) {
+        var x = c.cleanStr(v, 16);
+        return /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(x) ? x : "";
+      }
+      function deadlinePassed(e) { return !!e.deadline && nowStamp() > e.deadline; }
+
       function eventView(w, e) {
         var rsvps = e.rsvps || {};
         var yes = Object.keys(rsvps).filter(function (k) { return rsvps[k] === "yes"; });
+        var my = rsvps[w.id] || "";
+        var party = e.party && e.party.enabled ? e.party : null;
         var v = {
           id: e.id, title: e.title, date: e.date, start: e.start, end: e.end, place: e.place, area: e.area,
-          body: e.body, fee: e.fee, capacity: e.capacity || 0, url: e.url || "",
+          body: e.body, agenda: e.agenda || "", fee: e.fee, capacity: e.capacity || 0, url: e.url || "",
+          online: e.area === "online",
+          deadline: e.deadline || "", deadlinePassed: deadlinePassed(e),
+          // 参加リンク(Meet)は、申し込んだ人と管理者にだけ見せる
+          meetUrl: e.meetUrl && (my === "yes" || w.isAdmin) ? e.meetUrl : "",
+          hasMeet: !!e.meetUrl,
+          calLink: w.isAdmin ? e.calLink || "" : "",
+          party: party ? { place: party.place || "", fee: party.fee || "", time: party.time || "" } : null,
+          myParty: (e.partyRsvps || {})[w.id] || "",
+          partyYes: party ? Object.keys(e.partyRsvps || {}).filter(function (k) { return e.partyRsvps[k] === "yes"; }).length : 0,
           yesCount: yes.length,
           noCount: Object.keys(rsvps).filter(function (k) { return rsvps[k] === "no"; }).length,
           yesNames: yes.map(function (id) { return nameOf(w.db, id); }),
-          myRsvp: rsvps[w.id] || "",
+          myRsvp: my,
           attended: (e.attended || []).indexOf(w.id) !== -1,
           checkInOpen: !!e.checkIn && e.date === today(),
-          visitorCount: w.db.visitors.filter(function (x) { return x.eventId === e.id && x.status !== "declined"; }).length,
+          visitorCount: w.db.visitors.filter(function (x) { return x.eventId === e.id && x.status !== "declined" && x.status !== "invited"; }).length,
           past: e.date < today(),
         };
         return v;
+      }
+
+      // 定例会の詳細(全員に見せる): メンバーの出欠一覧とビジター
+      function getEvent(body) {
+        var w = who(body);
+        if (w.error) return w.error;
+        var e = c.find(w.db.events, function (x) { return x.id === body.id; });
+        if (!e) return c.fail("NOT_FOUND");
+        var rs = e.rsvps || {}, pr = e.partyRsvps || {};
+        var members = (w.db.referralMembers || []).map(function (m) {
+          var att = (e.attended || []).indexOf(m.id) !== -1;
+          return {
+            id: m.id, name: m.name, team: m.team || "", category: m.company || m.category || "",
+            rsvp: rs[m.id] || "", attended: att, party: pr[m.id] || "", isMe: m.id === w.id,
+          };
+        });
+        var visitors = w.db.visitors
+          .filter(function (v) { return v.eventId === e.id && v.status !== "invited"; })
+          .map(function (v) {
+            var out = { id: v.id, name: v.name, company: v.company, business: v.business, kind: v.kind || "general", byName: nameOf(w.db, v.by), status: v.status };
+            if (w.isAdmin || v.by === w.id) out.contact = v.contact || "";
+            return out;
+          });
+        return c.ok({ event: eventView(w, e), members: members, visitors: visitors, isAdmin: w.isAdmin });
       }
 
       function listEvents(body) {
@@ -119,7 +181,7 @@
           .filter(function (e) { return e.date >= from; })
           .sort(function (a, b) { return (a.date + a.start).localeCompare(b.date + b.start); })
           .map(function (e) { return eventView(w, e); });
-        return c.ok({ events: events, today: today() });
+        return c.ok({ events: events, today: today(), calendar: !!c.calendar });
       }
 
       function rsvpEvent(body) {
@@ -127,9 +189,19 @@
         if (w.error) return w.error;
         var e = c.find(w.db.events, function (x) { return x.id === body.eventId; });
         if (!e) return c.fail("NOT_FOUND");
-        var answer = oneOf(body.answer, ["yes", "no", ""], "");
-        e.rsvps = e.rsvps || {};
-        if (answer) e.rsvps[w.id] = answer; else delete e.rsvps[w.id];
+        if ((deadlinePassed(e) || e.date < today()) && !w.isAdmin) return c.fail("INVALID_REQUEST", "申込の受付は終了しました。変更は運営にご連絡ください。");
+        if ("answer" in body) {
+          var answer = oneOf(body.answer, ["yes", "no", ""], "");
+          e.rsvps = e.rsvps || {};
+          if (answer) e.rsvps[w.id] = answer; else delete e.rsvps[w.id];
+          // 欠席にしたら懇親会も不参加に
+          if (answer === "no" && e.partyRsvps && e.partyRsvps[w.id]) e.partyRsvps[w.id] = "no";
+        }
+        if ("party" in body && e.party && e.party.enabled) {
+          var p = oneOf(body.party, ["yes", "no", ""], "");
+          e.partyRsvps = e.partyRsvps || {};
+          if (p) e.partyRsvps[w.id] = p; else delete e.partyRsvps[w.id];
+        }
         c.saveDb(w.db);
         return c.ok({ event: eventView(w, e) });
       }
@@ -159,6 +231,34 @@
         return c.ok({ event: eventView(w, e) });
       }
 
+      function daysBetween(a, b) {
+        var pa = a.split("-").map(Number), pb = b.split("-").map(Number);
+        return Math.round((Date.UTC(pb[0], pb[1] - 1, pb[2]) - Date.UTC(pa[0], pa[1] - 1, pa[2])) / DAY);
+      }
+      function shiftStamp(stamp, days) {
+        var p = stamp.slice(0, 10).split("-").map(Number);
+        var d = new Date(Date.UTC(p[0], p[1] - 1, p[2] + days));
+        return d.getUTCFullYear() + "-" + ("0" + (d.getUTCMonth() + 1)).slice(-2) + "-" + ("0" + d.getUTCDate()).slice(-2) + stamp.slice(10);
+      }
+      // 定例会を Google カレンダー(運営のカレンダー)に入れ、オンラインなら Google Meet も作る
+      function syncEventCalendar(db, e) {
+        if (!c.calendar || e.date < today()) return null;
+        if (e.area !== "online" && !e.calId) return null;
+        try {
+          var r = c.calendar.upsert({
+            id: e.calId || "", title: e.title + "(BT-EX5 定例会)", date: e.date, start: e.start || "", end: e.end || e.start || "",
+            meet: e.area === "online" && e.meet !== false, location: e.area === "online" ? "" : e.place,
+            description: [e.agenda, e.body].filter(Boolean).join("\n\n"), guests: [],
+          });
+          e.calId = r.id || e.calId || "";
+          e.calLink = r.link || e.calLink || "";
+          if (r.meetUrl) e.meetUrl = r.meetUrl;
+          return "synced";
+        } catch (err) {
+          return "error";
+        }
+      }
+
       function adminSaveEvent(body) {
         var w = admin(body);
         if (w.error) return w.error;
@@ -175,9 +275,23 @@
           fee: c.cleanStr(input.fee, 60),
           capacity: Math.max(0, Math.min(999, Number(input.capacity) || 0)),
           url: /^https:\/\/[^\s"'<>]+$/i.test(String(input.url || "")) ? c.cleanStr(input.url, 300) : "",
+          agenda: cleanText(input.agenda, 2000),
+          deadline: cleanStamp(input.deadline),
+          meet: input.meet === true,
+          party: input.party && input.party.enabled ? { enabled: true, place: c.cleanStr(input.party.place, 120), fee: c.cleanStr(input.party.fee, 60), time: c.cleanStr(input.party.time, 20) } : { enabled: false },
         };
+        // Meet の URL を手で入れた(自動で作れないとき)
+        var manualMeet = c.cleanStr(input.meetUrl, 200);
         if (!next.title || !next.date) return c.fail("INVALID_REQUEST");
-        if (e) Object.keys(next).forEach(function (k) { e[k] = next[k]; });
+        var applyMeet = function (x) {
+          if (next.area === "online" && /^https:\/\/meet\.google\.com\/[\w-]+$/.test(manualMeet)) x.meetUrl = manualMeet;
+          if (next.area !== "online") x.meetUrl = "";
+        };
+        if (e) {
+          Object.keys(next).forEach(function (k) { e[k] = next[k]; });
+          applyMeet(e);
+          syncEventCalendar(w.db, e);
+        }
         else {
           // 繰り返し: dates(最初の日を含む日付の一覧)があれば、同じ内容でまとめて作る
           var dates = [next.date];
@@ -190,10 +304,14 @@
           dates.forEach(function (d, i) {
             var x = c.clone(next);
             x.date = d;
+            // 申込締切は、開催日との差を保って各回にずらす
+            if (next.deadline && i > 0) x.deadline = shiftStamp(next.deadline, daysBetween(next.date, d));
             x.id = newId("ev_");
             x.rsvps = {};
             x.attended = [];
             x.createdAt = c.nowMs();
+            applyMeet(x);
+            syncEventCalendar(w.db, x);
             w.db.events.push(x);
             if (i === 0) e = x;
           });
@@ -208,9 +326,10 @@
       function adminDeleteEvent(body) {
         var w = admin(body);
         if (w.error) return w.error;
-        var before = w.db.events.length;
+        var target = c.find(w.db.events, function (x) { return x.id === body.id; });
+        if (!target) return c.fail("NOT_FOUND");
+        if (target.calId && c.calendar) { try { c.calendar.remove(target.calId); } catch (err) { /* 予定が消せなくても定例会は消す */ } }
         w.db.events = w.db.events.filter(function (x) { return x.id !== body.id; });
-        if (w.db.events.length === before) return c.fail("NOT_FOUND");
         c.saveDb(w.db);
         return c.ok({});
       }
@@ -261,7 +380,7 @@
       function visitorView(db, v, withContact) {
         var out = {
           id: v.id, eventId: v.eventId, name: v.name, company: v.company, business: v.business, message: v.message,
-          status: v.status, at: v.at, appliedAt: v.appliedAt || 0, by: v.by, byName: nameOf(db, v.by), token: v.token,
+          status: v.status, at: v.at, appliedAt: v.appliedAt || 0, by: v.by, byName: nameOf(db, v.by), token: v.token, kind: v.kind || "general",
         };
         var e = c.find(db.events, function (x) { return x.id === v.eventId; });
         out.eventTitle = e ? e.title : "";
@@ -279,6 +398,7 @@
           id: newId("v_"), token: c.randomToken().slice(0, 22), eventId: e.id, by: w.id,
           name: c.cleanStr(body.name, 40), company: "", business: "", contact: "", message: "",
           note: c.cleanStr(body.note, 200), status: "invited", at: c.nowMs(),
+          kind: oneOf(body.kind, ["general", "link"], "general"),
         };
         w.db.visitors.push(v);
         c.saveDb(w.db);
@@ -1117,7 +1237,7 @@
         migrate: migrate,
         actions: {
           getHome: getHome, getActivity: getActivity, adminDashboard: adminDashboard, adminExport: adminExport,
-          listEvents: listEvents, rsvpEvent: rsvpEvent, checkIn: checkIn,
+          listEvents: listEvents, getEvent: getEvent, rsvpEvent: rsvpEvent, checkIn: checkIn,
           adminSaveEvent: adminSaveEvent, adminDeleteEvent: adminDeleteEvent, adminOpenCheckIn: adminOpenCheckIn,
           adminEventDetail: adminEventDetail, adminMarkAttendance: adminMarkAttendance,
           createVisitorInvite: createVisitorInvite, listMyVisitors: listMyVisitors, updateVisitor: updateVisitor,

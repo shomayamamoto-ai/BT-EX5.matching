@@ -74,15 +74,15 @@ function randomBytes_(n) {
   return out.slice(0, n);
 }
 
-// ---------- Google カレンダー(1on1 の予定と Google Meet) ----------
+// ---------- Google カレンダー(定例会・1on1 の予定と Google Meet) ----------
 // Apps Script の「サービス」で「Google Calendar API」を追加すると使える(gas/README.md)。
-// 予定は運営者のアカウントに作る専用カレンダー「BT-EX5 1on1」に入れ、2人のメールアドレスに招待を送る
+// 予定は運営者のアカウントに作る専用カレンダー「BT-EX5 定例会・1on1」に入れる(1on1 は2人に招待を送る)
 var CALENDAR_PROP = "BTEX5_1ON1_CALENDAR_ID";
 function oneOnOneCalendarId_() {
   var props = PropertiesService.getScriptProperties();
   var id = props.getProperty(CALENDAR_PROP);
   if (id && CalendarApp.getCalendarById(id)) return id;
-  var cal = CalendarApp.createCalendar("BT-EX5 1on1", { timeZone: "Asia/Tokyo" });
+  var cal = CalendarApp.createCalendar("BT-EX5 定例会・1on1", { timeZone: "Asia/Tokyo" });
   props.setProperty(CALENDAR_PROP, cal.getId());
   return cal.getId();
 }

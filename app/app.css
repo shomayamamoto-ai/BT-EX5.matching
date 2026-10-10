@@ -502,3 +502,30 @@ html.big-text body { zoom: 1.15; }
 .one-meet-note a { font-weight: 700; }
 .one-cal { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .app-form select { appearance: none; -webkit-appearance: none; background-image: linear-gradient(45deg, transparent 50%, #a18a7e 50%), linear-gradient(135deg, #a18a7e 50%, transparent 50%); background-position: calc(100% - 18px) 50%, calc(100% - 12px) 50%; background-size: 6px 6px; background-repeat: no-repeat; padding-right: 32px; }
+
+/* ---------- 定例会の詳細 ---------- */
+.ev-main h3 a { color: inherit; text-decoration: none; }
+.ev-deadline { font-size: 12.5px; font-weight: 800; color: var(--warn); }
+.ev-deadline.is-closed { color: var(--text-light); }
+.ev-must { margin-top: 6px; font-size: 12.5px; font-weight: 800; color: #c0392b; }
+.ev-must::before { content: "← "; }
+.ev-meet { margin-top: 8px; }
+.ev-more { display: block; margin-top: 8px; }
+.evd-badges { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 12px; }
+.evd-card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); }
+.evd-info { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 16px; }
+.evd-info dt { font-size: 11.5px; color: var(--text-light); font-weight: 700; }
+.evd-info dd { font-size: 14px; font-weight: 700; }
+.evd-block { border-top: 1px solid var(--line); margin-top: 14px; padding-top: 12px; }
+.evd-block h2 { font-size: 12.5px; color: var(--text-light); font-weight: 800; margin-bottom: 6px; }
+.evd-block .app-rich { font-size: 14px; }
+.evd-block .app-btn { margin: 6px 0; }
+.evd-map { font-size: 12.5px; font-weight: 700; }
+.evd-party { margin-top: 14px; }
+.evd-rsvp .ev-rsvp-btn:disabled { opacity: 0.5; cursor: default; }
+.evd-group { margin-bottom: 12px; }
+.evd-group-head { display: inline-block; font-size: 12.5px; font-weight: 800; border-radius: 8px; padding: 2px 10px; margin-bottom: 6px; }
+.evd-group-head small { font-weight: 500; }
+.evd-no { width: 22px; text-align: right; color: var(--text-light); font-size: 12px; flex-shrink: 0; }
+.evd-members li.is-me { background: #fff3ea; }
+.evd-members .app-row { min-height: 52px; gap: 8px; }

@@ -65,6 +65,13 @@ const App = (function () {
     if (d.toDateString() === y.toDateString()) return `昨日 ${hm}`;
     return `${d.getMonth() + 1}/${d.getDate()} ${hm}`;
   }
+  // "YYYY-MM-DDTHH:MM" → "10/15(木) 0:00(あと4日)"
+  function fmtStamp(stamp) {
+    if (!stamp) return "";
+    const date = stamp.slice(0, 10), time = stamp.slice(11);
+    const days = daysUntil(date, todayKey());
+    return `${fmtDate(date)} ${Number(time.slice(0, 2))}:${time.slice(3)}${days > 0 ? `(あと${days}日)` : days === 0 ? "(今日まで)" : ""}`;
+  }
   function yen(n) { return `¥${Number(n || 0).toLocaleString("ja-JP")}`; }
   function daysUntil(d, today) {
     return Math.round((parseDate(d) - parseDate(today)) / 86400000);
@@ -295,6 +302,31 @@ const App = (function () {
     if (single) return h("label", { class: "app-field" }, h("span", { class: "app-field-label" }, label), hint ? h("span", { class: "app-field-hint" }, hint) : null, input);
     return h("div", { class: "app-field", role: "group", "aria-label": label }, h("span", { class: "app-field-label" }, label), hint ? h("span", { class: "app-field-hint" }, hint) : null, input);
   }
+  // 選んで切り替えるボタンの並び(押したものが選ばれる)
+  function toggle(options, value, onchange) {
+    let cur = value;
+    const el = h("div", { class: "app-toggle", role: "radiogroup" });
+    const draw = () => el.replaceChildren(...options.map((o) => h("button", {
+      type: "button", role: "radio", class: o.id === cur ? "is-on" : "", "aria-checked": o.id === cur ? "true" : "false",
+      onclick: () => { cur = o.id; draw(); if (onchange) onchange(cur); },
+    }, o.label)));
+    draw();
+    el.getValue = () => cur;
+    el.setValue = (v) => { cur = v; draw(); };
+    return el;
+  }
+  // 時刻の選択肢(from〜to 時、step 分ごと)
+  function timeSelect(value, opt) {
+    const o = Object.assign({ from: 6, to: 23, step: 30, none: "" }, opt || {});
+    const sel = h("select", { "aria-label": o.label || "時刻" }, o.none ? h("option", { value: "" }, o.none) : null);
+    for (let m = o.from * 60; m <= o.to * 60 + 30; m += o.step) {
+      const t = `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
+      sel.append(h("option", { value: t }, t));
+    }
+    if (value && ![...sel.options].some((x) => x.value === value)) sel.append(h("option", { value }, value));
+    sel.value = value || (o.none ? "" : sel.options[0].value);
+    return sel;
+  }
   function btn(label, onclick, cls) {
     return h("button", { type: "button", class: `app-btn ${cls || ""}`, onclick }, label);
   }
@@ -500,8 +532,8 @@ const App = (function () {
   }
 
   return {
-    h, append, fill, fmtDate, fmtDateLong, fmtTime, yen, daysUntil, todayKey, chip, avatar, richText, toast, copyText, shareText,
-    icon, qrImage, draft, clearDraft, calendarButtons, googleCalUrl, api, openSheet, doneSheet, field, btn, segmented, empty, section, memberPicker,
+    h, append, fill, fmtStamp, fmtDate, fmtDateLong, fmtTime, yen, daysUntil, todayKey, chip, avatar, richText, toast, copyText, shareText,
+    icon, qrImage, draft, clearDraft, calendarButtons, googleCalUrl, api, openSheet, doneSheet, field, btn, toggle, timeSelect, segmented, empty, section, memberPicker,
     AREA_LABELS, REF_STATUS, VISITOR_STATUS,
     views, go, route, setBadges, start,
     get members() { return members; },
