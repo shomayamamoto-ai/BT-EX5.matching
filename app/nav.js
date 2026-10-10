@@ -5,6 +5,8 @@
 // ============================================
 (function () {
   "use strict";
+  // 文字を大きく(会員アプリのマイページで切り替え)
+  try { if (localStorage.getItem("btex5-big-text") === "1") document.documentElement.classList.add("big-text"); } catch { /* noop */ }
   const script = document.currentScript;
   const currentTab = (script && script.dataset.tab) || "";
   const base = new URL("../app/", script ? script.src : location.href);

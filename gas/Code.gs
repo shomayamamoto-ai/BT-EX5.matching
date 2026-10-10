@@ -2002,13 +2002,27 @@ var BtexServerCore = (function () {
         if (!next.title || !next.date) return c.fail("INVALID_REQUEST");
         if (e) Object.keys(next).forEach(function (k) { e[k] = next[k]; });
         else {
-          e = next;
-          e.id = newId("ev_");
-          e.rsvps = {};
-          e.attended = [];
-          e.createdAt = c.nowMs();
-          w.db.events.push(e);
+          // 繰り返し: dates(最初の日を含む日付の一覧)があれば、同じ内容でまとめて作る
+          var dates = [next.date];
+          if (Array.isArray(body.dates)) {
+            body.dates.slice(0, 24).forEach(function (d) {
+              var k = cleanDate(d);
+              if (k && dates.indexOf(k) === -1) dates.push(k);
+            });
+          }
+          dates.forEach(function (d, i) {
+            var x = c.clone(next);
+            x.date = d;
+            x.id = newId("ev_");
+            x.rsvps = {};
+            x.attended = [];
+            x.createdAt = c.nowMs();
+            w.db.events.push(x);
+            if (i === 0) e = x;
+          });
           trim(w.db.events, LIMITS.events);
+          c.saveDb(w.db);
+          return c.ok({ event: eventView(w, e), created: dates.length });
         }
         c.saveDb(w.db);
         return c.ok({ event: eventView(w, e) });
@@ -2340,7 +2354,11 @@ var BtexServerCore = (function () {
       // ============================================
       function annView(w, a) {
         var v = { id: a.id, title: a.title, body: a.body, cat: a.cat, pinned: !!a.pinned, at: a.at, byName: a.byName || "運営", read: (a.readBy || []).indexOf(w.id) !== -1 };
-        if (w.isAdmin) { v.readCount = (a.readBy || []).length; v.memberCount = (w.db.referralMembers || []).length; }
+        if (w.isAdmin) {
+          v.readCount = (a.readBy || []).length;
+          v.memberCount = (w.db.referralMembers || []).length;
+          v.unreadNames = (w.db.referralMembers || []).filter(function (m) { return (a.readBy || []).indexOf(m.id) === -1; }).map(function (m) { return m.name; });
+        }
         return v;
       }
       function listAnnouncements(body) {
@@ -2598,6 +2616,102 @@ var BtexServerCore = (function () {
       }
 
       // ============================================
+      // 運営ダッシュボード(管理者): 月ごとの数字・動きの少ない人・定例会ごとの出席
+      // ============================================
+      function adminDashboard(body) {
+        var w = admin(body);
+        if (w.error) return w.error;
+        var db = w.db;
+        var month = /^\d{4}-\d{2}$/.test(String(body.month || "")) ? body.month : today().slice(0, 7);
+        var prev = (function () {
+          var y = Number(month.slice(0, 4)), m = Number(month.slice(5, 7)) - 1;
+          if (m === 0) { y -= 1; m = 12; }
+          return y + "-" + ("0" + m).slice(-2);
+        })();
+        function totals(mon) {
+          var inMon = function (ms) { return monthKey(ms) === mon; };
+          return {
+            referrals: db.referralLogs.filter(function (l) { return inMon(l.at); }).length,
+            won: db.referralLogs.filter(function (l) { return l.status === "won" && inMon(l.statusAt || l.at); }).length,
+            miles: db.thanks.filter(function (t) { return inMon(t.at); }).reduce(function (s2, t) { return s2 + t.amount; }, 0),
+            oneOnOnes: db.oneOnOnes.filter(function (o) { return o.status === "done" && o.date.slice(0, 7) === mon; }).length,
+            visitors: db.visitors.filter(function (v) { var e = c.find(db.events, function (x) { return x.id === v.eventId; }); return e && e.date.slice(0, 7) === mon && v.status !== "invited" && v.status !== "declined"; }).length,
+            posts: db.posts.filter(function (p) { return inMon(p.at); }).length,
+          };
+        }
+        var monthEvents = db.events.filter(function (e) { return e.date.slice(0, 7) === month; })
+          .sort(function (a, b) { return a.date < b.date ? -1 : 1; })
+          .map(function (e) {
+            var rs = e.rsvps || {};
+            return {
+              id: e.id, title: e.title, date: e.date,
+              yes: Object.keys(rs).filter(function (k) { return rs[k] === "yes"; }).length,
+              no: Object.keys(rs).filter(function (k) { return rs[k] === "no"; }).length,
+              attended: (e.attended || []).length,
+              visitors: db.visitors.filter(function (v) { return v.eventId === e.id && (v.status === "applied" || v.status === "attended" || v.status === "joined"); }).length,
+            };
+          });
+        var members = (db.referralMembers || []).map(function (m) {
+          var u = c.find(db.users, function (x) { return x.memberId === m.id; });
+          var gave = db.referralLogs.filter(function (l) { return memberIdOfUser(db, l.fromUserId) === m.id; });
+          var lastAct = 0;
+          gave.forEach(function (l) { lastAct = Math.max(lastAct, l.at); });
+          db.oneOnOnes.forEach(function (o) { if (o.a === m.id || o.b === m.id) lastAct = Math.max(lastAct, o.at); });
+          db.posts.forEach(function (p) { if (p.by === m.id) lastAct = Math.max(lastAct, p.at); });
+          var pastEvents = db.events.filter(function (e) { return e.date < today() && e.date >= dateKey(c.nowMs() - 120 * DAY); });
+          var att = pastEvents.filter(function (e) { return (e.attended || []).indexOf(m.id) !== -1; }).length;
+          return {
+            id: m.id, name: m.name, team: m.team || "",
+            lastLoginAt: (u && u.lastLoginAt) || 0,
+            account: u && u.pw ? "active" : "none",
+            monthGiven: gave.filter(function (l) { return monthKey(l.at) === month; }).length,
+            monthReceived: db.referralLogs.filter(function (l) { return l.toMemberId === m.id && monthKey(l.at) === month; }).length,
+            monthMiles: db.thanks.filter(function (t) { return t.to === m.id && monthKey(t.at) === month; }).reduce(function (s2, t) { return s2 + t.amount; }, 0),
+            monthOnes: db.oneOnOnes.filter(function (o) { return (o.a === m.id || o.b === m.id) && o.status === "done" && o.date.slice(0, 7) === month; }).length,
+            attendRate: pastEvents.length ? Math.round((att / pastEvents.length) * 100) : null,
+            lastActivityAt: lastAct,
+          };
+        });
+        return c.ok({ month: month, prevMonth: prev, totals: totals(month), prevTotals: totals(prev), events: monthEvents, members: members, now: c.nowMs() });
+      }
+
+      // データの書き出し(管理者)。紹介した相手の連絡先は当事者だけのものなので含めない
+      function adminExport(body) {
+        var w = admin(body);
+        if (w.error) return w.error;
+        var db = w.db;
+        var kind = oneOf(body.kind, ["referrals", "thanks", "attendance", "visitors", "oneOnOnes"], "referrals");
+        var rows = [];
+        if (kind === "referrals") {
+          rows.push(["日時", "紹介した人", "紹介先", "紹介した方", "相談内容", "状況"]);
+          db.referralLogs.forEach(function (l) {
+            var g = memberIdOfUser(db, l.fromUserId);
+            rows.push([l.at, nameOf(db, g), nameOf(db, l.toMemberId), l.prospect, l.memo || "", l.status]);
+          });
+        } else if (kind === "thanks") {
+          rows.push(["日時", "お礼をした人", "紹介してくれた人", "金額(円)", "メッセージ"]);
+          db.thanks.forEach(function (t) { rows.push([t.at, nameOf(db, t.from), nameOf(db, t.to), t.amount, t.message]); });
+        } else if (kind === "attendance") {
+          rows.push(["日付", "定例会", "氏名", "チーム", "出欠の回答", "出席"]);
+          db.events.slice().sort(function (a, b) { return a.date < b.date ? -1 : 1; }).forEach(function (e) {
+            (db.referralMembers || []).forEach(function (m) {
+              rows.push([e.date, e.title, m.name, m.team || "", (e.rsvps || {})[m.id] || "", (e.attended || []).indexOf(m.id) !== -1 ? "出席" : ""]);
+            });
+          });
+        } else if (kind === "visitors") {
+          rows.push(["招待した日", "招待した人", "定例会", "お名前", "会社名", "事業内容", "連絡先", "ひとこと", "状況"]);
+          db.visitors.forEach(function (v) {
+            var e = c.find(db.events, function (x) { return x.id === v.eventId; });
+            rows.push([v.at, nameOf(db, v.by), e ? e.date + " " + e.title : "", v.name, v.company, v.business, v.contact, v.message, v.status]);
+          });
+        } else {
+          rows.push(["日付", "時刻", "メンバー", "相手", "場所", "状況"]);
+          db.oneOnOnes.forEach(function (o) { rows.push([o.date, o.time || "", nameOf(db, o.a), nameOf(db, o.b), o.place || "", o.status]); });
+        }
+        return c.ok({ kind: kind, rows: rows });
+      }
+
+      // ============================================
       // お知らせ(自分に関係する出来事)。保存はせず、記録から毎回組み立てる
       // ============================================
       function activityItems(db, me) {
@@ -2732,7 +2846,7 @@ var BtexServerCore = (function () {
       return {
         migrate: migrate,
         actions: {
-          getHome: getHome, getActivity: getActivity,
+          getHome: getHome, getActivity: getActivity, adminDashboard: adminDashboard, adminExport: adminExport,
           listEvents: listEvents, rsvpEvent: rsvpEvent, checkIn: checkIn,
           adminSaveEvent: adminSaveEvent, adminDeleteEvent: adminDeleteEvent, adminOpenCheckIn: adminOpenCheckIn,
           adminEventDetail: adminEventDetail, adminMarkAttendance: adminMarkAttendance,

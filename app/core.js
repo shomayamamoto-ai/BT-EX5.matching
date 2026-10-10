@@ -8,6 +8,9 @@
 const App = (function () {
   "use strict";
 
+  // 文字を大きく(マイページで切り替え。この端末に保存)
+  try { if (localStorage.getItem("btex5-big-text") === "1") document.documentElement.classList.add("big-text"); } catch { /* noop */ }
+
   // ---------- DOM を組み立てる ----------
   // h("div", { class: "x", onclick: fn }, "文字", 子要素...)
   function h(tag, attrs, ...children) {

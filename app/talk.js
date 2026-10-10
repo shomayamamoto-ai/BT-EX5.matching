@@ -52,7 +52,13 @@
           h("b", null, a.title),
           h("small", null, `${App.fmtTime(a.at)} ・ ${a.byName}${a.readCount !== undefined ? ` ・ 既読 ${a.readCount}/${a.memberCount}` : ""}`)),
         App.richText(a.body),
+        a.unreadNames && a.unreadNames.length ? h("p", { class: "app-field-hint ann-unread" }, `未読:${a.unreadNames.join("、")}`) : null,
         App.isAdmin() ? h("div", { class: "app-btn-row" },
+          a.unreadNames && a.unreadNames.length ? App.btn(`未読の ${a.unreadNames.length} 名への声かけ文をコピー`, () => App.copyText([
+            `【運営連絡を見てください】${a.title}`,
+            `まだ見ていない方:${a.unreadNames.map((n) => `${n}さん`).join("、")}`,
+            App.siteUrl(`#talk/news?open=${a.id}`),
+          ].join("\n"), "コピーしました。LINE グループなどに貼り付けてください"), "small") : null,
           App.btn("編集", () => annForm(a, d.cats), "ghost small"),
           App.btn("削除", async () => {
             if (!confirm("この運営連絡を削除しますか?")) return;

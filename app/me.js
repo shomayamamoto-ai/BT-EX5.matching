@@ -20,6 +20,13 @@
         menu("../profile/", "プロフィール・1on1シートを編集", "紹介されるための情報。入れるほど紹介が届きます"),
         menu(me ? `../referral/#member=${encodeURIComponent(me.id)}` : "../referral/", "ほかのメンバーからの見え方", "早見表のあなたのカード"),
         menu("#me/password", s.hasPassword ? "パスワードを変える" : "パスワードを決める", s.hasPassword ? "" : "共通パスコードの代わりに、あなた専用のパスワードで入れます", !s.hasPassword),
+        h("button", { type: "button", class: "me-item", onclick: (e) => {
+          const on = !document.documentElement.classList.contains("big-text");
+          document.documentElement.classList.toggle("big-text", on);
+          try { localStorage.setItem("btex5-big-text", on ? "1" : "0"); } catch { /* noop */ }
+          e.currentTarget.querySelector("b").textContent = on ? "文字を元の大きさに戻す" : "文字を大きくする";
+          App.toast(on ? "文字を大きくしました(この端末のすべての画面)" : "元の大きさに戻しました");
+        } }, h("b", null, document.documentElement.classList.contains("big-text") ? "文字を元の大きさに戻す" : "文字を大きくする"), h("small", null, "小さい文字が読みにくいときに")),
         menu("#me/qr", "あなたのプロフィールの QR コード", "交流会でメンバーに読み取ってもらうと、あなたの詳細が開きます"),
         menu("#me/feedback", "バグ・要望を送る", "使いにくいところ・ほしい機能を運営へ"),
         menu("../teams/", "全体分析", "仕事が回る業種・紹介の流れ"),
@@ -161,12 +168,13 @@
     tab: "",
     async render(el, parts) {
       if (!App.isAdmin()) { el.append(App.empty("管理者のみ使えます。")); return; }
-      const tab = ["accounts", "feedback"].includes(parts[0]) ? parts[0] : "accounts";
+      const tab = ["dashboard", "accounts", "feedback"].includes(parts[0]) ? parts[0] : "dashboard";
       el.append(h("a", { class: "app-back", href: "#me" }, "← マイページ"));
-      el.append(App.segmented([{ id: "accounts", label: "会員アカウント" }, { id: "feedback", label: "バグ・要望" }], tab, (id) => App.go(`admin/${id}`)));
+      el.append(App.segmented([{ id: "dashboard", label: "ダッシュボード" }, { id: "accounts", label: "会員アカウント" }, { id: "feedback", label: "バグ・要望" }], tab, (id) => App.go(`admin/${id}`)));
       const body = h("div");
       el.append(body);
-      if (tab === "accounts") await renderAccounts(body);
+      if (tab === "dashboard") await App.renderDashboard(body, parts[1]);
+      else if (tab === "accounts") await renderAccounts(body);
       else await renderFeedback(body);
     },
   };

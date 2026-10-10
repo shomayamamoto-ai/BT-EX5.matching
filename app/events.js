@@ -155,21 +155,58 @@
       f.area.value = ev ? ev.area : "niigata";
       f.body.value = ev ? ev.body : "";
       const err = h("p", { class: "app-error", role: "alert" });
+      // 繰り返し(新しく作るときだけ): 毎月同じ週の同じ曜日 / 毎週 / 隔週
+      const repeat = h("select", null,
+        h("option", { value: "" }, "繰り返さない"),
+        h("option", { value: "monthly" }, "毎月(同じ週の同じ曜日)"),
+        h("option", { value: "weekly" }, "毎週"),
+        h("option", { value: "biweekly" }, "隔週"));
+      const times = h("select", null, [2, 3, 4, 6, 8, 10, 12].map((n) => h("option", { value: String(n) }, `${n}回分`)));
+      times.value = "6";
+      const preview = h("p", { class: "app-field-hint" });
+      const repeatDates = () => {
+        if (!repeat.value || !f.date.value) return [];
+        const [y, m, dd] = f.date.value.split("-").map(Number);
+        const first = new Date(y, m - 1, dd);
+        const nth = Math.ceil(dd / 7);
+        const out = [];
+        for (let i = 0; i < Number(times.value); i++) {
+          let d;
+          if (repeat.value === "monthly") {
+            // その月の「第 n ○曜日」。第5週がない月は最後の○曜日
+            const base = new Date(y, m - 1 + i, 1);
+            const shift = (first.getDay() - base.getDay() + 7) % 7;
+            d = new Date(base.getFullYear(), base.getMonth(), 1 + shift + (nth - 1) * 7);
+            if (d.getMonth() !== base.getMonth()) d.setDate(d.getDate() - 7);
+          } else {
+            d = new Date(y, m - 1, dd + i * (repeat.value === "weekly" ? 7 : 14));
+          }
+          out.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`);
+        }
+        return out;
+      };
+      const drawPreview = () => {
+        const ds = repeatDates();
+        preview.textContent = ds.length ? `作る日:${ds.map((x) => App.fmtDate(x)).join("、")}` : "";
+      };
+      [repeat, times, f.date].forEach((x) => x.addEventListener("change", drawPreview));
       body.append(h("form", { class: "app-form", onsubmit: async (e) => {
         e.preventDefault();
         if (!f.title.value.trim() || !f.date.value) { err.textContent = "名前と日付を入れてください。"; return; }
         const payload = { id: ev ? ev.id : "" };
         Object.keys(f).forEach((k) => { payload[k] = f[k].value.trim(); });
-        const d = await App.api("adminSaveEvent", { event: payload });
+        const d = await App.api("adminSaveEvent", { event: payload, dates: ev ? [] : repeatDates() });
         if (!d) return;
         close();
-        App.toast("保存しました");
+        App.toast(d.created > 1 ? `${d.created}回分の定例会を作りました` : "保存しました");
         App.route();
       } },
       App.field("名前", f.title),
       h("div", { class: "app-grid2" }, App.field("日付", f.date), App.field("エリア", f.area)),
       h("div", { class: "app-grid2" }, App.field("開始", f.start), App.field("終了", f.end)),
       App.field("会場", f.place), App.field("参加費", f.fee), App.field("案内ページ", f.url), App.field("内容", f.body),
+      ev ? null : h("div", { class: "app-grid2" }, App.field("繰り返し", repeat), App.field("回数", times)),
+      ev ? null : preview,
       err, h("button", { type: "submit", class: "app-btn primary wide" }, "保存する")));
     });
   }
