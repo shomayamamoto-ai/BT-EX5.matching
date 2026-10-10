@@ -386,26 +386,38 @@
     { id: "attended", label: "出席", unit: "回" },
     { id: "visitors", label: "ビジター", unit: "名" },
   ];
-  const fmtV = (m, v) => (m.yen ? App.yen(v) : `${v}${m.unit}`);
+  const fmtV = (m, v) => (m.yen ? App.yen(v) : `${v}${m.unit}`); // pt は小数1けた(0.1pt 単位)
   const ymLabel = (ym) => `${Number(ym.slice(5, 7))}月`;
 
   async function renderRank(el, params) {
     const period = PERIODS.some((p) => p.id === params.get("p")) ? params.get("p") : "month";
     const metric = METRICS.find((m) => m.id === params.get("m")) || METRICS[0];
-    const d = await App.api("getTeamRanking", { period, team: params.get("team") || "" });
+    const d = await App.api("getTeamRanking", { period });
     if (!d) return;
-    const set = (k, v) => { const p = new URLSearchParams({ p: period, m: metric.id, team: d.team }); p.set(k, v); App.go(`log/rank?${p}`); };
+    const set = (k, v) => { const p = new URLSearchParams({ p: period, m: metric.id }); p.set(k, v); App.go(`log/rank?${p}`); };
     const P = d.points;
     const me = d.me;
-    const isMine = d.team === d.myTeam;
 
     el.append(App.segmented(PERIODS, period, (v) => set("p", v)));
 
-    // ---------- あなた(自分のチームを見ているとき) ----------
-    if (me && isMine) {
-      const next = me.rank > 1 && me.gap ? `あと ${me.gap}pt で ${me.rank - 1}位(${me.gapName}さん)` : me.points > 0 ? "チーム1位です!" : "紹介を1件記録すると +10pt";
+    // ---------- 貢献ポイントのつけ方(開いて確かめる) ----------
+    el.append(h("details", { class: "rk-howto" },
+      h("summary", null, "貢献ポイントのつけ方(タップで開く)"),
+      h("table", { class: "rk-pt-table" }, h("tbody", null,
+        [["紹介 1件", `+${P.referral}pt`, "紹介を記録したとき"],
+          ["成約 1件", `+${P.won}pt`, "紹介した相手が成約にしたとき"],
+          [`貢献金額 ${P.milesPer.toLocaleString("ja-JP")}円ごと`, `+${P.mile}pt`, "あなたの紹介から生まれた売上(ありがとうマイル)"],
+          ["1on1 1回", `+${P.oneOnOne}pt`, ""],
+          ["定例会に出席", `+${P.attended}pt`, ""],
+          ["ビジターの申込 1名", `+${P.visitor}pt`, ""]].map(([k, v, note]) => h("tr", null,
+          h("th", { scope: "row" }, k, note ? h("small", null, note) : null), h("td", null, v))))),
+      h("p", { class: "app-field-hint" }, "例:紹介を2件して、そのうち1件が10万円で成約 → 1+1+3+10 = 15pt")));
+
+    // ---------- あなた ----------
+    if (me) {
+      const next = me.rank > 1 && me.gap ? `あと ${me.gap}pt で ${me.rank - 1}位(${me.gapName}さん)` : me.points > 0 ? "1位です!" : `紹介を1件記録すると +${P.referral}pt`;
       el.append(h("section", { class: "rk-me" },
-        h("div", { class: "rk-me-rank" }, h("span", null, `${d.team} の中で`), h("b", null, `${me.rank}`, h("small", null, `位 / ${d.members.length}名`))),
+        h("div", { class: "rk-me-rank" }, h("span", null, "BT-EX5 の中で"), h("b", null, `${me.rank}`, h("small", null, `位 / ${d.members.length}名`))),
         h("div", { class: "rk-me-main" },
           h("p", { class: "rk-me-pt" }, h("b", null, String(me.points)), " pt"),
           h("p", { class: "rk-me-next" }, next),
@@ -415,57 +427,32 @@
           h("a", { class: "app-btn ghost small", href: "../referral/" }, "紹介先を探す"))));
     }
 
-    // ---------- チームの目標(今月) ----------
-    const myT = d.teams.find((t) => t.team === d.team);
-    if (myT && period === "month") {
-      const bar = (label, v, goal, fmt) => {
-        const pct = goal ? Math.min(100, Math.round((v / goal) * 100)) : 0;
-        return h("div", { class: "rk-goal" },
-          h("div", { class: "rk-goal-head" }, h("span", null, label), h("b", null, `${fmt(v)} / ${fmt(goal)}`), h("small", null, `${pct}%`)),
-          h("div", { class: "rk-goal-bar", role: "progressbar", "aria-valuenow": String(pct), "aria-valuemin": "0", "aria-valuemax": "100", "aria-label": `${label}の達成率` },
-            h("span", { style: `width:${pct}%` })),
-          v < goal ? h("p", { class: "rk-goal-left" }, `目標まであと ${fmt(goal - v)}`) : h("p", { class: "rk-goal-left is-done" }, "目標達成!"));
-      };
-      el.append(App.section(`${d.team} の今月の目標`,
-        h("div", { class: "rk-goals" },
-          bar("チームの紹介", myT.referrals, myT.goal.referrals, (v) => `${v}件`),
-          myT.goal.miles ? bar("チームの貢献金額", myT.miles, myT.goal.miles, App.yen) : null),
-        d.canEditGoals ? App.btn("目標を変える(管理者)", () => goalForm(d), "ghost small") : null));
-    }
+    // ---------- BT-EX5 全体の今月の目標 ----------
+    const g = d.goal;
+    const bar = (label, v, goal, fmt) => {
+      const pct = goal ? Math.min(100, Math.round((v / goal) * 100)) : 0;
+      return h("div", { class: "rk-goal" },
+        h("div", { class: "rk-goal-head" }, h("span", null, label), h("b", null, `${fmt(v)} / ${fmt(goal)}`), h("small", null, `${pct}%`)),
+        h("div", { class: "rk-goal-bar", role: "progressbar", "aria-valuenow": String(pct), "aria-valuemin": "0", "aria-valuemax": "100", "aria-label": `${label}の達成率` },
+          h("span", { style: `width:${pct}%` })),
+        v < goal ? h("p", { class: "rk-goal-left" }, `目標まであと ${fmt(goal - v)}`) : h("p", { class: "rk-goal-left is-done" }, "目標達成!"));
+    };
+    el.append(App.section("BT-EX5 みんなの今月の目標",
+      h("div", { class: "rk-goals" },
+        bar("紹介", g.referrals, g.target.referrals, (v) => `${v}件`),
+        g.target.miles ? bar("貢献金額", g.miles, g.target.miles, App.yen) : null),
+      d.canEditGoals ? App.btn("目標を変える(管理者)", () => goalForm(g.target), "ghost small") : null));
 
-    // ---------- チーム内ランキング ----------
-    el.append(App.section("チーム内ランキング",
-      h("div", { class: "rk-controls" },
-        d.teamNames.length > 1 ? h("select", { class: "rk-team-sel", "aria-label": "チーム", onchange: (e) => set("team", e.target.value) },
-          d.teamNames.map((t) => h("option", { value: t, selected: t === d.team }, t === d.myTeam ? `${t}(あなたのチーム)` : t))) : null,
-        h("div", { class: "rank-metrics" }, METRICS.map((m) => h("button", { type: "button", class: `app-pill${m.id === metric.id ? " is-on" : ""}`, onclick: () => set("m", m.id) }, m.label)))),
-      rankList(d.members.slice().sort((a, b) => b[metric.id] - a[metric.id] || b.points - a.points), metric, (r) => r.name, (r) => ptBreakdown(r, P))));
+    // ---------- ランキング(個人) ----------
+    el.append(App.section("ランキング",
+      h("div", { class: "rank-metrics" }, METRICS.map((m) => h("button", { type: "button", class: `app-pill${m.id === metric.id ? " is-on" : ""}`, onclick: () => set("m", m.id) }, m.label))),
+      rankList(d.members.slice().sort((a, b) => b[metric.id] - a[metric.id] || b.points - a.points), metric, (r) => r.name, ptBreakdown)));
 
-    // ---------- チーム対抗 ----------
-    el.append(App.section("チーム対抗(1人あたりの貢献ポイント)",
-      h("p", { class: "app-field-hint" }, "人数の差が出ないよう、1人あたりのポイントで比べます。"),
-      h("ol", { class: "rank-list rk-teams" }, d.teams.map((t) => h("li", { class: t.team === d.myTeam ? "is-me" : "" },
-        h("span", { class: `rank-no${t.rank <= 3 && t.avgPoints > 0 ? ` top${t.rank}` : ""}` }, String(t.rank)),
-        h("button", { type: "button", class: "rank-name rk-team-btn", onclick: () => set("team", t.team) }, h("b", null, t.team), h("small", null, `${t.members}名 ・ 紹介 ${t.referrals}件 ・ ${App.yen(t.miles)}`)),
-        h("span", { class: "rank-bar", "aria-hidden": "true" }, h("span", { style: `width:${d.teams[0].avgPoints ? Math.max(t.avgPoints ? 4 : 0, (t.avgPoints / d.teams[0].avgPoints) * 100) : 0}%` })),
-        h("b", { class: "rank-v" }, `${t.avgPoints}pt`))))));
-
-    // ---------- 直近6か月(選んだチーム) ----------
-    el.append(App.section(`${d.team} の推移(直近6か月)`,
+    // ---------- あなたの推移(直近6か月) ----------
+    el.append(App.section("あなたの推移(直近6か月)",
       h("div", { class: "rk-charts" },
         barChart("紹介の件数", d.history.map((x) => ({ label: ymLabel(x.month), value: x.referrals, text: `${x.referrals}件` }))),
         barChart("貢献金額", d.history.map((x) => ({ label: ymLabel(x.month), value: x.miles, text: App.yen(x.miles) }))))));
-
-    // ---------- ポイントのつけ方 ----------
-    el.append(App.section("貢献ポイントのつけ方",
-      h("ul", { class: "rk-rules" },
-        h("li", null, h("b", null, `紹介 1件 +${P.referral}pt`), "(紹介を記録したとき)"),
-        h("li", null, h("b", null, `成約 1件 +${P.won}pt`), "(紹介した相手が成約にしたとき)"),
-        h("li", null, h("b", null, `貢献金額 ${(P.milesPer / 10000)}万円ごとに +${P.mile}pt`), "(あなたの紹介から生まれた売上。ありがとうマイル)"),
-        h("li", null, h("b", null, `1on1 1回 +${P.oneOnOne}pt`)),
-        h("li", null, h("b", null, `定例会に出席 +${P.attended}pt`)),
-        h("li", null, h("b", null, `ビジターの申込 1名 +${P.visitor}pt`))),
-      d.mvp ? h("p", { class: "rk-mvp" }, `👑 この期間のトップ:${d.mvp.name}さん(${d.mvp.team})${d.mvp.points}pt`) : null));
   }
 
   // 1人ずつの順位(指標を選べる)
@@ -542,16 +529,14 @@
       h("table", { class: "visually-hidden" }, h("tbody", null, data.map((x) => h("tr", null, h("th", null, x.label), h("td", null, x.text))))));
   }
 
-  function goalForm(d) {
-    App.openSheet("チームの今月の目標", (body, close) => {
-      const team = h("select", null, h("option", { value: "" }, "全チーム共通"), d.teamNames.map((t) => h("option", { value: t }, t)));
-      const myT = d.teams.find((t) => t.team === d.team);
-      const refs = h("input", { type: "text", inputmode: "numeric", value: myT ? String(myT.goal.referrals) : "" });
-      const miles = h("input", { type: "text", inputmode: "numeric", placeholder: "例:1000000(0なら表示しない)", value: myT && myT.goal.miles ? String(myT.goal.miles) : "" });
+  function goalForm(target) {
+    App.openSheet("BT-EX5 みんなの今月の目標", (body, close) => {
+      const refs = h("input", { type: "text", inputmode: "numeric", value: String(target.referrals || "") });
+      const miles = h("input", { type: "text", inputmode: "numeric", placeholder: "例:1000000(0なら表示しない)", value: target.miles ? String(target.miles) : "" });
       body.append(h("form", { class: "app-form", onsubmit: async (e) => {
         e.preventDefault();
-        if (await App.api("adminSetTeamGoals", { team: team.value, referrals: refs.value, miles: miles.value })) { close(); App.toast("目標を保存しました"); App.route(); }
-      } }, App.field("チーム", team, "チームごとに決めないときは「全チーム共通」"), App.field("紹介の件数(月)", refs, "決めていないときは、人数 × 2件"), App.field("貢献金額(月・円)", miles),
+        if (await App.api("adminSetTeamGoals", { team: "", referrals: refs.value, miles: miles.value })) { close(); App.toast("目標を保存しました"); App.route(); }
+      } }, App.field("紹介の件数(月)", refs, "決めていないときは、人数 × 1件"), App.field("貢献金額(月・円)", miles),
       h("button", { type: "submit", class: "app-btn primary wide" }, "保存する")));
     });
   }

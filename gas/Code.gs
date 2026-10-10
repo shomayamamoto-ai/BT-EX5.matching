@@ -2663,7 +2663,9 @@ var BtexServerCore = (function () {
       // チームのランキング(貢献ポイント)
       // ============================================
       // 貢献ポイント: 何をするとポイントになるかを画面で見せ、紹介と貢献金額が増えるようにする
-      var POINTS = { referral: 10, won: 30, milesPer: 10000, mile: 1, oneOnOne: 5, attended: 5, visitor: 10 };
+      // 紹介 +1 / 成約 +3 / 貢献金額 1,000円ごとに +0.1 / 1on1 +1 / 定例会に出席 +1 / ビジターの申込 +2
+      var POINTS = { referral: 1, won: 3, milesPer: 1000, mile: 0.1, oneOnOne: 1, attended: 1, visitor: 2 };
+      function round1(x) { return Math.round(x * 10) / 10; }
       var VISITOR_COUNTED = ["applied", "confirmed", "attended", "joined"];
       function monthShift(ym, n) {
         var y = Number(ym.slice(0, 4)), m = Number(ym.slice(5, 7)) - 1 + n;
@@ -2701,8 +2703,8 @@ var BtexServerCore = (function () {
         });
         Object.keys(rows).forEach(function (k) {
           var r = rows[k];
-          r.points = r.referrals * POINTS.referral + r.won * POINTS.won + Math.floor(r.miles / POINTS.milesPer) * POINTS.mile
-            + r.oneOnOnes * POINTS.oneOnOne + r.attended * POINTS.attended + r.visitors * POINTS.visitor;
+          r.points = round1(r.referrals * POINTS.referral + r.won * POINTS.won + Math.floor(r.miles / POINTS.milesPer) * POINTS.mile
+            + r.oneOnOnes * POINTS.oneOnOne + r.attended * POINTS.attended + r.visitors * POINTS.visitor);
         });
         return rows;
       }
@@ -2713,20 +2715,17 @@ var BtexServerCore = (function () {
           r.rank = i > 0 && sorted[i - 1][key] === r[key] ? sorted[i - 1].rank : i + 1;
           var above = null;
           for (var j = i - 1; j >= 0; j--) { if (sorted[j][key] > r[key]) { above = sorted[j]; break; } }
-          r.gap = above ? above[key] - r[key] : 0;
+          r.gap = above ? round1(above[key] - r[key]) : 0;
           r.gapName = above ? (above.name || above.team) : "";
         });
         return sorted;
       }
-      function teamGoal(db, team, size) {
-        var g = (db.settings.teamGoals || {});
-        var t = (g.byTeam || {})[team] || {};
-        var d = g.default || {};
-        return {
-          referrals: t.referrals || d.referrals || size * 2,
-          miles: t.miles || d.miles || 0,
-        };
+      // BT-EX5 全体の月の目標(管理者が設定。決めていなければ紹介は1人1件)
+      function communityGoal(db, size) {
+        var d = ((db.settings.teamGoals || {}).default) || {};
+        return { referrals: d.referrals || size, miles: d.miles || 0 };
       }
+      // ランキング(BT-EX5 の中の個人の順位。チームでは分けない)
       function getTeamRanking(body) {
         var w = who(body);
         if (w.error) return w.error;
@@ -2738,39 +2737,19 @@ var BtexServerCore = (function () {
           : period === "prev" ? [monthShift(ym, -1) + "-01", lastDay(monthShift(ym, -1))]
           : period === "year" ? [t.slice(0, 4) + "-01-01", t] : ["2000-01-01", t];
         var rows = memberStats(db, range[0], range[1]);
-        var list = Object.keys(rows).map(function (k) { return rows[k]; });
-        var myTeam = rows[w.id] ? rows[w.id].team : "";
-        var teamNames = [];
-        list.forEach(function (r) { if (teamNames.indexOf(r.team) === -1) teamNames.push(r.team); });
-        var team = teamNames.indexOf(body.team) !== -1 ? body.team : myTeam;
-
-        // チームごと
-        var teams = teamNames.map(function (name) {
-          var ms = list.filter(function (r) { return r.team === name; });
-          var tot = { team: name, members: ms.length, referrals: 0, won: 0, miles: 0, oneOnOnes: 0, attended: 0, visitors: 0, points: 0 };
-          ms.forEach(function (r) { ["referrals", "won", "miles", "oneOnOnes", "attended", "visitors", "points"].forEach(function (f) { tot[f] += r[f]; }); });
-          tot.avgPoints = ms.length ? Math.round((tot.points / ms.length) * 10) / 10 : 0;
-          tot.goal = teamGoal(db, name, ms.length);
-          return tot;
-        });
-        rankRows(teams, "avgPoints");
-        var teamsByPoints = rankRows(teams.map(function (x) { return Object.assign({}, x, { name: x.team }); }), "points");
-
-        // 選んだチームの中の順位
-        var members = rankRows(list.filter(function (r) { return r.team === team; }), "points");
+        var members = rankRows(Object.keys(rows).map(function (k) { return rows[k]; }), "points");
         members.forEach(function (r) { r.isMe = r.id === w.id; });
+        var total = { referrals: 0, won: 0, miles: 0, points: 0 };
+        members.forEach(function (r) { total.referrals += r.referrals; total.won += r.won; total.miles += r.miles; total.points += r.points; });
+        total.points = round1(total.points);
 
-        // 選んだチームの直近6か月(今月を含む)
+        // 自分の直近6か月(今月を含む)と、何か月つづけて紹介しているか
         var history = [];
         for (var i = 5; i >= 0; i--) {
           var mon = monthShift(ym, -i);
-          var mrows = memberStats(db, mon + "-01", mon === ym ? t : lastDay(mon));
-          var h = { month: mon, referrals: 0, miles: 0, points: 0, won: 0 };
-          Object.keys(mrows).forEach(function (k) { var r = mrows[k]; if (r.team !== team) return; h.referrals += r.referrals; h.miles += r.miles; h.points += r.points; h.won += r.won; });
-          history.push(h);
+          var r1 = memberStats(db, mon + "-01", mon === ym ? t : lastDay(mon))[w.id] || {};
+          history.push({ month: mon, referrals: r1.referrals || 0, miles: r1.miles || 0, points: r1.points || 0 });
         }
-
-        // 自分: 何か月続けて紹介しているか(今月を含む)
         var streak = 0;
         for (var j = 0; j < 24; j++) {
           var m2 = monthShift(ym, -j);
@@ -2779,22 +2758,25 @@ var BtexServerCore = (function () {
           else if (j === 0) continue; // 今月まだなら先月から数える
           else break;
         }
-
-        var all = rankRows(list.map(function (r) { return Object.assign({}, r); }), "points");
+        // 今月の BT-EX5 全体の目標
+        var monthRows = period === "month" ? members : (function () {
+          var mr = memberStats(db, ym + "-01", t);
+          return Object.keys(mr).map(function (k) { return mr[k]; });
+        })();
+        var monthTotal = { referrals: 0, miles: 0 };
+        monthRows.forEach(function (r) { monthTotal.referrals += r.referrals; monthTotal.miles += r.miles; });
         return c.ok({
           period: period, range: range, points: POINTS,
-          team: team, myTeam: myTeam, teamNames: teamNames,
           members: members,
           me: members.filter(function (r) { return r.isMe; })[0] || null,
-          teams: teams.sort(function (a, b) { return a.rank - b.rank; }),
-          teamsByPoints: teamsByPoints,
+          total: total,
+          goal: { target: communityGoal(db, members.length), referrals: monthTotal.referrals, miles: monthTotal.miles },
           history: history,
           streak: streak,
-          mvp: all[0] && all[0].points > 0 ? { name: all[0].name, team: all[0].team, points: all[0].points } : null,
           canEditGoals: w.isAdmin,
         });
       }
-      // 管理者: チームの月の目標(紹介数・貢献金額)。team が空なら全チーム共通
+      // 管理者: BT-EX5 全体の月の目標(紹介数・貢献金額)
       function adminSetTeamGoals(body) {
         var w = admin(body);
         if (w.error) return w.error;
@@ -3452,11 +3434,10 @@ var BtexServerCore = (function () {
           followUps: followUps.slice(0, 6),
           teamRank: (function () {
             var rows = memberStats(db, t.slice(0, 7) + "-01", t);
-            var mine = rows[w.id];
-            if (!mine) return null;
-            var ms = rankRows(Object.keys(rows).map(function (k) { return rows[k]; }).filter(function (r) { return r.team === mine.team; }), "points");
+            if (!rows[w.id]) return null;
+            var ms = rankRows(Object.keys(rows).map(function (k) { return rows[k]; }), "points");
             var me = ms.filter(function (r) { return r.id === w.id; })[0];
-            return { team: mine.team, rank: me.rank, size: ms.length, points: me.points, gap: me.gap, gapName: me.gapName };
+            return { rank: me.rank, size: ms.length, points: me.points, gap: me.gap, gapName: me.gapName };
           })(),
         });
       }

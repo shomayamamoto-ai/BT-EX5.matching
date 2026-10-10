@@ -618,3 +618,10 @@ html.big-text body { zoom: 1.15; }
 .rk-rules { list-style: none; display: grid; gap: 4px; background: #fff; border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px; font-size: 13px; color: var(--text-sub); }
 .rk-rules b { color: var(--text); margin-right: 4px; }
 .rk-mvp { margin-top: 10px; font-weight: 800; font-size: 13.5px; }
+.rk-howto { margin-top: 12px; background: #fff; border: 1.5px solid var(--line-strong); border-radius: var(--radius); padding: 0 14px; }
+.rk-howto summary { cursor: pointer; padding: 12px 0; font-weight: 900; font-size: 14px; color: var(--accent-dark); }
+.rk-pt-table { width: 100%; border-collapse: collapse; font-size: 13.5px; margin-bottom: 8px; }
+.rk-pt-table th { text-align: left; font-weight: 700; padding: 7px 0; border-top: 1px solid var(--line); }
+.rk-pt-table th small { display: block; font-weight: 500; color: var(--text-light); font-size: 11.5px; }
+.rk-pt-table td { text-align: right; font-family: "Inter", sans-serif; font-weight: 900; color: var(--accent-dark); padding: 7px 0; border-top: 1px solid var(--line); white-space: nowrap; }
+.rk-howto .app-field-hint { padding-bottom: 12px; }

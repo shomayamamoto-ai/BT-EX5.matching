@@ -73,14 +73,14 @@
           action("#invite", "ビジターを招待", "招待URLを送るだけ", "M15 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Zm-9-2V7H4v3H1v2h3v3h2v-3h3v-2Zm9 4c-2.7 0-8 1.3-8 4v2h16v-2c0-2.7-5.3-4-8-4Z"),
           action("#talk/board?new", "掲示板に書く", "紹介依頼・募集・お礼", "M4 4h16v12H7l-3 3z"))));
 
-      // ---------- チーム内の順位 ----------
+      // ---------- BT-EX5 の中の順位(貢献ポイント) ----------
       if (d.teamRank) {
         const r = d.teamRank;
         el.append(h("a", { class: "home-rank", href: "#log/rank" },
-          h("span", { class: "home-rank-no" }, h("small", null, "チーム内"), h("b", null, String(r.rank)), h("small", null, `位 / ${r.size}名`)),
+          h("span", { class: "home-rank-no" }, h("small", null, "BT-EX5 で"), h("b", null, String(r.rank)), h("small", null, `位 / ${r.size}名`)),
           h("span", { class: "home-rank-main" },
-            h("b", null, `${r.team} ・ 今月 ${r.points}pt`),
-            h("small", null, r.rank > 1 && r.gap ? `あと ${r.gap}pt で ${r.rank - 1}位(${r.gapName}さん)。紹介1件で +10pt` : r.points ? "チーム1位です!" : "紹介を1件記録すると +10pt")),
+            h("b", null, `今月の貢献ポイント ${r.points}pt`),
+            h("small", null, r.rank > 1 && r.gap ? `あと ${r.gap}pt で ${r.rank - 1}位(${r.gapName}さん)。紹介1件で +1pt・成約で +3pt` : r.points ? "1位です!" : "紹介を1件記録すると +1pt")),
           h("span", { class: "home-rank-go", "aria-hidden": "true" }, "›")));
       }
 
