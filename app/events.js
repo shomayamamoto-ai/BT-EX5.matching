@@ -322,6 +322,14 @@
           : h("p", { class: "app-field-hint" }, "まだありません。決まったこと・次回までにやることを残しておくと、休んだ人にも伝わります。"),
         d.isAdmin ? App.btn(d.minutes ? "議事録を直す" : "議事録を書く", () => minutesForm(ev, d.minutes), "ghost small") : null));
     }
+    // この定例会で決まったやること(担当・期限・済んだ人)
+    const tk = await App.api("listTasks", { eventId: ev.id }, { quiet: true });
+    if (tk && (tk.items.length || d.isAdmin)) {
+      const evTitle = `${App.fmtDate(ev.date)} ${ev.title}`;
+      card.append(h("div", { class: "evd-block" }, h("h2", null, `やること(${tk.items.length})`),
+        tk.items.length ? h("ul", { class: "task-list" }, tk.items.map((t) => App.taskRow(t, { showPeople: true, canManage: d.isAdmin }))) : h("p", { class: "app-field-hint" }, "議事録の「次回までにやること」を、担当と期限つきで配れます。担当の人のホームに出て、スマホにも届きます。"),
+        d.isAdmin ? App.btn("＋ やることを追加", () => App.taskForm({ eventId: ev.id, eventTitle: evTitle }, () => App.route()), "ghost small") : null));
+    }
 
     // 出欠の登録
     const rsvpBox = h("div", { class: "evd-block evd-rsvp" });

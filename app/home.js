@@ -64,6 +64,15 @@
       }
       if (todo.length) el.append(h("div", { class: "home-todo" }, todo));
 
+      // ---------- あなたのやること ----------
+      const tasks = d.tasks || [];
+      const taskList = h("ul", { class: "task-list" }, tasks.map((t) => App.taskRow(t, { showEvent: true, onChange: (x) => {
+        if (x.myDone) setTimeout(() => { const li = taskList.querySelector(".task-row.is-done"); if (li) li.remove(); }, 600);
+      } })));
+      el.append(App.section(`あなたのやること(${tasks.length})`,
+        tasks.length ? taskList : h("p", { class: "app-field-hint" }, "いまはありません。定例会で決まったことや、自分の予定を入れておけます。"),
+        h("div", { class: "app-btn-row" }, App.btn("＋ やることを追加", () => App.taskForm({}, () => App.route()), "ghost small"))));
+
       // ---------- 次の定例会 ----------
       const next = d.events[0];
       el.append(App.section("次の定例会",

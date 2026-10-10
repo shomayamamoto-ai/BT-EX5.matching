@@ -20,6 +20,8 @@
       case "oneSoon": return { icon: "☕", title: `${x.time} から ${x.whoName}さんと 1on1 です`, sub: x.meetUrl ? "Google Meet で参加できます" : App.fmtDate(x.date) };
       case "refMeetSoon": return { icon: "🤝", title: `${x.time} から紹介の顔合わせです`, sub: `${x.text} × ${x.whoName}さん` };
       case "refMeet": return { icon: "🤝", title: `${x.whoName}さんが紹介の顔合わせの予定を入れました`, sub: `${App.fmtDate(x.date)} ${x.text}` };
+      case "taskNew": return { icon: "✅", title: `${x.whoName}さんから やること:${x.text}`, sub: x.date ? `期限 ${App.fmtDate(x.date)}` : "期限なし" };
+      case "taskDue": return { icon: "⏰", title: `やることの期限が近づいています:${x.text}`, sub: `期限 ${App.fmtDate(x.date)}` };
       case "oneAsk": return { icon: "☕", title: `${x.whoName}さんとの 1on1 は実施しましたか?`, sub: "押して「実施した」を選ぶと回数に数えます" };
       case "oneNew": return { icon: "👥", title: `${x.whoName}さんが 1on1 を記録しました`, sub: App.fmtDate(x.date) };
       case "visitor": return { icon: "🙋", title: `${x.text || "ビジター"}さんが定例会に申し込みました`, sub: "あなたの招待から" };

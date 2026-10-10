@@ -2045,7 +2045,7 @@ var BtexServerCore = (function () {
       "reportThanks", "deleteThanks", "save1on1", "delete1on1", "confirm1on1",
     ],
     // 書き込みのあとに、通知(プッシュ)を送るか確かめる操作(mutating に加えて)
-    notifying: ["createPost", "commentPost", "adminSaveAnnouncement", "setReferralMeeting", "adminSaveMinutes"],
+    notifying: ["createPost", "commentPost", "adminSaveAnnouncement", "setReferralMeeting", "adminSaveMinutes", "saveTask"],
     create: function (c) {
       function dateKey(ms) {
         var d = new Date(ms + JST);
@@ -2092,7 +2092,7 @@ var BtexServerCore = (function () {
 
       function migrate(db) {
         var changed = false;
-        ["events", "visitors", "thanks", "oneOnOnes", "announcements", "posts", "threads", "feedback", "pushSubs", "searchMisses"].forEach(function (k) {
+        ["events", "visitors", "thanks", "oneOnOnes", "announcements", "posts", "threads", "feedback", "pushSubs", "searchMisses", "tasks"].forEach(function (k) {
           if (!Array.isArray(db[k])) { db[k] = []; changed = true; }
         });
         if (!db.seen || typeof db.seen !== "object") { db.seen = {}; changed = true; }
@@ -3378,6 +3378,78 @@ var BtexServerCore = (function () {
           }),
         };
       }
+      // ============================================
+      // やること(担当者・期限つき)。管理者はだれにでも、メンバーは自分に割り当てられる。
+      // 定例会の議事録から作ると、その定例会にひもづく
+      // ============================================
+      function taskView(db, t, me) {
+        var done = t.done || {};
+        return {
+          id: t.id, title: t.title, note: t.note || "", due: t.due || "", eventId: t.eventId || "",
+          eventTitle: (function () { var e = t.eventId && c.find(db.events, function (x) { return x.id === t.eventId; }); return e ? e.date.slice(5).replace("-", "/") + " " + e.title : ""; })(),
+          by: t.by, byName: nameOf(db, t.by), at: t.at,
+          assignees: t.assignees.map(function (id) { return { id: id, name: nameOf(db, id), done: !!done[id] }; }),
+          mine: t.assignees.indexOf(me) !== -1, myDone: !!done[me], doneCount: t.assignees.filter(function (id) { return done[id]; }).length,
+          canEdit: t.by === me,
+        };
+      }
+      function listTasks(body) {
+        var w = who(body);
+        if (w.error) return w.error;
+        var db = w.db;
+        var list = db.tasks.filter(function (t) {
+          if (body.eventId) return t.eventId === body.eventId;
+          return t.assignees.indexOf(w.id) !== -1 || t.by === w.id;
+        });
+        list.sort(function (a, b) { return (a.due || "9999").localeCompare(b.due || "9999") || a.at - b.at; });
+        return c.ok({ items: list.map(function (t) { return taskView(db, t, w.id); }), today: today() });
+      }
+      function saveTask(body) {
+        var w = who(body);
+        if (w.error) return w.error;
+        var db = w.db;
+        var input = body.item || {};
+        var title = c.cleanStr(input.title, 100);
+        if (!title) return c.fail("INVALID_REQUEST", "やることを入れてください。");
+        var assignees = c.cleanList(input.assignees, null, 40).filter(function (id) { return member(db, id); });
+        if (!w.isAdmin) assignees = assignees.filter(function (id) { return id === w.id; });
+        if (!assignees.length) assignees = [w.id];
+        var t = input.id ? c.find(db.tasks, function (x) { return x.id === input.id; }) : null;
+        if (input.id && (!t || (t.by !== w.id && !w.isAdmin))) return c.fail("NOT_FOUND");
+        if (!t) {
+          t = { id: newId("t_"), by: w.id, at: c.nowMs(), done: {} };
+          db.tasks.push(t);
+          trim(db.tasks, 1000);
+        }
+        t.title = title;
+        t.note = cleanText(input.note, 500);
+        t.due = cleanDate(input.due);
+        t.assignees = assignees;
+        var ev = input.eventId && c.find(db.events, function (x) { return x.id === input.eventId; });
+        t.eventId = ev ? ev.id : (t.eventId || "");
+        c.saveDb(db);
+        return c.ok({ item: taskView(db, t, w.id) });
+      }
+      function toggleTask(body) {
+        var w = who(body);
+        if (w.error) return w.error;
+        var t = c.find(w.db.tasks, function (x) { return x.id === body.id; });
+        if (!t || t.assignees.indexOf(w.id) === -1) return c.fail("NOT_FOUND");
+        t.done = t.done || {};
+        if (body.done === true) t.done[w.id] = c.nowMs(); else delete t.done[w.id];
+        c.saveDb(w.db);
+        return c.ok({ item: taskView(w.db, t, w.id) });
+      }
+      function deleteTask(body) {
+        var w = who(body);
+        if (w.error) return w.error;
+        var t = c.find(w.db.tasks, function (x) { return x.id === body.id; });
+        if (!t || (t.by !== w.id && !w.isAdmin)) return c.fail("NOT_FOUND");
+        w.db.tasks = w.db.tasks.filter(function (x) { return x.id !== t.id; });
+        c.saveDb(w.db);
+        return c.ok({});
+      }
+
       // 自分の投稿を直す(種類と本文)
       function editPost(body) {
         var w = who(body);
@@ -3660,6 +3732,15 @@ var BtexServerCore = (function () {
         db.visitors.forEach(function (v) {
           if (v.by === me && v.appliedAt) items.push({ type: "visitor", at: v.appliedAt, text: v.name, link: "events" });
         });
+        // やること: 人から割り当てられた/期限が明日・今日でまだ
+        db.tasks.forEach(function (tk) {
+          if (tk.assignees.indexOf(me) === -1 || (tk.done || {})[me]) return;
+          if (tk.by !== me) items.push({ type: "taskNew", at: tk.at, who: tk.by, whoName: nameOf(db, tk.by), text: tk.title, date: tk.due || "", link: "home" });
+          if (tk.due) {
+            var remind = Date.parse(tk.due + "T09:00:00+09:00") - DAY;
+            if (c.nowMs() >= remind && tk.due >= today()) items.push({ type: "taskDue", at: remind, text: tk.title, date: tk.due, link: "home" });
+          }
+        });
         db.announcements.forEach(function (a) {
           items.push({ type: "ann", at: a.at, text: a.title, link: "news?open=" + a.id });
         });
@@ -3757,7 +3838,11 @@ var BtexServerCore = (function () {
           var other = o.a === w.id ? o.b : o.a;
           followUps.push({ type: "oneMemo", id: o.id, with: other, withName: nameOf(db, other), date: o.date });
         });
+        var myTasks = db.tasks.filter(function (tk) { return tk.assignees.indexOf(w.id) !== -1 && !(tk.done || {})[w.id]; })
+          .sort(function (a, b) { return (a.due || "9999").localeCompare(b.due || "9999") || a.at - b.at; })
+          .map(function (tk) { return taskView(db, tk, w.id); });
         return c.ok({
+          tasks: myTasks,
           me: { id: w.id, name: w.me.name, team: w.me.team || "", isAdmin: w.isAdmin, hasPassword: !!w.user.pw },
           today: t,
           events: upcoming.slice(0, 3).map(function (e) { return eventView(w, e); }),
@@ -3886,6 +3971,8 @@ var BtexServerCore = (function () {
           case "refMeet": return { title: "🤝 " + n + "が紹介の顔合わせの予定を入れました", body: (x.date || "") + " " + x.text };
           case "oneSoon": return { title: "☕ " + (x.time || "") + " から " + n + "と 1on1 です", body: x.meetUrl ? "Google Meet:" + x.meetUrl : "押すと予定を確認できます" };
           case "refMeetSoon": return { title: "🤝 " + (x.time || "") + " から紹介の顔合わせです", body: x.text + " × " + n + (x.meetUrl ? "(Google Meet:" + x.meetUrl + ")" : "") };
+          case "taskNew": return { title: "✅ " + n + "から やること", body: x.text + (x.date ? "(期限 " + x.date.slice(5).replace("-", "/") + ")" : "") };
+          case "taskDue": return { title: "⏰ やることの期限が近づいています", body: x.text + "(期限 " + x.date.slice(5).replace("-", "/") + ")" };
           case "oneAsk": return { title: "☕ " + n + "との1on1 は実施しましたか?", body: "「実施した」を押すと 1on1 の回数に数えます" };
           case "visitor": return { title: "🙋 ビジターの申込がありました", body: x.text + " さん" };
           case "ann": return { title: "📣 運営からのお知らせ", body: x.text };
@@ -3959,6 +4046,7 @@ var BtexServerCore = (function () {
           getMySettings: getMySettings, updateMySettings: updateMySettings,
           listAnnouncements: listAnnouncements, markAnnouncementsRead: markAnnouncementsRead,
           adminSaveAnnouncement: adminSaveAnnouncement, adminDeleteAnnouncement: adminDeleteAnnouncement,
+          listTasks: listTasks, saveTask: saveTask, toggleTask: toggleTask, deleteTask: deleteTask,
           listBoard: listBoard, createPost: createPost, editPost: editPost, deletePost: deletePost, commentPost: commentPost,
           deleteComment: deleteComment, likePost: likePost,
           sendFeedback: sendFeedback, listMyFeedback: listMyFeedback, adminListFeedback: adminListFeedback, adminUpdateFeedback: adminUpdateFeedback,

@@ -702,3 +702,17 @@ html.big-text body { zoom: 1.15; }
 
 /* 定例会の議事録 */
 .evd-minutes { border-left: 3px solid var(--accent); padding-left: 12px; }
+
+/* やること */
+.task-list { list-style: none; margin: 0 0 8px; padding: 0; display: grid; gap: 6px; }
+.task-row { display: flex; align-items: flex-start; gap: 8px; padding: 10px 12px; background: var(--card); border: 1px solid var(--line); border-radius: 12px; }
+.task-row.is-done b { text-decoration: line-through; color: var(--text-light); }
+.task-main { flex: 1; display: flex; align-items: flex-start; gap: 10px; cursor: pointer; min-width: 0; }
+.task-main input { width: 22px; height: 22px; margin-top: 1px; accent-color: var(--accent); flex: none; }
+.task-main > span { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.task-main b { font-size: 14.5px; overflow-wrap: anywhere; }
+.task-main small { font-size: 12px; color: var(--text-sub); }
+.task-due { font-weight: 700; }
+.task-due.is-soon { color: var(--warn); }
+.task-due.is-over { color: #c23b22; }
+.task-note, .task-people { color: var(--text-light) !important; }
