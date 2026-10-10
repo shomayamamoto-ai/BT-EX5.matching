@@ -1092,6 +1092,8 @@ var BtexServerCore = (function () {
       calendar: env.calendar || null,
       // Google Meet の参加記録(共有サーバーで設定したときだけ。なければ null)
       meet: env.meet || null,
+      // プッシュ通知の鍵(共有サーバーで動くときだけ。なければ null)
+      push: env.push || null,
     };
     var MODULE_INSTANCES = MODULES.map(function (m) {
       var inst = m.create(ctx) || {};
@@ -1112,10 +1114,10 @@ var BtexServerCore = (function () {
     }
 
     // 定期実行の処理(外からは呼べない。GAS の時間主導トリガーから呼ぶ)
-    function runJob(name) {
+    function runJob(name, arg) {
       var done = [];
       MODULE_INSTANCES.forEach(function (m) {
-        if (m.jobs && typeof m.jobs[name] === "function") done.push(m.jobs[name]());
+        if (m.jobs && typeof m.jobs[name] === "function") done.push(m.jobs[name](arg));
       });
       return done;
     }
@@ -1128,12 +1130,15 @@ var BtexServerCore = (function () {
     "updateMyProfile", "adminSaveReferralMember", "adminDeleteReferralMember", "adminImportReferralMembers",
     "recordReferral", "deleteReferral", "updateReferralStatus",
   ];
+  // 書き込みのあとに、プッシュ通知を送るか確かめる操作
+  var NOTIFY_ACTIONS = MUTATING_ACTIONS.slice();
 
   return {
     createServer: createServer,
     registerModule: function (mod) {
       registerModule(mod);
-      (mod.mutating || []).forEach(function (a) { MUTATING_ACTIONS.push(a); });
+      (mod.mutating || []).forEach(function (a) { MUTATING_ACTIONS.push(a); NOTIFY_ACTIONS.push(a); });
+      (mod.notifying || []).forEach(function (a) { NOTIFY_ACTIONS.push(a); });
     },
     sha256Hex: sha256Hex,
     normalizeName: normalizeName,
@@ -1141,5 +1146,6 @@ var BtexServerCore = (function () {
     ERRORS: ERRORS,
     REFERRAL_STATUSES: REFERRAL_STATUSES,
     MUTATING_ACTIONS: MUTATING_ACTIONS,
+    NOTIFY_ACTIONS: NOTIFY_ACTIONS,
   };
 })();

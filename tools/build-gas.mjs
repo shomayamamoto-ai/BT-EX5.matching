@@ -1,4 +1,4 @@
-// gas/Code.gs を作る: referral/data.js + auth/server-core.js + auth/server-community.js + gas/main.js
+// gas/Code.gs を作る: referral/data.js + auth/server-core.js + auth/server-community.js + gas/webpush.js + gas/main.js
 // 使い方: node tools/build-gas.mjs        (作り直す)
 //         node tools/build-gas.mjs --check (最新かどうかだけ確かめる)
 import { readFileSync, writeFileSync } from "node:fs";
@@ -6,7 +6,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
-const parts = ["referral/data.js", "auth/server-core.js", "auth/server-community.js", "gas/main.js"];
+const parts = ["referral/data.js", "auth/server-core.js", "auth/server-community.js", "gas/webpush.js", "gas/main.js"];
 
 const header = `// ============================================
 // BT-EX5 会員サイト — 共有サーバー(Google Apps Script)

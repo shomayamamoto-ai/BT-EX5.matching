@@ -454,7 +454,7 @@ const App = (function () {
   function renderTabs() {
     const nav = document.getElementById("appTabs");
     nav.replaceChildren(...TABS.map((t) => {
-      const count = t.id === "talk" ? (badges.announcements || 0) + (badges.messages || 0)
+      const count = t.id === "talk" ? (badges.announcements || 0) + (badges.messages || 0) + (badges.board || 0)
         : t.id === "log" ? badges.inbox || 0
         : t.id === "events" ? badges.rsvp || 0 : 0;
       return h("a", { class: "app-tab", href: t.href || `#${t.id}`, dataset: { tab: t.id } },
@@ -522,6 +522,18 @@ const App = (function () {
     document.getElementById("appMe").setAttribute("aria-label", `${data.displayName}さんのマイページ`);
     renderTabs();
     window.addEventListener("hashchange", route);
+    // 通知から開いたとき: ホーム画面のアイコンの数字を消し、通知の画面へ移る
+    if (typeof BtexPush !== "undefined") {
+      BtexPush.clearBadge();
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.addEventListener("message", (e) => {
+          if (e.data && e.data.type === "open" && typeof e.data.url === "string") {
+            const u = new URL(e.data.url, location.href);
+            if (u.origin === location.origin && u.pathname === location.pathname) go(u.hash.slice(1) || "home");
+          }
+        });
+      }
+    }
     // ほかのアプリから戻ってきたら、入力中でなければ最新にする(1分以上たっていたら)
     document.addEventListener("visibilitychange", () => {
       if (document.hidden) { hiddenAt = Date.now(); return; }

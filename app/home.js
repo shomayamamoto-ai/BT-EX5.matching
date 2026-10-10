@@ -138,6 +138,19 @@
           h("span", null, `まだ入っていない項目:${d.missing.slice(0, 4).join("・")}${d.missing.length > 4 ? " ほか" : ""}`),
           h("span", { class: "home-nudge-go" }, "自分の情報を入れる →")));
       }
+
+      // ---------- 通知(共有サーバーで、まだこの端末でオンにしていないとき) ----------
+      if (typeof BtexPush !== "undefined" && AuthApi.isShared()) {
+        const slot = h("div");
+        el.append(slot);
+        BtexPush.status().then((st) => {
+          if (st.on || st.permission === "denied" || (!st.supported && !st.needsInstall)) return;
+          slot.append(h("a", { class: "home-nudge", href: "#me/notify" },
+            h("b", null, "🔔 スマホに通知を受け取る"),
+            h("span", null, st.needsInstall ? "iPhone はホーム画面に追加すると、紹介・メッセージ・掲示板の更新が通知で届きます" : "紹介・メッセージ・掲示板・お知らせが届いたら、すぐにわかります"),
+            h("span", { class: "home-nudge-go" }, "通知をオンにする →")));
+        }).catch(() => {});
+      }
     },
   };
 

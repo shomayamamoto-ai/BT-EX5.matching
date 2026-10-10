@@ -172,12 +172,70 @@ var MEET_ = {
   },
 };
 
+// ---------- プッシュ通知(iPhone・Android・パソコン) ----------
+// 送り手の鍵(VAPID)は初回に作ってスクリプトのプロパティに保存する(サイトには公開鍵だけを渡す)。
+// 送るのは中身のない合図だけで、端末が会員サイトから中身を取りに来る(gas/webpush.js)
+var VAPID_PROP = "BTEX5_VAPID_KEYS";
+function vapidKeys_() {
+  var props = PropertiesService.getScriptProperties();
+  var saved = props.getProperty(VAPID_PROP);
+  if (saved) return JSON.parse(saved);
+  var keys = WebPush.generateKeys(randomBytes_);
+  props.setProperty(VAPID_PROP, JSON.stringify(keys));
+  return keys;
+}
+// Apps Script のバイト列は -128〜127。0〜255 との相互変換
+function toSigned_(bytes) { return bytes.map(function (b) { return b > 127 ? b - 256 : b; }); }
+function toUnsigned_(bytes) { return bytes.map(function (b) { return b & 255; }); }
+function sha256Bytes_(bytes) { return toUnsigned_(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, toSigned_(bytes))); }
+function hmacBytes_(key, msg) { return toUnsigned_(Utilities.computeHmacSha256Signature(toSigned_(msg), toSigned_(key))); }
+
+// 送り先のサービス(Apple・Google・Mozilla)ごとの署名は 11時間使い回す(署名の計算は重いため)
+function vapidAuth_(endpoint, subject) {
+  var aud = String(endpoint).match(/^https:\/\/[^/]+/)[0];
+  var cache = CacheService.getScriptCache();
+  var key = "vapid:" + aud;
+  var hit = cache.get(key);
+  if (hit) return hit;
+  var header = WebPush.vapidHeader(endpoint, vapidKeys_(), subject, Math.floor(Date.now() / 1000), sha256Bytes_, hmacBytes_);
+  cache.put(key, header, 11 * 60 * 60);
+  return header;
+}
+
+// 合図を送る(スクリプトロックを外してから呼ぶ)。届かなくなった端末は名簿から消す
+function sendPushes_(job) {
+  if (!job || !job.subs || !job.subs.length) return;
+  var subject = job.subject || "https://github.com/";
+  var requests = job.subs.map(function (s) {
+    return {
+      url: s.endpoint,
+      method: "post",
+      headers: { TTL: "86400", Urgency: "normal", Authorization: vapidAuth_(s.endpoint, subject) },
+      payload: "",
+      muteHttpExceptions: true,
+    };
+  });
+  var gone = [];
+  UrlFetchApp.fetchAll(requests).forEach(function (res, i) {
+    var code = res.getResponseCode();
+    if (code === 404 || code === 410) gone.push(job.subs[i].endpoint);
+    else if (code >= 300) console.warn("push " + code + " " + res.getContentText().slice(0, 200));
+  });
+  if (gone.length) {
+    var lock = LockService.getScriptLock();
+    if (lock.tryLock(10000)) {
+      try { SERVER_.runJob("dropPushSubs", gone); } finally { lock.releaseLock(); }
+    }
+  }
+}
+
 var SERVER_ = BtexServerCore.createServer({
   load: loadDb_,
   save: saveDb_,
   randomBytes: randomBytes_,
   calendar: CALENDAR_,
   meet: MEET_,
+  push: { publicKey: function () { return vapidKeys_().publicKey; } },
   onError: function (err) { console.error(err && err.stack ? err.stack : err); },
 });
 
@@ -289,15 +347,21 @@ function doPost(e) {
   } catch (err) {
     return json_({ success: false, error: { code: "SERVER_ERROR", message: BtexServerCore.ERRORS.SERVER_ERROR } });
   }
+  var result, pushJob = null;
   try {
-    var result = SERVER_.handle(body);
+    result = SERVER_.handle(body);
     if (result.success && body && BtexServerCore.MUTATING_ACTIONS.indexOf(body.action) !== -1) {
       try { refreshSheets_(); } catch (err) { console.error(err); }
     }
-    return json_(result);
+    if (result.success && body && BtexServerCore.NOTIFY_ACTIONS.indexOf(body.action) !== -1) {
+      // 新しいお知らせが届く人の端末を選んでおく(送るのはロックを外してから)
+      try { pushJob = SERVER_.runJob("takePushOutbox")[0]; } catch (err) { console.error(err); }
+    }
   } finally {
     lock.releaseLock();
   }
+  try { sendPushes_(pushJob); } catch (err) { console.error(err); }
+  return json_(result);
 }
 
 function doGet() {

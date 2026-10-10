@@ -43,7 +43,7 @@
       const label = document.createElement("span");
       label.textContent = t.label;
       a.append(svg, label);
-      const n = t.id === "talk" ? (badges.announcements || 0) + (badges.messages || 0)
+      const n = t.id === "talk" ? (badges.announcements || 0) + (badges.messages || 0) + (badges.board || 0)
         : t.id === "log" ? badges.inbox || 0 : t.id === "events" ? badges.rsvp || 0 : 0;
       if (n) {
         const b = document.createElement("span");

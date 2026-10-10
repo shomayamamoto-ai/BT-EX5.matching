@@ -27,6 +27,7 @@
           e.currentTarget.querySelector("b").textContent = on ? "文字を元の大きさに戻す" : "文字を大きくする";
           App.toast(on ? "文字を大きくしました(この端末のすべての画面)" : "元の大きさに戻しました");
         } }, h("b", null, document.documentElement.classList.contains("big-text") ? "文字を元の大きさに戻す" : "文字を大きくする"), h("small", null, "小さい文字が読みにくいときに")),
+        menu("#me/notify", "通知を受け取る(iPhone・Android)", "紹介・メッセージ・掲示板・お知らせが届いたら、スマホに通知します"),
         menu("#me/calendar", "Google カレンダー・Meet の設定", "1on1 の招待を受け取るアドレスと、Meet で表示される名前(定例会の出欠に使います)"),
         menu("#invite", "ビジター招待", "招待URL の発行・そのまま使える文・招待履歴"),
         menu("#me/qr", "あなたのプロフィールの QR コード", "交流会でメンバーに読み取ってもらうと、あなたの詳細が開きます"),
@@ -50,6 +51,8 @@
 
       el.append(h("div", { class: "app-cta-row" }, App.btn("ログアウト", async () => {
         const token = AuthSession.getToken();
+        // この端末への通知も止める(共有の端末で、ほかの人に通知が出ないように)
+        if (typeof BtexPush !== "undefined") await BtexPush.disable().catch(() => null);
         if (token) await AuthApi.logout(token);
         AuthSession.clearToken();
         location.replace("../login/");
@@ -60,6 +63,7 @@
       if (parts[0] === "feedback") feedbackSheet();
       if (parts[0] === "install") installSheet();
       if (parts[0] === "calendar") calendarSheet();
+      if (parts[0] === "notify") notifySheet();
       if (parts[0] === "qr") {
         const url = App.siteUrl(`../referral/#member=${encodeURIComponent(s.memberId)}`);
         App.openSheet("あなたのプロフィールの QR コード", (body) => {
@@ -128,6 +132,77 @@
         err,
         h("button", { type: "submit", class: "app-btn primary wide" }, "保存する")));
     }, { onClose: () => { if (location.hash === "#me/calendar") history.replaceState(null, "", "#me"); } });
+  }
+
+  // ---------- 通知(プッシュ通知) ----------
+  async function notifySheet() {
+    const st = await BtexPush.status();
+    App.openSheet("通知を受け取る", (body) => {
+      const msg = h("p", { class: "app-error", role: "alert" });
+      const state = h("p", { class: "notify-state" });
+      const drawState = (on) => {
+        state.className = `notify-state${on ? " is-on" : ""}`;
+        state.textContent = on ? "🔔 この端末で通知を受け取っています" : "🔕 この端末ではまだ受け取っていません";
+      };
+      drawState(st.on);
+      body.append(
+        h("p", { class: "app-lead" }, "次のことがあると、この端末に通知が届きます。通知を押すと、その画面が開きます。"),
+        h("ul", { class: "notify-list" },
+          h("li", null, "🤝 あなたあての紹介・紹介した案件の進み具合"),
+          h("li", null, "✉️ メッセージ"),
+          h("li", null, "📝 掲示板の新しい投稿・あなたの投稿へのコメント"),
+          h("li", null, "📣 運営からのお知らせ・📅 定例会の予定"),
+          h("li", null, "🎉 ありがとうマイル・☕ 1on1 の予定・🙋 ビジターの申込")),
+        state);
+
+      if (!st.shared) {
+        body.append(h("p", { class: "one-meet-note" }, "いまはお試し版のため、通知はまだ届きません。共有サーバーに切り替えると、ここから設定できます(アプリ内のベル🔔と、タブの数字ではいまも確認できます)。"));
+      }
+      if (st.needsInstall) {
+        body.append(h("div", { class: "notify-ios" },
+          h("b", null, "iPhone・iPad の方へ"),
+          h("ol", null,
+            h("li", null, "Safari でこの画面を開き、下の共有ボタン(□に↑)を押す"),
+            h("li", null, "「ホーム画面に追加」を押す"),
+            h("li", null, "ホーム画面の BT-EX5 のアイコンから開き、マイページ →「通知を受け取る」でオンにする")),
+          h("small", null, "iOS 16.4 以降が必要です。Apple の決まりで、Safari のままでは通知を受け取れません。")));
+      } else if (!st.supported) {
+        body.append(h("p", { class: "one-meet-note" }, "このブラウザは通知に対応していません。iPhone は Safari、Android は Chrome でお試しください。"));
+      }
+      if (st.permission === "denied") {
+        body.append(h("p", { class: "one-meet-note" }, st.ios ? "通知が止められています。iPhone の「設定」→「通知」→「BT-EX5」で許可してください。" : "通知が止められています。ブラウザのアドレス欄の🔒(または端末の設定)から、このサイトの通知を許可してください。"));
+      }
+
+      const row = h("div", { class: "app-btn-row" });
+      const draw = (on) => {
+        drawState(on);
+        row.replaceChildren(on
+          ? App.btn("この端末の通知を止める", async () => {
+            await BtexPush.disable();
+            draw(false);
+            App.toast("この端末の通知を止めました");
+          }, "ghost wide")
+          : App.btn("通知をオンにする", async (e) => {
+            msg.textContent = "";
+            const b = e.currentTarget;
+            b.disabled = true;
+            try {
+              await BtexPush.enable();
+              draw(true);
+              App.toast("通知をオンにしました");
+            } catch (err) {
+              msg.textContent = err.message;
+            } finally {
+              b.disabled = false;
+            }
+          }, "primary wide"));
+        const b = row.querySelector("button");
+        if (!on && (!st.supported || st.needsInstall || !st.shared)) b.disabled = true;
+      };
+      draw(st.on);
+      body.append(msg, row,
+        h("p", { class: "app-field-hint" }, "スマホ・パソコンなど、端末ごとにオンにします。ログアウトすると、その端末の通知は止まります。"));
+    }, { noFocus: true, onClose: () => { if (location.hash === "#me/notify") history.replaceState(null, "", "#me"); } });
   }
 
   // ---------- バグ・要望 ----------

@@ -1,7 +1,7 @@
 // ============================================
 // BT-EX5 会員サイト — 共有サーバー(Google Apps Script)
 // このファイルは tools/build-gas.mjs が自動で作ったものです。直接編集しないでください。
-// 元のファイル: referral/data.js / auth/server-core.js / auth/server-community.js / gas/main.js
+// 元のファイル: referral/data.js / auth/server-core.js / auth/server-community.js / gas/webpush.js / gas/main.js
 // 設定方法は gas/README.md を参照してください。
 // ============================================
 
@@ -733,6 +733,39 @@ const REF_SEED_EVENT_RECORDS = [
     seedId: "2026-10-07",
     attended: ["m22", "m02", "m16", "m08", "m20", "m14", "yamamoto", "m26", "m04", "m05", "m24", "m06", "m12", "m03", "m07"],
     absent: ["m18", "m10", "m25", "m17", "m19", "m13", "m09"],
+  },
+];
+
+// お試し版のときに書かれた掲示板の投稿を、どの端末にも一度だけ入れる(同じ人の同じ本文が既にあれば入れない)
+const REF_SEED_POSTS = [
+  {
+    seedId: "2026-10-10-advovisions",
+    by: "yamamoto",
+    cat: "雑談",
+    at: Date.UTC(2026, 9, 10, 4, 21), // 2026/10/10 13:21(日本時間)
+    body: [
+      "私の所属する芸能事務所兼映像制作会社で、私とアライアンスを組んでいる合同会社AdvoVisionsの告知です。",
+      "",
+      "告知失礼します！",
+      "「ケンコバのバコバコナイト」の制作を担当させていただくこととなり、",
+      "https://bakobako.tv",
+      "",
+      "10月2日放送分より弊社制作回がスタートいたしました。",
+      "https://youtu.be/DZGILK1LwDI?si=-x72BVDV6mBvEyAb",
+      "",
+      "企画・台本から収録、編集、MAまで、番組制作の一連を行ってます。",
+      "",
+      "関西・東海・関東の計6局で放送中ですので、お時間のある際にご覧いただけましたら幸いです。",
+      "",
+      "AIや映像制作の講義動画をはじめ",
+      "バラエティ番組に限らず、ドラマ・CM・PR映像など幅広いジャンルの映像制作を行っております。",
+      "映像に関わるご相談がございましたら、企画段階からでもお気軽にお声がけください。",
+      "",
+      "今後ともどうぞよろしくお願いいたします。",
+      "",
+      "合同会社AdvoVisions",
+      "代表　丸山弘太郎",
+    ].join("\n"),
   },
 ];
 
@@ -1850,6 +1883,8 @@ var BtexServerCore = (function () {
       calendar: env.calendar || null,
       // Google Meet の参加記録(共有サーバーで設定したときだけ。なければ null)
       meet: env.meet || null,
+      // プッシュ通知の鍵(共有サーバーで動くときだけ。なければ null)
+      push: env.push || null,
     };
     var MODULE_INSTANCES = MODULES.map(function (m) {
       var inst = m.create(ctx) || {};
@@ -1870,10 +1905,10 @@ var BtexServerCore = (function () {
     }
 
     // 定期実行の処理(外からは呼べない。GAS の時間主導トリガーから呼ぶ)
-    function runJob(name) {
+    function runJob(name, arg) {
       var done = [];
       MODULE_INSTANCES.forEach(function (m) {
-        if (m.jobs && typeof m.jobs[name] === "function") done.push(m.jobs[name]());
+        if (m.jobs && typeof m.jobs[name] === "function") done.push(m.jobs[name](arg));
       });
       return done;
     }
@@ -1886,12 +1921,15 @@ var BtexServerCore = (function () {
     "updateMyProfile", "adminSaveReferralMember", "adminDeleteReferralMember", "adminImportReferralMembers",
     "recordReferral", "deleteReferral", "updateReferralStatus",
   ];
+  // 書き込みのあとに、プッシュ通知を送るか確かめる操作
+  var NOTIFY_ACTIONS = MUTATING_ACTIONS.slice();
 
   return {
     createServer: createServer,
     registerModule: function (mod) {
       registerModule(mod);
-      (mod.mutating || []).forEach(function (a) { MUTATING_ACTIONS.push(a); });
+      (mod.mutating || []).forEach(function (a) { MUTATING_ACTIONS.push(a); NOTIFY_ACTIONS.push(a); });
+      (mod.notifying || []).forEach(function (a) { NOTIFY_ACTIONS.push(a); });
     },
     sha256Hex: sha256Hex,
     normalizeName: normalizeName,
@@ -1899,6 +1937,7 @@ var BtexServerCore = (function () {
     ERRORS: ERRORS,
     REFERRAL_STATUSES: REFERRAL_STATUSES,
     MUTATING_ACTIONS: MUTATING_ACTIONS,
+    NOTIFY_ACTIONS: NOTIFY_ACTIONS,
   };
 })();
 
@@ -1943,6 +1982,8 @@ var BtexServerCore = (function () {
       "createVisitorInvite", "updateVisitor", "visitorApply",
       "reportThanks", "deleteThanks", "save1on1", "delete1on1",
     ],
+    // 書き込みのあとに、通知(プッシュ)を送るか確かめる操作(mutating に加えて)
+    notifying: ["createPost", "commentPost", "sendMessage", "adminSaveAnnouncement"],
     create: function (c) {
       function dateKey(ms) {
         var d = new Date(ms + JST);
@@ -1989,7 +2030,7 @@ var BtexServerCore = (function () {
 
       function migrate(db) {
         var changed = false;
-        ["events", "visitors", "thanks", "oneOnOnes", "announcements", "posts", "threads", "feedback"].forEach(function (k) {
+        ["events", "visitors", "thanks", "oneOnOnes", "announcements", "posts", "threads", "feedback", "pushSubs"].forEach(function (k) {
           if (!Array.isArray(db[k])) { db[k] = []; changed = true; }
         });
         if (!db.seen || typeof db.seen !== "object") { db.seen = {}; changed = true; }
@@ -2008,6 +2049,21 @@ var BtexServerCore = (function () {
             syncEventCalendar(db, ev); // 共有サーバーでカレンダーが使えれば、Meet もここで作る
             db.events.push(ev);
             changed = true;
+          });
+        }
+        // お試し版のときの掲示板の投稿(REF_SEED_POSTS)を一度だけ入れる。
+        // 書いた本人の端末には同じ投稿が既にあるので、本文の書き出しが同じなら入れない
+        if (typeof REF_SEED_POSTS !== "undefined") {
+          if (!Array.isArray(db.postSeeds)) { db.postSeeds = []; changed = true; }
+          REF_SEED_POSTS.forEach(function (sp) {
+            if (db.postSeeds.indexOf(sp.seedId) !== -1) return;
+            db.postSeeds.push(sp.seedId);
+            changed = true;
+            var key = sp.body.replace(/\s/g, "").slice(0, 40);
+            var dup = db.posts.some(function (p) { return p.by === sp.by && String(p.body).replace(/\s/g, "").slice(0, 40) === key; });
+            if (dup || !member(db, sp.by)) return;
+            db.posts.push({ id: newId("p_"), by: sp.by, cat: sp.cat, body: sp.body, at: sp.at, likes: [], comments: [], seedId: sp.seedId });
+            db.posts.sort(function (a, b) { return a.at - b.at; });
           });
         }
         // 開く前の定例会の出欠(REF_SEED_EVENT_RECORDS)を一度だけ反映する。手で直した出欠は変えない
@@ -3316,6 +3372,8 @@ var BtexServerCore = (function () {
           if (t.to === me) items.push({ type: "thanks", at: t.at, who: t.from, whoName: nameOf(db, t.from), amount: t.amount, text: t.message || "", link: "log/miles" });
         });
         db.posts.forEach(function (p) {
+          // 掲示板の新しい投稿(自分以外)
+          if (p.by !== me) items.push({ type: "post", at: p.at, who: p.by, whoName: nameOf(db, p.by), text: String(p.body).replace(/\s+/g, " ").slice(0, 60), cat: p.cat, link: "talk/board" });
           (p.comments || []).forEach(function (cm) {
             if (cm.by === me) return;
             var mine = p.by === me;
@@ -3331,6 +3389,16 @@ var BtexServerCore = (function () {
         });
         db.announcements.forEach(function (a) {
           items.push({ type: "ann", at: a.at, text: a.title, link: "talk/news?open=" + a.id });
+        });
+        // メッセージ(自分あての最新の1通をやりとりごとに)
+        db.threads.forEach(function (t) {
+          if (t.members.indexOf(me) === -1) return;
+          for (var i = t.msgs.length - 1; i >= 0; i--) {
+            var m = t.msgs[i];
+            if (m.by === me) continue;
+            items.push({ type: "msg", at: m.at, who: m.by, whoName: nameOf(db, m.by), text: String(m.body).replace(/\s+/g, " ").slice(0, 60), link: "talk/msg/" + t.id });
+            break;
+          }
         });
         db.events.forEach(function (e) {
           if (e.createdAt && e.date >= today()) items.push({ type: "event", at: e.createdAt, text: e.title, date: e.date, link: "events" });
@@ -3442,9 +3510,154 @@ var BtexServerCore = (function () {
         });
       }
 
+      // ============================================
+      // プッシュ通知(iPhone・Android・パソコンの通知)
+      // サーバーから送るのは中身のない「合図」だけ。合図を受けた端末(sw.js)が pushPeek で
+      // 自分あての最新のお知らせを取りに来て表示する。pushPeek はその端末だけが知る鍵で読む
+      // (ログインのトークンを端末の裏側に置かない)。お知らせの中身は activityItems と同じ
+      // ============================================
+      var PUSH_MAX_PER_MEMBER = 10;
+      function cleanEndpoint(v) {
+        var s = String(v || "").trim();
+        return /^https:\/\/[^\s"'<>]+$/.test(s) && s.length <= 1000 ? s : "";
+      }
+      function cleanKey(v) {
+        var s = String(v || "");
+        return /^[A-Za-z0-9_-]{1,200}$/.test(s) ? s : "";
+      }
+      function latestActivityAt(db, memberId) {
+        var items = activityItems(db, memberId);
+        return items.length ? items[0].at : 0;
+      }
+
+      function pushConfig(body) {
+        var w = who(body);
+        if (w.error) return w.error;
+        var available = !!(c.push && c.push.publicKey);
+        return c.ok({
+          available: available,
+          publicKey: available ? c.push.publicKey() : "",
+          devices: w.db.pushSubs.filter(function (s) { return s.memberId === w.id; }).length,
+        });
+      }
+
+      function savePushSubscription(body) {
+        var w = who(body);
+        if (w.error) return w.error;
+        if (!c.push) return c.fail("INVALID_REQUEST", "通知は共有サーバーで動いているときだけ使えます。");
+        var sub = body.subscription || {};
+        var endpoint = cleanEndpoint(sub.endpoint);
+        if (!endpoint) return c.fail("INVALID_REQUEST");
+        var db = w.db;
+        var peekKey = c.randomToken();
+        var row = c.find(db.pushSubs, function (s) { return s.endpoint === endpoint; });
+        if (!row) {
+          row = { endpoint: endpoint, at: c.nowMs() };
+          db.pushSubs.push(row);
+        }
+        row.memberId = w.id;
+        row.peek = c.sha256Hex(peekKey);
+        row.ua = c.cleanStr(body.userAgent, 120);
+        row.seenAt = c.nowMs();
+        // 登録した時点より前の出来事では鳴らさない
+        row.notified = Math.max(row.notified || 0, latestActivityAt(db, w.id));
+        // 古い端末から消す(1人あたり上限まで)
+        var mine = db.pushSubs.filter(function (s) { return s.memberId === w.id; }).sort(function (a, b) { return a.seenAt - b.seenAt; });
+        var drop = mine.slice(0, Math.max(0, mine.length - PUSH_MAX_PER_MEMBER)).map(function (s) { return s.endpoint; });
+        if (drop.length) db.pushSubs = db.pushSubs.filter(function (s) { return drop.indexOf(s.endpoint) === -1; });
+        var site = String(body.site || "").match(/^https:\/\/[A-Za-z0-9.-]+(:\d+)?/);
+        if (site) db.pushSite = site[0];
+        c.saveDb(db);
+        return c.ok({ peekKey: peekKey, devices: mine.length - drop.length });
+      }
+
+      function deletePushSubscription(body) {
+        var db = c.ensureDb();
+        var endpoint = cleanEndpoint(body.endpoint);
+        var a = c.authSession(db, body.sessionToken);
+        var peek = cleanKey(body.peekKey);
+        var before = db.pushSubs.length;
+        db.pushSubs = db.pushSubs.filter(function (s) {
+          if (s.endpoint !== endpoint) return true;
+          var mine = (a && a.user.memberId === s.memberId) || (peek && s.peek === c.sha256Hex(peek));
+          return !mine;
+        });
+        if (db.pushSubs.length !== before) c.saveDb(db);
+        return c.ok({ removed: before - db.pushSubs.length });
+      }
+
+      // 通知に出す文(app/feed.js の表示と同じ言い回し)
+      var REF_STATUS_JA = { contacted: "連絡しました", meeting: "商談中です", won: "成約しました", lost: "見送りになりました" };
+      function pushText(x) {
+        var n = (x.whoName || "") + "さん";
+        switch (x.type) {
+          case "refIn": return { title: "🤝 " + n + "から紹介が届きました", body: x.text };
+          case "refStatus": return { title: "🤝 紹介の進み具合", body: n + "への紹介(" + x.text + ")が" + (REF_STATUS_JA[x.status] || "更新されました") };
+          case "thanks": return { title: "🎉 " + n + "からありがとうマイル", body: (x.amount ? Number(x.amount).toLocaleString("ja-JP") + "円 " : "") + x.text };
+          case "post": return { title: "📝 " + n + "が掲示板に投稿しました", body: x.text };
+          case "comment": return { title: "💬 " + n + "があなたの投稿にコメント", body: x.text };
+          case "reply": return { title: "💬 " + n + "も掲示板でコメント", body: x.text };
+          case "oneNew": return { title: "☕ " + n + "と1on1の予定", body: x.date || "" };
+          case "visitor": return { title: "🙋 ビジターの申込がありました", body: x.text + " さん" };
+          case "ann": return { title: "📣 運営からのお知らせ", body: x.text };
+          case "msg": return { title: "✉️ " + n + "からメッセージ", body: x.text };
+          case "event": return { title: "📅 定例会の予定が出ました", body: (x.date || "") + " " + x.text };
+          default: return { title: "BT-EX5", body: "新しいお知らせがあります" };
+        }
+      }
+
+      // 端末(sw.js)が通知に出す中身を取りに来る。ログインは不要で、登録時に渡した鍵で読む
+      function pushPeek(body) {
+        var db = c.ensureDb();
+        var endpoint = cleanEndpoint(body.endpoint);
+        var peek = cleanKey(body.peekKey);
+        var row = endpoint && peek ? c.find(db.pushSubs, function (s) { return s.endpoint === endpoint; }) : null;
+        if (!row || row.peek !== c.sha256Hex(peek)) return c.fail("SESSION_INVALID");
+        var lastSeen = seen(db, row.memberId).feed || 0;
+        var fresh = activityItems(db, row.memberId).filter(function (x) { return x.at > lastSeen; });
+        var top = fresh[0];
+        var t = top ? pushText(top) : { title: "BT-EX5", body: "新しいお知らせがあります" };
+        return c.ok({
+          title: t.title,
+          body: String(t.body || "").slice(0, 120),
+          link: top ? top.link : "feed",
+          count: fresh.length,
+          more: Math.max(0, fresh.length - 1),
+        });
+      }
+
+      // 書き込みのあとに呼ぶ: 新しいお知らせがある端末を選び、送り先として返す(中身は返さない)
+      function jobTakePushOutbox() {
+        var db = c.ensureDb();
+        if (!db.pushSubs || !db.pushSubs.length) return { subs: [] };
+        var latest = {};
+        var out = [];
+        db.pushSubs.forEach(function (s) {
+          if (!(s.memberId in latest)) latest[s.memberId] = member(db, s.memberId) ? latestActivityAt(db, s.memberId) : 0;
+          var at = latest[s.memberId];
+          if (at > (s.notified || 0)) {
+            s.notified = at;
+            out.push({ endpoint: s.endpoint });
+          }
+        });
+        if (out.length) c.saveDb(db);
+        return { subs: out, subject: db.pushSite || "" };
+      }
+
+      // 届かなくなった端末(404・410)を消す
+      function jobDropPushSubs(endpoints) {
+        var list = Array.isArray(endpoints) ? endpoints : [];
+        if (!list.length) return { removed: 0 };
+        var db = c.ensureDb();
+        var before = db.pushSubs.length;
+        db.pushSubs = db.pushSubs.filter(function (s) { return list.indexOf(s.endpoint) === -1; });
+        if (db.pushSubs.length !== before) c.saveDb(db);
+        return { removed: before - db.pushSubs.length };
+      }
+
       return {
         migrate: migrate,
-        jobs: { syncMeet: jobSyncMeet },
+        jobs: { syncMeet: jobSyncMeet, takePushOutbox: jobTakePushOutbox, dropPushSubs: jobDropPushSubs },
         actions: {
           getHome: getHome, getActivity: getActivity, adminDashboard: adminDashboard, adminExport: adminExport,
           listEvents: listEvents, getEvent: getEvent, rsvpEvent: rsvpEvent, checkIn: checkIn,
@@ -3462,10 +3675,158 @@ var BtexServerCore = (function () {
           deleteComment: deleteComment, likePost: likePost,
           listThreads: listThreads, getThread: getThread, sendMessage: sendMessage,
           sendFeedback: sendFeedback, listMyFeedback: listMyFeedback, adminListFeedback: adminListFeedback, adminUpdateFeedback: adminUpdateFeedback,
+          pushConfig: pushConfig, savePushSubscription: savePushSubscription, deletePushSubscription: deletePushSubscription, pushPeek: pushPeek,
         },
       };
     },
   });
+})();
+
+
+// ---------- gas/webpush.js ----------
+// ============================================
+// gas/webpush.js — Web プッシュ通知(iPhone・Android・パソコン)を送るための署名
+//
+// Web プッシュでは、送り手であることを示す VAPID(ES256 = P-256 の ECDSA 署名)が必要。
+// Apps Script には ES256 の署名がないため、ここで P-256 の計算を BigInt で行う。
+// 送るのは「中身のない合図」だけ(中身の暗号化はしない)。合図を受けた端末の
+// サービスワーカー(sw.js)が、会員サイトから最新のお知らせを取りに来て表示する。
+//
+// 使い方(gas/main.js):
+//   var keys = WebPush.generateKeys(randomBytes)      // { privateHex, publicKey }(初回だけ)
+//   var auth = WebPush.vapidHeader(endpoint, keys, subject, nowSec, hmacSha256)
+//   → Authorization ヘッダーの値("vapid t=..., k=...")
+// ============================================
+
+var WebPush = (function () {
+  "use strict";
+
+  // ---------- P-256(secp256r1) ----------
+  var P = BigInt("0xffffffff00000001000000000000000000000000ffffffffffffffffffffffff");
+  var N = BigInt("0xffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc632551");
+  var A = P - BigInt(3);
+  var GX = BigInt("0x6b17d1f2e12c4247f8bce6e563a440f277037d812deb33a0f4a13945d898c296");
+  var GY = BigInt("0x4fe342e2fe1a7f9b8ee7eb4a7c0f9e162bce33576b315ececbb6406837bf51f5");
+  var ZERO = BigInt(0), ONE = BigInt(1), TWO = BigInt(2), THREE = BigInt(3);
+
+  function mod(a, m) { var r = a % m; return r < ZERO ? r + m : r; }
+  function inv(a, m) {
+    // 拡張ユークリッド
+    var lm = ONE, hm = ZERO, low = mod(a, m), high = m;
+    while (low > ONE) {
+      var r = high / low;
+      var nm = hm - lm * r, nw = high - low * r;
+      hm = lm; high = low; lm = nm; low = nw;
+    }
+    return mod(lm, m);
+  }
+
+  // ヤコビアン座標 [X, Y, Z]
+  function dbl(p) {
+    var X = p[0], Y = p[1], Z = p[2];
+    if (Y === ZERO || Z === ZERO) return [ZERO, ONE, ZERO];
+    var YY = mod(Y * Y, P);
+    var S = mod(BigInt(4) * X * YY, P);
+    var ZZ = mod(Z * Z, P);
+    var M = mod(THREE * X * X + A * ZZ * ZZ, P);
+    var X3 = mod(M * M - TWO * S, P);
+    var Y3 = mod(M * (S - X3) - BigInt(8) * YY * YY, P);
+    var Z3 = mod(TWO * Y * Z, P);
+    return [X3, Y3, Z3];
+  }
+  function add(p, q) {
+    if (p[2] === ZERO) return q;
+    if (q[2] === ZERO) return p;
+    var Z1Z1 = mod(p[2] * p[2], P), Z2Z2 = mod(q[2] * q[2], P);
+    var U1 = mod(p[0] * Z2Z2, P), U2 = mod(q[0] * Z1Z1, P);
+    var S1 = mod(p[1] * q[2] * Z2Z2, P), S2 = mod(q[1] * p[2] * Z1Z1, P);
+    if (U1 === U2) return S1 === S2 ? dbl(p) : [ZERO, ONE, ZERO];
+    var H = mod(U2 - U1, P), R = mod(S2 - S1, P);
+    var HH = mod(H * H, P), HHH = mod(H * HH, P), V = mod(U1 * HH, P);
+    var X3 = mod(R * R - HHH - TWO * V, P);
+    var Y3 = mod(R * (V - X3) - S1 * HHH, P);
+    var Z3 = mod(H * p[2] * q[2], P);
+    return [X3, Y3, Z3];
+  }
+  function mul(k, x, y) {
+    var R = [ZERO, ONE, ZERO], Q = [x, y, ONE];
+    var bits = k.toString(2);
+    for (var i = 0; i < bits.length; i++) {
+      R = dbl(R);
+      if (bits[i] === "1") R = add(R, Q);
+    }
+    if (R[2] === ZERO) throw new Error("point at infinity");
+    var zi = inv(R[2], P), zi2 = mod(zi * zi, P);
+    return [mod(R[0] * zi2, P), mod(R[1] * zi2 * zi, P)];
+  }
+
+  // ---------- 文字・バイト ----------
+  function hexToBytes(h) { var o = []; for (var i = 0; i < h.length; i += 2) o.push(parseInt(h.substr(i, 2), 16)); return o; }
+  function bytesToHex(b) { return b.map(function (x) { return ((x & 255) < 16 ? "0" : "") + (x & 255).toString(16); }).join(""); }
+  function bigToBytes(n, len) { var h = n.toString(16); while (h.length < len * 2) h = "0" + h; return hexToBytes(h); }
+  function bytesToBig(b) { return b.length ? BigInt("0x" + bytesToHex(b)) : ZERO; }
+  var B64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+  function b64url(bytes) {
+    var out = "";
+    for (var i = 0; i < bytes.length; i += 3) {
+      var n = ((bytes[i] & 255) << 16) | (((bytes[i + 1] || 0) & 255) << 8) | ((bytes[i + 2] || 0) & 255);
+      out += B64[(n >>> 18) & 63] + B64[(n >>> 12) & 63];
+      if (i + 1 < bytes.length) out += B64[(n >>> 6) & 63];
+      if (i + 2 < bytes.length) out += B64[n & 63];
+    }
+    return out;
+  }
+  function utf8(s) {
+    var t = unescape(encodeURIComponent(String(s)));
+    var o = new Array(t.length);
+    for (var i = 0; i < t.length; i++) o[i] = t.charCodeAt(i);
+    return o;
+  }
+
+  // ---------- 鍵 ----------
+  // randomBytes(n) → 0〜255 の配列
+  function generateKeys(randomBytes) {
+    var d = ZERO;
+    while (d === ZERO || d >= N) d = bytesToBig(randomBytes(32));
+    var Q = mul(d, GX, GY);
+    return { privateHex: d.toString(16), publicKey: b64url([4].concat(bigToBytes(Q[0], 32), bigToBytes(Q[1], 32))) };
+  }
+
+  // ---------- ECDSA 署名(k は RFC 6979 で決める。乱数の質に頼らない) ----------
+  // hmac(keyBytes, msgBytes) → 32バイトの配列
+  function sign(msgBytes, privateHex, sha256Bytes, hmac) {
+    var d = BigInt("0x" + privateHex);
+    var h1 = sha256Bytes(msgBytes);
+    var e = bytesToBig(h1);
+    var x = bigToBytes(d, 32), hb = bigToBytes(mod(e, N), 32);
+    var V = [], K = [], i;
+    for (i = 0; i < 32; i++) { V.push(1); K.push(0); }
+    K = hmac(K, V.concat([0], x, hb)); V = hmac(K, V);
+    K = hmac(K, V.concat([1], x, hb)); V = hmac(K, V);
+    for (;;) {
+      V = hmac(K, V);
+      var k = bytesToBig(V);
+      if (k > ZERO && k < N) {
+        var R = mul(k, GX, GY);
+        var r = mod(R[0], N);
+        var s = mod(inv(k, N) * (e + r * d), N);
+        if (r !== ZERO && s !== ZERO) return bigToBytes(r, 32).concat(bigToBytes(s, 32));
+      }
+      K = hmac(K, V.concat([0])); V = hmac(K, V);
+    }
+  }
+
+  // VAPID の Authorization ヘッダー(RFC 8292)
+  function vapidHeader(endpoint, keys, subject, nowSec, sha256Bytes, hmac) {
+    var aud = String(endpoint).match(/^https:\/\/[^/]+/)[0];
+    var header = b64url(utf8(JSON.stringify({ typ: "JWT", alg: "ES256" })));
+    var payload = b64url(utf8(JSON.stringify({ aud: aud, exp: nowSec + 12 * 60 * 60, sub: subject })));
+    var input = header + "." + payload;
+    var sig = sign(utf8(input), keys.privateHex, sha256Bytes, hmac);
+    return "vapid t=" + input + "." + b64url(sig) + ", k=" + keys.publicKey;
+  }
+
+  return { generateKeys: generateKeys, sign: sign, vapidHeader: vapidHeader, b64url: b64url, utf8: utf8 };
 })();
 
 
@@ -3644,12 +4005,70 @@ var MEET_ = {
   },
 };
 
+// ---------- プッシュ通知(iPhone・Android・パソコン) ----------
+// 送り手の鍵(VAPID)は初回に作ってスクリプトのプロパティに保存する(サイトには公開鍵だけを渡す)。
+// 送るのは中身のない合図だけで、端末が会員サイトから中身を取りに来る(gas/webpush.js)
+var VAPID_PROP = "BTEX5_VAPID_KEYS";
+function vapidKeys_() {
+  var props = PropertiesService.getScriptProperties();
+  var saved = props.getProperty(VAPID_PROP);
+  if (saved) return JSON.parse(saved);
+  var keys = WebPush.generateKeys(randomBytes_);
+  props.setProperty(VAPID_PROP, JSON.stringify(keys));
+  return keys;
+}
+// Apps Script のバイト列は -128〜127。0〜255 との相互変換
+function toSigned_(bytes) { return bytes.map(function (b) { return b > 127 ? b - 256 : b; }); }
+function toUnsigned_(bytes) { return bytes.map(function (b) { return b & 255; }); }
+function sha256Bytes_(bytes) { return toUnsigned_(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, toSigned_(bytes))); }
+function hmacBytes_(key, msg) { return toUnsigned_(Utilities.computeHmacSha256Signature(toSigned_(msg), toSigned_(key))); }
+
+// 送り先のサービス(Apple・Google・Mozilla)ごとの署名は 11時間使い回す(署名の計算は重いため)
+function vapidAuth_(endpoint, subject) {
+  var aud = String(endpoint).match(/^https:\/\/[^/]+/)[0];
+  var cache = CacheService.getScriptCache();
+  var key = "vapid:" + aud;
+  var hit = cache.get(key);
+  if (hit) return hit;
+  var header = WebPush.vapidHeader(endpoint, vapidKeys_(), subject, Math.floor(Date.now() / 1000), sha256Bytes_, hmacBytes_);
+  cache.put(key, header, 11 * 60 * 60);
+  return header;
+}
+
+// 合図を送る(スクリプトロックを外してから呼ぶ)。届かなくなった端末は名簿から消す
+function sendPushes_(job) {
+  if (!job || !job.subs || !job.subs.length) return;
+  var subject = job.subject || "https://github.com/";
+  var requests = job.subs.map(function (s) {
+    return {
+      url: s.endpoint,
+      method: "post",
+      headers: { TTL: "86400", Urgency: "normal", Authorization: vapidAuth_(s.endpoint, subject) },
+      payload: "",
+      muteHttpExceptions: true,
+    };
+  });
+  var gone = [];
+  UrlFetchApp.fetchAll(requests).forEach(function (res, i) {
+    var code = res.getResponseCode();
+    if (code === 404 || code === 410) gone.push(job.subs[i].endpoint);
+    else if (code >= 300) console.warn("push " + code + " " + res.getContentText().slice(0, 200));
+  });
+  if (gone.length) {
+    var lock = LockService.getScriptLock();
+    if (lock.tryLock(10000)) {
+      try { SERVER_.runJob("dropPushSubs", gone); } finally { lock.releaseLock(); }
+    }
+  }
+}
+
 var SERVER_ = BtexServerCore.createServer({
   load: loadDb_,
   save: saveDb_,
   randomBytes: randomBytes_,
   calendar: CALENDAR_,
   meet: MEET_,
+  push: { publicKey: function () { return vapidKeys_().publicKey; } },
   onError: function (err) { console.error(err && err.stack ? err.stack : err); },
 });
 
@@ -3761,15 +4180,21 @@ function doPost(e) {
   } catch (err) {
     return json_({ success: false, error: { code: "SERVER_ERROR", message: BtexServerCore.ERRORS.SERVER_ERROR } });
   }
+  var result, pushJob = null;
   try {
-    var result = SERVER_.handle(body);
+    result = SERVER_.handle(body);
     if (result.success && body && BtexServerCore.MUTATING_ACTIONS.indexOf(body.action) !== -1) {
       try { refreshSheets_(); } catch (err) { console.error(err); }
     }
-    return json_(result);
+    if (result.success && body && BtexServerCore.NOTIFY_ACTIONS.indexOf(body.action) !== -1) {
+      // 新しいお知らせが届く人の端末を選んでおく(送るのはロックを外してから)
+      try { pushJob = SERVER_.runJob("takePushOutbox")[0]; } catch (err) { console.error(err); }
+    }
   } finally {
     lock.releaseLock();
   }
+  try { sendPushes_(pushJob); } catch (err) { console.error(err); }
+  return json_(result);
 }
 
 function doGet() {

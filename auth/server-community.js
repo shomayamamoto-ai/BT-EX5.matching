@@ -37,6 +37,8 @@
       "createVisitorInvite", "updateVisitor", "visitorApply",
       "reportThanks", "deleteThanks", "save1on1", "delete1on1",
     ],
+    // 書き込みのあとに、通知(プッシュ)を送るか確かめる操作(mutating に加えて)
+    notifying: ["createPost", "commentPost", "sendMessage", "adminSaveAnnouncement"],
     create: function (c) {
       function dateKey(ms) {
         var d = new Date(ms + JST);
@@ -83,7 +85,7 @@
 
       function migrate(db) {
         var changed = false;
-        ["events", "visitors", "thanks", "oneOnOnes", "announcements", "posts", "threads", "feedback"].forEach(function (k) {
+        ["events", "visitors", "thanks", "oneOnOnes", "announcements", "posts", "threads", "feedback", "pushSubs"].forEach(function (k) {
           if (!Array.isArray(db[k])) { db[k] = []; changed = true; }
         });
         if (!db.seen || typeof db.seen !== "object") { db.seen = {}; changed = true; }
@@ -102,6 +104,21 @@
             syncEventCalendar(db, ev); // 共有サーバーでカレンダーが使えれば、Meet もここで作る
             db.events.push(ev);
             changed = true;
+          });
+        }
+        // お試し版のときの掲示板の投稿(REF_SEED_POSTS)を一度だけ入れる。
+        // 書いた本人の端末には同じ投稿が既にあるので、本文の書き出しが同じなら入れない
+        if (typeof REF_SEED_POSTS !== "undefined") {
+          if (!Array.isArray(db.postSeeds)) { db.postSeeds = []; changed = true; }
+          REF_SEED_POSTS.forEach(function (sp) {
+            if (db.postSeeds.indexOf(sp.seedId) !== -1) return;
+            db.postSeeds.push(sp.seedId);
+            changed = true;
+            var key = sp.body.replace(/\s/g, "").slice(0, 40);
+            var dup = db.posts.some(function (p) { return p.by === sp.by && String(p.body).replace(/\s/g, "").slice(0, 40) === key; });
+            if (dup || !member(db, sp.by)) return;
+            db.posts.push({ id: newId("p_"), by: sp.by, cat: sp.cat, body: sp.body, at: sp.at, likes: [], comments: [], seedId: sp.seedId });
+            db.posts.sort(function (a, b) { return a.at - b.at; });
           });
         }
         // 開く前の定例会の出欠(REF_SEED_EVENT_RECORDS)を一度だけ反映する。手で直した出欠は変えない
@@ -1410,6 +1427,8 @@
           if (t.to === me) items.push({ type: "thanks", at: t.at, who: t.from, whoName: nameOf(db, t.from), amount: t.amount, text: t.message || "", link: "log/miles" });
         });
         db.posts.forEach(function (p) {
+          // 掲示板の新しい投稿(自分以外)
+          if (p.by !== me) items.push({ type: "post", at: p.at, who: p.by, whoName: nameOf(db, p.by), text: String(p.body).replace(/\s+/g, " ").slice(0, 60), cat: p.cat, link: "talk/board" });
           (p.comments || []).forEach(function (cm) {
             if (cm.by === me) return;
             var mine = p.by === me;
@@ -1425,6 +1444,16 @@
         });
         db.announcements.forEach(function (a) {
           items.push({ type: "ann", at: a.at, text: a.title, link: "talk/news?open=" + a.id });
+        });
+        // メッセージ(自分あての最新の1通をやりとりごとに)
+        db.threads.forEach(function (t) {
+          if (t.members.indexOf(me) === -1) return;
+          for (var i = t.msgs.length - 1; i >= 0; i--) {
+            var m = t.msgs[i];
+            if (m.by === me) continue;
+            items.push({ type: "msg", at: m.at, who: m.by, whoName: nameOf(db, m.by), text: String(m.body).replace(/\s+/g, " ").slice(0, 60), link: "talk/msg/" + t.id });
+            break;
+          }
         });
         db.events.forEach(function (e) {
           if (e.createdAt && e.date >= today()) items.push({ type: "event", at: e.createdAt, text: e.title, date: e.date, link: "events" });
@@ -1536,9 +1565,154 @@
         });
       }
 
+      // ============================================
+      // プッシュ通知(iPhone・Android・パソコンの通知)
+      // サーバーから送るのは中身のない「合図」だけ。合図を受けた端末(sw.js)が pushPeek で
+      // 自分あての最新のお知らせを取りに来て表示する。pushPeek はその端末だけが知る鍵で読む
+      // (ログインのトークンを端末の裏側に置かない)。お知らせの中身は activityItems と同じ
+      // ============================================
+      var PUSH_MAX_PER_MEMBER = 10;
+      function cleanEndpoint(v) {
+        var s = String(v || "").trim();
+        return /^https:\/\/[^\s"'<>]+$/.test(s) && s.length <= 1000 ? s : "";
+      }
+      function cleanKey(v) {
+        var s = String(v || "");
+        return /^[A-Za-z0-9_-]{1,200}$/.test(s) ? s : "";
+      }
+      function latestActivityAt(db, memberId) {
+        var items = activityItems(db, memberId);
+        return items.length ? items[0].at : 0;
+      }
+
+      function pushConfig(body) {
+        var w = who(body);
+        if (w.error) return w.error;
+        var available = !!(c.push && c.push.publicKey);
+        return c.ok({
+          available: available,
+          publicKey: available ? c.push.publicKey() : "",
+          devices: w.db.pushSubs.filter(function (s) { return s.memberId === w.id; }).length,
+        });
+      }
+
+      function savePushSubscription(body) {
+        var w = who(body);
+        if (w.error) return w.error;
+        if (!c.push) return c.fail("INVALID_REQUEST", "通知は共有サーバーで動いているときだけ使えます。");
+        var sub = body.subscription || {};
+        var endpoint = cleanEndpoint(sub.endpoint);
+        if (!endpoint) return c.fail("INVALID_REQUEST");
+        var db = w.db;
+        var peekKey = c.randomToken();
+        var row = c.find(db.pushSubs, function (s) { return s.endpoint === endpoint; });
+        if (!row) {
+          row = { endpoint: endpoint, at: c.nowMs() };
+          db.pushSubs.push(row);
+        }
+        row.memberId = w.id;
+        row.peek = c.sha256Hex(peekKey);
+        row.ua = c.cleanStr(body.userAgent, 120);
+        row.seenAt = c.nowMs();
+        // 登録した時点より前の出来事では鳴らさない
+        row.notified = Math.max(row.notified || 0, latestActivityAt(db, w.id));
+        // 古い端末から消す(1人あたり上限まで)
+        var mine = db.pushSubs.filter(function (s) { return s.memberId === w.id; }).sort(function (a, b) { return a.seenAt - b.seenAt; });
+        var drop = mine.slice(0, Math.max(0, mine.length - PUSH_MAX_PER_MEMBER)).map(function (s) { return s.endpoint; });
+        if (drop.length) db.pushSubs = db.pushSubs.filter(function (s) { return drop.indexOf(s.endpoint) === -1; });
+        var site = String(body.site || "").match(/^https:\/\/[A-Za-z0-9.-]+(:\d+)?/);
+        if (site) db.pushSite = site[0];
+        c.saveDb(db);
+        return c.ok({ peekKey: peekKey, devices: mine.length - drop.length });
+      }
+
+      function deletePushSubscription(body) {
+        var db = c.ensureDb();
+        var endpoint = cleanEndpoint(body.endpoint);
+        var a = c.authSession(db, body.sessionToken);
+        var peek = cleanKey(body.peekKey);
+        var before = db.pushSubs.length;
+        db.pushSubs = db.pushSubs.filter(function (s) {
+          if (s.endpoint !== endpoint) return true;
+          var mine = (a && a.user.memberId === s.memberId) || (peek && s.peek === c.sha256Hex(peek));
+          return !mine;
+        });
+        if (db.pushSubs.length !== before) c.saveDb(db);
+        return c.ok({ removed: before - db.pushSubs.length });
+      }
+
+      // 通知に出す文(app/feed.js の表示と同じ言い回し)
+      var REF_STATUS_JA = { contacted: "連絡しました", meeting: "商談中です", won: "成約しました", lost: "見送りになりました" };
+      function pushText(x) {
+        var n = (x.whoName || "") + "さん";
+        switch (x.type) {
+          case "refIn": return { title: "🤝 " + n + "から紹介が届きました", body: x.text };
+          case "refStatus": return { title: "🤝 紹介の進み具合", body: n + "への紹介(" + x.text + ")が" + (REF_STATUS_JA[x.status] || "更新されました") };
+          case "thanks": return { title: "🎉 " + n + "からありがとうマイル", body: (x.amount ? Number(x.amount).toLocaleString("ja-JP") + "円 " : "") + x.text };
+          case "post": return { title: "📝 " + n + "が掲示板に投稿しました", body: x.text };
+          case "comment": return { title: "💬 " + n + "があなたの投稿にコメント", body: x.text };
+          case "reply": return { title: "💬 " + n + "も掲示板でコメント", body: x.text };
+          case "oneNew": return { title: "☕ " + n + "と1on1の予定", body: x.date || "" };
+          case "visitor": return { title: "🙋 ビジターの申込がありました", body: x.text + " さん" };
+          case "ann": return { title: "📣 運営からのお知らせ", body: x.text };
+          case "msg": return { title: "✉️ " + n + "からメッセージ", body: x.text };
+          case "event": return { title: "📅 定例会の予定が出ました", body: (x.date || "") + " " + x.text };
+          default: return { title: "BT-EX5", body: "新しいお知らせがあります" };
+        }
+      }
+
+      // 端末(sw.js)が通知に出す中身を取りに来る。ログインは不要で、登録時に渡した鍵で読む
+      function pushPeek(body) {
+        var db = c.ensureDb();
+        var endpoint = cleanEndpoint(body.endpoint);
+        var peek = cleanKey(body.peekKey);
+        var row = endpoint && peek ? c.find(db.pushSubs, function (s) { return s.endpoint === endpoint; }) : null;
+        if (!row || row.peek !== c.sha256Hex(peek)) return c.fail("SESSION_INVALID");
+        var lastSeen = seen(db, row.memberId).feed || 0;
+        var fresh = activityItems(db, row.memberId).filter(function (x) { return x.at > lastSeen; });
+        var top = fresh[0];
+        var t = top ? pushText(top) : { title: "BT-EX5", body: "新しいお知らせがあります" };
+        return c.ok({
+          title: t.title,
+          body: String(t.body || "").slice(0, 120),
+          link: top ? top.link : "feed",
+          count: fresh.length,
+          more: Math.max(0, fresh.length - 1),
+        });
+      }
+
+      // 書き込みのあとに呼ぶ: 新しいお知らせがある端末を選び、送り先として返す(中身は返さない)
+      function jobTakePushOutbox() {
+        var db = c.ensureDb();
+        if (!db.pushSubs || !db.pushSubs.length) return { subs: [] };
+        var latest = {};
+        var out = [];
+        db.pushSubs.forEach(function (s) {
+          if (!(s.memberId in latest)) latest[s.memberId] = member(db, s.memberId) ? latestActivityAt(db, s.memberId) : 0;
+          var at = latest[s.memberId];
+          if (at > (s.notified || 0)) {
+            s.notified = at;
+            out.push({ endpoint: s.endpoint });
+          }
+        });
+        if (out.length) c.saveDb(db);
+        return { subs: out, subject: db.pushSite || "" };
+      }
+
+      // 届かなくなった端末(404・410)を消す
+      function jobDropPushSubs(endpoints) {
+        var list = Array.isArray(endpoints) ? endpoints : [];
+        if (!list.length) return { removed: 0 };
+        var db = c.ensureDb();
+        var before = db.pushSubs.length;
+        db.pushSubs = db.pushSubs.filter(function (s) { return list.indexOf(s.endpoint) === -1; });
+        if (db.pushSubs.length !== before) c.saveDb(db);
+        return { removed: before - db.pushSubs.length };
+      }
+
       return {
         migrate: migrate,
-        jobs: { syncMeet: jobSyncMeet },
+        jobs: { syncMeet: jobSyncMeet, takePushOutbox: jobTakePushOutbox, dropPushSubs: jobDropPushSubs },
         actions: {
           getHome: getHome, getActivity: getActivity, adminDashboard: adminDashboard, adminExport: adminExport,
           listEvents: listEvents, getEvent: getEvent, rsvpEvent: rsvpEvent, checkIn: checkIn,
@@ -1556,6 +1730,7 @@
           deleteComment: deleteComment, likePost: likePost,
           listThreads: listThreads, getThread: getThread, sendMessage: sendMessage,
           sendFeedback: sendFeedback, listMyFeedback: listMyFeedback, adminListFeedback: adminListFeedback, adminUpdateFeedback: adminUpdateFeedback,
+          pushConfig: pushConfig, savePushSubscription: savePushSubscription, deletePushSubscription: deletePushSubscription, pushPeek: pushPeek,
         },
       };
     },

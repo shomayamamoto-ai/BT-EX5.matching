@@ -143,6 +143,7 @@ const AuthApi = (function () {
     adminSaveReferralMember, adminDeleteReferralMember, adminImportReferralMembers,
     recordReferral, deleteReferral, updateReferralStatus, getReferralStats,
     isShared: () => Boolean(API_BASE_URL),
+    apiUrl: () => API_BASE_URL,
     NETWORK_MESSAGE,
   };
 })();
