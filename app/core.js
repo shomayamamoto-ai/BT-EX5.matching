@@ -556,7 +556,28 @@ const App = (function () {
     document.documentElement.classList.remove("guard-pending");
   }
 
+  // 早見表でメンバーの詳細を開くリンク。詳細に「← ◯◯に戻る」が出て、いまの画面へ戻れる
+  // back: 戻り先(#のあと)。省くといまの画面
+  function profileHref(memberId, back) {
+    const to = back === undefined ? location.hash.replace(/^#/, "") : back;
+    return `../referral/#member=${encodeURIComponent(memberId)}${to ? `&back=${encodeURIComponent(to)}` : ""}`;
+  }
+
+  // Google Meet の会議の作り方(トグルで開く)
+  function meetHowTo() {
+    return h("details", { class: "meet-howto" },
+      h("summary", null, "Meet の作り方(タップで開く)"),
+      h("ol", null,
+        h("li", null, "上の「Meet を作る」を押す(Google Meet が新しいタブで開きます)"),
+        h("li", null, "Google アカウントでログインしていなければ、ログインする"),
+        h("li", null, "会議の画面が開いたら、上のアドレス欄の URL(https://meet.google.com/xxx-xxxx-xxx)をコピーする。「参加に必要な情報」の欄にある URL のコピーボタンでも同じです"),
+        h("li", null, "この画面に戻り、下の入力欄に URL を貼り付けて「保存する」"),
+        h("li", null, "Meet のタブは閉じてかまいません。当日は同じ URL(「Meet に参加」ボタン)から入れます")),
+      h("p", { class: "app-field-hint" }, "スマホは Google Meet アプリが開くことがあります。そのときは「会議に参加するための情報を共有」→「コピー」で URL を取り出せます。"));
+  }
+
   return {
+    profileHref, meetHowTo,
     h, append, fill, fmtStamp, fmtDate, fmtDateLong, fmtTime, yen, daysUntil, todayKey, chip, avatar, richText, toast, copyText, shareText,
     icon, qrImage, draft, clearDraft, calendarButtons, googleCalUrl, api, openSheet, doneSheet, field, btn, toggle, timeSelect, segmented, empty, section, memberPicker,
     AREA_LABELS, REF_STATUS, VISITOR_STATUS,

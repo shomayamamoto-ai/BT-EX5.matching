@@ -37,7 +37,7 @@
       // 声かけが必要なこと
       (d.followUps || []).forEach((f) => {
         if (f.type === "givenStale") {
-          todo.push(alertLink(`../referral/#member=${encodeURIComponent(f.with)}`,
+          todo.push(alertLink(App.profileHref(f.with, "home"),
             `${f.withName}さんへの紹介が ${f.days} 日そのままです`, `${f.prospect || "紹介した方"}の件、ひと声かけましょう(LINE などの連絡先を開く)`));
         } else if (f.type === "inboxStale") {
           todo.push(alertLink("#log/ref", `${f.withName}さんからの紹介に ${f.days} 日返事をしていません`, `${f.prospect || "紹介された方"}へ連絡したら「連絡済み」にしてください`, "is-warn"));

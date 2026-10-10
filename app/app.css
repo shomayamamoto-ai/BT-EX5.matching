@@ -669,3 +669,9 @@ html.big-text body { zoom: 1.15; }
   .st-card > b { font-size: 21px; }
   .st-table-head { flex-direction: column; }
 }
+
+/* Google Meet の作り方(トグル) */
+.meet-howto { margin: 2px 0 10px; border: 1px solid var(--line); border-radius: 12px; background: #fff; font-size: 13px; }
+.meet-howto summary { cursor: pointer; padding: 9px 12px; font-weight: 800; color: var(--accent-dark); }
+.meet-howto ol { margin: 0; padding: 0 14px 4px 2.2em; display: grid; gap: 5px; line-height: 1.6; }
+.meet-howto .app-field-hint { padding: 4px 12px 10px; margin: 0; }

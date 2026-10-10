@@ -241,6 +241,9 @@
     el.append(recommendSection(d.items));
     el.append(App.section(`これまで(${done.length})`, done.length ? h("ul", { class: "app-list" }, done.map(row)) : App.empty("まだ記録がありません。")));
     if (params.has("new")) oneForm(null, params.get("with"));
+    // プロフィールから戻ってきたとき、開いていた 1on1 をもう一度開く
+    const reopen = params.get("open") && d.items.find((o) => o.id === params.get("open"));
+    if (reopen) { history.replaceState(null, "", "#log/1on1"); oneForm(reopen); }
   }
 
   // 次に 1on1 するとよい人: まだ会っていない人のうち、紹介し合えそうな人を先に
@@ -263,7 +266,7 @@
           h("span", { class: "app-row-main" }, h("b", null, `${p.m.name}さん`), h("small", null, p.why))),
         h("div", { class: "rec-actions" },
           h("a", { class: "app-btn small", href: `#log/1on1?new&with=${encodeURIComponent(p.m.id)}` }, "1on1 を予定する"),
-          h("a", { class: "app-btn ghost small", href: `../referral/#member=${encodeURIComponent(p.m.id)}` }, "プロフィール"))))));
+          h("a", { class: "app-btn ghost small", href: App.profileHref(p.m.id) }, "プロフィール"))))));
   }
 
   // 1on1 の設定(共有サーバーで Google カレンダーが使えるか・自分のメールを登録済みか)
@@ -339,6 +342,7 @@
             oneMeta.hasCalendarEmail ? null : h("a", { href: "#me/calendar" }, "(招待を受け取るメールアドレスを登録する)"))
           : [h("p", { class: "one-meet-note" }, "いまはお試し版のため、Meet は自動で作れません(共有サーバーに切り替えると自動になります)。下のボタンで作り、URL を貼り付けてください。"),
             h("div", { class: "app-btn-row" }, h("a", { class: "app-btn ghost small", href: "https://meet.google.com/new", target: "_blank", rel: "noopener" }, "Meet を作る")),
+            App.meetHowTo(),
             meetUrl],
         o && o.meetUrl ? h("a", { class: "app-btn small", href: o.meetUrl, target: "_blank", rel: "noopener" }, "Meet に参加する") : null);
       const mode = toggleGroup([{ id: "onsite", label: "現地(対面)" }, { id: "meet", label: "Google Meet" }], o ? o.mode : "onsite", (v) => {
@@ -386,7 +390,7 @@
       err,
       save,
       o ? h("div", { class: "app-form-foot" },
-        App.btn(`${o.withName}さんのプロフィール`, () => { location.href = `../referral/#member=${encodeURIComponent(o.with)}`; }, "ghost small"),
+        App.btn(`${o.withName}さんのプロフィール`, () => { location.href = App.profileHref(o.with, `log/1on1?open=${encodeURIComponent(o.id)}`); }, "ghost small"),
         App.btn("削除", async () => {
           if (!confirm("この 1on1 を削除しますか?(Google カレンダーの予定も消えます)")) return;
           if (await App.api("delete1on1", { id: o.id })) { close(); App.toast("削除しました"); App.route(); }

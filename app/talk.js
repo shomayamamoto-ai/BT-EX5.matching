@@ -140,7 +140,7 @@
       const comment = h("input", { type: "text", maxlength: "1000", placeholder: "コメントする", "aria-label": "コメント" });
       App.fill(card, 
         h("div", { class: "post-head" }, App.avatar(p.byName),
-          h("div", null, h("a", { href: `../referral/#member=${encodeURIComponent(p.by)}` }, h("b", null, p.byName)), h("small", null, App.fmtTime(p.at))),
+          h("div", null, h("a", { href: App.profileHref(p.by) }, h("b", null, p.byName)), h("small", null, App.fmtTime(p.at))),
           App.chip(p.cat, p.cat === "紹介依頼" ? "warn" : p.cat === "成約・お礼" ? "good" : "info"),
           p.isNew ? h("span", { class: "ann-dot" }, "新着") : null),
         App.richText(p.body),

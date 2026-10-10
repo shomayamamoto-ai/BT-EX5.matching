@@ -453,11 +453,23 @@
   }
 
   let detailReturnFocus = null;
+  // 会員アプリから開いたときの戻り先(#member=…&back=log/1on1 など)。詳細の上に「← ◯◯に戻る」を出す
+  let detailBack = "";
+  const BACK_LABELS = [
+    [/^log\/1on1/, "1on1 に戻る"], [/^log\/stats/, "数字に戻る"], [/^log\/rank/, "ランキングに戻る"], [/^log/, "記録に戻る"],
+    [/^board/, "掲示板に戻る"], [/^news/, "運営連絡に戻る"], [/^events/, "予定に戻る"], [/^admin/, "管理者メニューに戻る"],
+    [/^me/, "マイページに戻る"], [/^home/, "ホームに戻る"],
+  ];
+  function backLink() {
+    if (!detailBack) return "";
+    const label = (BACK_LABELS.find(([re]) => re.test(detailBack)) || [null, "前の画面に戻る"])[1];
+    return `<a class="md-back" href="../app/#${escapeHtml(detailBack)}">← ${escapeHtml(label)}</a>`;
+  }
   function openDetail(id) {
     const m = members.find((x) => x.id === id);
     if (!m) return;
     detailReturnFocus = document.activeElement;
-    $("#detailBody").innerHTML = detailHtml(m);
+    $("#detailBody").innerHTML = backLink() + detailHtml(m);
     $("#detailOverlay").hidden = false;
     $("#detailOverlay").scrollTop = 0;
     document.body.style.overflow = "hidden";
@@ -476,6 +488,7 @@
     }
     $("#detailOverlay").hidden = true;
     document.body.style.overflow = "";
+    detailBack = "";
     if (changed && ta) {
       renderList();
       const btn = document.querySelector(`#member-${ta.dataset.memo} .ref-name-btn`);
@@ -927,8 +940,12 @@
       openDiag();
       return;
     }
-    const mm = /^#member=([\w-]+)$/.exec(hash);
+    const mm = /^#member=([\w-]+)(?:&back=([^&#]*))?$/.exec(hash);
     if (mm && members.some((m) => m.id === mm[1])) {
+      // 戻り先は会員アプリの中の画面だけ(文字の種類と長さを限る)
+      let back = "";
+      try { back = mm[2] ? decodeURIComponent(mm[2]) : ""; } catch { back = ""; }
+      detailBack = /^[a-z][\w\/?=&.%-]{0,199}$/.test(back) ? back : "";
       gotoCard(mm[1]);
       openDetail(mm[1]);
     }

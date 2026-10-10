@@ -129,6 +129,7 @@
           ? h("p", { class: "one-meet-note" }, ev && ev.hasMeet ? "Google Meet は作成済みです。日時を変えるとカレンダーの予定も変わります。" : "保存すると Google Meet を自動で作り、申し込んだメンバーに参加リンクを表示します。")
           : [h("p", { class: "one-meet-note" }, "いまはお試し版のため、Google Meet は自動で作れません(共有サーバーで Google カレンダーを連携すると、保存したときに自動で作られます)。下のボタンで作り、URL を貼り付けてください。"),
             h("div", { class: "app-btn-row" }, h("a", { class: "app-btn ghost small", href: "https://meet.google.com/new", target: "_blank", rel: "noopener" }, "Meet を作る")),
+            App.meetHowTo(),
             meetUrl]);
       const venueBox = h("div", { class: "one-mode-box" }, areaSel, f.place);
       const how = App.toggle([{ id: "online", label: "オンライン(Google Meet)" }, { id: "venue", label: "会場" }], base && !base.online ? "venue" : "online", (v) => {
@@ -342,7 +343,7 @@
         h("p", { class: `evd-group-head tone-${g.tone}` }, `${g.label}(${g.list.length}名)`, g.note ? h("small", null, ` ${g.note}`) : null),
         h("ul", { class: "app-list evd-members" }, g.list.map((m, i) => {
           const st = memberStatus(m);
-          return h("li", { class: m.isMe ? "is-me" : "" }, h("a", { class: "app-row", href: `../referral/#member=${encodeURIComponent(m.id)}` },
+          return h("li", { class: m.isMe ? "is-me" : "" }, h("a", { class: "app-row", href: App.profileHref(m.id) },
             h("span", { class: "evd-no" }, String(i + 1)),
             h("span", { class: "app-row-main" }, h("b", null, m.name, m.isMe ? "(あなた)" : ""), h("small", null, [m.team, m.category].filter(Boolean).join(" ・ ") || "—")),
             App.chip(st.label, st.tone),

@@ -154,7 +154,7 @@
             const rk = rowRank.get(r);
             return h("tr", { class: r.isMe ? "is-me" : "" },
               h("td", null, h("span", { class: `st-rank${rk && rk <= 4 ? ` st-r${rk}` : ""}` }, rk ? String(rk) : "—")),
-              h("td", { class: "st-name" }, h("a", { href: `../referral/#member=${encodeURIComponent(r.id)}` }, r.name), r.isMe ? h("span", { class: "st-me" }, "あなた") : null),
+              h("td", { class: "st-name" }, h("a", { href: App.profileHref(r.id) }, r.name), r.isMe ? h("span", { class: "st-me" }, "あなた") : null),
               COLS.map((c) => td(r, c)));
           }))))));
   };

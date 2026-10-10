@@ -1338,3 +1338,11 @@ a:hover > .brand-mark { transform: none; }
 }
 .md-app-btn.is-main { background: var(--grad); color: #fff; border-color: transparent; }
 a.ref-btn { display: inline-flex; align-items: center; justify-content: center; text-decoration: none; }
+
+/* 会員アプリから開いたときの「← ◯◯に戻る」 */
+.md-back {
+  display: inline-flex; align-items: center; gap: 4px; margin: 0 0 12px; padding: 8px 14px;
+  border: 1px solid #ead2bf; border-radius: 999px; background: #fff; color: #e2532f;
+  font-size: 14px; font-weight: 800; text-decoration: none;
+}
+.md-back:hover { border-color: #f4694b; }

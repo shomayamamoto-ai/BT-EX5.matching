@@ -18,7 +18,7 @@
 
       el.append(h("nav", { class: "me-menu", "aria-label": "マイページのメニュー" },
         menu("../profile/", "プロフィール・1on1シートを編集", "紹介されるための情報。入れるほど紹介が届きます"),
-        menu(me ? `../referral/#member=${encodeURIComponent(me.id)}` : "../referral/", "ほかのメンバーからの見え方", "早見表のあなたのカード"),
+        menu(me ? App.profileHref(me.id, "me") : "../referral/", "ほかのメンバーからの見え方", "早見表のあなたのカード"),
         menu("#me/password", s.hasPassword ? "パスワードを変える" : "パスワードを決める", s.hasPassword ? "" : "共通パスコードの代わりに、あなた専用のパスワードで入れます", !s.hasPassword),
         h("button", { type: "button", class: "me-item", onclick: (e) => {
           const on = !document.documentElement.classList.contains("big-text");
@@ -45,7 +45,7 @@
       el.append(App.section("お気に入りのメンバー",
         favs.length
           ? h("ul", { class: "app-list me-favs" }, favs.map((m) => h("li", null,
-            h("a", { class: "app-row", href: `../referral/#member=${encodeURIComponent(m.id)}` },
+            h("a", { class: "app-row", href: App.profileHref(m.id, "me") },
               App.avatar(m.name), h("span", { class: "app-row-main" }, h("b", null, m.name), h("small", null, m.company || m.category || ""))))))
           : App.empty("早見表のカード右上の☆を押すと、ここに並びます。")));
 
