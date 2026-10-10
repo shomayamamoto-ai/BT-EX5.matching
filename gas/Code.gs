@@ -2042,7 +2042,7 @@ var BtexServerCore = (function () {
       "reportThanks", "deleteThanks", "save1on1", "delete1on1", "confirm1on1",
     ],
     // 書き込みのあとに、通知(プッシュ)を送るか確かめる操作(mutating に加えて)
-    notifying: ["createPost", "commentPost", "adminSaveAnnouncement"],
+    notifying: ["createPost", "commentPost", "adminSaveAnnouncement", "setReferralMeeting"],
     create: function (c) {
       function dateKey(ms) {
         var d = new Date(ms + JST);
@@ -2673,7 +2673,43 @@ var BtexServerCore = (function () {
           prospect: l.prospect, contact: l.contact || "", memo: l.memo || "", topics: l.topics || [],
           mine: giver === me, received: l.toMemberId === me,
           thanksAmount: thanks ? thanks.amount : 0,
+          meeting: meetingView(db, l.meeting),
         };
+      }
+
+      // 紹介の顔合わせの予定(紹介した人・紹介を受けた人のどちらでも決められる)
+      function meetingView(db, mt) {
+        if (!mt || !mt.date) return null;
+        var o = { date: mt.date, time: mt.time || "", duration: mt.duration || 60 };
+        return {
+          date: mt.date, time: mt.time || "", duration: o.duration, end: endTime(o), endDate: endDate(o),
+          mode: mt.mode || "onsite", place: mt.place || "", meetUrl: mt.meetUrl || "", setByName: mt.setBy ? nameOf(db, mt.setBy) : "",
+        };
+      }
+      function setReferralMeeting(body) {
+        var w = who(body);
+        if (w.error) return w.error;
+        var db = w.db;
+        var l = c.find(db.referralLogs, function (x) { return x.id === body.id; });
+        if (!l || (memberIdOfUser(db, l.fromUserId) !== w.id && l.toMemberId !== w.id)) return c.fail("NOT_FOUND");
+        var m = body.meeting;
+        if (!m) {
+          delete l.meeting;
+        } else {
+          var date = cleanDate(m.date);
+          if (!date) return c.fail("INVALID_REQUEST", "顔合わせの日付を入れてください。");
+          var mode = oneOf(m.mode, ["onsite", "meet"], "onsite");
+          var url = c.cleanStr(m.meetUrl, 200);
+          l.meeting = {
+            date: date, time: cleanTime(m.time),
+            duration: DURATIONS.indexOf(Number(m.duration)) !== -1 ? Number(m.duration) : 60,
+            mode: mode, place: mode === "meet" ? "" : c.cleanStr(m.place, 80),
+            meetUrl: mode === "meet" && /^https:\/\/[^\s"'<>]+$/.test(url) ? url : "",
+            setBy: w.id, setAt: c.nowMs(),
+          };
+        }
+        c.saveDb(db);
+        return c.ok({ item: referralView(db, l, w.id) });
       }
 
       function thanksView(db, t) {
@@ -3518,6 +3554,10 @@ var BtexServerCore = (function () {
           if (l.toMemberId === me && giver !== me) {
             items.push({ type: "refIn", at: l.at, who: giver, whoName: nameOf(db, giver), text: l.prospect || "", link: "log/ref" });
           }
+          // 紹介の顔合わせの予定(相手が決めた・直したとき)
+          if (l.meeting && l.meeting.setBy && l.meeting.setBy !== me && (giver === me || l.toMemberId === me)) {
+            items.push({ type: "refMeet", at: l.meeting.setAt, who: l.meeting.setBy, whoName: nameOf(db, l.meeting.setBy), text: l.prospect || "", date: l.meeting.date, link: "log/ref" });
+          }
           if (giver === me && l.statusAt && l.status !== "new") {
             items.push({ type: "refStatus", at: l.statusAt, who: l.toMemberId, whoName: nameOf(db, l.toMemberId), status: l.status, text: l.prospect || "", link: "log/ref" });
           }
@@ -3760,6 +3800,7 @@ var BtexServerCore = (function () {
           case "reply": return { title: "💬 " + n + "も掲示板でコメント", body: x.text };
           case "oneNew": return { title: "☕ " + n + "と1on1の予定", body: x.date || "" };
           case "rsvpSoon": return { title: "📅 " + (x.date || "") + " の定例会の出欠がまだです", body: x.text + "(押して出席・欠席を選んでください)" };
+          case "refMeet": return { title: "🤝 " + n + "が紹介の顔合わせの予定を入れました", body: (x.date || "") + " " + x.text };
           case "oneAsk": return { title: "☕ " + n + "との1on1 は実施しましたか?", body: "「実施した」を押すと 1on1 の回数に数えます" };
           case "visitor": return { title: "🙋 ビジターの申込がありました", body: x.text + " さん" };
           case "ann": return { title: "📣 運営からのお知らせ", body: x.text };
@@ -3828,7 +3869,7 @@ var BtexServerCore = (function () {
           adminSyncMeetAttendance: adminSyncMeetAttendance, adminMapMeetName: adminMapMeetName,
           createVisitorInvite: createVisitorInvite, listMyVisitors: listMyVisitors, updateVisitor: updateVisitor,
           visitorInfo: visitorInfo, visitorApply: visitorApply,
-          listMyReferrals: listMyReferrals, reportThanks: reportThanks, deleteThanks: deleteThanks, getRankings: getRankings, getTeamRanking: getTeamRanking, getStats: getStats, logSearch: logSearch, adminSetTeamGoals: adminSetTeamGoals,
+          listMyReferrals: listMyReferrals, setReferralMeeting: setReferralMeeting, reportThanks: reportThanks, deleteThanks: deleteThanks, getRankings: getRankings, getTeamRanking: getTeamRanking, getStats: getStats, logSearch: logSearch, adminSetTeamGoals: adminSetTeamGoals,
           list1on1: list1on1, save1on1: save1on1, delete1on1: delete1on1, confirm1on1: confirm1on1,
           getMySettings: getMySettings, updateMySettings: updateMySettings,
           listAnnouncements: listAnnouncements, markAnnouncementsRead: markAnnouncementsRead,

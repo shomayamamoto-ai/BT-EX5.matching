@@ -693,3 +693,9 @@ html.big-text body { zoom: 1.15; }
 .dash-hidden p { margin: 0 0 6px; }
 .dash-misses { margin-top: 10px; }
 .dash-misses summary { cursor: pointer; font-weight: 800; font-size: 13.5px; padding: 6px 0; }
+
+/* 紹介の顔合わせ・送る文 */
+.ref-meet { margin: 4px 0 12px; border: 1px solid var(--line); border-radius: 12px; background: #fff; }
+.ref-meet summary { cursor: pointer; padding: 10px 12px; font-weight: 800; color: var(--accent-dark); }
+.ref-meet > .app-field-hint, .ref-meet > .ref-meet-editor { padding: 0 12px 10px; }
+.ref-share { margin-top: 8px; flex-wrap: wrap; }

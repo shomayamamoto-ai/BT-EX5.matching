@@ -61,7 +61,10 @@
           h("dt", null, "紹介された方"), h("dd", null, r.prospect || "(未記入)"),
           r.contact ? [h("dt", null, "連絡先"), h("dd", null, contactLink(r.contact))] : null,
           r.memo ? [h("dt", null, "メモ"), h("dd", null, r.memo)] : null,
-          r.thanksAmount ? [h("dt", null, "お礼"), h("dd", null, App.yen(r.thanksAmount))] : null),
+          r.thanksAmount ? [h("dt", null, "お礼"), h("dd", null, App.yen(r.thanksAmount))] : null,
+          meetingSummary(r.meeting)),
+        refShareButtons(r),
+        h("div", { class: "app-btn-row" }, App.btn(r.meeting ? "顔合わせの予定を直す" : "顔合わせの予定を決める", () => meetingSheet(r, draw), "ghost small")),
         h("div", { class: "ref-status-row", role: "group", "aria-label": "対応状況" },
           ["contacted", "meeting", "lost"].map((s) => h("button", {
             type: "button", class: `app-pill${r.status === s ? " is-on" : ""}`, "aria-pressed": r.status === s ? "true" : "false",
@@ -79,27 +82,196 @@
   }
 
   function givenCard(r) {
-    const st = App.REF_STATUS[r.status] || App.REF_STATUS.new;
-    return h("article", { class: "ref-card" },
-      h("div", { class: "ref-card-head" }, App.avatar(r.toName), h("div", null, h("b", null, `${r.toName}さんへ`), h("small", null, App.fmtTime(r.at))), App.chip(st.label, st.tone)),
-      h("dl", { class: "ref-card-body" },
-        h("dt", null, "紹介した方"), h("dd", null, r.prospect || "(未記入)"),
-        r.memo ? [h("dt", null, "メモ"), h("dd", null, r.memo)] : null,
-        r.thanksAmount ? [h("dt", null, "お礼"), h("dd", { class: "is-good" }, `${App.yen(r.thanksAmount)} のありがとうマイル`)] : null),
-      h("div", { class: "ref-card-actions" },
-        App.btn("取り消す", async (e) => {
-          if (!confirm("この紹介の記録を取り消しますか?")) return;
-          const res = await AuthApi.deleteReferral(AuthSession.getToken(), r.id);
-          if (!res.success) { App.toast(res.error.userMessage); return; }
-          e.target.closest("li").remove();
-          App.toast("取り消しました");
-        }, "ghost small")));
+    const card = h("article", { class: "ref-card" });
+    function draw() {
+      const st = App.REF_STATUS[r.status] || App.REF_STATUS.new;
+      App.fill(card,
+        h("div", { class: "ref-card-head" }, App.avatar(r.toName), h("div", null, h("b", null, `${r.toName}さんへ`), h("small", null, App.fmtTime(r.at))), App.chip(st.label, st.tone)),
+        h("dl", { class: "ref-card-body" },
+          h("dt", null, "紹介した方"), h("dd", null, r.prospect || "(未記入)"),
+          r.memo ? [h("dt", null, "メモ"), h("dd", null, r.memo)] : null,
+          r.thanksAmount ? [h("dt", null, "お礼"), h("dd", { class: "is-good" }, `${App.yen(r.thanksAmount)} のありがとうマイル`)] : null,
+          meetingSummary(r.meeting)),
+        refShareButtons(r),
+        h("div", { class: "ref-card-actions" },
+          App.btn(r.meeting ? "顔合わせの予定を直す" : "顔合わせの予定を決める", () => meetingSheet(r, draw), "ghost small"),
+          App.btn("取り消す", async (e) => {
+            if (!confirm("この紹介の記録を取り消しますか?")) return;
+            const res = await AuthApi.deleteReferral(AuthSession.getToken(), r.id);
+            if (!res.success) { App.toast(res.error.userMessage); return; }
+            e.target.closest("li").remove();
+            App.toast("取り消しました");
+          }, "ghost small")));
+    }
+    draw();
+    return card;
   }
 
   function contactLink(c) {
     if (/^[\w.+-]+@[\w-]+\.[\w.-]+$/.test(c)) return h("a", { href: `mailto:${c}` }, c);
     if (/^[0-9０-９()+\- ]{9,}$/.test(c)) return h("a", { href: `tel:${c.replace(/[^\d+]/g, "")}` }, c);
     return c;
+  }
+
+  // ============================================
+  // 紹介の顔合わせ(日時・場所 / Google Meet)と、送る文・カレンダー
+  // ============================================
+  function meetingEditor(mt) {
+    const today = App.todayKey();
+    const date = h("input", { type: "date", value: mt ? mt.date : "" });
+    const quick = h("div", { class: "app-chips" }, [["一昨日", -2], ["昨日", -1], ["今日", 0], ["明日", 1], ["あさって", 2]].map(([label, n]) =>
+      h("button", { type: "button", class: "app-pill", onclick: () => { date.value = addDays(today, n); } }, label)));
+    const time = h("select", { "aria-label": "顔合わせの開始時刻" }, timeOptions());
+    time.value = mt ? mt.time : "";
+    const durs = [30, 60, 90, 120, 150, 180, 210, 240, 270, 300];
+    const duration = h("select", { "aria-label": "顔合わせの時間" }, durs.map((n) => h("option", { value: String(n) }, durLabel(n))));
+    duration.value = String(mt ? mt.duration : 60);
+    const place = h("input", { type: "text", maxlength: "80", placeholder: "例:新潟駅前のカフェ", value: mt && mt.mode !== "meet" ? mt.place : "" });
+    const meetUrl = h("input", { type: "url", maxlength: "200", placeholder: "https://meet.google.com/…", value: mt ? mt.meetUrl : "" });
+    const onsiteBox = h("div", { class: "one-mode-box" }, place);
+    const meetBox = h("div", { class: "one-mode-box" },
+      h("div", { class: "app-btn-row" }, h("a", { class: "app-btn ghost small", href: "https://meet.google.com/new", target: "_blank", rel: "noopener" }, "Meet を作る")),
+      App.meetHowTo(), meetUrl);
+    const mode = toggleGroup([{ id: "onsite", label: "現地(対面)" }, { id: "meet", label: "Google Meet" }], mt ? mt.mode : "onsite", (v) => {
+      onsiteBox.hidden = v !== "onsite";
+      meetBox.hidden = v !== "meet";
+    });
+    onsiteBox.hidden = mode.getValue() !== "onsite";
+    meetBox.hidden = mode.getValue() !== "meet";
+    const el = h("div", { class: "ref-meet-editor" },
+      App.field("日付", h("div", null, date, quick)),
+      h("div", { class: "app-grid2" }, App.field("開始時刻", time), App.field("時間", duration)),
+      App.field("場所", h("div", null, mode, onsiteBox, meetBox)));
+    const get = () => {
+      if (!date.value) return null;
+      const m = mode.getValue();
+      const e = oneEnd(time.value, Number(duration.value));
+      const url = meetUrl.value.trim();
+      return { date: date.value, time: time.value, duration: Number(duration.value), end: e.end, endDate: e.endNext ? addDays(date.value, 1) : date.value,
+        mode: m, place: m === "meet" ? "" : place.value.trim(), meetUrl: m === "meet" && /^https:\/\//.test(url) ? url : "" };
+    };
+    return { el, get };
+  }
+
+  function meetingLines(mt) {
+    if (!mt || !mt.date) return [];
+    const next = mt.endDate && mt.endDate !== mt.date;
+    const lines = [`■ 顔合わせ:${App.fmtDate(mt.date)} ${mt.time ? `${mt.time}〜${next ? "翌" : ""}${mt.end}` : "(時刻はあらためてご相談させてください)"}`];
+    if (mt.mode === "meet") {
+      lines.push("■ 場所:Google Meet(オンライン)");
+      if (mt.meetUrl) lines.push(`■ 参加URL:${mt.meetUrl}`);
+    } else if (mt.place) {
+      lines.push(`■ 場所:${mt.place}`);
+    }
+    return lines;
+  }
+  // メンバーのホームページ・SNS・連絡先(早見表に登録したもの)
+  function memberLinkLines(m) {
+    const types = typeof LINK_TYPES !== "undefined" ? LINK_TYPES : [];
+    return (m && m.links ? m.links : []).map((l) => {
+      const t = types.find((x) => x.id === l.type) || { label: "リンク" };
+      const url = /^https:\/\//.test(l.url) ? l.url : App.siteUrl(`../${l.url}`);
+      return `・${l.label || t.label}:${url}`;
+    });
+  }
+  function shortBiz(m) {
+    const t = String((m && m.business) || "").replace(/\s+/g, " ");
+    return t.length > 120 ? `${t.slice(0, 120)}…` : t;
+  }
+  // 紹介した人 → 紹介先のメンバーへ
+  function refTextToMember(r) {
+    return [
+      `${r.toName}さん`,
+      `${r.prospect || "お客様"}をご紹介させていただきました。`,
+      r.memo ? `ご相談の内容:${r.memo}` : "",
+      r.contact ? `連絡先:${r.contact}` : "",
+      ...meetingLines(r.meeting),
+      "会員サイトの「記録」にも入れています。どうぞよろしくお願いします!",
+      App.siteUrl("#log/ref"),
+    ].filter(Boolean).join("\n");
+  }
+  // 紹介した人 → 紹介した方(お客様)へ。紹介先のホームページ・SNS 入り
+  function refTextToProspect(r) {
+    const m = App.memberById(r.toId);
+    const links = memberLinkLines(m);
+    return [
+      `${r.prospect || "お客様"}`,
+      "",
+      `先日お話しした件で、信頼している仲間の ${r.toName}さん${m && m.company ? `(${m.company})` : ""}をご紹介します。`,
+      shortBiz(m),
+      ...(links.length ? ["", "▼ ホームページ・SNS", ...links] : []),
+      ...(r.meeting ? ["", ...meetingLines(r.meeting)] : []),
+      "",
+      `${r.toName}さんからもご連絡が入ります。どうぞよろしくお願いいたします。`,
+      `${App.session.displayName}(BT-EX5)`,
+    ].filter((x, i, a) => x || (i > 0 && a[i - 1])).join("\n");
+  }
+  // 紹介を受けた人 → 紹介された方(お客様)へ。自分のホームページ・SNS 入り
+  function refTextFromReceiver(r) {
+    const me = App.memberById(App.session.memberId);
+    const links = memberLinkLines(me);
+    return [
+      `${r.prospect || "お客様"}`,
+      "",
+      `はじめまして。${r.fromName}さんからご紹介いただきました、${App.session.displayName}${me && me.company ? `(${me.company})` : ""}です。`,
+      r.memo ? `ご相談の件(${r.memo})、ぜひお話をお聞かせください。` : "ご相談の件、ぜひお話をお聞かせください。",
+      ...(r.meeting ? ["", ...meetingLines(r.meeting)] : []),
+      ...(links.length ? ["", "▼ ホームページ・SNS", ...links] : []),
+      "",
+      "どうぞよろしくお願いいたします。",
+      App.session.displayName,
+    ].join("\n");
+  }
+  function refCalItem(r) {
+    const mt = r.meeting;
+    return {
+      uid: `ref-${r.id}`, title: `紹介の顔合わせ:${r.prospect || "お客様"} × ${r.mine ? `${r.toName}さん` : `${r.fromName}さんの紹介`}`,
+      date: mt.date, start: mt.time, end: mt.end, endDate: mt.endDate,
+      place: mt.mode === "meet" ? mt.meetUrl || "Google Meet" : mt.place,
+      body: [r.memo ? `相談:${r.memo}` : "", mt.meetUrl ? `Google Meet:${mt.meetUrl}` : ""].filter(Boolean).join("\n"),
+    };
+  }
+  // カレンダー・送る文のボタン
+  function refShareButtons(r) {
+    const copied = "コピーしました。LINE などに貼り付けて送ってください";
+    return h("div", { class: "app-btn-row ref-share" },
+      r.meeting && r.meeting.time ? App.btn("Google カレンダーに追加", () => window.open(App.googleCalUrl(refCalItem(r)), "_blank", "noopener"), "ghost small") : null,
+      r.mine ? App.btn(`${r.toName}さんへの文をコピー`, () => App.copyText(refTextToMember(r), copied), "ghost small") : null,
+      r.mine ? App.btn(`${r.prospect || "お客様"}への文をコピー`, () => App.copyText(refTextToProspect(r), copied), "primary small") : null,
+      !r.mine ? App.btn(`${r.prospect || "お客様"}への文をコピー`, () => App.copyText(refTextFromReceiver(r), copied), "primary small") : null);
+  }
+  // 顔合わせの予定を決める・直す
+  function meetingSheet(r, onSaved) {
+    App.openSheet("紹介の顔合わせの予定", (body, close) => {
+      const ed = meetingEditor(r.meeting);
+      body.append(h("p", { class: "app-lead" }, `${r.prospect || "お客様"} と ${r.mine ? `${r.toName}さん` : "あなた"} の顔合わせの日時と場所です。決めると相手にも届きます。`),
+        ed.el,
+        h("div", { class: "app-btn-row" },
+          App.btn("保存する", async () => {
+            const mt = ed.get();
+            if (!mt) { App.toast("日付を入れてください"); return; }
+            const d = await App.api("setReferralMeeting", { id: r.id, meeting: mt });
+            if (!d) return;
+            Object.assign(r, d.item);
+            close();
+            App.toast("顔合わせの予定を保存しました");
+            if (onSaved) onSaved();
+          }, "primary"),
+          r.meeting ? App.btn("予定を消す", async () => {
+            const d = await App.api("setReferralMeeting", { id: r.id, meeting: null });
+            if (!d) return;
+            r.meeting = null;
+            close();
+            if (onSaved) onSaved();
+          }, "ghost") : null));
+    }, { noFocus: true });
+  }
+  function meetingSummary(mt) {
+    if (!mt) return null;
+    const next = mt.endDate && mt.endDate !== mt.date;
+    return [h("dt", null, "顔合わせ"), h("dd", null,
+      `${App.fmtDate(mt.date)} ${mt.time ? `${mt.time}〜${next ? "翌" : ""}${mt.end}` : "時刻未定"} ・ ${mt.mode === "meet" ? "Google Meet" : mt.place || "場所未定"}`,
+      mt.meetUrl ? [" ", h("a", { href: mt.meetUrl, target: "_blank", rel: "noopener" }, "参加する")] : null)];
   }
 
   // 紹介の記録(紹介先 → 紹介した相手 → 連絡先 → メモ)
@@ -112,6 +284,10 @@
       const memo = h("textarea", { rows: "3", maxlength: "300", placeholder: "例:ホームページのリニューアルを検討中。来月までに話を聞きたい" });
       if (memoText) memo.value = String(memoText).slice(0, 300);
       App.draft("ref-memo", memo);
+      const meeting = meetingEditor(null);
+      const meetBox = h("details", { class: "ref-meet" }, h("summary", null, "顔合わせの予定も決める(任意)"),
+        h("p", { class: "app-field-hint" }, "日時と場所(または Google Meet)を入れると、カレンダーに追加でき、送る文にも入ります。あとからでも決められます。"),
+        meeting.el);
       const err = h("p", { class: "app-error", role: "alert" });
       const save = h("button", { type: "submit", class: "app-btn primary wide" }, "記録して知らせる");
       body.append(h("form", { class: "app-form", onsubmit: async (e) => {
@@ -124,22 +300,26 @@
         save.disabled = false;
         if (!res.success) { err.textContent = res.error.userMessage; return; }
         App.clearDraft("ref-prospect", "ref-contact", "ref-memo");
-        close();
         const toName = App.memberById(to).name;
+        const r = { id: res.data.log.id, mine: true, toId: to, toName, fromName: App.session.displayName, prospect: prospect.value.trim(), memo: memo.value.trim(), contact: contact.value.trim(), meeting: null };
+        const mt = meeting.get();
+        if (mt) {
+          const d = await App.api("setReferralMeeting", { id: r.id, meeting: mt }, { quiet: true });
+          if (d) Object.assign(r, d.item);
+        }
+        close();
         await App.go("log/ref");
-        App.doneSheet("紹介を記録しました", `${toName}さんのホームに届きました。LINE などでもひと言送っておくと確実です。`, [
-          `${toName}さん`,
-          `${prospect.value.trim()}様をご紹介させていただきました。`,
-          memo.value.trim() ? `ご相談の内容:${memo.value.trim()}` : "",
-          contact.value.trim() ? `連絡先:${contact.value.trim()}` : "",
-          "会員サイトの「記録」にも入れています。どうぞよろしくお願いします!",
-          App.siteUrl("#log/ref"),
-        ].filter(Boolean).join("\n"));
+        App.openSheet("紹介を記録しました", (b) => {
+          b.append(h("p", { class: "app-lead" }, `${toName}さんのホームに届きました。LINE などでも、${toName}さんと${r.prospect}に、ひと言送っておくと確実です。`),
+            r.meeting ? h("dl", { class: "ref-card-body" }, meetingSummary(r.meeting)) : null,
+            refShareButtons(r));
+        }, { noFocus: true });
       } },
       App.field("紹介先のメンバー", picker),
       App.field("紹介した方", prospect, "会社名・お名前"),
       App.field("連絡先", contact, "紹介先のメンバーとあなただけが見られます"),
       App.field("どんな相談か", memo),
+      meetBox,
       err, save));
     }, { noFocus: true });
   }
