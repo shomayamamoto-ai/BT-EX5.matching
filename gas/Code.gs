@@ -2782,6 +2782,78 @@ var BtexServerCore = (function () {
         return { referrals: d.referrals || size, miles: d.miles || 0 };
       }
       // ランキング(BT-EX5 の中の個人の順位。チームでは分けない)
+      // ============================================
+      // 自分の数字・メンバー別の数字(期間を選んで集計)
+      // 出席・1on1 は開催日、紹介・マイルは記録した日、ビジターは参加する定例会の日で数える
+      // ============================================
+      function getStats(body) {
+        var w = who(body);
+        if (w.error) return w.error;
+        var db = w.db;
+        var from = cleanDate(body.from), to = cleanDate(body.to);
+        if (!from || !to) { from = today().slice(0, 8) + "01"; to = lastDay(today().slice(0, 7)); }
+        if (from > to) { var tmp = from; from = to; to = tmp; }
+        var inRange = function (key) { return key >= from && key <= to; };
+        var rows = {};
+        (db.referralMembers || []).forEach(function (m) {
+          rows[m.id] = { id: m.id, name: m.name, attended: 0, referrals: 0, received: 0, oneOnOnes: 0, milesGiven: 0, milesReceived: 0, visitors: 0, visitorsGeneral: 0, visitorsLink: 0, joined: 0 };
+        });
+        var total = { attended: 0, referrals: 0, miles: 0, oneOnOnes: 0, visitors: 0, joined: 0 };
+        db.events.forEach(function (e) {
+          if (e.date > today() || !inRange(e.date)) return;
+          (e.attended || []).forEach(function (id) { if (rows[id]) { rows[id].attended += 1; total.attended += 1; } });
+        });
+        db.referralLogs.forEach(function (l) {
+          if (!inRange(dateKey(l.at))) return;
+          var g = rows[memberIdOfUser(db, l.fromUserId)];
+          if (g) g.referrals += 1;
+          if (rows[l.toMemberId]) rows[l.toMemberId].received += 1;
+          total.referrals += 1;
+        });
+        // ありがとうマイル: to = 紹介した人(自分の紹介で相手が成約した分)/ from = 仕事を受けた人(メンバーの紹介で自分が成約できた分)
+        db.thanks.forEach(function (t) {
+          if (!inRange(dateKey(t.at))) return;
+          if (rows[t.to]) rows[t.to].milesGiven += t.amount;
+          if (rows[t.from]) rows[t.from].milesReceived += t.amount;
+          total.miles += t.amount;
+        });
+        db.oneOnOnes.forEach(function (o) {
+          if (o.status !== "done" || !inRange(o.date)) return;
+          [o.a, o.b].forEach(function (id) { if (rows[id]) rows[id].oneOnOnes += 1; });
+          total.oneOnOnes += 1;
+        });
+        // ビジター: 招待の URL から申し込み、参加が決まった方。同じ方は何回来ても1人
+        var eventDate = {};
+        db.events.forEach(function (e) { eventDate[e.id] = e.date; });
+        var seenBy = {}, seenAll = {};
+        db.visitors.forEach(function (v) {
+          var d = eventDate[v.eventId];
+          if (!d || !inRange(d) || VISITOR_COUNTED.indexOf(v.status) === -1) return;
+          var person = BtexServerCore.normalizeName(v.name) + "|" + BtexServerCore.normalizeName(v.company);
+          var r = rows[v.by];
+          if (r && !seenBy[v.by + "|" + person]) {
+            seenBy[v.by + "|" + person] = true;
+            r.visitors += 1;
+            if (v.kind === "link") r.visitorsLink += 1; else r.visitorsGeneral += 1;
+            if (v.status === "joined") r.joined += 1;
+          }
+          if (!seenAll[person]) {
+            seenAll[person] = true;
+            total.visitors += 1;
+            if (v.status === "joined") total.joined += 1;
+          }
+        });
+        var list = Object.keys(rows).map(function (k) { return rows[k]; });
+        return c.ok({
+          from: from, to: to, today: today(),
+          me: rows[w.id] || null,
+          members: list.map(function (r) {
+            return { id: r.id, name: r.name, isMe: r.id === w.id, attended: r.attended, referrals: r.referrals, miles: r.milesGiven, oneOnOnes: r.oneOnOnes, visitors: r.visitors };
+          }),
+          total: total,
+        });
+      }
+
       function getTeamRanking(body) {
         var w = who(body);
         if (w.error) return w.error;
@@ -3674,7 +3746,7 @@ var BtexServerCore = (function () {
           adminSyncMeetAttendance: adminSyncMeetAttendance, adminMapMeetName: adminMapMeetName,
           createVisitorInvite: createVisitorInvite, listMyVisitors: listMyVisitors, updateVisitor: updateVisitor,
           visitorInfo: visitorInfo, visitorApply: visitorApply,
-          listMyReferrals: listMyReferrals, reportThanks: reportThanks, deleteThanks: deleteThanks, getRankings: getRankings, getTeamRanking: getTeamRanking, adminSetTeamGoals: adminSetTeamGoals,
+          listMyReferrals: listMyReferrals, reportThanks: reportThanks, deleteThanks: deleteThanks, getRankings: getRankings, getTeamRanking: getTeamRanking, getStats: getStats, adminSetTeamGoals: adminSetTeamGoals,
           list1on1: list1on1, save1on1: save1on1, delete1on1: delete1on1,
           getMySettings: getMySettings, updateMySettings: updateMySettings,
           listAnnouncements: listAnnouncements, markAnnouncementsRead: markAnnouncementsRead,

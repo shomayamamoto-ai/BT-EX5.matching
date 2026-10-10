@@ -94,6 +94,7 @@
           stat("1on1", s.oneOnOnes, "回"),
           h("div", { class: "home-stat is-wide" }, h("span", null, "ありがとうマイル(受け取った)"), h("b", null, App.yen(s.milesIn)), h("small", null, `これまでの合計 ${App.yen(s.milesInAll)}`))),
         h("div", { class: "home-stat-links" },
+          h("a", { class: "app-more", href: "#log/stats" }, "期間を変えて見る・メンバー別の数字 →"),
           h("a", { class: "app-more", href: "#log/rank" }, "ランキングを見る →"),
           h("button", { type: "button", class: "app-more home-share", onclick: () => App.shareText([
             `【BT-EX5 ${Number(d.today.slice(5, 7))}月の活動】${d.me.name}`,

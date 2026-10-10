@@ -11,6 +11,7 @@
     { id: "miles", label: "マイル" },
     { id: "1on1", label: "1on1" },
     { id: "rank", label: "ランキング" },
+    { id: "stats", label: "数字" },
   ];
 
   App.views.log = {
@@ -25,6 +26,7 @@
       if (tab === "miles") await renderMiles(body, params);
       if (tab === "1on1") await renderOnes(body, params);
       if (tab === "rank") await renderRank(body, params);
+      if (tab === "stats") await App.renderStats(body, params);
     },
   };
 
