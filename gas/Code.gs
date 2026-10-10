@@ -750,7 +750,7 @@ const REF_SEED_POSTS = [
   {
     seedId: "2026-10-10-advovisions",
     by: "yamamoto",
-    cat: "雑談",
+    cat: "告知",
     at: Date.UTC(2026, 9, 10, 4, 21), // 2026/10/10 13:21(日本時間)
     body: [
       "私の所属する芸能事務所兼映像制作会社で、私とアライアンスを組んでいる合同会社AdvoVisionsの告知です。",
@@ -1983,7 +1983,8 @@ var BtexServerCore = (function () {
 
   var JST = 9 * 60 * 60 * 1000;
   var DAY = 24 * 60 * 60 * 1000;
-  var BOARD_CATS = ["紹介依頼", "イベント・募集", "成約・お礼", "質問・相談", "雑談"];
+  // 掲示板の種類(以前の「雑談」は「告知」に変えた)
+  var BOARD_CATS = ["紹介依頼", "イベント・募集", "成約・お礼", "質問・相談", "告知"];
   var ANNOUNCE_CATS = ["お知らせ", "定例会", "重要", "その他"];
   // invited 招待中 / applied 参加申込 / confirmed 参加確定 / attended 参加済み / joined 入会 / declined キャンセル
   var VISITOR_STATUSES = ["invited", "applied", "confirmed", "attended", "joined", "declined"];
@@ -2050,6 +2051,8 @@ var BtexServerCore = (function () {
           if (!Array.isArray(db[k])) { db[k] = []; changed = true; }
         });
         if (!db.seen || typeof db.seen !== "object") { db.seen = {}; changed = true; }
+        // 掲示板の「雑談」は「告知」に変えた
+        db.posts.forEach(function (p) { if (p.cat === "雑談") { p.cat = "告知"; changed = true; } });
         if (autoComplete(db)) changed = true;
         // 初めの定例会(REF_SEED_EVENTS)を一度だけ入れる
         if (typeof REF_SEED_EVENTS !== "undefined") {
@@ -3192,7 +3195,7 @@ var BtexServerCore = (function () {
         if (w.error) return w.error;
         var text = cleanText(body.body, 2000);
         if (!text) return c.fail("INVALID_REQUEST", "本文を入れてください。");
-        var p = { id: newId("p_"), by: w.id, cat: oneOf(body.cat, BOARD_CATS, "雑談"), body: text, at: c.nowMs(), likes: [], comments: [] };
+        var p = { id: newId("p_"), by: w.id, cat: oneOf(body.cat === "雑談" ? "告知" : body.cat, BOARD_CATS, "告知"), body: text, at: c.nowMs(), likes: [], comments: [] };
         w.db.posts.push(p);
         trim(w.db.posts, LIMITS.posts);
         c.saveDb(w.db);

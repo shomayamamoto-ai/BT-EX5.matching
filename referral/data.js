@@ -742,7 +742,7 @@ const REF_SEED_POSTS = [
   {
     seedId: "2026-10-10-advovisions",
     by: "yamamoto",
-    cat: "雑談",
+    cat: "告知",
     at: Date.UTC(2026, 9, 10, 4, 21), // 2026/10/10 13:21(日本時間)
     body: [
       "私の所属する芸能事務所兼映像制作会社で、私とアライアンスを組んでいる合同会社AdvoVisionsの告知です。",
