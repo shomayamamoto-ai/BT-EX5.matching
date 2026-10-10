@@ -357,7 +357,6 @@
       <div class="md-actions">
         <button type="button" class="ref-btn" data-copy="${m.id}">紹介文をコピー</button>
         <button type="button" class="ref-btn ghost" data-ask="${m.id}">打診文をコピー</button>
-        <button type="button" class="ref-btn ghost" data-link="${m.id}">この人のリンクをコピー</button>
         <button type="button" class="ref-btn ghost" data-close-detail>閉じる</button>
       </div>`;
   }
@@ -941,8 +940,6 @@
     } catch { return false; }
   }
 
-  // メンバーへのリンク(開くとその人の詳細が出る。ログイン前に開いたときもログイン後に出す)
-  const memberLink = (id) => `${location.origin}${location.pathname}#member=${encodeURIComponent(id)}`;
   function openFromHash() {
     let hash = location.hash;
     try {
@@ -1054,12 +1051,6 @@
       const m = members.find((x) => x.id === askBtn.dataset.ask);
       const ok = await copyText(askText(m));
       toast(ok ? `${m.name}さんへの打診文をコピーしました` : "コピーできませんでした");
-      return;
-    }
-    const linkBtn = t.closest("[data-link]");
-    if (linkBtn) {
-      const ok = await copyText(memberLink(linkBtn.dataset.link));
-      toast(ok ? "リンクをコピーしました(ログインした会員だけが開けます)" : "コピーできませんでした");
       return;
     }
 
