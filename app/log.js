@@ -215,17 +215,26 @@
   async function renderOnes(el, params) {
     const d = await App.api("list1on1");
     if (!d) return;
-    el.append(h("p", { class: "app-lead" }, "1on1 は、メンバー同士がお互いの仕事を深く知るための面談です。予定を入れておくと前日にホームに出ます。メモはあなただけが見られます。"));
-    el.append(h("div", { class: "app-cta-row" }, App.btn("＋ 1on1 を記録・予定する", () => oneForm(null, params.get("with")), "primary wide")));
+    oneMeta = { calendar: d.calendar, hasCalendarEmail: d.hasCalendarEmail };
+    el.append(h("p", { class: "app-lead" }, "1on1 は、メンバー同士がお互いの仕事を深く知るための面談です。予定を入れておくと、時刻を過ぎたときに自動で「実施」になり、回数に数えられます。メモはあなただけが見られます。"));
+    el.append(h("div", { class: "app-cta-row" }, App.btn("＋ 1on1 を予定・記録する", () => oneForm(null, params.get("with")), "primary wide")));
+    if (d.calendar && !d.hasCalendarEmail) {
+      el.append(h("a", { class: "home-alert", href: "#me/calendar" }, h("b", null, "Google カレンダーと連携しましょう"), h("span", null, "メールアドレスを登録すると、1on1 の予定と Meet の招待があなたのカレンダーに自動で入ります")));
+    }
     const planned = d.items.filter((o) => o.status === "planned").reverse();
     const done = d.items.filter((o) => o.status !== "planned");
+    const when = (o) => `${App.fmtDate(o.date)} ${o.time ? `${o.time}〜${o.end}` : "時刻未定"}`;
+    const where = (o) => (o.mode === "meet" ? "Google Meet" : o.place || "場所未定");
     const row = (o) => h("li", null, h("button", { type: "button", class: "app-row", onclick: () => oneForm(o) },
       App.avatar(o.withName),
-      h("span", { class: "app-row-main" }, h("b", null, `${o.withName}さん`), h("small", null, `${App.fmtDate(o.date)} ${o.time} ${o.place}${o.note ? " ・ メモあり" : ""}`)),
-      o.status === "cancelled" ? App.chip("中止", "mute") : o.status === "done" ? App.chip("実施", "good") : App.chip(App.daysUntil(o.date, d.today) === 0 ? "今日" : "予定", "info")));
+      h("span", { class: "app-row-main" }, h("b", null, `${o.withName}さん`), h("small", null, `${when(o)} ・ ${where(o)}${o.note ? " ・ メモあり" : ""}`)),
+      o.status === "cancelled" ? App.chip("中止", "mute") : o.status === "done" ? App.chip(o.autoDone ? "実施(自動)" : "実施", "good") : App.chip(App.daysUntil(o.date, d.today) === 0 ? "今日" : "予定", "info")));
     el.append(App.section(`予定(${planned.length})`, planned.length ? h("ul", { class: "app-list" }, planned.map((o) => {
       const li = row(o);
-      li.append(h("div", { class: "one-cal" }, App.calendarButtons({ uid: o.id, title: `1on1:${o.withName}さん`, date: o.date, start: o.time, place: o.place })));
+      li.append(h("div", { class: "one-cal" },
+        o.meetUrl ? h("a", { class: "app-btn small", href: o.meetUrl, target: "_blank", rel: "noopener" }, "Meet に参加") : null,
+        o.synced && o.calLink ? h("a", { class: "app-btn ghost small", href: o.calLink, target: "_blank", rel: "noopener" }, "カレンダーで開く")
+          : App.calendarButtons({ uid: o.id, title: `1on1:${o.withName}さん`, date: o.date, start: o.time, end: o.end, place: o.mode === "meet" ? o.meetUrl || "Google Meet" : o.place })));
       return li;
     })) : App.empty("予定はありません。")));
     el.append(recommendSection(d.items));
@@ -256,42 +265,109 @@
           h("a", { class: "app-btn ghost small", href: `../referral/#member=${encodeURIComponent(p.m.id)}` }, "プロフィール"))))));
   }
 
+  // 1on1 の設定(共有サーバーで Google カレンダーが使えるか・自分のメールを登録済みか)
+  let oneMeta = { calendar: false, hasCalendarEmail: false };
+
+  // 選んで切り替えるボタンの並び(押したものが選ばれる)
+  function toggleGroup(options, value, onchange) {
+    let current = value;
+    const el = h("div", { class: "app-toggle", role: "radiogroup" });
+    const draw = () => el.replaceChildren(...options.map((o) => h("button", {
+      type: "button", role: "radio", class: o.id === current ? "is-on" : "", "aria-checked": o.id === current ? "true" : "false",
+      onclick: () => { current = o.id; draw(); if (onchange) onchange(current); },
+    }, o.label)));
+    draw();
+    el.getValue = () => current;
+    el.setValue = (v) => { current = v; draw(); };
+    return el;
+  }
+  function timeOptions() {
+    const out = [h("option", { value: "" }, "未定")];
+    for (let m = 7 * 60; m <= 22 * 60; m += 30) {
+      const t = `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
+      out.push(h("option", { value: t }, t));
+    }
+    return out;
+  }
+  function addDays(key, n) {
+    const [y, m, d] = key.split("-").map(Number);
+    const x = new Date(y, m - 1, d + n);
+    return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, "0")}-${String(x.getDate()).padStart(2, "0")}`;
+  }
+
   function oneForm(o, withId) {
-    App.openSheet(o ? `${o.withName}さんとの 1on1` : "1on1 を記録・予定する", (body, close) => {
+    App.openSheet(o ? `${o.withName}さんとの 1on1` : "1on1 を予定・記録する", (body, close) => {
       const picker = o ? null : App.memberPicker({ value: withId && App.memberById(withId) ? withId : null, exclude: [App.session.memberId], label: "相手" });
-      const date = h("input", { type: "date", value: o ? o.date : App.todayKey(), required: true });
-      const time = h("input", { type: "time", value: o ? o.time : "" });
-      const place = h("input", { type: "text", maxlength: "80", placeholder: "例:新潟駅前のカフェ / Zoom", value: o ? o.place : "" });
-      const status = h("select", null,
-        h("option", { value: "planned" }, "予定"), h("option", { value: "done" }, "実施した"), h("option", { value: "cancelled" }, "中止"));
-      status.value = o ? o.status : "done";
-      date.addEventListener("change", () => { if (!o) status.value = date.value > App.todayKey() ? "planned" : "done"; });
-      const note = h("textarea", { rows: "5", maxlength: "2000", placeholder: "相手の強み・紹介してほしい人・印象に残った話など(あなただけが見られます)" });
+      const today = App.todayKey();
+      const date = h("input", { type: "date", value: o ? o.date : today, required: true });
+      const quick = h("div", { class: "app-chips" }, [["今日", 0], ["明日", 1], ["あさって", 2], ["1週間後", 7]].map(([label, n]) =>
+        h("button", { type: "button", class: "app-pill", onclick: () => { date.value = addDays(today, n); date.dispatchEvent(new Event("change")); } }, label)));
+      const time = h("select", { "aria-label": "開始時刻" }, timeOptions());
+      time.value = o ? o.time : "";
+      if (o && o.time && time.value !== o.time) time.append(h("option", { value: o.time }, o.time)), time.value = o.time;
+      const duration = h("select", { "aria-label": "時間" }, [30, 45, 60, 90, 120].map((n) => h("option", { value: String(n) }, n < 60 ? `${n}分` : n === 60 ? "1時間" : n === 90 ? "1時間半" : "2時間")));
+      duration.value = String(o ? o.duration : 60);
+
+      // 場所: 現地(対面)か Google Meet
+      const place = h("input", { type: "text", maxlength: "80", placeholder: "例:新潟駅前のカフェ", value: o && o.mode !== "meet" ? o.place : "" });
+      const meetUrl = h("input", { type: "url", maxlength: "200", placeholder: "https://meet.google.com/…", value: o ? o.meetUrl : "" });
+      const onsiteBox = h("div", { class: "one-mode-box" }, place);
+      const meetBox = h("div", { class: "one-mode-box" },
+        oneMeta.calendar
+          ? h("p", { class: "one-meet-note" }, "保存すると Google Meet の会議と Google カレンダーの予定を自動で作り、2人に招待を送ります。",
+            oneMeta.hasCalendarEmail ? null : h("a", { href: "#me/calendar" }, "(招待を受け取るメールアドレスを登録する)"))
+          : [h("p", { class: "one-meet-note" }, "いまはお試し版のため、Meet は自動で作れません(共有サーバーに切り替えると自動になります)。下のボタンで作り、URL を貼り付けてください。"),
+            h("div", { class: "app-btn-row" }, h("a", { class: "app-btn ghost small", href: "https://meet.google.com/new", target: "_blank", rel: "noopener" }, "Meet を作る")),
+            meetUrl],
+        o && o.meetUrl ? h("a", { class: "app-btn small", href: o.meetUrl, target: "_blank", rel: "noopener" }, "Meet に参加する") : null);
+      const mode = toggleGroup([{ id: "onsite", label: "現地(対面)" }, { id: "meet", label: "Google Meet" }], o ? o.mode : "onsite", (v) => {
+        onsiteBox.hidden = v !== "onsite";
+        meetBox.hidden = v !== "meet";
+      });
+      onsiteBox.hidden = mode.getValue() !== "onsite";
+      meetBox.hidden = mode.getValue() !== "meet";
+
+      // 状況: 予定の時刻を過ぎると自動で「実施」になる
+      const isPast = () => date.value < today;
+      const status = toggleGroup([{ id: "planned", label: "予定" }, { id: "done", label: "実施した" }, { id: "cancelled", label: "中止" }], o ? o.status : "planned");
+      date.addEventListener("change", () => { if (!o) status.setValue(isPast() ? "done" : "planned"); });
+
+      const note = h("textarea", { rows: "4", maxlength: "2000", placeholder: "相手の強み・紹介してほしい人・印象に残った話など(あなただけが見られます)" });
       note.value = o ? o.note : "";
       const next = h("input", { type: "text", maxlength: "200", placeholder: "例:〇〇さんを紹介する", value: o ? o.next : "" });
       const err = h("p", { class: "app-error", role: "alert" });
+      const save = h("button", { type: "submit", class: "app-btn primary wide" }, "保存する");
       body.append(h("form", { class: "app-form", onsubmit: async (e) => {
         e.preventDefault();
-        const payload = { id: o ? o.id : "", withMemberId: o ? o.with : picker.getValue(), date: date.value, time: time.value, place: place.value.trim(), status: status.value, note: note.value, next: next.value.trim() };
+        const payload = {
+          id: o ? o.id : "", withMemberId: o ? o.with : picker.getValue(), date: date.value, time: time.value, duration: Number(duration.value),
+          mode: mode.getValue(), place: place.value.trim(), meetUrl: meetUrl.value.trim(), status: status.getValue(),
+          note: note.value, next: next.value.trim(), appUrl: App.siteUrl("#log/1on1"),
+        };
         if (!payload.withMemberId) { err.textContent = "相手を選んでください。"; return; }
+        if (!payload.date) { err.textContent = "日付を選んでください。"; return; }
+        save.disabled = true;
         const d = await App.api("save1on1", payload, { raw: true, quiet: true });
+        save.disabled = false;
         if (!d || d.success === false) { err.textContent = d ? d.error.userMessage : "保存できませんでした。"; return; }
         close();
-        App.toast("保存しました");
+        App.toast(d.calendar === "synced" ? (payload.mode === "meet" ? "Google Meet と Google カレンダーの予定を作りました" : "Google カレンダーに予定を入れました")
+          : d.calendar === "error" ? "保存しました(Google カレンダーには入れられませんでした)" : "保存しました");
         App.go("log/1on1");
       } },
       o ? null : App.field("相手", picker),
-      h("div", { class: "app-grid2" }, App.field("日付", date), App.field("時刻", time)),
-      App.field("場所", place),
-      App.field("状況", status),
+      App.field("日付", h("div", null, date, quick)),
+      h("div", { class: "app-grid2" }, App.field("開始時刻", time), App.field("時間", duration)),
+      App.field("場所", h("div", null, mode, onsiteBox, meetBox)),
+      App.field("状況", status, "予定の時刻を過ぎると、自動で「実施」になります(中止したときは「中止」に)"),
       App.field("メモ", note),
       App.field("次にやること", next),
       err,
-      h("button", { type: "submit", class: "app-btn primary wide" }, "保存する"),
+      save,
       o ? h("div", { class: "app-form-foot" },
         App.btn(`${o.withName}さんのプロフィール`, () => { location.href = `../referral/#member=${encodeURIComponent(o.with)}`; }, "ghost small"),
         App.btn("削除", async () => {
-          if (!confirm("この 1on1 を削除しますか?")) return;
+          if (!confirm("この 1on1 を削除しますか?(Google カレンダーの予定も消えます)")) return;
           if (await App.api("delete1on1", { id: o.id })) { close(); App.toast("削除しました"); App.route(); }
         }, "ghost small danger")) : null));
     }, { noFocus: true });

@@ -260,7 +260,8 @@ const App = (function () {
     sheetStack.push(wrap);
     build(body, close);
     const first = body.querySelector("input:not([type=hidden]):not([type=checkbox]):not([type=radio]), textarea, select");
-    if (first && !(opt && opt.noFocus)) setTimeout(() => first.focus({ preventScroll: true }), 50);
+    // すでにどこかの入力欄で書き始めていたら、カーソルを動かさない
+    if (first && !(opt && opt.noFocus)) setTimeout(() => { if (!panel.contains(document.activeElement)) first.focus({ preventScroll: true }); }, 50);
     return close;
   }
   document.addEventListener("keydown", (e) => {
@@ -287,8 +288,12 @@ const App = (function () {
   }
 
   // ---------- 入力欄 ----------
+  // 入力欄1つなら <label>。ボタンの並び(メンバーの選択・種類など)は <label> に入れると
+  // 押したときにブラウザが先頭のボタンも押してしまうため、<div> + 見出しにする
   function field(label, input, hint) {
-    return h("label", { class: "app-field" }, h("span", { class: "app-field-label" }, label), hint ? h("span", { class: "app-field-hint" }, hint) : null, input);
+    const single = input instanceof Element && /^(INPUT|SELECT|TEXTAREA)$/.test(input.tagName);
+    if (single) return h("label", { class: "app-field" }, h("span", { class: "app-field-label" }, label), hint ? h("span", { class: "app-field-hint" }, hint) : null, input);
+    return h("div", { class: "app-field", role: "group", "aria-label": label }, h("span", { class: "app-field-label" }, label), hint ? h("span", { class: "app-field-hint" }, hint) : null, input);
   }
   function btn(label, onclick, cls) {
     return h("button", { type: "button", class: `app-btn ${cls || ""}`, onclick }, label);
@@ -336,7 +341,7 @@ const App = (function () {
     function renderList() {
       const q = input.value.trim().toLowerCase();
       const hits = pool.filter((m) => !picked.has(m.id) && (!q || [m.name, m.company, m.business, m.team].join(" ").toLowerCase().includes(q)));
-      list.replaceChildren(...hits.slice(0, q ? 30 : 8).map((m) => h("li", null,
+      list.replaceChildren(...hits.map((m) => h("li", null,
         h("button", { type: "button", role: "option", onclick: () => {
           if (!opt.multiple) picked.clear();
           picked.add(m.id);

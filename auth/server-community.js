@@ -85,6 +85,7 @@
           if (!Array.isArray(db[k])) { db[k] = []; changed = true; }
         });
         if (!db.seen || typeof db.seen !== "object") { db.seen = {}; changed = true; }
+        if (autoComplete(db)) changed = true;
         return changed;
       }
       function seen(db, id) { return db.seen[id] || (db.seen[id] = { board: 0 }); }
@@ -474,13 +475,70 @@
       // ============================================
       // 1on1(予定と記録)。メモは書いた本人だけが読める
       // ============================================
+      var DURATIONS = [30, 45, 60, 90, 120];
+      function toMin(t) { var p = String(t || "").split(":"); return Number(p[0]) * 60 + Number(p[1] || 0); }
+      function nowMinJst() { var d = new Date(c.nowMs() + JST); return d.getUTCHours() * 60 + d.getUTCMinutes(); }
+      // 予定の時刻(時刻がなければその日)を過ぎた 1on1 は、中止にしていなければ自動で「実施」にする
+      function autoComplete(db) {
+        var changed = false;
+        var t = today(), nowMin = nowMinJst();
+        (db.oneOnOnes || []).forEach(function (o) {
+          if (o.status !== "planned") return;
+          var end = o.time ? toMin(o.time) + (o.duration || 60) : 24 * 60;
+          if (o.date < t || (o.date === t && nowMin >= end)) {
+            o.status = "done";
+            o.autoDone = true;
+            o.doneAt = c.nowMs();
+            changed = true;
+          }
+        });
+        return changed;
+      }
+      function endTime(o) {
+        if (!o.time) return "";
+        var m = toMin(o.time) + (o.duration || 60);
+        return ("0" + Math.floor(m / 60) % 24).slice(-2) + ":" + ("0" + (m % 60)).slice(-2);
+      }
       function oneView(db, o, me) {
         var other = o.a === me ? o.b : o.a;
         return {
-          id: o.id, with: other, withName: nameOf(db, other), date: o.date, time: o.time || "", place: o.place || "",
-          status: o.status, note: (o.notes || {})[me] || "", next: (o.nexts || {})[me] || "", by: o.by, at: o.at,
+          id: o.id, with: other, withName: nameOf(db, other), date: o.date, time: o.time || "", end: endTime(o), duration: o.duration || 60,
+          mode: o.mode || "onsite", place: o.place || "", meetUrl: o.meetUrl || "", calLink: o.calLink || "", synced: !!o.calId,
+          status: o.status, autoDone: !!o.autoDone, note: (o.notes || {})[me] || "", next: (o.nexts || {})[me] || "", by: o.by, at: o.at,
         };
       }
+      function userOf(db, memberId) { return c.find(db.users, function (u) { return u.memberId === memberId; }); }
+
+      // Google カレンダーに予定を作る・直す・消す(共有サーバーでカレンダーを使えるときだけ)。
+      // Google Meet を選んだときは Meet の会議も作り、2人のカレンダー用メールアドレスに招待を送る
+      function syncCalendar(db, o, appUrl) {
+        if (!c.calendar) return null;
+        try {
+          if (o.status === "cancelled") {
+            if (o.calId) c.calendar.remove(o.calId);
+            o.calId = ""; o.calLink = "";
+            if (o.mode === "meet") o.meetUrl = "";
+            return "removed";
+          }
+          if (o.status !== "planned") return null;
+          var guests = [o.a, o.b].map(function (id) { var u = userOf(db, id); return u && u.calendarEmail; }).filter(Boolean);
+          var r = c.calendar.upsert({
+            id: o.calId || "",
+            title: "1on1:" + nameOf(db, o.a) + " × " + nameOf(db, o.b) + "(BT-EX5)",
+            date: o.date, start: o.time || "", end: endTime(o),
+            meet: o.mode === "meet", location: o.mode === "meet" ? "" : o.place,
+            description: "BT-EX5 の 1on1 です。" + (appUrl ? "\n会員サイト:" + appUrl : ""),
+            guests: guests,
+          });
+          o.calId = r.id || o.calId || "";
+          o.calLink = r.link || o.calLink || "";
+          if (o.mode === "meet" && r.meetUrl) o.meetUrl = r.meetUrl;
+          return "synced";
+        } catch (err) {
+          return "error";
+        }
+      }
+
       function list1on1(body) {
         var w = who(body);
         if (w.error) return w.error;
@@ -488,7 +546,7 @@
           .filter(function (o) { return o.a === w.id || o.b === w.id; })
           .sort(function (a, b) { return (b.date + (b.time || "")).localeCompare(a.date + (a.time || "")); })
           .map(function (o) { return oneView(w.db, o, w.id); });
-        return c.ok({ items: list, today: today() });
+        return c.ok({ items: list, today: today(), calendar: !!c.calendar, hasCalendarEmail: !!w.user.calendarEmail });
       }
       function save1on1(body) {
         var w = who(body);
@@ -504,25 +562,56 @@
           o = { id: newId("o_"), a: w.id, b: other, by: w.id, at: c.nowMs(), notes: {}, nexts: {} };
           db.oneOnOnes.push(o);
         }
+        var before = JSON.stringify([o.date, o.time, o.duration, o.mode, o.place, o.status]);
         o.date = date;
         o.time = cleanTime(body.time);
-        o.place = c.cleanStr(body.place, 80);
-        o.status = oneOf(body.status, ["planned", "done", "cancelled"], date <= today() ? "done" : "planned");
+        o.duration = DURATIONS.indexOf(Number(body.duration)) !== -1 ? Number(body.duration) : (o.duration || 60);
+        o.mode = oneOf(body.mode, ["onsite", "meet"], o.mode || "onsite");
+        o.place = o.mode === "meet" ? "Google Meet" : c.cleanStr(body.place, 80);
+        // 共有サーバーで自動作成できないときは、自分で作った Meet の URL を入れられる
+        var manualMeet = c.cleanStr(body.meetUrl, 200);
+        if (o.mode === "meet" && /^https:\/\/meet\.google\.com\/[\w-]+$/.test(manualMeet)) o.meetUrl = manualMeet;
+        if (o.mode !== "meet") o.meetUrl = "";
+        var past = date < today() || (date === today() && o.time && nowMinJst() >= toMin(o.time) + o.duration);
+        o.status = oneOf(body.status, ["planned", "done", "cancelled"], past ? "done" : "planned");
+        if (o.status !== "done") { o.autoDone = false; }
         o.notes = o.notes || {};
         o.nexts = o.nexts || {};
         if ("note" in body) o.notes[w.id] = cleanText(body.note, 2000);
         if ("next" in body) o.nexts[w.id] = c.cleanStr(body.next, 200);
+        var cal = null;
+        var changedPlan = before !== JSON.stringify([o.date, o.time, o.duration, o.mode, o.place, o.status]);
+        if (changedPlan || (o.status === "planned" && !o.calId)) cal = syncCalendar(db, o, c.cleanStr(body.appUrl, 300));
         c.saveDb(db);
-        return c.ok({ item: oneView(db, o, w.id) });
+        return c.ok({ item: oneView(db, o, w.id), calendar: cal });
       }
       function delete1on1(body) {
         var w = who(body);
         if (w.error) return w.error;
-        var before = w.db.oneOnOnes.length;
-        w.db.oneOnOnes = w.db.oneOnOnes.filter(function (o) { return !(o.id === body.id && (o.a === w.id || o.b === w.id)); });
-        if (before === w.db.oneOnOnes.length) return c.fail("NOT_FOUND");
+        var o = c.find(w.db.oneOnOnes, function (x) { return x.id === body.id && (x.a === w.id || x.b === w.id); });
+        if (!o) return c.fail("NOT_FOUND");
+        if (o.calId && c.calendar) { try { c.calendar.remove(o.calId); } catch (err) { /* 予定が消せなくても記録は消す */ } }
+        w.db.oneOnOnes = w.db.oneOnOnes.filter(function (x) { return x.id !== o.id; });
         c.saveDb(w.db);
         return c.ok({});
+      }
+
+      // 自分だけの設定(Google カレンダーの招待を受け取るメールアドレス)。ほかの会員には返さない
+      function getMySettings(body) {
+        var w = who(body);
+        if (w.error) return w.error;
+        return c.ok({ calendarEmail: w.user.calendarEmail || "", calendar: !!c.calendar });
+      }
+      function updateMySettings(body) {
+        var w = who(body);
+        if (w.error) return w.error;
+        if ("calendarEmail" in body) {
+          var email = c.cleanStr(body.calendarEmail, 120).toLowerCase();
+          if (email && !/^[\w.+-]+@[\w-]+(\.[\w-]+)+$/.test(email)) return c.fail("INVALID_REQUEST", "メールアドレスの形を確認してください。");
+          w.user.calendarEmail = email;
+        }
+        c.saveDb(w.db);
+        return c.ok({ calendarEmail: w.user.calendarEmail || "" });
       }
 
       // ============================================
@@ -985,8 +1074,13 @@
         ones.forEach(function (o) {
           if (o.status !== "planned") return;
           var other = o.a === w.id ? o.b : o.a;
-          if (o.date === t) followUps.push({ type: "oneToday", id: o.id, with: other, withName: nameOf(db, other), time: o.time || "", place: o.place || "" });
-          else if (o.date < t) followUps.push({ type: "onePast", id: o.id, with: other, withName: nameOf(db, other), date: o.date });
+          if (o.date === t) followUps.push({ type: "oneToday", id: o.id, with: other, withName: nameOf(db, other), time: o.time || "", place: o.place || "", meetUrl: o.meetUrl || "" });
+        });
+        // 時刻を過ぎて自動で「実施」になった 1on1(1週間以内・自分のメモがまだ)
+        ones.forEach(function (o) {
+          if (!o.autoDone || (o.notes || {})[w.id] || c.nowMs() - (o.doneAt || 0) > 7 * DAY) return;
+          var other = o.a === w.id ? o.b : o.a;
+          followUps.push({ type: "oneMemo", id: o.id, with: other, withName: nameOf(db, other), date: o.date });
         });
         return c.ok({
           me: { id: w.id, name: w.me.name, team: w.me.team || "", isAdmin: w.isAdmin, hasPassword: !!w.user.pw },
@@ -1030,6 +1124,7 @@
           visitorInfo: visitorInfo, visitorApply: visitorApply,
           listMyReferrals: listMyReferrals, reportThanks: reportThanks, deleteThanks: deleteThanks, getRankings: getRankings,
           list1on1: list1on1, save1on1: save1on1, delete1on1: delete1on1,
+          getMySettings: getMySettings, updateMySettings: updateMySettings,
           listAnnouncements: listAnnouncements, markAnnouncementsRead: markAnnouncementsRead,
           adminSaveAnnouncement: adminSaveAnnouncement, adminDeleteAnnouncement: adminDeleteAnnouncement,
           listBoard: listBoard, createPost: createPost, deletePost: deletePost, commentPost: commentPost,

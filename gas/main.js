@@ -14,7 +14,9 @@
 // 同時アクセスはスクリプトロックで1件ずつ処理する。
 // ============================================
 
-/** @OnlyCurrentDoc */
+/**
+ * @OnlyCurrentDoc
+ */
 
 var DATA_SHEET = "_data";
 var CHUNK_SIZE = 40000; // セルの上限(5万文字)より小さく
@@ -72,10 +74,68 @@ function randomBytes_(n) {
   return out.slice(0, n);
 }
 
+// ---------- Google カレンダー(1on1 の予定と Google Meet) ----------
+// Apps Script の「サービス」で「Google Calendar API」を追加すると使える(gas/README.md)。
+// 予定は運営者のアカウントに作る専用カレンダー「BT-EX5 1on1」に入れ、2人のメールアドレスに招待を送る
+var CALENDAR_PROP = "BTEX5_1ON1_CALENDAR_ID";
+function oneOnOneCalendarId_() {
+  var props = PropertiesService.getScriptProperties();
+  var id = props.getProperty(CALENDAR_PROP);
+  if (id && CalendarApp.getCalendarById(id)) return id;
+  var cal = CalendarApp.createCalendar("BT-EX5 1on1", { timeZone: "Asia/Tokyo" });
+  props.setProperty(CALENDAR_PROP, cal.getId());
+  return cal.getId();
+}
+function calTime_(date, time) {
+  return { dateTime: date + "T" + time + ":00+09:00", timeZone: "Asia/Tokyo" };
+}
+var CALENDAR_ = typeof Calendar === "undefined" ? null : {
+  upsert: function (x) {
+    var calId = oneOnOneCalendarId_();
+    var nextDay = function (d) {
+      var t = new Date(d + "T00:00:00+09:00");
+      t.setDate(t.getDate() + 1);
+      return Utilities.formatDate(t, "Asia/Tokyo", "yyyy-MM-dd");
+    };
+    var ev = {
+      summary: x.title,
+      description: x.description,
+      location: x.location || "",
+      start: x.start ? calTime_(x.date, x.start) : { date: x.date },
+      end: x.start ? calTime_(x.date, x.end) : { date: nextDay(x.date) },
+      attendees: (x.guests || []).map(function (e) { return { email: e }; }),
+      reminders: { useDefault: false, overrides: [{ method: "popup", minutes: 60 }] },
+    };
+    var opts = { conferenceDataVersion: 1, sendUpdates: "all" };
+    var result;
+    if (x.meet) {
+      ev.conferenceData = { createRequest: { requestId: Utilities.getUuid(), conferenceSolutionKey: { type: "hangoutsMeet" } } };
+    }
+    if (x.id) {
+      // 既にある Meet はそのまま使う(作り直すと URL が変わるため)
+      try {
+        var cur = Calendar.Events.get(calId, x.id);
+        if (x.meet && cur.conferenceData) ev.conferenceData = cur.conferenceData;
+        if (!x.meet) ev.conferenceData = null;
+        result = Calendar.Events.patch(ev, calId, x.id, opts);
+      } catch (err) {
+        result = Calendar.Events.insert(ev, calId, opts);
+      }
+    } else {
+      result = Calendar.Events.insert(ev, calId, opts);
+    }
+    return { id: result.id, meetUrl: result.hangoutLink || "", link: result.htmlLink || "" };
+  },
+  remove: function (id) {
+    Calendar.Events.remove(oneOnOneCalendarId_(), id, { sendUpdates: "all" });
+  },
+};
+
 var SERVER_ = BtexServerCore.createServer({
   load: loadDb_,
   save: saveDb_,
   randomBytes: randomBytes_,
+  calendar: CALENDAR_,
   onError: function (err) { console.error(err && err.stack ? err.stack : err); },
 });
 
@@ -203,6 +263,8 @@ function doGet() {
 // 初回に Apps Script のエディタから一度だけ実行する(権限の承認と、名簿の作成)
 function setup() {
   SERVER_.handle({ action: "loginOptions" });
+  // Google Calendar API を追加していれば、1on1 用のカレンダーを作っておく(権限の確認もここで出る)
+  if (CALENDAR_) oneOnOneCalendarId_();
   SERVER_.handle({ action: "verifySession", sessionToken: "" });
   refreshSheets_();
   return "準備できました。名簿 " + (loadDb_().referralMembers || []).length + " 名";

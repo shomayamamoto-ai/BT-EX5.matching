@@ -1047,6 +1047,8 @@ var BtexServerCore = (function () {
       authSession: authSession, requireAdmin: requireAdmin,
       cleanStr: cleanStr, cleanList: cleanList, find: find, findIndex: findIndex,
       dataList: dataList, idsOf: idsOf, clone: clone, ERRORS: ERRORS,
+      // Google カレンダー(共有サーバーで設定したときだけ。なければ null)
+      calendar: env.calendar || null,
     };
     var MODULE_INSTANCES = MODULES.map(function (m) {
       var inst = m.create(ctx) || {};
