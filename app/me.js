@@ -27,6 +27,17 @@
         App.isAdmin() ? menu("#admin", "管理者メニュー", "会員の招待・ログイン設定・要望への返信", true) : null,
         App.isAdmin() ? menu("../admin/", "名簿の管理", "メンバーの追加・編集") : null));
 
+      // お気に入り(早見表のカードの☆。この端末に保存)
+      let favIds = [];
+      try { favIds = JSON.parse(localStorage.getItem(`btex5-favorites-${s.memberId || "guest"}`) || "[]"); } catch { favIds = []; }
+      const favs = favIds.map((id) => App.memberById(id)).filter(Boolean);
+      el.append(App.section("お気に入りのメンバー",
+        favs.length
+          ? h("ul", { class: "app-list me-favs" }, favs.map((m) => h("li", null,
+            h("a", { class: "app-row", href: `../referral/#member=${encodeURIComponent(m.id)}` },
+              App.avatar(m.name), h("span", { class: "app-row-main" }, h("b", null, m.name), h("small", null, m.company || m.category || ""))))))
+          : App.empty("早見表のカード右上の☆を押すと、ここに並びます。")));
+
       el.append(h("div", { class: "app-cta-row" }, App.btn("ログアウト", async () => {
         const token = AuthSession.getToken();
         if (token) await AuthApi.logout(token);
