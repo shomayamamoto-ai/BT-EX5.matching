@@ -236,6 +236,7 @@
     const copied = "コピーしました。LINE などに貼り付けて送ってください";
     return h("div", { class: "app-btn-row ref-share" },
       r.meeting && r.meeting.time ? App.btn("Google カレンダーに追加", () => window.open(App.googleCalUrl(refCalItem(r)), "_blank", "noopener"), "ghost small") : null,
+      r.meeting && r.meeting.time ? App.btn("iPhone・Outlook に追加", () => App.icsFile(refCalItem(r)), "ghost small") : null,
       r.mine ? App.btn(`${r.toName}さんへの文をコピー`, () => App.copyText(refTextToMember(r), copied), "ghost small") : null,
       r.mine ? App.btn(`${r.prospect || "お客様"}への文をコピー`, () => App.copyText(refTextToProspect(r), copied), "primary small") : null,
       !r.mine ? App.btn(`${r.prospect || "お客様"}への文をコピー`, () => App.copyText(refTextFromReceiver(r), copied), "primary small") : null);
@@ -613,6 +614,11 @@
             const x = current();
             if (!check(x, true)) return;
             window.open(App.googleCalUrl(oneCalItem(x)), "_blank", "noopener");
+          }, "ghost small"),
+          App.btn("iPhone・Outlook に追加", () => {
+            const x = current();
+            if (!check(x, true)) return;
+            App.icsFile(oneCalItem(x));
           }, "ghost small"),
           App.btn("相手に送る文をコピー", () => {
             const x = current();

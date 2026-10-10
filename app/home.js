@@ -43,6 +43,9 @@
           todo.push(alertLink("#log/ref", `${f.withName}さんからの紹介に ${f.days} 日返事をしていません`, `${f.prospect || "紹介された方"}へ連絡したら「連絡済み」にしてください`, "is-warn"));
         } else if (f.type === "thanksMissing") {
           todo.push(alertLink("#log/ref", `成約おめでとうございます。${f.withName}さんへお礼を送りましょう`, `${f.prospect || "紹介された方"}の件。「成約 → お礼」で金額を記録できます`, "is-good"));
+        } else if (f.type === "refMeetToday") {
+          todo.push(alertLink(f.meetUrl || "#log/ref", `今日は ${f.prospect || "お客様"} との顔合わせです(${f.withName}さん)`, f.meetUrl ? `${f.time} から Google Meet(押すと参加できます)` : [f.time, f.place].filter(Boolean).join(" ・ ") || "記録 → 紹介 で予定を確認できます"));
+          if (f.meetUrl) { const a = todo[todo.length - 1]; a.target = "_blank"; a.rel = "noopener"; }
         } else if (f.type === "rsvpSoon") {
           todo.push(alertLink(`#events/detail/${encodeURIComponent(f.id)}`, `${App.fmtDate(f.date)}${f.start ? ` ${f.start}` : ""} の定例会の出欠がまだです`, `${f.title}。押して「出席する」「欠席する」を選んでください`, "is-warn"));
         } else if (f.type === "visitorFollow") {

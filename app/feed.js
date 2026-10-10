@@ -17,6 +17,9 @@
       case "comment": return { icon: "💬", title: `${x.whoName}さんがあなたの投稿にコメントしました`, sub: x.text };
       case "reply": return { icon: "💬", title: `${x.whoName}さんも同じ投稿にコメントしました`, sub: x.text };
       case "rsvpSoon": return { icon: "📅", title: `${App.fmtDate(x.date)} の定例会の出欠がまだです`, sub: x.text };
+      case "oneSoon": return { icon: "☕", title: `${x.time} から ${x.whoName}さんと 1on1 です`, sub: x.meetUrl ? "Google Meet で参加できます" : App.fmtDate(x.date) };
+      case "refMeetSoon": return { icon: "🤝", title: `${x.time} から紹介の顔合わせです`, sub: `${x.text} × ${x.whoName}さん` };
+      case "refMeet": return { icon: "🤝", title: `${x.whoName}さんが紹介の顔合わせの予定を入れました`, sub: `${App.fmtDate(x.date)} ${x.text}` };
       case "oneAsk": return { icon: "☕", title: `${x.whoName}さんとの 1on1 は実施しましたか?`, sub: "押して「実施した」を選ぶと回数に数えます" };
       case "oneNew": return { icon: "👥", title: `${x.whoName}さんが 1on1 を記録しました`, sub: App.fmtDate(x.date) };
       case "visitor": return { icon: "🙋", title: `${x.text || "ビジター"}さんが定例会に申し込みました`, sub: "あなたの招待から" };

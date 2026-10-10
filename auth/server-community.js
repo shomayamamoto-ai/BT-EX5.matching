@@ -461,6 +461,16 @@
         var hm = (e.start || "00:00").split(":").map(Number);
         return Date.UTC(p[0], p[1] - 1, p[2], hm[0], hm[1]) - JST;
       }
+      // 予定の開始(日本時間)。時刻がなければ null
+      var SOON = 3 * 60 * 60 * 1000;
+      function startMs(date, time) {
+        if (!date || !time) return null;
+        return Date.parse(date + "T" + (time.length === 4 ? "0" + time : time) + ":00+09:00");
+      }
+      function startsSoon(date, time) {
+        var s0 = startMs(date, time);
+        return s0 !== null && c.nowMs() >= s0 - SOON && c.nowMs() < s0;
+      }
       // 2日以内に始まり、出欠の締切前の定例会
       function eventSoon(e) {
         var start = eventStartMs(e);
@@ -1550,6 +1560,11 @@
           if (l.toMemberId === me && giver !== me) {
             items.push({ type: "refIn", at: l.at, who: giver, whoName: nameOf(db, giver), text: l.prospect || "", link: "log/ref" });
           }
+          // もうすぐ始まる紹介の顔合わせ(3時間前から。紹介した人・受けた人の両方)
+          if (l.meeting && l.status !== "lost" && (giver === me || l.toMemberId === me) && startsSoon(l.meeting.date, l.meeting.time)) {
+            var other = giver === me ? l.toMemberId : giver;
+            items.push({ type: "refMeetSoon", at: startMs(l.meeting.date, l.meeting.time) - SOON, who: other, whoName: nameOf(db, other), text: l.prospect || "", date: l.meeting.date, time: l.meeting.time, meetUrl: l.meeting.meetUrl || "", link: "log/ref" });
+          }
           // 紹介の顔合わせの予定(相手が決めた・直したとき)
           if (l.meeting && l.meeting.setBy && l.meeting.setBy !== me && (giver === me || l.toMemberId === me)) {
             items.push({ type: "refMeet", at: l.meeting.setAt, who: l.meeting.setBy, whoName: nameOf(db, l.meeting.setBy), text: l.prospect || "", date: l.meeting.date, link: "log/ref" });
@@ -1573,6 +1588,11 @@
         });
         db.oneOnOnes.forEach(function (o) {
           if ((o.a === me || o.b === me) && o.by !== me) items.push({ type: "oneNew", at: o.at, who: o.by, whoName: nameOf(db, o.by), date: o.date, link: "log/1on1" });
+          // もうすぐ始まる 1on1(3時間前から)
+          if ((o.a === me || o.b === me) && o.status === "planned" && startsSoon(o.date, o.time)) {
+            var withId = o.a === me ? o.b : o.a;
+            items.push({ type: "oneSoon", at: startMs(o.date, o.time) - SOON, who: withId, whoName: nameOf(db, withId), date: o.date, time: o.time, meetUrl: o.meetUrl || "", link: "log/1on1" });
+          }
           // 時刻を過ぎた 1on1: 実施したかの確認
           if ((o.a === me || o.b === me) && awaitingConfirm(o)) {
             var other = o.a === me ? o.b : o.a;
@@ -1651,6 +1671,15 @@
           var other = o.a === w.id ? o.b : o.a;
           if (awaitingConfirm(o)) followUps.push({ type: "oneConfirm", id: o.id, with: other, withName: nameOf(db, other), date: o.date, time: o.time || "" });
           else if (o.date === t) followUps.push({ type: "oneToday", id: o.id, with: other, withName: nameOf(db, other), time: o.time || "", place: o.place || "", meetUrl: o.meetUrl || "" });
+        });
+        // 今日の紹介の顔合わせ(紹介した人・受けた人)
+        db.referralLogs.forEach(function (l) {
+          if (!l.meeting || l.meeting.date !== t || l.status === "lost") return;
+          var giver = memberIdOfUser(db, l.fromUserId);
+          if (giver !== w.id && l.toMemberId !== w.id) return;
+          var end = startMs(l.meeting.date, l.meeting.time);
+          if (end !== null && c.nowMs() > end + (l.meeting.duration || 60) * 60000) return;
+          followUps.push({ type: "refMeetToday", id: l.id, prospect: l.prospect || "", withName: nameOf(db, giver === w.id ? l.toMemberId : giver), time: l.meeting.time || "", place: l.meeting.mode === "meet" ? "Google Meet" : l.meeting.place || "", meetUrl: l.meeting.meetUrl || "" });
         });
         // 自分が招いたビジターが参加した(入会・見送りがまだ・参加から14日以内) → 入会の声かけ
         db.visitors.forEach(function (v) {
@@ -1797,6 +1826,8 @@
           case "oneNew": return { title: "☕ " + n + "と1on1の予定", body: x.date || "" };
           case "rsvpSoon": return { title: "📅 " + (x.date || "") + " の定例会の出欠がまだです", body: x.text + "(押して出席・欠席を選んでください)" };
           case "refMeet": return { title: "🤝 " + n + "が紹介の顔合わせの予定を入れました", body: (x.date || "") + " " + x.text };
+          case "oneSoon": return { title: "☕ " + (x.time || "") + " から " + n + "と 1on1 です", body: x.meetUrl ? "Google Meet:" + x.meetUrl : "押すと予定を確認できます" };
+          case "refMeetSoon": return { title: "🤝 " + (x.time || "") + " から紹介の顔合わせです", body: x.text + " × " + n + (x.meetUrl ? "(Google Meet:" + x.meetUrl + ")" : "") };
           case "oneAsk": return { title: "☕ " + n + "との1on1 は実施しましたか?", body: "「実施した」を押すと 1on1 の回数に数えます" };
           case "visitor": return { title: "🙋 ビジターの申込がありました", body: x.text + " さん" };
           case "ann": return { title: "📣 運営からのお知らせ", body: x.text };

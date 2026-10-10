@@ -579,7 +579,7 @@ const App = (function () {
   return {
     profileHref, meetHowTo,
     h, append, fill, fmtStamp, fmtDate, fmtDateLong, fmtTime, yen, daysUntil, todayKey, chip, avatar, richText, toast, copyText, shareText,
-    icon, qrImage, draft, clearDraft, calendarButtons, googleCalUrl, api, openSheet, doneSheet, field, btn, toggle, timeSelect, segmented, empty, section, memberPicker,
+    icon, qrImage, draft, clearDraft, calendarButtons, googleCalUrl, icsFile, api, openSheet, doneSheet, field, btn, toggle, timeSelect, segmented, empty, section, memberPicker,
     AREA_LABELS, REF_STATUS, VISITOR_STATUS,
     views, go, route, setBadges, start,
     get members() { return members; },
