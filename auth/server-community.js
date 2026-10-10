@@ -95,12 +95,35 @@
             if (db.eventSeeds.indexOf(se.seedId) !== -1) return;
             db.eventSeeds.push(se.seedId);
             var ev = {
-              id: newId("ev_"), title: se.title, date: se.date, start: se.start, end: se.end, place: se.place || "", area: se.area,
+              seedId: se.seedId, id: newId("ev_"), title: se.title, date: se.date, start: se.start, end: se.end, place: se.place || "", area: se.area,
               body: se.body || "", agenda: se.agenda || "", fee: se.fee || "", capacity: 0, url: "", deadline: se.deadline || "",
               meet: se.meet !== false, party: { enabled: false }, rsvps: {}, attended: [], createdAt: c.nowMs(), seed: true,
             };
             syncEventCalendar(db, ev); // 共有サーバーでカレンダーが使えれば、Meet もここで作る
             db.events.push(ev);
+            changed = true;
+          });
+        }
+        // 開く前の定例会の出欠(REF_SEED_EVENT_RECORDS)を一度だけ反映する。手で直した出欠は変えない
+        if (typeof REF_SEED_EVENT_RECORDS !== "undefined") {
+          if (!Array.isArray(db.eventRecordRevs)) { db.eventRecordRevs = []; changed = true; }
+          REF_SEED_EVENT_RECORDS.forEach(function (r) {
+            if (db.eventRecordRevs.indexOf(r.rev) !== -1) return;
+            var e = c.find(db.events, function (x) { return x.seedId === r.seedId; })
+              || c.find(db.events, function (x) { return x.seed && x.date === r.seedId; });
+            if (!e) return;
+            e.rsvps = e.rsvps || {};
+            e.attendSource = e.attendSource || {};
+            (r.attended || []).forEach(function (id) {
+              if (!member(db, id) || e.attendSource[id] === "manual") return;
+              if (!e.rsvps[id]) e.rsvps[id] = "yes";
+              if ((e.attended || []).indexOf(id) === -1) setAttendance(e, id, "present", "record");
+            });
+            (r.absent || []).forEach(function (id) {
+              if (!member(db, id) || e.attendSource[id] === "manual" || (e.attended || []).indexOf(id) !== -1) return;
+              if (!e.rsvps[id]) e.rsvps[id] = "no";
+            });
+            db.eventRecordRevs.push(r.rev);
             changed = true;
           });
         }

@@ -29,7 +29,9 @@
       // 出席コード(今日の受付が開いているときは目立たせる)
       const open = upcoming.some((e) => e.checkInOpen && !e.attended);
       const venueSoon = upcoming.some((e) => !e.online && App.daysUntil(e.date, d.today) <= 1);
-      const rate = past.length ? h("p", { class: "checkin-rate" }, `あなたの出席率(最近 ${past.length} 回):${Math.round((past.filter((e) => e.attended).length / past.length) * 100)}%(${past.filter((e) => e.attended && !e.late).length}回出席${past.some((e) => e.late) ? `・${past.filter((e) => e.late).length}回遅刻早退` : ""})`) : null;
+      const attendedN = past.filter((e) => e.attended).length;
+      const lateN = past.filter((e) => e.late).length;
+      const rate = past.length ? h("p", { class: "checkin-rate" }, `あなたの出席:${past.length}回中 ${attendedN}回(出席率 ${Math.round((attendedN / past.length) * 100)}%${lateN ? `・うち遅刻早退 ${lateN}回` : ""})`) : null;
       if (open || venueSoon) {
         el.append(h("section", { class: `checkin-box${open ? " is-open" : ""}` },
           h("h2", null, open ? "受付中:出席コードを入れてください" : "会場の出席コード"),

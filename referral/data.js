@@ -717,6 +717,17 @@ const REF_SEED_EVENTS = [
   { seedId: "2026-11-14", title: "日本海側最大のマーケット 新潟⇔東京", date: "2026-11-14", start: "20:00", end: "22:00", deadline: "" },
 ].map((e) => Object.assign({ area: "online", meet: true, fee: "会員 無料", agenda: REF_SEED_AGENDA, body: REF_SEED_GUIDE }, e));
 
+// 開いた前の定例会の出欠(bt-ex.jp の記録から。一度だけ反映する)。
+// attended: 出席(申込のまま出席扱いの人を含む)/ absent: 事前欠席
+const REF_SEED_EVENT_RECORDS = [
+  {
+    rev: "2026-10-07-attendance",
+    seedId: "2026-10-07",
+    attended: ["m22", "m02", "m16", "m08", "m20", "m14", "yamamoto", "m26", "m04", "m05", "m24", "m06", "m12", "m03", "m07"],
+    absent: ["m18", "m10", "m25", "m17", "m19", "m13", "m09"],
+  },
+];
+
 const PROFILE_ITEMS = [
   { key: "range", label: "活動範囲", ask: "活動範囲(新潟・東京/関東で対面できるか、オンラインで対応できるか)", ok: (m) => m.faceAreas.length > 0 || (m.online && m.online !== "unknown") },
   { key: "wants", label: "求める紹介", ask: "求める紹介(どんな悩みを持つ、どんな人を紹介してほしいか)", ok: (m) => Boolean(m.wants) },
