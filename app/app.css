@@ -439,3 +439,19 @@ a.site-maker { display: inline-flex; flex-direction: column; align-items: center
   .app-sheet, .app-sheet-wrap { animation: none; }
 }
 .checkin-input::placeholder { color: #e3d3c7; }
+
+/* ---------- カレンダーに追加・下書き・声かけ ---------- */
+.cal-add { margin-top: 8px; }
+.cal-add summary { list-style: none; display: inline-flex; align-items: center; gap: 4px; cursor: pointer; font-size: 12.5px; font-weight: 800; color: var(--accent-dark); min-height: 32px; }
+.cal-add summary::-webkit-details-marker { display: none; }
+.cal-add summary::before { content: "📅"; }
+.cal-add-menu { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+.has-draft { border-color: var(--amber) !important; }
+.home-alert.is-good { background: var(--good-bg); color: var(--good); border-color: rgba(47, 122, 91, 0.2); }
+.one-cal { padding: 0 14px 10px 66px; margin-top: -6px; }
+.rec-item { padding-bottom: 10px; }
+.rec-actions { display: flex; gap: 8px; padding: 0 14px 0 66px; }
+.board-search { width: 100%; min-height: 44px; margin-bottom: 10px; padding: 8px 14px; border: 1.5px solid var(--line-strong); border-radius: 999px; background: #fff; font-size: 16px; }
+.msg-quick { display: flex; gap: 6px; overflow-x: auto; padding: 4px 0 8px; scrollbar-width: none; }
+.msg-quick::-webkit-scrollbar { display: none; }
+.msg-quick .app-pill { min-height: 32px; font-size: 12.5px; }

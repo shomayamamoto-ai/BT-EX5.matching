@@ -9,6 +9,7 @@
 
   App.views.events = {
     title: "予定",
+    autoRefresh: (parts) => parts[0] !== "manage",
     async render(el, parts, params) {
       if (parts[0] === "manage" && parts[1]) return renderManage(el, parts[1]);
       const d = await App.api("listEvents");
@@ -187,6 +188,28 @@
     const yes = d.members.filter((m) => m.rsvp === "yes").length;
     const att = d.members.filter((m) => m.attended).length;
     const noAns = d.members.filter((m) => !m.rsvp).length;
+    // 運営の手間を減らす: 未回答の人への声かけ文・出欠の一覧をコピー
+    const when = `${App.fmtDate(ev.date)} ${ev.start || ""}`.trim();
+    const pending = d.members.filter((m) => !m.rsvp);
+    const remindText = [
+      `【出欠のお願い】${ev.title}(${when}${ev.place ? ` ${ev.place}` : ""})`,
+      `まだ出欠の回答がない方:${pending.map((m) => `${m.name}さん`).join("、")}`,
+      "",
+      "会員サイトの「予定」から、出席・欠席をタップでお知らせください。",
+      App.siteUrl("#events"),
+    ].join("\n");
+    const listText = [
+      `${ev.title}(${when})`,
+      `出席予定(${yes}名):${d.members.filter((m) => m.rsvp === "yes").map((m) => m.name).join("、") || "なし"}`,
+      `欠席(${d.members.filter((m) => m.rsvp === "no").length}名):${d.members.filter((m) => m.rsvp === "no").map((m) => m.name).join("、") || "なし"}`,
+      `未回答(${noAns}名):${pending.map((m) => m.name).join("、") || "なし"}`,
+      `出席(コード・手動)(${att}名):${d.members.filter((m) => m.attended).map((m) => m.name).join("、") || "なし"}`,
+      d.visitors.length ? `ビジター(${d.visitors.length}名):${d.visitors.map((v) => `${v.name || "(未入力)"}(${v.byName}さん招待)`).join("、")}` : "",
+    ].filter(Boolean).join("\n");
+    el.append(h("div", { class: "app-btn-row" },
+      pending.length ? App.btn(`未回答の ${pending.length} 名への声かけ文をコピー`, () => App.copyText(remindText, "コピーしました。LINE グループなどに貼り付けてください"), "small") : null,
+      App.btn("出欠の一覧をコピー", () => App.copyText(listText), "ghost small")));
+
     el.append(App.section(`出欠(出席予定 ${yes} ・ 出席 ${att} ・ 未回答 ${noAns})`,
       h("p", { class: "app-field-hint" }, "コードを入れられなかった人は、ここで出席にできます。"),
       h("ul", { class: "app-list att-list" }, d.members.map((m) => {

@@ -801,6 +801,28 @@
           .map(function (o) { return oneView(db, o, w.id); });
         var missing = typeof missingProfileItems === "function" ? missingProfileItems(Object.assign({ triggers: [], faceAreas: [] }, w.me)).map(function (it) { return it.label; }) : [];
         if (!(w.me.topics || []).length) missing.push("できること(ジャンル)");
+
+        // 声かけが必要なこと(放っておくと紹介が止まるもの)
+        var followUps = [];
+        myLogs.forEach(function (l) {
+          if (l.status === "new" && c.nowMs() - l.at > 3 * DAY) {
+            followUps.push({ type: "givenStale", id: l.id, with: l.toMemberId, withName: nameOf(db, l.toMemberId), prospect: l.prospect, days: Math.floor((c.nowMs() - l.at) / DAY) });
+          }
+        });
+        inbox.forEach(function (l) {
+          var giver = memberIdOfUser(db, l.fromUserId);
+          if (l.status === "won" && !c.find(db.thanks, function (t) { return t.referralId === l.id; })) {
+            followUps.push({ type: "thanksMissing", id: l.id, with: giver, withName: nameOf(db, giver), prospect: l.prospect });
+          } else if (l.status === "new" && c.nowMs() - l.at > 2 * DAY) {
+            followUps.push({ type: "inboxStale", id: l.id, with: giver, withName: nameOf(db, giver), prospect: l.prospect, days: Math.floor((c.nowMs() - l.at) / DAY) });
+          }
+        });
+        ones.forEach(function (o) {
+          if (o.status !== "planned") return;
+          var other = o.a === w.id ? o.b : o.a;
+          if (o.date === t) followUps.push({ type: "oneToday", id: o.id, with: other, withName: nameOf(db, other), time: o.time || "", place: o.place || "" });
+          else if (o.date < t) followUps.push({ type: "onePast", id: o.id, with: other, withName: nameOf(db, other), date: o.date });
+        });
         return c.ok({
           me: { id: w.id, name: w.me.name, team: w.me.team || "", isAdmin: w.isAdmin, hasPassword: !!w.user.pw },
           today: t,
@@ -827,6 +849,7 @@
           inboxNew: inbox.filter(function (l) { return l.status === "new"; }).slice(-3).reverse().map(function (l) { return referralView(db, l, w.id); }),
           nextOneOnOnes: nextOnes,
           missing: missing,
+          followUps: followUps.slice(0, 6),
         });
       }
 

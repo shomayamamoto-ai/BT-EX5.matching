@@ -15,6 +15,7 @@
 
   App.views.log = {
     title: "記録",
+    autoRefresh: true,
     async render(el, parts, params) {
       const tab = TABS.some((t) => t.id === parts[0]) ? parts[0] : "ref";
       el.append(App.segmented(TABS, tab, (id) => App.go(`log/${id}`)));
@@ -33,7 +34,7 @@
   async function renderRefs(el, params) {
     const d = await App.api("listMyReferrals");
     if (!d) return;
-    el.append(h("div", { class: "app-cta-row" }, App.btn("＋ 紹介を記録する", () => referralForm(params.get("to")), "primary wide")));
+    el.append(h("div", { class: "app-cta-row" }, App.btn("＋ 紹介を記録する", () => referralForm(params.get("to"), params.get("memo")), "primary wide")));
 
     el.append(App.section(`あなた宛ての紹介(${d.received.length})`,
       d.received.length
@@ -45,7 +46,7 @@
         ? h("ul", { class: "app-cards" }, d.given.map((r) => h("li", null, givenCard(r))))
         : App.empty("紹介したら記録しておくと、相手の対応状況とお礼(マイル)がここに届きます。")));
 
-    if (params.has("new")) referralForm(params.get("to"));
+    if (params.has("new")) referralForm(params.get("to"), params.get("memo"));
   }
 
   function receivedCard(r) {
@@ -101,12 +102,15 @@
   }
 
   // 紹介の記録(紹介先 → 紹介した相手 → 連絡先 → メモ)
-  function referralForm(toId) {
+  // memoText: 早見表の相談アシスタント・紹介診断から来たときの相談内容(入れ直さなくてよいように)
+  function referralForm(toId, memoText) {
     App.openSheet("紹介を記録", (body, close) => {
       const picker = App.memberPicker({ value: toId && App.memberById(toId) ? toId : null, exclude: [App.session.memberId], label: "紹介先のメンバー" });
-      const prospect = h("input", { type: "text", maxlength: "60", placeholder: "例:株式会社〇〇 佐藤社長" });
-      const contact = h("input", { type: "text", maxlength: "120", placeholder: "電話・メール・LINE など(任意)" });
+      const prospect = App.draft("ref-prospect", h("input", { type: "text", maxlength: "60", placeholder: "例:株式会社〇〇 佐藤社長" }));
+      const contact = App.draft("ref-contact", h("input", { type: "text", maxlength: "120", placeholder: "電話・メール・LINE など(任意)" }));
       const memo = h("textarea", { rows: "3", maxlength: "300", placeholder: "例:ホームページのリニューアルを検討中。来月までに話を聞きたい" });
+      if (memoText) memo.value = String(memoText).slice(0, 300);
+      App.draft("ref-memo", memo);
       const err = h("p", { class: "app-error", role: "alert" });
       const save = h("button", { type: "submit", class: "app-btn primary wide" }, "記録して知らせる");
       body.append(h("form", { class: "app-form", onsubmit: async (e) => {
@@ -118,6 +122,7 @@
         const res = await AuthApi.recordReferral(AuthSession.getToken(), to, prospect.value.trim(), [], memo.value.trim(), contact.value.trim());
         save.disabled = false;
         if (!res.success) { err.textContent = res.error.userMessage; return; }
+        App.clearDraft("ref-prospect", "ref-contact", "ref-memo");
         close();
         App.toast(`${App.memberById(to).name}さんに紹介を記録しました`);
         App.go("log/ref");
@@ -165,7 +170,7 @@
     App.openSheet(r ? "成約!紹介のお礼を送る" : "ありがとうを送る", (body, close) => {
       const picker = r ? null : App.memberPicker({ value: opt.to && App.memberById(opt.to) ? opt.to : null, exclude: [App.session.memberId], label: "お礼を送る相手" });
       const amount = h("input", { type: "text", inputmode: "numeric", placeholder: "例:300000", value: r && r.thanksAmount ? String(r.thanksAmount) : "" });
-      const message = h("textarea", { rows: "3", maxlength: "300", placeholder: "例:ご紹介いただいた〇〇様、ご契約いただけました!ありがとうございます" });
+      const message = App.draft("thanks-msg", h("textarea", { rows: "3", maxlength: "300", placeholder: "例:ご紹介いただいた〇〇様、ご契約いただけました!ありがとうございます" }));
       const err = h("p", { class: "app-error", role: "alert" });
       const shown = h("p", { class: "app-field-hint mile-preview" });
       amount.addEventListener("input", () => {
@@ -178,6 +183,7 @@
         if (!r && !to) { err.textContent = "お礼を送る相手を選んでください。"; return; }
         const d = await App.api("reportThanks", { referralId: r ? r.id : "", toMemberId: to, amount: amount.value, message: message.value.trim() }, { raw: true, quiet: true });
         if (!d || d.success === false) { err.textContent = d ? d.error.userMessage : "送れませんでした。"; return; }
+        App.clearDraft("thanks-msg");
         close();
         App.toast("ありがとうを送りました");
         if (opt.onDone) opt.onDone(d.thanks); else App.route();
@@ -203,9 +209,37 @@
       App.avatar(o.withName),
       h("span", { class: "app-row-main" }, h("b", null, `${o.withName}さん`), h("small", null, `${App.fmtDate(o.date)} ${o.time} ${o.place}${o.note ? " ・ メモあり" : ""}`)),
       o.status === "cancelled" ? App.chip("中止", "mute") : o.status === "done" ? App.chip("実施", "good") : App.chip(App.daysUntil(o.date, d.today) === 0 ? "今日" : "予定", "info")));
-    el.append(App.section(`予定(${planned.length})`, planned.length ? h("ul", { class: "app-list" }, planned.map(row)) : App.empty("予定はありません。")));
+    el.append(App.section(`予定(${planned.length})`, planned.length ? h("ul", { class: "app-list" }, planned.map((o) => {
+      const li = row(o);
+      li.append(h("div", { class: "one-cal" }, App.calendarButtons({ uid: o.id, title: `1on1:${o.withName}さん`, date: o.date, start: o.time, place: o.place })));
+      return li;
+    })) : App.empty("予定はありません。")));
+    el.append(recommendSection(d.items));
     el.append(App.section(`これまで(${done.length})`, done.length ? h("ul", { class: "app-list" }, done.map(row)) : App.empty("まだ記録がありません。")));
     if (params.has("new")) oneForm(null, params.get("with"));
+  }
+
+  // 次に 1on1 するとよい人: まだ会っていない人のうち、紹介し合えそうな人を先に
+  function recommendSection(items) {
+    const met = new Set(items.filter((o) => o.status !== "cancelled").map((o) => o.with));
+    const me = App.memberById(App.session.memberId);
+    const others = App.members.filter((m) => m.id !== App.session.memberId && !met.has(m.id));
+    if (!others.length) return App.section("次に 1on1 するとよい人", App.empty("全員と 1on1 をしました。すばらしいです!"));
+    let picks = [];
+    if (typeof RefPartners !== "undefined" && me) {
+      picks = RefPartners.findPartners(others.concat(me), me, 3).map((p) => ({ m: p.m, why: p.reasons[0] }));
+    }
+    // 足りなければ、まだ会っていない人を日替わりで
+    const day = Number(App.todayKey().replace(/-/g, ""));
+    others.slice().sort((a, b) => ((a.id.charCodeAt(a.id.length - 1) * 31 + day) % 97) - ((b.id.charCodeAt(b.id.length - 1) * 31 + day) % 97))
+      .forEach((m) => { if (picks.length < 3 && !picks.some((p) => p.m.id === m.id)) picks.push({ m, why: m.company || m.category || "" }); });
+    return App.section(`次に 1on1 するとよい人(まだ会っていない ${others.length}名)`,
+      h("ul", { class: "app-list" }, picks.map((p) => h("li", { class: "rec-item" },
+        h("div", { class: "app-row" }, App.avatar(p.m.name),
+          h("span", { class: "app-row-main" }, h("b", null, `${p.m.name}さん`), h("small", null, p.why))),
+        h("div", { class: "rec-actions" },
+          h("a", { class: "app-btn small", href: `#talk/msg/new?to=${encodeURIComponent(p.m.id)}&tpl=1on1` }, "1on1 を申し込む"),
+          h("a", { class: "app-btn ghost small", href: `../referral/#member=${encodeURIComponent(p.m.id)}` }, "プロフィール"))))));
   }
 
   function oneForm(o, withId) {

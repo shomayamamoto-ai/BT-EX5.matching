@@ -133,6 +133,81 @@ const App = (function () {
     copyText(text, "コピーしました。LINE などに貼り付けて送ってください");
   }
 
+  // ---------- 入力の下書き(閉じても、電波が切れても消えない) ----------
+  // 入力欄ごとに、この端末・ログインした人ごとに保存する。送ったら clearDraft で消す
+  function draftKey(key) { return `btex5-draft-${(session && session.memberId) || "guest"}-${key}`; }
+  function draft(key, el) {
+    try {
+      const saved = localStorage.getItem(draftKey(key));
+      if (saved && !el.value) {
+        el.value = saved;
+        el.classList.add("has-draft");
+      }
+    } catch { /* noop */ }
+    let timer = null;
+    el.addEventListener("input", () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        try {
+          if (el.value.trim()) localStorage.setItem(draftKey(key), el.value);
+          else localStorage.removeItem(draftKey(key));
+        } catch { /* noop */ }
+      }, 400);
+    });
+    return el;
+  }
+  function clearDraft(...keys) {
+    keys.forEach((key) => { try { localStorage.removeItem(draftKey(key)); } catch { /* noop */ } });
+  }
+
+  // ---------- カレンダーに追加(Google カレンダー / iPhone などの .ics) ----------
+  // item: { title, date: "YYYY-MM-DD", start: "HH:MM", end, place, body }
+  function calStamp(date, time) {
+    return `${date.replace(/-/g, "")}T${(time || "00:00").replace(":", "").padStart(4, "0")}00`;
+  }
+  function calRange(item) {
+    const start = item.start || "10:00";
+    let end = item.end;
+    if (!end) {
+      const [hh, mm] = start.split(":").map(Number);
+      end = `${String(Math.min(23, hh + 1)).padStart(2, "0")}:${String(mm).padStart(2, "0")}`;
+    }
+    return [calStamp(item.date, start), calStamp(item.date, end)];
+  }
+  function googleCalUrl(item) {
+    const [a, b] = calRange(item);
+    const p = new URLSearchParams({ action: "TEMPLATE", text: item.title, dates: `${a}/${b}`, ctz: "Asia/Tokyo" });
+    if (item.place) p.set("location", item.place);
+    if (item.body) p.set("details", item.body.slice(0, 800));
+    return `https://calendar.google.com/calendar/render?${p}`;
+  }
+  function icsFile(item) {
+    const [a, b] = calRange(item);
+    const esc = (t) => String(t || "").replace(/\\/g, "\\\\").replace(/[;,]/g, (c) => `\\${c}`).replace(/\r?\n/g, "\\n");
+    const now = new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d+/, "");
+    const text = [
+      "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//BT-EX5//JA", "CALSCALE:GREGORIAN", "BEGIN:VEVENT",
+      `UID:${item.uid || `${a}-${Math.random().toString(36).slice(2)}`}@bt-ex5`, `DTSTAMP:${now}`,
+      `DTSTART;TZID=Asia/Tokyo:${a}`, `DTEND;TZID=Asia/Tokyo:${b}`,
+      `SUMMARY:${esc(item.title)}`, item.place ? `LOCATION:${esc(item.place)}` : "", item.body ? `DESCRIPTION:${esc(item.body)}` : "",
+      "BEGIN:VALARM", "TRIGGER:-PT1H", "ACTION:DISPLAY", `DESCRIPTION:${esc(item.title)}`, "END:VALARM",
+      "END:VEVENT", "END:VCALENDAR",
+    ].filter(Boolean).join("\r\n");
+    const a2 = document.createElement("a");
+    a2.href = URL.createObjectURL(new Blob([text], { type: "text/calendar;charset=utf-8" }));
+    a2.download = `btex5-${item.date}.ics`;
+    document.body.append(a2);
+    a2.click();
+    setTimeout(() => { URL.revokeObjectURL(a2.href); a2.remove(); }, 1000);
+  }
+  function calendarButtons(item) {
+    return h("details", { class: "cal-add" },
+      h("summary", null, "カレンダーに追加"),
+      h("div", { class: "cal-add-menu" },
+        h("a", { href: googleCalUrl(item), target: "_blank", rel: "noopener", class: "app-btn ghost small" }, "Google カレンダー"),
+        h("button", { type: "button", class: "app-btn ghost small", onclick: () => icsFile(item) }, "iPhone・Outlook(.ics)")));
+  }
+
   // ---------- 通信 ----------
   async function api(action, payload, opt) {
     const res = await AuthApi.call(action, payload);
@@ -262,6 +337,7 @@ const App = (function () {
   let badges = {};
   let current = { view: "", parts: [], params: new URLSearchParams() };
   let cleanup = null;
+  let hiddenAt = Date.now();
 
   function parseHash() {
     const raw = location.hash.replace(/^#/, "") || "home";
@@ -351,13 +427,22 @@ const App = (function () {
     document.getElementById("appMe").setAttribute("aria-label", `${data.displayName}さんのマイページ`);
     renderTabs();
     window.addEventListener("hashchange", route);
+    // ほかのアプリから戻ってきたら、入力中でなければ最新にする(1分以上たっていたら)
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden) { hiddenAt = Date.now(); return; }
+      const v = views[current.view];
+      const typing = document.activeElement && /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName);
+      if (!v || !v.autoRefresh || sheetStack.length || typing || Date.now() - hiddenAt < 60 * 1000) return;
+      if (typeof v.autoRefresh === "function" && !v.autoRefresh(current.parts)) return;
+      route();
+    });
     await route();
     document.documentElement.classList.remove("guard-pending");
   }
 
   return {
     h, append, fill, fmtDate, fmtDateLong, fmtTime, yen, daysUntil, todayKey, chip, avatar, richText, toast, copyText, shareText,
-    icon, api, openSheet, field, btn, segmented, empty, section, memberPicker,
+    icon, draft, clearDraft, calendarButtons, googleCalUrl, api, openSheet, field, btn, segmented, empty, section, memberPicker,
     AREA_LABELS, REF_STATUS, VISITOR_STATUS,
     views, go, route, setBadges, start,
     get members() { return members; },

@@ -1336,3 +1336,4 @@ a:hover > .brand-mark { transform: none; }
   font-weight: 800; font-size: 13px; text-decoration: none; text-align: center;
 }
 .md-app-btn.is-main { background: var(--grad); color: #fff; border-color: transparent; }
+a.ref-btn { display: inline-flex; align-items: center; justify-content: center; text-decoration: none; }

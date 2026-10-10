@@ -49,6 +49,18 @@
     return { need: need.methods ? need.label : "", methods };
   }
   const shortText = (t, n) => (t.length > n ? t.slice(0, n) + "…" : t);
+  // 会員アプリの「紹介を記録」へ。相談アシスタント・紹介診断の内容をメモに入れて渡す(入れ直さなくてよい)
+  function recordHref(id) {
+    const p = new URLSearchParams({ to: id });
+    let memo = "";
+    if (scores && answers.consult) memo = $("#csText").value.trim();
+    else {
+      const ctx = diagContext();
+      if (ctx) memo = `${ctx.need || "相談"}${ctx.methods.length ? `(${ctx.methods.join("・")})` : ""}の相談`;
+    }
+    if (memo) p.set("memo", memo.slice(0, 300));
+    return `../app/#log/ref?new&${p}`;
+  }
   // できること(相談に合ったジャンルを先に)
   const mainTags = (m, n, hits) => [...new Set([...(hits || []).filter((t) => m.topics.includes(t)), ...m.topics])].slice(0, n).map(topicTag).filter(Boolean);
 
@@ -338,7 +350,7 @@
       </section>
       ${partnersSection(m)}
       ${m.id !== myMemberId ? `<nav class="md-app-actions" aria-label="この人との記録">
-        <a class="md-app-btn is-main" href="../app/#log/ref?new&amp;to=${encodeURIComponent(m.id)}">紹介を記録</a>
+        <a class="md-app-btn is-main" href="${escapeHtml(recordHref(m.id))}">紹介を記録</a>
         <a class="md-app-btn" href="../app/#talk/msg/new?to=${encodeURIComponent(m.id)}">メッセージ</a>
         <a class="md-app-btn" href="../app/#log/1on1?new&amp;with=${encodeURIComponent(m.id)}">1on1を記録</a>
       </nav>` : ""}
@@ -736,6 +748,7 @@
           <span class="rank-actions">
             <button type="button" class="ref-btn" data-copy="${m.id}">紹介文をコピー</button>
             <button type="button" class="ref-btn ghost" data-ask="${m.id}">打診文をコピー</button>
+            ${m.id !== myMemberId ? `<a class="ref-btn ghost" href="${escapeHtml(recordHref(m.id))}">紹介を記録</a>` : ""}
             <button type="button" class="ref-btn ghost" data-goto="${m.id}">カードを見る</button>
           </span>
         </li>`)

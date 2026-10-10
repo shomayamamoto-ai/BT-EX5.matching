@@ -8,6 +8,8 @@
 
   App.views.talk = {
     title: "つながる",
+    // やりとりの画面は自分で新着を取りに行くので、一覧のときだけ戻ったら最新にする
+    autoRefresh: (parts) => !(parts[0] === "msg" && parts[1]),
     async render(el, parts, params) {
       const tab = ["news", "board", "msg"].includes(parts[0]) ? parts[0] : "news";
       if (tab === "msg" && parts[1]) return renderThread(el, parts[1], params);
@@ -107,7 +109,23 @@
       }, c.label))));
     const items = d.items.filter((p) => !filter || p.cat === filter);
     if (!items.length) { el.append(App.empty("まだ投稿がありません。紹介のお願いやイベントの告知、成約のお礼などを気軽にどうぞ。")); }
-    el.append(h("ul", { class: "board-list" }, items.map((p) => h("li", null, postCard(p)))));
+    // 掲示板の中を探す(本文・名前・コメント)
+    const q = h("input", { type: "search", class: "board-search", placeholder: "掲示板を検索(例:税理士・イベント)", "aria-label": "掲示板を検索" });
+    const list = h("ul", { class: "board-list" });
+    const none = h("p", { class: "app-empty", hidden: true }, "見つかりませんでした。");
+    const draw = () => {
+      const words = q.value.trim().toLowerCase().split(/\s+/).filter(Boolean);
+      const hits = items.filter((p) => {
+        const text = [p.body, p.byName, p.cat, ...p.comments.map((c) => `${c.byName} ${c.body}`)].join(" ").toLowerCase();
+        return words.every((w) => text.includes(w));
+      });
+      list.replaceChildren(...hits.map((p) => h("li", null, postCard(p))));
+      none.hidden = !(items.length && !hits.length);
+    };
+    q.addEventListener("input", draw);
+    if (items.length > 3) el.append(q);
+    el.append(list, none);
+    draw();
     if (params.has("new")) postForm(d.cats, filter);
   }
 
@@ -154,12 +172,13 @@
       const chips = h("div", { class: "board-cats" });
       const drawChips = () => chips.replaceChildren(...cats.map((c) => h("button", { type: "button", class: `app-pill${c === picked ? " is-on" : ""}`, onclick: () => { picked = c; drawChips(); } }, c)));
       drawChips();
-      const text = h("textarea", { rows: "6", maxlength: "2000", placeholder: "例:〇〇で困っている知り合いがいます。△△に詳しい方いませんか?" });
+      const text = App.draft("board", h("textarea", { rows: "6", maxlength: "2000", placeholder: "例:〇〇で困っている知り合いがいます。△△に詳しい方いませんか?" }));
       body.append(h("form", { class: "app-form", onsubmit: async (e) => {
         e.preventDefault();
         if (!text.value.trim()) { App.toast("本文を入れてください"); return; }
         const d = await App.api("createPost", { cat: picked, body: text.value });
         if (!d) return;
+        App.clearDraft("board");
         close();
         App.toast("投稿しました");
         App.go("talk/board");
@@ -232,7 +251,26 @@
     }
 
     const input = h("textarea", { rows: "1", maxlength: "2000", placeholder: "メッセージを入力", "aria-label": "メッセージ" });
-    input.addEventListener("input", () => { input.style.height = "auto"; input.style.height = `${Math.min(140, input.scrollHeight)}px`; });
+    const grow = () => { input.style.height = "auto"; input.style.height = `${Math.min(140, input.scrollHeight)}px`; };
+    input.addEventListener("input", grow);
+    const draftName = isNew ? `msg-new-${params.get("to") || ""}` : `msg-${id}`;
+    // 決まった用件は文を用意しておく(1on1 の申し込み・紹介のその後)
+    App.draft(draftName, input);
+    const tpl = params.get("tpl");
+    if (input.value) { /* 書きかけを優先 */ } else if (isNew && tpl === "1on1") {
+      input.value = "はじめまして(いつもありがとうございます)。お互いの仕事をもっと知りたいので、30分ほど 1on1 をお願いできませんか?\n候補日:\n・\n・\nオンラインでも対面でも大丈夫です。";
+    } else if (isNew && tpl === "follow") {
+      const who = params.get("p");
+      input.value = `${who ? `先日ご紹介した${who}の件、` : "先日の紹介の件、"}その後いかがでしょうか?何かお手伝いできることがあれば教えてください。`;
+    }
+    requestAnimationFrame(grow);
+    // ひと言で返せる定型文(押すと入力欄に入る)
+    const PHRASES = ["ありがとうございます!", "承知しました。", "日程を調整させてください。候補日:", "ご紹介させていただきました。", "よろしくお願いします。"];
+    const quick = h("div", { class: "msg-quick", "aria-label": "定型文" }, PHRASES.map((t) => h("button", { type: "button", class: "app-pill", onclick: () => {
+      input.value = input.value ? `${input.value}${/\s$/.test(input.value) ? "" : "\n"}${t}` : t;
+      input.dispatchEvent(new Event("input"));
+      input.focus();
+    } }, t.replace(/。?候補日:$/, ""))));
     const send = h("button", { type: "submit", class: "app-btn primary" }, "送信");
     const form = h("form", { class: "msg-form", onsubmit: async (e) => {
       e.preventDefault();
@@ -250,6 +288,7 @@
       if (!d) return;
       input.value = "";
       input.style.height = "auto";
+      App.clearDraft(draftName);
       if (!threadId) { threadId = d.threadId; history.replaceState(null, "", `#talk/msg/${threadId}`); App.route(); return; }
       addMsgs([d.msg]);
       window.scrollTo({ top: document.body.scrollHeight, behavior: "instant" });
@@ -257,7 +296,7 @@
     // Enter で改行、Ctrl/⌘+Enter で送信
     input.addEventListener("keydown", (e) => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); form.requestSubmit(); } });
 
-    el.append(head, log, form);
+    el.append(head, log, quick, form);
     await load(true);
     if (!isNew && !log.children.length) log.append(h("li", { class: "app-empty" }, "まだメッセージはありません。"));
 

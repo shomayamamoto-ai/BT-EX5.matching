@@ -8,6 +8,7 @@
 
   App.views.home = {
     title: "ホーム",
+    autoRefresh: true,
     async render(el) {
       const d = await App.api("getHome");
       if (!d) return;
@@ -36,6 +37,21 @@
       if (d.badges.messages) {
         todo.push(alertLink("#talk/msg", `新しいメッセージが ${d.badges.messages} 件あります`, "メッセージを開く"));
       }
+      // 声かけが必要なこと
+      (d.followUps || []).forEach((f) => {
+        if (f.type === "givenStale") {
+          todo.push(alertLink(`#talk/msg/new?to=${encodeURIComponent(f.with)}&tpl=follow&p=${encodeURIComponent(f.prospect || "")}`,
+            `${f.withName}さんへの紹介が ${f.days} 日そのままです`, `${f.prospect || "紹介した方"}の件、ひと声かけましょう(メッセージを開く)`));
+        } else if (f.type === "inboxStale") {
+          todo.push(alertLink("#log/ref", `${f.withName}さんからの紹介に ${f.days} 日返事をしていません`, `${f.prospect || "紹介された方"}へ連絡したら「連絡済み」にしてください`, "is-warn"));
+        } else if (f.type === "thanksMissing") {
+          todo.push(alertLink("#log/ref", `成約おめでとうございます。${f.withName}さんへお礼を送りましょう`, `${f.prospect || "紹介された方"}の件。「成約 → お礼」で金額を記録できます`, "is-good"));
+        } else if (f.type === "oneToday") {
+          todo.push(alertLink("#log/1on1", `今日は ${f.withName}さんと 1on1 です`, [f.time, f.place].filter(Boolean).join(" ・ ") || "終わったらメモを残しましょう"));
+        } else if (f.type === "onePast") {
+          todo.push(alertLink("#log/1on1", `${f.withName}さんとの 1on1 はどうでしたか?`, `${App.fmtDate(f.date)} の予定のままです。「実施した」にしてメモを残しましょう`));
+        }
+      });
       if (!d.me.hasPassword) {
         todo.push(alertLink("#me/password", "あなた専用のパスワードを決めてください", "共通パスコードは近く使えなくなります。1分で終わります", "is-warn"));
       }
@@ -147,6 +163,7 @@
           h("p", { class: "ev-count" }, `出席予定 ${ev.yesCount}名`, ev.visitorCount ? ` ・ ビジター ${ev.visitorCount}名` : "", ev.attended ? h("span", { class: "ev-done" }, "出席済み") : null),
           ev.past || ev.attended ? null : h("div", { class: "ev-rsvp", role: "group", "aria-label": "出欠" },
             rsvpBtn("yes", "出席する"), rsvpBtn("no", "欠席する")),
+          ev.past ? null : App.calendarButtons({ uid: ev.id, title: ev.title, date: ev.date, start: ev.start, end: ev.end, place: ev.place, body: ev.body }),
           ev.checkInOpen && !ev.attended && !(opt && opt.noCheckIn) ? checkInForm(ev.id, (e2) => { Object.assign(ev, e2); draw(); if (onUpdate) onUpdate(ev); }) : null,
           card.extra ? card.extra(ev) : null));
     }
