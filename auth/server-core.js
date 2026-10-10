@@ -185,6 +185,7 @@ var BtexServerCore = (function () {
   function clone(v) { return JSON.parse(JSON.stringify(v)); }
 
   function createServer(env) {
+    var LINKS_MAX = 12; // 1人あたりの資料・リンクの上限
     var nowMs = env.now || function () { return Date.now(); };
 
     function randomHex(n) {
@@ -279,6 +280,13 @@ var BtexServerCore = (function () {
             if (r.fields && r.fields.indexOf(k) === -1) return;
             if (r.force || !current.editedAt || isBlankField(k, current[k])) next[k] = clone(seedMember[k]);
           });
+          // addLinks: ["line"] など。編集済みのメンバーにも、初期名簿のその種類のリンクのうち
+          // まだないもの(同じ URL がないもの)だけを足す(本人が消したほかのリンクは戻さない)
+          if (Array.isArray(r.addLinks)) {
+            var have = (next.links || []).map(function (l) { return l.url; });
+            var add = (seedMember.links || []).filter(function (l) { return r.addLinks.indexOf(l.type) !== -1 && have.indexOf(l.url) === -1; });
+            next.links = (next.links || []).concat(clone(add)).slice(0, LINKS_MAX);
+          }
           if (r.addTopics && Array.isArray(next.topics)) {
             next.topics = next.topics.concat((seedMember.topics || []).filter(function (t) {
               return r.addTopics.indexOf(t) !== -1 && next.topics.indexOf(t) === -1;
@@ -828,7 +836,7 @@ var BtexServerCore = (function () {
       var types = idsOf("LINK_TYPES");
       var out = [];
       v.forEach(function (x) {
-        if (!x || typeof x !== "object" || out.length >= 8) return;
+        if (!x || typeof x !== "object" || out.length >= LINKS_MAX) return;
         var type = cleanStr(x.type, 20);
         var url = cleanUrl(x.url);
         if (!url || (types && types.indexOf(type) === -1)) return;

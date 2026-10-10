@@ -303,7 +303,7 @@
   function linkButton(l) {
     const t = linkType(l.type);
     const text = l.label || t.label;
-    return `<a class="md-link ${t.kind}" href="${escapeHtml(linkHref(l.url))}" target="_blank" rel="noopener noreferrer"><span class="md-link-type">${escapeHtml(t.label)}</span><span class="md-link-text">${escapeHtml(text)}</span><span class="md-link-go" aria-hidden="true">↗</span></a>`;
+    return `<a class="md-link ${t.kind} is-${escapeHtml(l.type)}" href="${escapeHtml(linkHref(l.url))}" target="_blank" rel="noopener noreferrer"><span class="md-link-type">${escapeHtml(t.label)}</span><span class="md-link-text">${escapeHtml(text)}</span><span class="md-link-go" aria-hidden="true">↗</span></a>`;
   }
 
   function detailHtml(m) {

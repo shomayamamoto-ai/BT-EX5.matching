@@ -401,14 +401,20 @@ const MEETINGS = [
 ];
 
 // メンバーの資料・リンク(詳細画面に表示)。url は https:// か、サイト内の materials/ のファイル
+// match: URL を貼ったとき、この種類に自動で切り替える目印
 const LINK_TYPES = [
   { id: "proposal", label: "提案資料・パンフレット", kind: "material" },
   { id: "website", label: "ホームページ", kind: "web" },
-  { id: "instagram", label: "Instagram", kind: "contact" },
-  { id: "line", label: "LINE", kind: "contact" },
-  { id: "facebook", label: "Facebook", kind: "contact" },
-  { id: "x", label: "X(旧Twitter)", kind: "contact" },
-  { id: "youtube", label: "YouTube", kind: "web" },
+  { id: "line", label: "LINE", kind: "contact", match: /(^|\.)(line\.me|lin\.ee)\//i },
+  { id: "instagram", label: "Instagram", kind: "contact", match: /(^|\.)instagram\.com\//i },
+  { id: "facebook", label: "Facebook", kind: "contact", match: /(^|\.)(facebook\.com|fb\.com|fb\.me)\//i },
+  { id: "x", label: "X(旧Twitter)", kind: "contact", match: /(^|\.)(x\.com|twitter\.com)\//i },
+  { id: "tiktok", label: "TikTok", kind: "contact", match: /(^|\.)tiktok\.com\//i },
+  { id: "threads", label: "Threads", kind: "contact", match: /(^|\.)threads\.(net|com)\//i },
+  { id: "youtube", label: "YouTube", kind: "contact", match: /(^|\.)(youtube\.com|youtu\.be)\//i },
+  { id: "linkedin", label: "LinkedIn", kind: "contact", match: /(^|\.)linkedin\.com\//i },
+  { id: "note", label: "note", kind: "contact", match: /(^|\.)note\.com\//i },
+  { id: "blog", label: "ブログ(アメブロなど)", kind: "contact", match: /(^|\.)(ameblo\.jp|hatenablog\.|livedoor\.blog|blog\.jp)/i },
   { id: "other", label: "その他のリンク", kind: "web" },
 ];
 
@@ -467,6 +473,7 @@ const REF_SEED_MEMBERS = [
       { type: "proposal", url: "materials/lumenium-proposal.pdf", label: "Lumenium 自己紹介・ご提案(14ページ)", cover: "materials/lumenium-proposal-cover.jpg" },
       { type: "website", url: "https://lumenium.net", label: "lumenium.net" },
       { type: "instagram", url: "https://www.instagram.com/showstagram.keio/", label: "@showstagram.keio" },
+      { type: "line", url: "https://line.me/ti/p/2viaHtuXEu", label: "山本 捷真(LINE で友だち追加)" },
     ],
   },
   Object.assign(rosterMember("m02", "あまみや 七音", "echo studio 代表/声優ボイス・ドクター", "Over", "声・司会・キャスティング", ["voice", "mc", "recording", "casting", "video", "health"]), {
@@ -699,6 +706,8 @@ const REF_SEED_REVISIONS = [
   { rev: "2026-10-kobane-1", ids: ["m22"], fields: ["business", "customers", "wants", "triggers", "topics"], force: true },
   // 山本 捷真のプロフィール(資料・リンク・自己紹介文・事業内容など)を、どの端末でも最新の内容にそろえる
   { rev: "2026-10-yamamoto-4", ids: ["yamamoto"], force: true },
+  // 本人の依頼で、山本 捷真の LINE を連絡先に追加(本人が足したリンクは消さず、ないものだけを足す)
+  { rev: "2026-10-yamamoto-line", ids: ["yamamoto"], fields: ["links"], addLinks: ["line"] },
 ];
 
 // 紹介に効く項目(重要な順)。足りない項目は管理者ページの「お願い文」と、

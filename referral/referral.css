@@ -983,6 +983,7 @@ a:hover > .brand-mark { transform: rotate(-10deg) scale(1.06); }
 .md-link:hover, .md-link:focus-visible { border-color: var(--accent); outline: none; }
 .md-link-type { font-size: 12px; font-weight: 800; padding: 2px 8px; border-radius: 6px; background: #eef3fb; color: #2f5d9a; white-space: nowrap; }
 .md-link.contact .md-link-type { background: #fdeef4; color: #b0306a; }
+.md-link.is-line .md-link-type { background: #e3f6ea; color: #06803a; }
 .md-link-text { font-size: 14.5px; font-weight: 700; overflow-wrap: anywhere; }
 .md-link-go { color: var(--accent); font-weight: 800; }
 .md-nolinks { margin-top: 12px; font-size: 13.5px; color: var(--text-light); }
