@@ -9,7 +9,8 @@
 //
 // 保存:
 //   「_data」シート … 全データの JSON を 4万文字ずつ A 列に分けて保存(非表示)
-//   「名簿」「紹介の記録」シート … 運営者が見るための一覧(書き込みのたびに更新)
+//   「名簿」「紹介の記録」「ありがとうマイル」「定例会の出欠」「ビジター」「1on1」シート
+//     … 運営者が見るための一覧(書き込みのたびに更新。ここを書き換えてもサイトには反映されない)
 // 同時アクセスはスクリプトロックで1件ずつ処理する。
 // ============================================
 
@@ -17,7 +18,9 @@
 
 var DATA_SHEET = "_data";
 var CHUNK_SIZE = 40000; // セルの上限(5万文字)より小さく
-var STATUS_LABELS_JA = { new: "未対応", contacted: "連絡済み", won: "成約", lost: "見送り" };
+var STATUS_LABELS_JA = { new: "未対応", contacted: "連絡済み", meeting: "商談中", won: "成約", lost: "見送り" };
+var VISITOR_LABELS_JA = { invited: "招待中", applied: "参加申込", attended: "参加済み", joined: "入会", declined: "見送り" };
+var RSVP_LABELS_JA = { yes: "出席", no: "欠席" };
 
 function spreadsheet_() {
   return SpreadsheetApp.getActiveSpreadsheet();
@@ -125,6 +128,42 @@ function refreshSheets_() {
       return [fmtTime_(l.at), userName(l.fromUserId), memberName(l.toMemberId), l.prospect, l.memo, STATUS_LABELS_JA[l.status] || "", fmtTime_(l.statusAt)].map(cell_);
     })
   );
+  writeSheet_(
+    "ありがとうマイル",
+    ["日時", "お礼をした人(仕事を受けた人)", "紹介してくれた人", "金額(円)", "メッセージ"],
+    (db.thanks || []).slice().reverse().map(function (t) {
+      return [fmtTime_(t.at), memberName(t.from), memberName(t.to), String(t.amount), t.message].map(cell_);
+    })
+  );
+  var events = (db.events || []).slice().sort(function (a, b) { return a.date < b.date ? 1 : -1; });
+  var rsvpRows = [];
+  events.forEach(function (e) {
+    members.forEach(function (m) {
+      var r = (e.rsvps || {})[m.id] || "";
+      var att = (e.attended || []).indexOf(m.id) !== -1;
+      if (!r && !att) return;
+      rsvpRows.push([e.date, e.title, m.name, m.team, RSVP_LABELS_JA[r] || "", att ? "出席済み" : ""].map(cell_));
+    });
+  });
+  writeSheet_("定例会の出欠", ["日付", "定例会", "氏名", "チーム", "出欠の回答", "出席コード"], rsvpRows);
+  var eventTitle = function (id) {
+    var e = events.filter(function (x) { return x.id === id; })[0];
+    return e ? e.date + " " + e.title : "";
+  };
+  writeSheet_(
+    "ビジター",
+    ["招待した日", "招待した人", "定例会", "お名前", "会社名", "事業内容", "連絡先", "ひとこと", "状況"],
+    (db.visitors || []).slice().reverse().map(function (v) {
+      return [fmtTime_(v.at), memberName(v.by), eventTitle(v.eventId), v.name, v.company, v.business, v.contact, v.message, VISITOR_LABELS_JA[v.status] || ""].map(cell_);
+    })
+  );
+  writeSheet_(
+    "1on1",
+    ["日付", "時刻", "メンバー", "相手", "場所", "状況"],
+    (db.oneOnOnes || []).slice().sort(function (a, b) { return a.date < b.date ? 1 : -1; }).map(function (o) {
+      return [o.date, o.time, memberName(o.a), memberName(o.b), o.place, { planned: "予定", done: "実施", cancelled: "中止" }[o.status] || ""].map(cell_);
+    })
+  );
 }
 
 function json_(obj) {
@@ -158,11 +197,12 @@ function doPost(e) {
 }
 
 function doGet() {
-  return json_({ success: true, data: { service: "BT-EX5 紹介先早見表 API", status: "ok" } });
+  return json_({ success: true, data: { service: "BT-EX5 会員サイト API", status: "ok" } });
 }
 
 // 初回に Apps Script のエディタから一度だけ実行する(権限の承認と、名簿の作成)
 function setup() {
+  SERVER_.handle({ action: "loginOptions" });
   SERVER_.handle({ action: "verifySession", sessionToken: "" });
   refreshSheets_();
   return "準備できました。名簿 " + (loadDb_().referralMembers || []).length + " 名";

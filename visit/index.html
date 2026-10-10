@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="referrer" content="no-referrer">
+  <meta name="robots" content="noindex">
+  <title>定例会のご案内 | BT-EX5</title>
+  <link rel="icon" type="image/svg+xml" href="../assets/bt-ex5-mark.svg?v=202610100110">
+  <meta name="theme-color" content="#1a0f0c">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Noto+Sans+JP:wght@400;700;900&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Noto+Sans+JP:wght@400;700;900&display=swap"></noscript>
+  <link rel="stylesheet" href="../auth/auth.css?v=202610100110">
+  <link rel="stylesheet" href="visit.css?v=202610100110">
+</head>
+<body>
+  <main class="auth-main">
+    <div class="auth-card visit-card">
+      <div class="auth-logo">
+        <img class="brand-mark" src="../assets/bt-ex5-mark.svg?v=202610100110" alt="" width="40" height="40">
+        <span class="brand-word"><span class="brand-name">BT-<em>EX5</em></span><span class="brand-sub">新潟・東京 紹介者制コミュニティ</span></span>
+      </div>
+
+      <p class="auth-lead" id="visit-status" role="status">ご案内を読み込んでいます…</p>
+
+      <div id="visit-content" hidden>
+        <p class="visit-from"><b id="visit-inviter"></b>さんから、定例会へのご招待です</p>
+        <h1 id="visit-title"></h1>
+        <dl class="visit-info">
+          <dt>日時</dt><dd id="visit-when"></dd>
+          <dt>場所</dt><dd id="visit-place"></dd>
+          <dt id="visit-fee-label">参加費</dt><dd id="visit-fee"></dd>
+        </dl>
+        <p class="visit-body" id="visit-body"></p>
+        <a id="visit-url" class="visit-link" target="_blank" rel="noopener" hidden>案内ページを見る</a>
+        <p class="visit-about">BT-EX5 は、新潟と東京の経営者が集まり、お互いのお客様を紹介し合うコミュニティです。はじめての方もお気軽にどうぞ。</p>
+
+        <form id="visit-form" novalidate>
+          <h2>参加を申し込む</h2>
+          <div class="auth-field"><label for="v-name">お名前 <span class="visit-req">必須</span></label><input type="text" id="v-name" maxlength="40" autocomplete="name" required></div>
+          <div class="auth-field"><label for="v-company">会社名・屋号</label><input type="text" id="v-company" maxlength="80" autocomplete="organization"></div>
+          <div class="auth-field"><label for="v-business">お仕事の内容</label><textarea id="v-business" rows="3" maxlength="300" placeholder="例:新潟市でリフォーム業をしています"></textarea></div>
+          <div class="auth-field"><label for="v-contact">連絡先(電話・メールなど)</label><input type="text" id="v-contact" maxlength="120" autocomplete="email"></div>
+          <div class="auth-field"><label for="v-message">ひとこと</label><textarea id="v-message" rows="2" maxlength="300" placeholder="ご質問などあれば"></textarea></div>
+          <p class="visit-note">ご入力の内容は、招待したメンバーと運営者だけが見られます。</p>
+          <button type="submit" class="auth-submit" id="visit-submit">申し込む</button>
+        </form>
+        <div id="visit-done" class="visit-done" hidden>
+          <b>お申し込みありがとうございます</b>
+          <p>当日お会いできるのを楽しみにしています。ご不明な点は、招待したメンバーにお気軽にお問い合わせください。</p>
+          <button type="button" class="auth-text-btn" id="visit-edit">入力した内容を直す</button>
+        </div>
+      </div>
+      <div id="visit-message" class="auth-message"></div>
+    </div>
+  </main>
+
+  <footer class="auth-footer">
+    <p class="site-copy">© 2026 BT-EX5</p>
+  </footer>
+
+  <script src="../referral/data.js?v=202610100110"></script>
+  <script src="../auth/server-core.js?v=202610100110"></script>
+  <script src="../auth/server-community.js?v=202610100110"></script>
+  <script src="../auth/mock-server.js?v=202610100110"></script>
+  <script src="../auth/api.js?v=202610100110"></script>
+  <script src="visit.js?v=202610100110"></script>
+</body>
+</html>

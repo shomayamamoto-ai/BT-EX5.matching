@@ -378,3 +378,12 @@ a.site-maker:hover span { text-decoration: underline; color: var(--accent); }
   box-shadow: 0 4px 12px rgba(30, 18, 10, 0.22);
 }
 a:hover > .brand-mark { transform: none; }
+
+/* ---------- ログイン方法の切り替え(お名前とパスワード / 共通パスコード) ---------- */
+.login-tabs { display: flex; gap: 4px; padding: 4px; margin-bottom: var(--space-2); background: #f6e9de; border-radius: 12px; }
+.login-tabs[hidden] { display: none; }
+.login-tabs button { flex: 1; min-height: 40px; border: none; border-radius: 9px; background: none; font: inherit; font-size: 13px; font-weight: 700; color: #7a655b; cursor: pointer; }
+.login-tabs button[aria-selected="true"] { background: #fff; color: var(--text); box-shadow: 0 2px 8px rgba(160, 90, 40, 0.12); }
+.setpw-name { font-weight: 800; font-size: 16px; margin-bottom: var(--space-2); }
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+#login-name, #invite-code, #setpw-password2 { width: 100%; }

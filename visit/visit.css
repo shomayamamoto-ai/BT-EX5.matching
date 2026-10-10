@@ -1,0 +1,19 @@
+/* ビジター向けの定例会案内・申込ページ */
+.visit-card { max-width: 520px; }
+.visit-card .auth-logo { justify-content: center; margin-bottom: 18px; }
+.visit-from { font-size: 13px; color: #7a655b; text-align: center; }
+.visit-card h1 { font-size: 22px; text-align: center; margin: 4px 0 14px; }
+.visit-info { display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; padding: 14px 16px; background: #fff8f2; border: 1px solid #f3e2d4; border-radius: 14px; font-size: 14px; }
+.visit-info dt { color: #a18a7e; font-weight: 700; }
+.visit-body { white-space: pre-wrap; font-size: 14px; margin: 12px 0; }
+.visit-body:empty { display: none; }
+.visit-link { display: inline-block; font-size: 13.5px; font-weight: 700; color: #e2532f; margin-bottom: 10px; }
+.visit-about { font-size: 13px; color: #7a655b; margin: 10px 0 18px; }
+#visit-form h2 { font-size: 16px; margin: 6px 0 12px; }
+#visit-form textarea { width: 100%; border: 1.5px solid #ead2bf; border-radius: 12px; padding: 10px 12px; font: inherit; font-size: 16px; resize: vertical; }
+#visit-form input { font-size: 16px; }
+.visit-req { font-size: 11px; color: #fff; background: #f4694b; border-radius: 4px; padding: 0 5px; margin-left: 4px; }
+.visit-note { font-size: 12px; color: #a18a7e; margin: 0 0 12px; }
+.visit-done { text-align: center; padding: 18px; background: #e8f4ee; color: #2f7a5b; border-radius: 14px; }
+.visit-done p { font-size: 13.5px; margin-top: 6px; color: #3a2b25; }
+[hidden] { display: none !important; }

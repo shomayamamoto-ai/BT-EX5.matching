@@ -330,18 +330,31 @@
       ${m.triggers.length ? section("こんな話が出たら", `<div class="ref-triggers">${m.triggers.map((t) => `<span class="ref-trigger">「${escapeHtml(t)}」</span>`).join("")}</div>`) : ""}
       ${m.note ? section("補足", text(m.note)) : ""}
       ${section("活動範囲", text(range, "未入力"))}
+      ${sheetSection(m)}
       <section class="md-sec md-memo">
         <h3>あなたのメモ<small>この端末だけに保存。本人や他の会員には見えません</small></h3>
         <textarea id="memoText" data-memo="${m.id}" rows="3" maxlength="1000" placeholder="例:10/9 の交流会で話した。来月に飲食店の開業予定。名刺交換済み">${escapeHtml(memos[m.id] || "")}</textarea>
         <p class="md-memo-state" id="memoState" aria-live="polite"></p>
       </section>
       ${partnersSection(m)}
+      ${m.id !== myMemberId ? `<nav class="md-app-actions" aria-label="この人との記録">
+        <a class="md-app-btn is-main" href="../app/#log/ref?new&amp;to=${encodeURIComponent(m.id)}">紹介を記録</a>
+        <a class="md-app-btn" href="../app/#talk/msg/new?to=${encodeURIComponent(m.id)}">メッセージ</a>
+        <a class="md-app-btn" href="../app/#log/1on1?new&amp;with=${encodeURIComponent(m.id)}">1on1を記録</a>
+      </nav>` : ""}
       <div class="md-actions">
         <button type="button" class="ref-btn" data-copy="${m.id}">紹介文をコピー</button>
         <button type="button" class="ref-btn ghost" data-ask="${m.id}">打診文をコピー</button>
         <button type="button" class="ref-btn ghost" data-link="${m.id}">この人のリンクをコピー</button>
         <button type="button" class="ref-btn ghost" data-close-detail>閉じる</button>
       </div>`;
+  }
+
+  // 1on1シート(強み・紹介のひとこと・注意点・目標・人柄)
+  function sheetSection(m) {
+    const rows = [["強み・選ばれる理由", m.strengths], ["紹介するときのひとこと", m.pitch], ["紹介の注意点・NG", m.ng], ["いまの目標", m.goals], ["人柄", m.personal]].filter((r) => r[1]);
+    if (!rows.length) return "";
+    return `<section class="md-sec md-sheet"><h3>1on1シート</h3><dl>${rows.map((r) => `<dt>${r[0]}</dt><dd>${escapeHtml(r[1])}</dd>`).join("")}</dl></section>`;
   }
 
   // この人と紹介し合えそうな人(詳細画面)

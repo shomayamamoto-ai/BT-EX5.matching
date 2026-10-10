@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="referrer" content="no-referrer">
   <title>ログイン | BT-EX5</title>
-  <link rel="icon" type="image/svg+xml" href="../assets/bt-ex5-mark.svg?v=202610100031">
+  <link rel="icon" type="image/svg+xml" href="../assets/bt-ex5-mark.svg?v=202610100110">
   <link rel="manifest" href="../manifest.webmanifest">
   <link rel="apple-touch-icon" href="../assets/icon-180.png">
   <meta name="theme-color" content="#1a0f0c">
@@ -13,26 +13,85 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Noto+Sans+JP:wght@400;700;900&display=swap" onload="this.onload=null;this.rel='stylesheet'">
   <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Noto+Sans+JP:wght@400;700;900&display=swap"></noscript>
-  <link rel="stylesheet" href="../auth/auth.css?v=202610100031">
-  <link rel="stylesheet" href="../opening/intro.css?v=202610100031">
+  <link rel="stylesheet" href="../auth/auth.css?v=202610100110">
+  <link rel="stylesheet" href="../opening/intro.css?v=202610100110">
 </head>
 <body>
   <main class="auth-main">
     <div class="auth-card">
       <a href="../referral/" class="auth-logo">
-        <img class="brand-mark" src="../assets/bt-ex5-mark.svg?v=202610100031" alt="" width="40" height="40">
+        <img class="brand-mark" src="../assets/bt-ex5-mark.svg?v=202610100110" alt="" width="40" height="40">
         <span class="brand-word"><span class="brand-name">BT-<em>EX5</em></span><span class="brand-sub">新潟・東京 紹介者制コミュニティ</span></span>
       </a>
 
       <h1>ログイン</h1>
-      <p class="auth-lead" id="login-lead">コミュニティのパスコードを入力してください。</p>
+      <p class="auth-lead" id="login-lead">お名前とパスワードを入力してください。</p>
 
-      <!-- 手順1: パスコード -->
-      <form id="login-form" novalidate>
+      <div class="login-tabs" role="tablist" id="login-tabs">
+        <button type="button" role="tab" id="tab-account" aria-selected="true" data-mode="account">お名前とパスワード</button>
+        <button type="button" role="tab" id="tab-passcode" aria-selected="false" data-mode="passcode">共通パスコード</button>
+      </div>
+
+      <!-- 会員ごとのアカウント -->
+      <form id="account-form" novalidate>
+        <div class="auth-field">
+          <label for="login-name">お名前</label>
+          <input type="text" id="login-name" name="username" autocomplete="username" required placeholder="例:山本 捷真">
+        </div>
+        <div class="auth-field">
+          <label for="login-password">パスワード</label>
+          <div class="password-row">
+            <input type="password" id="login-password" name="password" autocomplete="current-password" required>
+            <button type="button" class="password-toggle" data-toggle="login-password" aria-pressed="false" aria-label="パスワードを表示">表示</button>
+          </div>
+        </div>
+        <div class="remember-row">
+          <input type="checkbox" id="account-remember" name="remember" checked>
+          <label for="account-remember">ログイン状態を保持する</label>
+          <span class="remember-note">(オフ:12時間 / オン:30日)</span>
+        </div>
+        <button type="submit" id="account-submit" class="auth-submit" aria-busy="false">ログイン</button>
+        <button type="button" class="auth-text-btn" data-mode="invite">はじめての方・パスワードを忘れた方(招待コード)</button>
+      </form>
+
+      <!-- 招待コード → パスワードを決める -->
+      <form id="invite-form" novalidate hidden>
+        <div class="auth-field">
+          <label for="invite-code">招待コード</label>
+          <input type="text" id="invite-code" name="invite" autocomplete="one-time-code" autocapitalize="characters" spellcheck="false" required placeholder="例:ABCDE-FGH23">
+        </div>
+        <p class="member-note">招待コードは運営者から届きます。お持ちでない方は運営者にお問い合わせください。</p>
+        <button type="submit" id="invite-submit" class="auth-submit" aria-busy="false">次へ</button>
+        <button type="button" class="auth-text-btn" data-mode="account">ログインに戻る</button>
+      </form>
+      <form id="setpw-form" novalidate hidden>
+        <p class="setpw-name"><span id="setpw-name"></span>さん、ようこそ</p>
+        <input type="text" id="setpw-user" name="username" autocomplete="username" class="visually-hidden" tabindex="-1" aria-hidden="true">
+        <div class="auth-field">
+          <label for="setpw-password">パスワードを決めてください(8文字以上)</label>
+          <div class="password-row">
+            <input type="password" id="setpw-password" name="new-password" autocomplete="new-password" minlength="8" required>
+            <button type="button" class="password-toggle" data-toggle="setpw-password" aria-pressed="false" aria-label="パスワードを表示">表示</button>
+          </div>
+        </div>
+        <div class="auth-field">
+          <label for="setpw-password2">もう一度</label>
+          <input type="password" id="setpw-password2" autocomplete="new-password" required>
+        </div>
+        <div class="remember-row">
+          <input type="checkbox" id="setpw-remember" checked>
+          <label for="setpw-remember">ログイン状態を保持する</label>
+        </div>
+        <button type="submit" id="setpw-submit" class="auth-submit" aria-busy="false">決めてはじめる</button>
+        <p class="member-note">次からは「お名前」と、このパスワードでログインします。</p>
+      </form>
+
+      <!-- 共通パスコード(移行期間・運営者用) -->
+      <form id="login-form" novalidate hidden>
         <div class="auth-field">
           <label for="login-passcode">パスコード</label>
           <div class="password-row">
-            <input type="password" id="login-passcode" name="passcode" autocomplete="current-password" autocapitalize="off" spellcheck="false" required>
+            <input type="password" id="login-passcode" name="passcode" autocomplete="off" autocapitalize="off" spellcheck="false" required>
             <button type="button" id="password-toggle" class="password-toggle" aria-pressed="false" aria-label="パスコードを表示">表示</button>
           </div>
         </div>
@@ -59,7 +118,7 @@
 
       <div id="login-message" class="auth-message"></div>
 
-      <p class="auth-help">パスコードがわからない場合は、コミュニティの運営者にお問い合わせください。</p>
+      <p class="auth-help">ログインできない場合は、コミュニティの運営者にお問い合わせください。</p>
     </div>
   </main>
 
@@ -67,16 +126,17 @@
     <a href="../opening/">オープニングムービー</a><a href="../terms/">利用規約</a>
     <p class="site-copy">© 2026 BT-EX5</p>
     <p class="site-credit">Created by <a href="https://lumenium.net/?utm_source=bt-ex5&amp;utm_medium=referral&amp;utm_campaign=credit" target="_blank" rel="noopener">Shoma Yamamoto</a></p>
-    <a class="site-maker" href="https://lumenium.net/?utm_source=bt-ex5&amp;utm_medium=referral&amp;utm_campaign=footer_logo" target="_blank" rel="noopener"><img src="../assets/lumenium-logo.svg?v=202610100031" alt="Lumenium" width="115" height="24"><span>Webサイト・システム制作のご相談はこちら</span></a>
+    <a class="site-maker" href="https://lumenium.net/?utm_source=bt-ex5&amp;utm_medium=referral&amp;utm_campaign=footer_logo" target="_blank" rel="noopener"><img src="../assets/lumenium-logo.svg?v=202610100110" alt="Lumenium" width="115" height="24"><span>Webサイト・システム制作のご相談はこちら</span></a>
   </footer>
 
-  <script src="../referral/data.js?v=202610100031"></script>
-  <script src="../auth/server-core.js?v=202610100031"></script>
-  <script src="../auth/mock-server.js?v=202610100031"></script>
-  <script src="../auth/api.js?v=202610100031"></script>
-  <script src="../auth/session.js?v=202610100031"></script>
-  <script src="../auth/ui.js?v=202610100031"></script>
-  <script src="../auth/login.js?v=202610100031"></script>
-  <script src="../opening/intro.js?v=202610100031" data-autoplay></script>
+  <script src="../referral/data.js?v=202610100110"></script>
+  <script src="../auth/server-core.js?v=202610100110"></script>
+  <script src="../auth/server-community.js?v=202610100110"></script>
+  <script src="../auth/mock-server.js?v=202610100110"></script>
+  <script src="../auth/api.js?v=202610100110"></script>
+  <script src="../auth/session.js?v=202610100110"></script>
+  <script src="../auth/ui.js?v=202610100110"></script>
+  <script src="../auth/login.js?v=202610100110"></script>
+  <script src="../opening/intro.js?v=202610100110" data-autoplay></script>
 </body>
 </html>

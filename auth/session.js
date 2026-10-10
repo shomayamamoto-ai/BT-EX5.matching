@@ -19,8 +19,9 @@ const AuthSession = (function () {
   // 画面定義(SCREENS)から導出する。画面の追加はここに1行足すだけでよい
   // home(サイトの入口)は紹介先早見表
   const SCREENS = {
-    home: "../referral/",
-    portal: "../portal/",
+    home: "../app/",
+    app: "../app/",
+    portal: "../app/",
     referral: "../referral/",
     admin: "../admin/",
     profile: "../profile/",

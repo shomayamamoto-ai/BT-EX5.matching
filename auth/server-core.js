@@ -8,11 +8,16 @@
 // そのため同期処理だけで書き、ブラウザ固有の API(crypto.subtle・btoa など)は
 // 使わない。保存先と乱数は createServer({ load, save, randomBytes }) で受け取る。
 //
-// 認証: 会員登録はなく、コミュニティ共通のパスコードで入る。
-// パスコードが正しければ名簿から自分の名前を選んでセッションを発行する
-// (紹介の記録を本人名義で集計するため)。管理者用パスコードで入った
-// セッションだけが名簿を編集できる。失敗理由は AUTH_FAILED / LOCKED の2種、
-// verifySession の失敗は SESSION_INVALID 単一コード(§5.4 / §5.5)。
+// 認証は2通り。
+//   ・会員ごとのアカウント(本番): 運営者が発行した招待コードで本人がパスワードを決め、
+//     以後は「お名前 + パスワード」で入る。5回まちがえると15分ロック(本人ごと)。
+//   ・共通パスコード(移行期間用): パスコードが正しければ名簿から自分の名前を選ぶ。
+//     会員用パスコードは管理者が設定で止められる。管理者用パスコードは非常用に常に使える。
+// 管理者は、管理者用パスコードで入ったセッションか、管理者に指定された会員のアカウント。
+// 失敗理由は AUTH_FAILED / LOCKED、verifySession の失敗は SESSION_INVALID 単一コード(§5.4 / §5.5)。
+//
+// 機能の追加: BtexServerCore.registerModule(...) で操作(action)のまとまりを足せる
+// (auth/server-community.js が定例会・掲示板などを足す)。createServer より前に登録する。
 //
 // 紹介先早見表: 名簿の閲覧は会員、追加・編集・削除は管理者のみ。
 // 会員は自分のプロフィール(名前・所属チーム以外)だけを編集できる。
@@ -45,17 +50,41 @@ var BtexServerCore = (function () {
     INVALID_ACTION: "不明な操作が指定されました。",
     FORBIDDEN_ADMIN: "この操作は管理者のみ行えます。",
     SELF_REFERRAL: "ご自身への紹介は記録できません。",
+    ACCOUNT_FAILED: "お名前またはパスワードが正しくありません。",
+    INVITE_INVALID: "招待コードが正しくないか、期限が切れています。運営者に新しいコードをお願いしてください。",
+    PASSWORD_WEAK: "パスワードは8文字以上で、お名前とは違うものにしてください。",
+    PASSCODE_DISABLED: "共通パスコードでのログインは終了しました。お名前とパスワードでログインしてください。",
+    NOT_FOUND: "対象が見つかりませんでした。画面を読み込み直してください。",
+    CHECKIN_FAILED: "出席コードが正しくないか、受付時間外です。",
     SERVER_ERROR: "サーバーでエラーが発生しました。時間をおいて再度お試しください。",
   };
 
   // 紹介の対応状況(紹介を受けた本人が更新する)
-  var REFERRAL_STATUSES = ["new", "contacted", "won", "lost"];
+  // new 未対応 / contacted 連絡済み / meeting 商談中 / won 成約 / lost 見送り
+  var REFERRAL_STATUSES = ["new", "contacted", "meeting", "won", "lost"];
+
+  // 会員アカウント
+  var INVITE_DAYS = 14;
+  var PASSWORD_ITERATIONS = 1500;
+  var INVITE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // 見まちがえやすい I・O・0・1 は使わない
 
   // 本人が編集できる項目(名前・所属チーム・ID は管理者のみ)
   var SELF_EDITABLE = [
     "company", "base", "category", "business", "customers", "offer", "selfIntro", "note", "wants", "triggers",
     "face", "faceAreas", "online", "topics", "targets", "prospects", "links",
+    "strengths", "pitch", "ng", "goals", "personal",
   ];
+
+  // 追加の機能(registerModule で登録)
+  var MODULES = [];
+  function registerModule(mod) { MODULES.push(mod); }
+
+  // お名前の照合用: 全角・半角、空白、大文字小文字の違いをそろえる
+  function normalizeName(v) {
+    var s = String(v || "");
+    if (s.normalize) s = s.normalize("NFKC");
+    return s.replace(/[\s\u3000・]/g, "").toLowerCase();
+  }
 
   // ---------- SHA-256(UTF-8 文字列 → 16進) ----------
   var K = [
@@ -127,6 +156,12 @@ var BtexServerCore = (function () {
     return out;
   }
 
+  function hashPassword(salt, password, iterations) {
+    var h = String(password);
+    for (var i = 0; i < iterations; i++) h = sha256Hex(salt + ":" + h);
+    return h;
+  }
+
   // データ定義(referral/data.js)は読み込まれていない環境もあるため typeof で参照する
   function dataList(name) {
     var lists = {
@@ -184,6 +219,9 @@ var BtexServerCore = (function () {
       });
       if (!db.referralLogs) { db.referralLogs = []; migrated = true; }
       if (!db.passcodeGuard) { db.passcodeGuard = { failures: 0, lockedUntil: 0 }; migrated = true; }
+      if (!db.inviteGuard) { db.inviteGuard = { failures: 0, lockedUntil: 0 }; migrated = true; }
+      if (!db.settings) { db.settings = { memberPasscode: true, admins: [] }; migrated = true; }
+      if (!Array.isArray(db.settings.admins)) { db.settings.admins = []; migrated = true; }
       db.referralLogs.forEach(function (l) {
         if (REFERRAL_STATUSES.indexOf(l.status) === -1) { l.status = "new"; migrated = true; }
       });
@@ -197,6 +235,7 @@ var BtexServerCore = (function () {
       }
       if (applySeedRevisions(db)) migrated = true;
       if (remapLegacyCategories(db)) migrated = true;
+      MODULE_INSTANCES.forEach(function (m) { if (m.migrate && m.migrate(db)) migrated = true; });
 
       if (migrated) saveDb(db);
       return db;
@@ -304,24 +343,31 @@ var BtexServerCore = (function () {
       return i < 0 ? null : list[i];
     }
 
-    function toPublicUser(u, session) {
-      // §5.3 の7フィールド。管理者かどうかはセッション単位(入ったパスコード)で決まる
+    // 管理者かどうか: 管理者用パスコードで入ったセッション、または管理者に指定された会員
+    function sessionIsAdmin(db, session, user) {
+      if (session.isAdmin === true) return true;
+      return !!(db.settings && db.settings.admins.indexOf(user.memberId) !== -1);
+    }
+
+    function toPublicUser(u, session, db) {
+      // §5.3 の7フィールド
+      var admin = db ? sessionIsAdmin(db, session, u) : session.isAdmin === true;
       return {
         userId: u.userId,
         email: "",
-        role: session.isAdmin ? "admin" : "member",
+        role: admin ? "admin" : "member",
         accountStatus: "active",
         subscriptionStatus: "active",
         paymentExempt: false,
-        isAdmin: session.isAdmin === true,
+        isAdmin: admin,
       };
     }
 
     function ok(data) { return { success: true, data: data }; }
-    function fail(code) {
+    function fail(code, message) {
       return {
         success: false,
-        error: { code: code || "UNKNOWN", message: ERRORS[code] || ERRORS.SERVER_ERROR },
+        error: { code: code || "UNKNOWN", message: message || ERRORS[code] || ERRORS.SERVER_ERROR },
       };
     }
 
@@ -333,7 +379,7 @@ var BtexServerCore = (function () {
       if (!user) return null;
       // 名簿から削除されたメンバーのセッションは無効
       if (db.referralMembers && !db.referralMembers.some(function (m) { return m.id === user.memberId; })) return null;
-      return { session: session, user: user };
+      return { session: session, user: user, isAdmin: sessionIsAdmin(db, session, user) };
     }
 
     function authUser(db, token) {
@@ -377,6 +423,10 @@ var BtexServerCore = (function () {
       }
       guard.failures = 0;
       guard.lockedUntil = 0;
+      if (role === "member" && db.settings.memberPasscode === false) {
+        saveDb(db);
+        return fail("PASSCODE_DISABLED");
+      }
 
       var roster = db.referralMembers || [];
       var memberId = String(body.memberId || "").trim();
@@ -403,26 +453,241 @@ var BtexServerCore = (function () {
         ? SESSION_REMEMBER_DAYS * 24 * 60 * 60 * 1000
         : SESSION_TTL_HOURS * 60 * 60 * 1000;
 
+      return issueSession(db, user, { isAdmin: role === "admin", remember: remember, userAgent: body.userAgent, via: "passcode" });
+    }
+
+    // セッションを発行して保存する(ログイン成功時の共通処理)
+    function issueSession(db, user, opt) {
+      var ttlMs = opt.remember
+        ? SESSION_REMEMBER_DAYS * 24 * 60 * 60 * 1000
+        : SESSION_TTL_HOURS * 60 * 60 * 1000;
       var token = randomToken();
       var session = {
         userId: user.userId,
-        isAdmin: role === "admin",
+        isAdmin: opt.isAdmin === true,
+        via: opt.via,
         issuedAt: nowMs(),
         expiresAt: nowMs() + ttlMs,
-        remember: remember,
+        remember: opt.remember,
         revoked: false,
-        userAgent: String(body.userAgent || "").slice(0, 300),
+        userAgent: String(opt.userAgent || "").slice(0, 300),
       };
       db.sessions[token] = session;
+      user.lastLoginAt = nowMs();
       saveDb(db);
-
       return ok({
         sessionToken: token,
         expiresAt: new Date(session.expiresAt).toISOString(),
-        remember: remember,
-        user: toPublicUser(user, session),
+        remember: opt.remember,
+        user: toPublicUser(user, session, db),
         displayName: user.name,
+        memberId: user.memberId,
       });
+    }
+
+    // ============================================
+    // 会員ごとのアカウント
+    // ============================================
+
+    function userForMember(db, member) {
+      var user = find(db.users, function (u) { return u.memberId === member.id; });
+      if (!user) {
+        user = { userId: "usr_" + randomHex(16), memberId: member.id, name: member.name, createdAt: nowMs() };
+        db.users.push(user);
+      }
+      user.name = member.name;
+      return user;
+    }
+
+    function inviteHash(code) {
+      return sha256Hex("invite:" + String(code || "").toUpperCase().replace(/[^A-Z0-9]/g, ""));
+    }
+
+    function findInvite(db, code) {
+      var h = inviteHash(code);
+      return find(db.users, function (u) { return u.invite && u.invite.hash === h && u.invite.expiresAt > nowMs(); });
+    }
+
+    // 招待コードの総当たりを防ぐ(全体で20回まちがえると15分止める)
+    function inviteGuardFail(db) {
+      var g = db.inviteGuard;
+      g.failures += 1;
+      if (g.failures >= 20) { g.lockedUntil = nowMs() + LOCK_DURATION_MINUTES * 60 * 1000; g.failures = 0; }
+      saveDb(db);
+      return fail(g.lockedUntil > nowMs() ? "LOCKED" : "INVITE_INVALID");
+    }
+
+    // ログイン画面の表示に使う(共通パスコードを受け付けているか)
+    function loginOptions() {
+      var db = ensureDb();
+      return ok({ memberPasscode: db.settings.memberPasscode !== false });
+    }
+
+    // 招待コードの確認 → 本人の名前を返す
+    function inviteInfo(body) {
+      var db = ensureDb();
+      if (db.inviteGuard.lockedUntil > nowMs()) return fail("LOCKED");
+      var user = findInvite(db, body.code);
+      if (!user) return inviteGuardFail(db);
+      return ok({ name: user.name, hasPassword: !!user.pw });
+    }
+
+    function passwordOk(password, name) {
+      var p = String(password || "");
+      return p.length >= 8 && p.length <= 128 && normalizeName(p) !== normalizeName(name);
+    }
+
+    function setPassword(user, password) {
+      var salt = randomHex(16);
+      user.pw = { salt: salt, iter: PASSWORD_ITERATIONS, hash: hashPassword(salt, password, PASSWORD_ITERATIONS) };
+      user.failures = 0;
+      user.lockedUntil = 0;
+    }
+
+    // 招待コードで本人がパスワードを決める(再発行されたコードならパスワードの再設定)
+    function activateAccount(body) {
+      var db = ensureDb();
+      if (db.inviteGuard.lockedUntil > nowMs()) return fail("LOCKED");
+      var user = findInvite(db, body.code);
+      if (!user) return inviteGuardFail(db);
+      if (!passwordOk(body.password, user.name)) return fail("PASSWORD_WEAK");
+      setPassword(user, body.password);
+      delete user.invite;
+      user.activatedAt = nowMs();
+      // パスワードを決め直したら、ほかの端末のログインは切る
+      Object.keys(db.sessions).forEach(function (t) { if (db.sessions[t].userId === user.userId) delete db.sessions[t]; });
+      return issueSession(db, user, { remember: body.remember === true, userAgent: body.userAgent, via: "account" });
+    }
+
+    function accountLogin(body) {
+      var db = ensureDb();
+      var key = normalizeName(body.name);
+      var password = String(body.password || "");
+      if (!key || !password) return fail("ACCOUNT_FAILED");
+      var candidates = (db.referralMembers || [])
+        .filter(function (m) { return normalizeName(m.name) === key; })
+        .map(function (m) { return find(db.users, function (u) { return u.memberId === m.id && u.pw; }); })
+        .filter(Boolean);
+      if (!candidates.length) return fail("ACCOUNT_FAILED");
+      if (candidates.every(function (u) { return (u.lockedUntil || 0) > nowMs(); })) return fail("LOCKED");
+      var user = null;
+      candidates.forEach(function (u) {
+        if (user || (u.lockedUntil || 0) > nowMs()) return;
+        if (hashPassword(u.pw.salt, password, u.pw.iter) === u.pw.hash) user = u;
+      });
+      if (!user) {
+        var locked = false;
+        candidates.forEach(function (u) {
+          u.failures = (u.failures || 0) + 1;
+          if (u.failures >= LOGIN_FAILURE_LIMIT) { u.lockedUntil = nowMs() + LOCK_DURATION_MINUTES * 60 * 1000; u.failures = 0; locked = true; }
+        });
+        saveDb(db);
+        return fail(locked ? "LOCKED" : "ACCOUNT_FAILED");
+      }
+      user.failures = 0;
+      user.lockedUntil = 0;
+      return issueSession(db, user, { remember: body.remember === true, userAgent: body.userAgent, via: "account" });
+    }
+
+    function changePassword(body) {
+      var db = ensureDb();
+      var a = authSession(db, body.sessionToken);
+      if (!a) return fail("SESSION_INVALID");
+      var user = a.user;
+      if (user.pw && hashPassword(user.pw.salt, String(body.current || ""), user.pw.iter) !== user.pw.hash) {
+        return fail("ACCOUNT_FAILED", "いまのパスワードが正しくありません。");
+      }
+      if (!passwordOk(body.password, user.name)) return fail("PASSWORD_WEAK");
+      setPassword(user, body.password);
+      user.activatedAt = user.activatedAt || nowMs();
+      // このセッション以外のログインは切る
+      Object.keys(db.sessions).forEach(function (t) {
+        if (db.sessions[t].userId === user.userId && t !== String(body.sessionToken)) delete db.sessions[t];
+      });
+      saveDb(db);
+      return ok({});
+    }
+
+    // 招待コードを発行する(コードはこのときだけ返す。保存するのはハッシュだけ)
+    function adminIssueInvite(body) {
+      var db = ensureDb();
+      var auth = requireAdmin(db, body.sessionToken);
+      if (auth.error) return auth.error;
+      var ids = Array.isArray(body.memberIds) ? body.memberIds : [body.memberId];
+      var out = [];
+      ids.slice(0, 500).forEach(function (raw) {
+        var id = cleanStr(raw, 40);
+        var member = find(db.referralMembers || [], function (m) { return m.id === id; });
+        if (!member) return;
+        var user = userForMember(db, member);
+        var code = env.randomBytes(10).map(function (b) { return INVITE_ALPHABET[b % INVITE_ALPHABET.length]; }).join("");
+        code = code.slice(0, 5) + "-" + code.slice(5);
+        user.invite = { hash: inviteHash(code), expiresAt: nowMs() + INVITE_DAYS * 24 * 60 * 60 * 1000, issuedAt: nowMs() };
+        out.push({ memberId: member.id, name: member.name, code: code, expiresAt: user.invite.expiresAt, reset: !!user.pw });
+      });
+      if (!out.length) return fail("NOT_FOUND");
+      saveDb(db);
+      return ok({ invites: out });
+    }
+
+    function adminListAccounts(body) {
+      var db = ensureDb();
+      var auth = requireAdmin(db, body.sessionToken);
+      if (auth.error) return auth.error;
+      var accounts = (db.referralMembers || []).map(function (m) {
+        var u = find(db.users, function (x) { return x.memberId === m.id; });
+        var status = u && u.pw ? "active" : u && u.invite && u.invite.expiresAt > nowMs() ? "invited" : u && u.invite ? "expired" : "none";
+        return {
+          memberId: m.id,
+          name: m.name,
+          team: m.team,
+          status: status,
+          inviteExpiresAt: u && u.invite ? u.invite.expiresAt : 0,
+          activatedAt: (u && u.activatedAt) || 0,
+          lastLoginAt: (u && u.lastLoginAt) || 0,
+          locked: !!(u && u.lockedUntil > nowMs()),
+          admin: db.settings.admins.indexOf(m.id) !== -1,
+        };
+      });
+      return ok({ accounts: accounts, settings: { memberPasscode: db.settings.memberPasscode !== false } });
+    }
+
+    function adminSetSettings(body) {
+      var db = ensureDb();
+      var auth = requireAdmin(db, body.sessionToken);
+      if (auth.error) return auth.error;
+      if (typeof body.memberPasscode === "boolean") db.settings.memberPasscode = body.memberPasscode;
+      saveDb(db);
+      return ok({ settings: { memberPasscode: db.settings.memberPasscode !== false } });
+    }
+
+    function adminSetAdmin(body) {
+      var db = ensureDb();
+      var auth = requireAdmin(db, body.sessionToken);
+      if (auth.error) return auth.error;
+      var id = cleanStr(body.memberId, 40);
+      if (!find(db.referralMembers || [], function (m) { return m.id === id; })) return fail("NOT_FOUND");
+      db.settings.admins = db.settings.admins.filter(function (x) { return x !== id; });
+      if (body.admin === true) db.settings.admins.push(id);
+      saveDb(db);
+      return ok({ admins: db.settings.admins });
+    }
+
+    // ロックの解除・ログアウトさせる(端末をなくしたときなど)
+    function adminResetAccount(body) {
+      var db = ensureDb();
+      var auth = requireAdmin(db, body.sessionToken);
+      if (auth.error) return auth.error;
+      var id = cleanStr(body.memberId, 40);
+      var user = find(db.users, function (u) { return u.memberId === id; });
+      if (!user) return fail("NOT_FOUND");
+      user.failures = 0;
+      user.lockedUntil = 0;
+      if (body.signOut === true) {
+        Object.keys(db.sessions).forEach(function (t) { if (db.sessions[t].userId === user.userId) delete db.sessions[t]; });
+      }
+      saveDb(db);
+      return ok({});
     }
 
     // ---------- verifySession(失敗は常に SESSION_INVALID §5.5) ----------
@@ -435,9 +700,10 @@ var BtexServerCore = (function () {
       return ok({
         expiresAt: new Date(a.session.expiresAt).toISOString(),
         remember: a.session.remember,
-        user: toPublicUser(a.user, a.session),
+        user: toPublicUser(a.user, a.session, db),
         displayName: a.user.name,
         memberId: a.user.memberId,
+        hasPassword: !!a.user.pw,
       });
     }
 
@@ -501,6 +767,12 @@ var BtexServerCore = (function () {
         targets: cleanList(m.targets, industries ? industries.concat("any") : null, 10),
         prospects: cleanList(m.prospects, idsOf("PROSPECTS"), 3),
         links: cleanLinks(m.links),
+        // 1on1シート(人柄が伝わる項目)
+        strengths: cleanStr(m.strengths, 400),
+        pitch: cleanStr(m.pitch, 200),
+        ng: cleanStr(m.ng, 300),
+        goals: cleanStr(m.goals, 300),
+        personal: cleanStr(m.personal, 400),
       };
     }
 
@@ -531,7 +803,7 @@ var BtexServerCore = (function () {
     function requireAdmin(db, token) {
       var a = authSession(db, token);
       if (!a) return { error: fail("SESSION_INVALID") };
-      if (!a.session.isAdmin) return { error: fail("FORBIDDEN_ADMIN") };
+      if (!a.isAdmin) return { error: fail("FORBIDDEN_ADMIN") };
       return { user: a.user };
     }
 
@@ -571,7 +843,9 @@ var BtexServerCore = (function () {
       var requestedId = cleanStr(body.member && body.member.id, 40);
       var index = findIndex(db.referralMembers, function (x) { return x.id === requestedId; });
       var id = index >= 0 ? requestedId : "m_" + randomHex(5);
-      var member = sanitizeReferralMember(body.member, id);
+      // 送られてこなかった項目(1on1シートなど)は今の値を残す
+      var input = index >= 0 ? Object.assign({}, db.referralMembers[index], body.member || {}) : body.member;
+      var member = sanitizeReferralMember(input, id);
       if (!member.name) return fail("INVALID_REQUEST");
       member.editedAt = nowMs();
       member.editedBy = "admin";
@@ -636,6 +910,8 @@ var BtexServerCore = (function () {
         fromUserId: me.userId,
         toMemberId: member.id,
         prospect: cleanStr(body.prospect, 60),
+        // 紹介した相手の連絡先: 紹介した人と紹介を受けた人だけが見る
+        contact: cleanStr(body.contact, 120),
         memo: cleanStr(body.memo, 300),
         topics: cleanList(body.topics, idsOf("TOPICS"), 10),
         status: "new",
@@ -734,7 +1010,7 @@ var BtexServerCore = (function () {
           .slice(-30)
           .reverse()
           .map(function (l) {
-            return { id: l.id, fromName: giverName(l.fromUserId), prospect: l.prospect, memo: l.memo || "", topics: l.topics || [], status: l.status, at: l.at };
+            return { id: l.id, fromName: giverName(l.fromUserId), prospect: l.prospect, contact: l.contact || "", memo: l.memo || "", topics: l.topics || [], status: l.status, at: l.at };
           }),
       });
     }
@@ -752,7 +1028,31 @@ var BtexServerCore = (function () {
       deleteReferral: deleteReferral,
       updateReferralStatus: updateReferralStatus,
       getReferralStats: getReferralStats,
+      loginOptions: loginOptions,
+      inviteInfo: inviteInfo,
+      activateAccount: activateAccount,
+      accountLogin: accountLogin,
+      changePassword: changePassword,
+      adminIssueInvite: adminIssueInvite,
+      adminListAccounts: adminListAccounts,
+      adminSetSettings: adminSetSettings,
+      adminSetAdmin: adminSetAdmin,
+      adminResetAccount: adminResetAccount,
     };
+
+    // 追加の機能に渡す道具
+    var ctx = {
+      ensureDb: ensureDb, saveDb: saveDb, ok: ok, fail: fail, nowMs: nowMs,
+      randomHex: randomHex, randomToken: randomToken, sha256Hex: sha256Hex,
+      authSession: authSession, requireAdmin: requireAdmin,
+      cleanStr: cleanStr, cleanList: cleanList, find: find, findIndex: findIndex,
+      dataList: dataList, idsOf: idsOf, clone: clone, ERRORS: ERRORS,
+    };
+    var MODULE_INSTANCES = MODULES.map(function (m) {
+      var inst = m.create(ctx) || {};
+      Object.keys(inst.actions || {}).forEach(function (name) { ACTIONS[name] = inst.actions[name]; });
+      return inst;
+    });
 
     function handle(body) {
       try {
@@ -769,15 +1069,22 @@ var BtexServerCore = (function () {
     return { handle: handle };
   }
 
+  // 書き込みを伴う操作(共有サーバーでスプレッドシートの一覧を更新する対象)
+  var MUTATING_ACTIONS = [
+    "updateMyProfile", "adminSaveReferralMember", "adminDeleteReferralMember", "adminImportReferralMembers",
+    "recordReferral", "deleteReferral", "updateReferralStatus",
+  ];
+
   return {
     createServer: createServer,
+    registerModule: function (mod) {
+      registerModule(mod);
+      (mod.mutating || []).forEach(function (a) { MUTATING_ACTIONS.push(a); });
+    },
     sha256Hex: sha256Hex,
+    normalizeName: normalizeName,
     ERRORS: ERRORS,
     REFERRAL_STATUSES: REFERRAL_STATUSES,
-    // 書き込みを伴う操作(共有サーバーでスプレッドシートの一覧を更新する対象)
-    MUTATING_ACTIONS: [
-      "updateMyProfile", "adminSaveReferralMember", "adminDeleteReferralMember", "adminImportReferralMembers",
-      "recordReferral", "deleteReferral", "updateReferralStatus",
-    ],
+    MUTATING_ACTIONS: MUTATING_ACTIONS,
   };
 })();

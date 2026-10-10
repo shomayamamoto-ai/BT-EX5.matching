@@ -9,6 +9,8 @@
 
   const $ = (sel) => document.querySelector(sel);
   const form = $("#profileForm");
+  // 1on1シートの項目
+  const SHEET_FIELDS = ["strengths", "pitch", "ng", "goals", "personal"];
   let me = null;
 
   function escapeHtml(s) {
@@ -47,7 +49,7 @@
   }
 
   function fill(m) {
-    ["company", "category", "base", "business", "customers", "offer", "selfIntro", "note", "wants", "face", "online"].forEach((k) => {
+    ["company", "category", "base", "business", "customers", "offer", "selfIntro", "note", "wants", "face", "online", ...SHEET_FIELDS].forEach((k) => {
       form.elements[k].value = m[k] || "";
     });
     if (!form.elements.online.value) form.elements.online.value = "unknown";
@@ -80,6 +82,7 @@
       targets: checked("targets"),
       prospects: checked("prospects"),
       links: LinksEditor.read($("#fLinks")).links,
+      ...Object.fromEntries(SHEET_FIELDS.map((k) => [k, v(k)])),
     };
   }
 

@@ -7,7 +7,7 @@
   <meta name="robots" content="noindex">
   <title>自分の情報を編集 | BT-EX5</title>
   <style>html.guard-pending body { visibility: hidden; } html.guard-pending::after { content: "読み込み中…"; position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; font: 700 15px sans-serif; color: #a18a7e; background: #fff8f2; }</style>
-  <link rel="icon" type="image/svg+xml" href="../assets/bt-ex5-mark.svg?v=202610100031">
+  <link rel="icon" type="image/svg+xml" href="../assets/bt-ex5-mark.svg?v=202610100110">
   <link rel="manifest" href="../manifest.webmanifest">
   <link rel="apple-touch-icon" href="../assets/icon-180.png">
   <meta name="theme-color" content="#1a0f0c">
@@ -15,22 +15,23 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" onload="this.onload=null;this.rel='stylesheet'">
   <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Noto+Sans+JP:wght@400;500;700;900&display=swap"></noscript>
-  <link rel="stylesheet" href="../referral/referral.css?v=202610100031">
-  <link rel="stylesheet" href="../admin/admin.css?v=202610100031">
-  <link rel="stylesheet" href="profile.css?v=202610100031">
-  <link rel="stylesheet" href="../opening/intro.css?v=202610100031">
+  <link rel="stylesheet" href="../referral/referral.css?v=202610100110">
+  <link rel="stylesheet" href="../admin/admin.css?v=202610100110">
+  <link rel="stylesheet" href="profile.css?v=202610100110">
+  <link rel="stylesheet" href="../opening/intro.css?v=202610100110">
+  <link rel="stylesheet" href="../app/nav.css?v=202610100110">
 </head>
 <body>
 
   <header class="ref-header">
     <div class="ref-header-inner">
       <a href="../referral/" class="ref-logo">
-        <img class="brand-mark" src="../assets/bt-ex5-mark.svg?v=202610100031" alt="" width="40" height="40">
+        <img class="brand-mark" src="../assets/bt-ex5-mark.svg?v=202610100110" alt="" width="40" height="40">
         <span class="brand-word"><span class="brand-name">BT-<em>EX5</em></span><span class="brand-sub">新潟・東京 紹介者制コミュニティ</span></span>
       </a>
       <nav class="ref-header-nav">
         <a href="../referral/" class="ref-header-link">紹介先早見表</a>
-        <a href="../portal/" class="ref-header-link">マイページ</a>
+        <a href="../app/" class="ref-header-link">ホーム</a>
         <button type="button" class="op-movie-btn" data-open-movie aria-label="オープニングムービーを見る" title="オープニングムービーを見る"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 1.2v9.6L10.6 6z"/></svg><span>ムービー</span></button>
       </nav>
     </div>
@@ -54,7 +55,7 @@
     </section>
 
     <nav class="prof-jump" aria-label="入力する項目へ移動">
-      <a href="#pfBasic">基本情報</a><a href="#pfContent">早見表の内容</a><a href="#pfRange">活動範囲</a><a href="#pfLinks">資料・リンク</a><a href="#pfDiag">できること</a>
+      <a href="#pfBasic">基本情報</a><a href="#pfContent">早見表の内容</a><a href="#pfSheet">1on1シート</a><a href="#pfRange">活動範囲</a><a href="#pfLinks">資料・リンク</a><a href="#pfDiag">できること</a>
     </nav>
 
     <form id="profileForm" class="prof-form" novalidate>
@@ -77,6 +78,16 @@
         <label class="adm-field">こんな話が出たら(1行に1つ)<span class="prof-hint">会話でこの言葉が出たら自分を思い出してほしい、というキーワードです。</span><textarea name="triggers" rows="4"></textarea></label>
         <label class="adm-field">紹介特典<span class="prof-hint">BT-EX5のメンバーから紹介されたお客様への特典です。例:初回相談無料、初回10%オフ、無料診断。紹介文にも入るので、紹介されたお客様が動きやすくなります。</span><textarea name="offer" rows="2" maxlength="120"></textarea></label>
         <label class="adm-field">補足(料金・返信の早さなど)<textarea name="note" rows="2" maxlength="300"></textarea></label>
+      </fieldset>
+
+      <fieldset class="adm-group" id="pfSheet">
+        <legend>1on1シート(人柄と、紹介のコツ)</legend>
+        <p class="prof-hint">1on1 の前に相手が読む内容です。メンバーがあなたを紹介するときの「ひとこと」にも使われます。</p>
+        <label class="adm-field">強み・選ばれる理由<span class="prof-hint">同業の中で、あなたが選ばれる理由は?</span><textarea name="strengths" rows="3" maxlength="400"></textarea></label>
+        <label class="adm-field">紹介するときのひとこと<span class="prof-hint">例:「HPで問い合わせを増やしたいなら、まず〇〇さんに聞いてみて」</span><textarea name="pitch" rows="2" maxlength="200"></textarea></label>
+        <label class="adm-field">紹介の注意点・NG<span class="prof-hint">例:個人のお客様は受けていません / 新潟県外は対応できません</span><textarea name="ng" rows="2" maxlength="300"></textarea></label>
+        <label class="adm-field">いまの目標<span class="prof-hint">例:今年中に県央エリアの取引先を10社増やす</span><textarea name="goals" rows="2" maxlength="300"></textarea></label>
+        <label class="adm-field">人柄(出身・趣味・家族・好きなこと)<span class="prof-hint">共通点が見つかると、つながりが深まります。</span><textarea name="personal" rows="3" maxlength="400"></textarea></label>
       </fieldset>
 
       <fieldset class="adm-group" id="pfRange">
@@ -128,18 +139,20 @@
     <nav class="ref-footer-nav"><a href="../terms/">利用規約</a></nav>
     <p>© 2026 BT-EX5</p>
     <p class="site-credit">Created by <a href="https://lumenium.net/?utm_source=bt-ex5&amp;utm_medium=referral&amp;utm_campaign=credit" target="_blank" rel="noopener">Shoma Yamamoto</a></p>
-    <a class="site-maker" href="https://lumenium.net/?utm_source=bt-ex5&amp;utm_medium=referral&amp;utm_campaign=footer_logo" target="_blank" rel="noopener"><img src="../assets/lumenium-logo.svg?v=202610100031" alt="Lumenium" width="115" height="24"><span>Webサイト・システム制作のご相談はこちら</span></a>
+    <a class="site-maker" href="https://lumenium.net/?utm_source=bt-ex5&amp;utm_medium=referral&amp;utm_campaign=footer_logo" target="_blank" rel="noopener"><img src="../assets/lumenium-logo.svg?v=202610100110" alt="Lumenium" width="115" height="24"><span>Webサイト・システム制作のご相談はこちら</span></a>
   </footer>
 
   <div class="ref-toast" id="refToast" role="status" hidden></div>
 
-  <script src="../referral/data.js?v=202610100031"></script>
-  <script src="../auth/server-core.js?v=202610100031"></script>
-  <script src="../auth/mock-server.js?v=202610100031"></script>
-  <script src="../auth/api.js?v=202610100031"></script>
-  <script src="../auth/session.js?v=202610100031"></script>
-  <script src="../referral/links-editor.js?v=202610100031"></script>
-  <script src="profile.js?v=202610100031"></script>
-  <script src="../opening/intro.js?v=202610100031"></script>
+  <script src="../referral/data.js?v=202610100110"></script>
+  <script src="../auth/server-core.js?v=202610100110"></script>
+  <script src="../auth/server-community.js?v=202610100110"></script>
+  <script src="../auth/mock-server.js?v=202610100110"></script>
+  <script src="../auth/api.js?v=202610100110"></script>
+  <script src="../auth/session.js?v=202610100110"></script>
+  <script src="../referral/links-editor.js?v=202610100110"></script>
+  <script src="profile.js?v=202610100110"></script>
+  <script src="../opening/intro.js?v=202610100110"></script>
+  <script src="../app/nav.js?v=202610100110" data-tab="me"></script>
 </body>
 </html>

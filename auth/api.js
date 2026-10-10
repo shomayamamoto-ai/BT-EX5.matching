@@ -20,6 +20,7 @@ const AuthApi = (function () {
     "AUTH_FAILED", "LOCKED", "SESSION_INVALID",
     "INVALID_REQUEST", "INVALID_ACTION", "RATE_LIMITED", "SERVER_ERROR",
     "FORBIDDEN_ADMIN", "SELF_REFERRAL",
+    "ACCOUNT_FAILED", "INVITE_INVALID", "PASSWORD_WEAK", "PASSCODE_DISABLED", "NOT_FOUND", "CHECKIN_FAILED",
   ]);
 
   // §5.6 フォールバック: message 欠落・未知コード → NETWORK_MESSAGE
@@ -96,8 +97,8 @@ const AuthApi = (function () {
   }
 
   // ---------- 紹介の記録 ----------
-  function recordReferral(sessionToken, toMemberId, prospect, topics, memo) {
-    return post("recordReferral", { sessionToken, toMemberId, prospect, topics, memo: memo || "" });
+  function recordReferral(sessionToken, toMemberId, prospect, topics, memo, contact) {
+    return post("recordReferral", { sessionToken, toMemberId, prospect, topics, memo: memo || "", contact: contact || "" });
   }
   // 紹介を受けた本人が対応状況を更新する(new / contacted / won / lost)
   function updateReferralStatus(sessionToken, id, status) {
@@ -110,8 +111,30 @@ const AuthApi = (function () {
     return post("getReferralStats", { sessionToken });
   }
 
+  // ---------- 会員アカウント ----------
+  function accountLogin(name, password, remember) {
+    return post("accountLogin", { name, password, remember: remember === true });
+  }
+  function inviteInfo(code) {
+    return post("inviteInfo", { code });
+  }
+  function activateAccount(code, password, remember) {
+    return post("activateAccount", { code, password, remember: remember === true });
+  }
+  function loginOptions() {
+    return post("loginOptions", {});
+  }
+
+  // ---------- そのほかの操作(定例会・掲示板など)。ログイン中のトークンを自動で付ける ----------
+  function call(action, payload) {
+    let sessionToken = "";
+    try { sessionToken = typeof AuthSession !== "undefined" ? AuthSession.getToken() : ""; } catch { sessionToken = ""; }
+    return post(action, Object.assign({ sessionToken }, payload || {}));
+  }
+
   return {
     passcodeLogin, verifySession, logout,
+    accountLogin, inviteInfo, activateAccount, loginOptions, call,
     listReferralMembers, updateMyProfile,
     adminSaveReferralMember, adminDeleteReferralMember, adminImportReferralMembers,
     recordReferral, deleteReferral, updateReferralStatus, getReferralStats,
