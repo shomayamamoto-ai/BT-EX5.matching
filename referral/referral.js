@@ -351,7 +351,6 @@
       ${partnersSection(m)}
       ${m.id !== myMemberId ? `<nav class="md-app-actions" aria-label="この人との記録">
         <a class="md-app-btn is-main" href="${escapeHtml(recordHref(m.id))}">紹介を記録</a>
-        <a class="md-app-btn" href="../app/#talk/msg/new?to=${encodeURIComponent(m.id)}">メッセージ</a>
         <a class="md-app-btn" href="../app/#log/1on1?new&amp;with=${encodeURIComponent(m.id)}">1on1を記録</a>
       </nav>` : ""}
       <div class="md-actions">

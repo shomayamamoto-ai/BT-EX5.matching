@@ -15,7 +15,8 @@
     { id: "search", label: "探す", href: new URL("../referral/", base).pathname, icon: "M10.5 4a6.5 6.5 0 1 0 4.03 11.6l4.43 4.43 1.41-1.41-4.43-4.43A6.5 6.5 0 0 0 10.5 4Zm0 2a4.5 4.5 0 1 1 0 9 4.5 4.5 0 0 1 0-9Z" },
     { id: "log", label: "記録", href: `${base.pathname}#log`, icon: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Zm1 4v4h4v2h-4v4h-2v-4H7v-2h4V7z" },
     { id: "events", label: "予定", href: `${base.pathname}#events`, icon: "M7 2v2H5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-2V2h-2v2H9V2zm-2 8h14v9H5z" },
-    { id: "talk", label: "つながる", href: `${base.pathname}#talk`, icon: "M4 4h16a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H8l-4 4V5a1 1 0 0 1 1-1Z" },
+    { id: "board", label: "掲示板", href: `${base.pathname}#board`, icon: "M4 3h16a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H8l-4 4V4a1 1 0 0 1 1-1Zm3 4v2h10V7Zm0 4v2h7v-2Z" },
+    { id: "news", label: "運営連絡", href: `${base.pathname}#news`, icon: "M3 10v4a1 1 0 0 0 1 1h2l5 4V5L6 9H4a1 1 0 0 0-1 1Zm13.5 2A4.5 4.5 0 0 0 14 8v8a4.5 4.5 0 0 0 2.5-4ZM14 3.2v2.1a7 7 0 0 1 0 13.4v2.1a9 9 0 0 0 0-17.6Z" },
   ];
   const NS = "http://www.w3.org/2000/svg";
 
@@ -43,7 +44,7 @@
       const label = document.createElement("span");
       label.textContent = t.label;
       a.append(svg, label);
-      const n = t.id === "talk" ? (badges.announcements || 0) + (badges.messages || 0) + (badges.board || 0)
+      const n = t.id === "news" ? badges.announcements || 0 : t.id === "board" ? badges.board || 0
         : t.id === "log" ? badges.inbox || 0 : t.id === "events" ? badges.rsvp || 0 : 0;
       if (n) {
         const b = document.createElement("span");

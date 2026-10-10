@@ -1,31 +1,30 @@
 // ============================================
-// app/talk.js — つながる(運営連絡・掲示板・メッセージ)
+// app/talk.js — 運営連絡・掲示板(下のメニューにそれぞれのタブ)
 // ============================================
 
 (function () {
   "use strict";
   const { h } = App;
 
+  // 運営連絡・掲示板は、下のメニューにそれぞれのタブを置く
+  App.views.news = {
+    title: "運営連絡",
+    autoRefresh: true,
+    async render(el, parts, params) { await renderNews(el, params); },
+  };
+  App.views.board = {
+    title: "掲示板",
+    autoRefresh: true,
+    async render(el, parts, params) { await renderBoard(el, params); },
+  };
+  // 以前のリンク(#talk/news・#talk/board・メッセージ)は、運営連絡・掲示板へ移す
   App.views.talk = {
-    title: "つながる",
-    // やりとりの画面は自分で新着を取りに行くので、一覧のときだけ戻ったら最新にする
-    autoRefresh: (parts) => !(parts[0] === "msg" && parts[1]),
+    title: "",
     async render(el, parts, params) {
-      const tab = ["news", "board", "msg"].includes(parts[0]) ? parts[0] : "news";
-      if (tab === "msg" && parts[1]) return renderThread(el, parts[1], params);
-      const home = await App.api("getHome", {}, { quiet: true });
-      const b = home ? home.badges : {};
-      if (home) App.setBadges(b);
-      el.append(App.segmented([
-        { id: "news", label: "運営連絡", badge: b.announcements },
-        { id: "board", label: "掲示板", badge: b.board },
-        { id: "msg", label: "メッセージ", badge: b.messages },
-      ], tab, (id) => App.go(`talk/${id}`)));
-      const body = h("div");
-      el.append(body);
-      if (tab === "news") await renderNews(body, params);
-      if (tab === "board") await renderBoard(body, params);
-      if (tab === "msg") await renderThreads(body);
+      const to = parts[0] === "news" ? "news" : "board";
+      const q = params.toString();
+      history.replaceState(null, "", `#${to}${q && parts[0] !== "msg" ? `?${q}` : ""}`);
+      await App.route();
     },
   };
 
@@ -57,7 +56,7 @@
           a.unreadNames && a.unreadNames.length ? App.btn(`未読の ${a.unreadNames.length} 名への声かけ文をコピー`, () => App.copyText([
             `【運営連絡を見てください】${a.title}`,
             `まだ見ていない方:${a.unreadNames.map((n) => `${n}さん`).join("、")}`,
-            App.siteUrl(`#talk/news?open=${a.id}`),
+            App.siteUrl(`#news?open=${a.id}`),
           ].join("\n"), "コピーしました。LINE グループなどに貼り付けてください"), "small") : null,
           App.btn("編集", () => annForm(a, d.cats), "ghost small"),
           App.btn("削除", async () => {
@@ -111,7 +110,7 @@
     el.append(h("div", { class: "board-cats" },
       [{ id: "", label: "すべて" }].concat(d.cats.map((c) => ({ id: c, label: c }))).map((c) => h("button", {
         type: "button", class: `app-pill${c.id === filter ? " is-on" : ""}`,
-        onclick: () => App.go(`talk/board${c.id ? `?cat=${encodeURIComponent(c.id)}` : ""}`),
+        onclick: () => App.go(`board${c.id ? `?cat=${encodeURIComponent(c.id)}` : ""}`),
       }, c.label))));
     const items = d.items.filter((p) => !filter || p.cat === filter);
     if (!items.length) { el.append(App.empty("まだ投稿がありません。紹介のお願いやイベントの告知、成約のお礼などを気軽にどうぞ。")); }
@@ -150,7 +149,6 @@
             const d = await App.api("likePost", { id: p.id });
             if (d) { Object.assign(p, d.item); draw(); }
           } }, p.liked ? "♥" : "♡", ` ${p.likes || ""}`),
-          p.by !== App.session.memberId ? h("button", { type: "button", class: "post-link", onclick: () => App.go(`talk/msg/new?to=${encodeURIComponent(p.by)}`) }, "メッセージ") : null,
           p.canDelete ? h("button", { type: "button", class: "post-link danger", onclick: async () => {
             if (!confirm("この投稿を削除しますか?")) return;
             if (await App.api("deletePost", { id: p.id })) card.closest("li").remove();
@@ -187,127 +185,8 @@
         App.clearDraft("board");
         close();
         App.toast("投稿しました");
-        App.go("talk/board");
+        App.go("board");
       } }, App.field("種類", chips), App.field("本文", text), h("button", { type: "submit", class: "app-btn primary wide" }, "投稿する")));
     }, { confirmClose: () => false });
-  }
-
-  // ============================================
-  // メッセージ
-  // ============================================
-  async function renderThreads(el) {
-    const d = await App.api("listThreads");
-    if (!d) return;
-    el.append(h("div", { class: "app-cta-row" }, App.btn("＋ 新しいメッセージ", () => App.go("talk/msg/new"), "primary wide")));
-    if (!d.threads.length) { el.append(App.empty("まだやりとりはありません。メンバーのプロフィールや掲示板から、気軽にメッセージを送れます。")); return; }
-    el.append(h("ul", { class: "app-list thread-list" }, d.threads.map((t) => h("li", null,
-      h("a", { class: `app-row${t.unread ? " is-unread" : ""}`, href: `#talk/msg/${t.id}` },
-        App.avatar(t.title),
-        h("span", { class: "app-row-main" }, h("b", null, t.title, t.group ? ` (${t.members.length})` : ""),
-          h("small", null, t.last ? `${t.last.mine ? "あなた: " : t.group ? `${t.last.byName}: ` : ""}${t.last.body}` : "")),
-        h("span", { class: "thread-side" }, h("small", null, t.last ? App.fmtTime(t.last.at) : ""), t.unread ? h("span", { class: "app-badge" }, String(t.unread)) : null))))));
-  }
-
-  // やりとりの画面。new なら相手を選んでから最初の1通で作る。開いている間は新着を取りに行く
-  async function renderThread(el, id, params) {
-    el.classList.add("is-thread");
-    el.append(h("a", { class: "app-back", href: "#talk/msg" }, "← メッセージ一覧"));
-    const isNew = id === "new";
-    const log = h("ol", { class: "msg-log", "aria-live": "polite" });
-    const head = h("div", { class: "msg-head" });
-    let picker = null;
-    let lastAt = 0;
-    let threadId = isNew ? "" : id;
-    let readUpTo = 0;
-    const seenIds = new Set();
-
-    if (isNew) {
-      const to = params.get("to");
-      picker = App.memberPicker({ multiple: true, value: to && App.memberById(to) ? [to] : [], exclude: [App.session.memberId], label: "送る相手" });
-      head.append(App.field("送る相手(複数選ぶとグループ)", picker));
-    }
-    function addMsgs(msgs) {
-      if (msgs.length) log.querySelectorAll(".app-empty").forEach((x) => x.remove());
-      msgs.forEach((m) => {
-        if (seenIds.has(m.id)) return;
-        seenIds.add(m.id);
-        lastAt = Math.max(lastAt, m.at);
-        log.append(h("li", { class: `msg${m.mine ? " is-mine" : ""}`, dataset: { at: String(m.at) } },
-          m.mine ? null : h("small", { class: "msg-name" }, m.byName),
-          h("div", { class: "msg-bubble" }, App.richText(m.body)),
-          h("small", { class: "msg-time" }, App.fmtTime(m.at))));
-      });
-      markRead();
-    }
-    function markRead() {
-      log.querySelectorAll(".msg.is-mine").forEach((li) => li.classList.toggle("is-read", Number(li.dataset.at) <= readUpTo));
-    }
-    async function load(initial) {
-      if (!threadId) return;
-      const d = await App.api("getThread", { id: threadId, since: initial ? 0 : lastAt }, { quiet: !initial });
-      if (!d) return;
-      if (initial) {
-        App.fill(head, h("h1", { class: "app-h1" }, d.title), d.members.length > 2 ? h("p", { class: "app-field-hint" }, d.members.map((m) => m.name).join("、")) : null);
-        document.getElementById("appTitle").textContent = d.title;
-      }
-      readUpTo = d.readUpTo;
-      const atBottom = window.innerHeight + window.scrollY >= document.body.scrollHeight - 80;
-      addMsgs(d.msgs);
-      if (initial || (atBottom && d.msgs.length)) requestAnimationFrame(() => window.scrollTo({ top: document.body.scrollHeight, behavior: "instant" }));
-    }
-
-    const input = h("textarea", { rows: "1", maxlength: "2000", placeholder: "メッセージを入力", "aria-label": "メッセージ" });
-    const grow = () => { input.style.height = "auto"; input.style.height = `${Math.min(140, input.scrollHeight)}px`; };
-    input.addEventListener("input", grow);
-    const draftName = isNew ? `msg-new-${params.get("to") || ""}` : `msg-${id}`;
-    // 決まった用件は文を用意しておく(1on1 の申し込み・紹介のその後)
-    App.draft(draftName, input);
-    const tpl = params.get("tpl");
-    if (input.value) { /* 書きかけを優先 */ } else if (isNew && tpl === "1on1") {
-      input.value = "はじめまして(いつもありがとうございます)。お互いの仕事をもっと知りたいので、30分ほど 1on1 をお願いできませんか?\n候補日:\n・\n・\nオンラインでも対面でも大丈夫です。";
-    } else if (isNew && tpl === "follow") {
-      const who = params.get("p");
-      input.value = `${who ? `先日ご紹介した${who}の件、` : "先日の紹介の件、"}その後いかがでしょうか?何かお手伝いできることがあれば教えてください。`;
-    }
-    requestAnimationFrame(grow);
-    // ひと言で返せる定型文(押すと入力欄に入る)
-    const PHRASES = ["ありがとうございます!", "承知しました。", "日程を調整させてください。候補日:", "ご紹介させていただきました。", "よろしくお願いします。"];
-    const quick = h("div", { class: "msg-quick", "aria-label": "定型文" }, PHRASES.map((t) => h("button", { type: "button", class: "app-pill", onclick: () => {
-      input.value = input.value ? `${input.value}${/\s$/.test(input.value) ? "" : "\n"}${t}` : t;
-      input.dispatchEvent(new Event("input"));
-      input.focus();
-    } }, t.replace(/。?候補日:$/, ""))));
-    const send = h("button", { type: "submit", class: "app-btn primary" }, "送信");
-    const form = h("form", { class: "msg-form", onsubmit: async (e) => {
-      e.preventDefault();
-      const text = input.value.trim();
-      if (!text) return;
-      const payload = { body: text };
-      if (threadId) payload.threadId = threadId;
-      else {
-        payload.to = picker.getValue();
-        if (!payload.to.length) { App.toast("送る相手を選んでください"); return; }
-      }
-      send.disabled = true;
-      const d = await App.api("sendMessage", payload);
-      send.disabled = false;
-      if (!d) return;
-      input.value = "";
-      input.style.height = "auto";
-      App.clearDraft(draftName);
-      if (!threadId) { threadId = d.threadId; history.replaceState(null, "", `#talk/msg/${threadId}`); App.route(); return; }
-      addMsgs([d.msg]);
-      window.scrollTo({ top: document.body.scrollHeight, behavior: "instant" });
-    } }, input, send);
-    // Enter で改行、Ctrl/⌘+Enter で送信
-    input.addEventListener("keydown", (e) => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); form.requestSubmit(); } });
-
-    el.append(head, log, quick, form);
-    await load(true);
-    if (!isNew && !log.children.length) log.append(h("li", { class: "app-empty" }, "まだメッセージはありません。"));
-
-    // 開いている間は 8 秒ごとに新着を確認(画面が隠れている間は止める)
-    const timer = setInterval(() => { if (!document.hidden) load(false); }, 8000);
-    return () => clearInterval(timer);
   }
 })();

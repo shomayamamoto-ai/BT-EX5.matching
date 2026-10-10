@@ -20,7 +20,6 @@
       case "visitor": return { icon: "🙋", title: `${x.text || "ビジター"}さんが定例会に申し込みました`, sub: "あなたの招待から" };
       case "ann": return { icon: "📣", title: "運営連絡", sub: x.text };
       case "post": return { icon: "📝", title: `${x.whoName}さんが掲示板に投稿しました`, sub: x.text };
-      case "msg": return { icon: "✉️", title: `${x.whoName}さんからメッセージ`, sub: x.text };
       case "event": return { icon: "📅", title: `定例会が追加されました(${App.fmtDate(x.date)})`, sub: x.text };
       default: return { icon: "・", title: x.type, sub: x.text || "" };
     }

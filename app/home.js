@@ -32,16 +32,13 @@
         todo.push(alertLink("#log/ref", `あなた宛ての紹介が ${d.badges.inbox} 件あります`, "連絡したら状況を「連絡済み」にしてください", "is-warn"));
       }
       if (d.badges.announcements) {
-        todo.push(alertLink("#talk/news", `運営からの連絡が ${d.badges.announcements} 件あります`, "未読のお知らせを確認してください"));
-      }
-      if (d.badges.messages) {
-        todo.push(alertLink("#talk/msg", `新しいメッセージが ${d.badges.messages} 件あります`, "メッセージを開く"));
+        todo.push(alertLink("#news", `運営からの連絡が ${d.badges.announcements} 件あります`, "未読のお知らせを確認してください"));
       }
       // 声かけが必要なこと
       (d.followUps || []).forEach((f) => {
         if (f.type === "givenStale") {
-          todo.push(alertLink(`#talk/msg/new?to=${encodeURIComponent(f.with)}&tpl=follow&p=${encodeURIComponent(f.prospect || "")}`,
-            `${f.withName}さんへの紹介が ${f.days} 日そのままです`, `${f.prospect || "紹介した方"}の件、ひと声かけましょう(メッセージを開く)`));
+          todo.push(alertLink(`../referral/#member=${encodeURIComponent(f.with)}`,
+            `${f.withName}さんへの紹介が ${f.days} 日そのままです`, `${f.prospect || "紹介した方"}の件、ひと声かけましょう(LINE などの連絡先を開く)`));
         } else if (f.type === "inboxStale") {
           todo.push(alertLink("#log/ref", `${f.withName}さんからの紹介に ${f.days} 日返事をしていません`, `${f.prospect || "紹介された方"}へ連絡したら「連絡済み」にしてください`, "is-warn"));
         } else if (f.type === "thanksMissing") {
@@ -71,7 +68,7 @@
           action("#log/miles?new", "ありがとうを送る", "紹介で決まった仕事のお礼", "M12 21s-7.5-4.6-9.3-9.4C1.4 8 3.6 4.5 7 4.5c2 0 3.4 1.1 5 3 1.6-1.9 3-3 5-3 3.4 0 5.6 3.5 4.3 7.1C19.5 16.4 12 21 12 21Z"),
           action("#log/1on1?new", "1on1を記録", "会った・会う予定", "M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm8 0a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM1 20c0-3.3 3.6-6 8-6s8 2.7 8 6v1H1zm16.5-5.9c2.9.4 5.5 2.4 5.5 4.9v1h-4.2c0-2.3-.5-4.3-1.3-5.9Z"),
           action("#invite", "ビジターを招待", "招待URLを送るだけ", "M15 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Zm-9-2V7H4v3H1v2h3v3h2v-3h3v-2Zm9 4c-2.7 0-8 1.3-8 4v2h16v-2c0-2.7-5.3-4-8-4Z"),
-          action("#talk/board?new", "掲示板に書く", "紹介依頼・募集・お礼", "M4 4h16v12H7l-3 3z"))));
+          action("#board?new", "掲示板に書く", "紹介依頼・募集・お礼", "M4 4h16v12H7l-3 3z"))));
 
       // ---------- BT-EX5 の中の順位(貢献ポイント) ----------
       if (d.teamRank) {
@@ -126,11 +123,11 @@
       el.append(App.section("運営連絡",
         d.announcements.length
           ? h("ul", { class: "app-list" }, d.announcements.map((a) => h("li", null,
-            h("a", { class: "app-row", href: `#talk/news?open=${encodeURIComponent(a.id)}` },
+            h("a", { class: "app-row", href: `#news?open=${encodeURIComponent(a.id)}` },
               h("span", { class: "app-row-main" }, h("b", null, a.pinned ? "📌 " : "", a.title), h("small", null, `${App.fmtTime(a.at)} ・ ${a.cat}`)),
               a.read ? null : App.chip("未読", "warn")))))
           : App.empty("運営からの連絡はまだありません。"),
-        h("a", { class: "app-more", href: "#talk/news" }, "すべての運営連絡 →")));
+        h("a", { class: "app-more", href: "#news" }, "すべての運営連絡 →")));
 
       // ---------- プロフィール ----------
       if (d.missing.length) {
@@ -148,7 +145,7 @@
           if (st.on || st.permission === "denied" || (!st.supported && !st.needsInstall)) return;
           slot.append(h("a", { class: "home-nudge", href: "#me/notify" },
             h("b", null, "🔔 スマホに通知を受け取る"),
-            h("span", null, st.needsInstall ? "iPhone はホーム画面に追加すると、紹介・メッセージ・掲示板の更新が通知で届きます" : "紹介・メッセージ・掲示板・お知らせが届いたら、すぐにわかります"),
+            h("span", null, st.needsInstall ? "iPhone はホーム画面に追加すると、紹介・掲示板・運営連絡の更新が通知で届きます" : "紹介・掲示板・運営連絡が届いたら、すぐにわかります"),
             h("span", { class: "home-nudge-go" }, "通知をオンにする →")));
         }).catch(() => {});
       }

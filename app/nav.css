@@ -5,13 +5,14 @@
 body.has-app-tabs { padding-bottom: calc(var(--app-tabs-h) + env(safe-area-inset-bottom, 0px)); }
 .app-tabs {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 45;
-  display: grid; grid-template-columns: repeat(5, 1fr);
+  display: grid; grid-template-columns: repeat(6, minmax(0, 1fr));
   height: calc(var(--app-tabs-h) + env(safe-area-inset-bottom, 0px)); padding-bottom: env(safe-area-inset-bottom, 0px);
   background: rgba(255, 255, 255, 0.96); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
   border-top: 1px solid #f3e2d4;
   font-family: "Inter", "Noto Sans JP", sans-serif;
 }
 .app-tab {
+  min-width: 0; white-space: nowrap;
   position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
   color: #a18a7e; text-decoration: none; font-size: 11px; font-weight: 800; line-height: 1.2;
 }
@@ -28,7 +29,7 @@ body.has-app-tabs .prof-actions { bottom: calc(var(--app-tabs-h) + env(safe-area
 body.has-app-tabs .ref-to-top { bottom: calc(var(--app-tabs-h) + 14px + env(safe-area-inset-bottom, 0px)); }
 body.has-app-tabs .ref-toast { bottom: calc(var(--app-tabs-h) + 18px + env(safe-area-inset-bottom, 0px)); }
 @media (min-width: 900px) {
-  .app-tabs { left: 50%; right: auto; width: 560px; transform: translateX(-50%); bottom: 14px; border: 1px solid #f3e2d4; border-radius: 20px; box-shadow: 0 10px 30px rgba(60, 30, 10, 0.12); height: var(--app-tabs-h); padding: 0; }
+  .app-tabs { left: 50%; right: auto; width: 640px; transform: translateX(-50%); bottom: 14px; border: 1px solid #f3e2d4; border-radius: 20px; box-shadow: 0 10px 30px rgba(60, 30, 10, 0.12); height: var(--app-tabs-h); padding: 0; }
   body.has-app-tabs { padding-bottom: calc(var(--app-tabs-h) + 30px); }
   body.has-app-tabs .prof-actions { bottom: calc(var(--app-tabs-h) + 24px); }
   body.has-app-tabs .ref-to-top { bottom: 24px; }

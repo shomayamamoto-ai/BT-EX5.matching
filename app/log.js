@@ -72,8 +72,7 @@
               draw();
             },
           }, App.REF_STATUS[s].label)),
-          h("button", { type: "button", class: `app-pill is-won${r.status === "won" ? " is-on" : ""}`, onclick: () => thanksForm({ referral: r, onDone: (t) => { r.status = "won"; r.thanksAmount = t.amount; draw(); } }) }, r.status === "won" ? "成約(お礼を直す)" : "成約 → お礼")),
-        App.btn(`${r.fromName}さんにメッセージ`, () => App.go(`talk/msg/new?to=${encodeURIComponent(r.fromId)}`), "ghost small"));
+          h("button", { type: "button", class: `app-pill is-won${r.status === "won" ? " is-on" : ""}`, onclick: () => thanksForm({ referral: r, onDone: (t) => { r.status = "won"; r.thanksAmount = t.amount; draw(); } }) }, r.status === "won" ? "成約(お礼を直す)" : "成約 → お礼")));
     }
     draw();
     return card;
@@ -263,7 +262,7 @@
         h("div", { class: "app-row" }, App.avatar(p.m.name),
           h("span", { class: "app-row-main" }, h("b", null, `${p.m.name}さん`), h("small", null, p.why))),
         h("div", { class: "rec-actions" },
-          h("a", { class: "app-btn small", href: `#talk/msg/new?to=${encodeURIComponent(p.m.id)}&tpl=1on1` }, "1on1 を申し込む"),
+          h("a", { class: "app-btn small", href: `#log/1on1?new&with=${encodeURIComponent(p.m.id)}` }, "1on1 を予定する"),
           h("a", { class: "app-btn ghost small", href: `../referral/#member=${encodeURIComponent(p.m.id)}` }, "プロフィール"))))));
   }
 

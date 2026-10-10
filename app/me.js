@@ -27,7 +27,7 @@
           e.currentTarget.querySelector("b").textContent = on ? "文字を元の大きさに戻す" : "文字を大きくする";
           App.toast(on ? "文字を大きくしました(この端末のすべての画面)" : "元の大きさに戻しました");
         } }, h("b", null, document.documentElement.classList.contains("big-text") ? "文字を元の大きさに戻す" : "文字を大きくする"), h("small", null, "小さい文字が読みにくいときに")),
-        menu("#me/notify", "通知を受け取る(iPhone・Android)", "紹介・メッセージ・掲示板・お知らせが届いたら、スマホに通知します"),
+        menu("#me/notify", "通知を受け取る(iPhone・Android)", "紹介・掲示板・運営連絡が届いたら、スマホに通知します"),
         menu("#me/calendar", "Google カレンダー・Meet の設定", "1on1 の招待を受け取るアドレスと、Meet で表示される名前(定例会の出欠に使います)"),
         menu("#invite", "ビジター招待", "招待URL の発行・そのまま使える文・招待履歴"),
         menu("#me/qr", "あなたのプロフィールの QR コード", "交流会でメンバーに読み取ってもらうと、あなたの詳細が開きます"),
@@ -149,7 +149,6 @@
         h("p", { class: "app-lead" }, "次のことがあると、この端末に通知が届きます。通知を押すと、その画面が開きます。"),
         h("ul", { class: "notify-list" },
           h("li", null, "🤝 あなたあての紹介・紹介した案件の進み具合"),
-          h("li", null, "✉️ メッセージ"),
           h("li", null, "📝 掲示板の新しい投稿・あなたの投稿へのコメント"),
           h("li", null, "📣 運営からのお知らせ・📅 定例会の予定"),
           h("li", null, "🎉 ありがとうマイル・☕ 1on1 の予定・🙋 ビジターの申込")),

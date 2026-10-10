@@ -106,7 +106,7 @@
         const list = h("ul", { class: "app-list" }, need.map((x, i) => h("li", { hidden: i >= 8 },
           h("div", { class: "app-row" }, App.avatar(x.m.name),
             h("span", { class: "app-row-main" }, h("b", null, x.m.name), h("small", null, x.f.join(" ・ "))),
-            h("a", { class: "app-btn ghost small", href: `#talk/msg/new?to=${encodeURIComponent(x.m.id)}` }, "連絡")))));
+            h("a", { class: "app-btn ghost small", href: `../referral/#member=${encodeURIComponent(x.m.id)}` }, "連絡先")))));
         const more = need.length > 8 ? App.btn(`残りの ${need.length - 8} 名も見る`, () => {
           list.querySelectorAll("li[hidden]").forEach((li) => { li.hidden = false; });
           more.remove();

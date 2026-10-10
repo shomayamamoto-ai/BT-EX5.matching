@@ -1973,7 +1973,6 @@ var BtexServerCore = (function () {
 //   1on1           list1on1 / save1on1 / delete1on1
 //   運営連絡       listAnnouncements / markAnnouncementsRead / adminSaveAnnouncement / adminDeleteAnnouncement
 //   掲示板         listBoard / createPost / deletePost / commentPost / deleteComment / likePost
-//   メッセージ     listThreads / getThread / sendMessage
 //   バグ・要望     sendFeedback / listMyFeedback / adminListFeedback / adminUpdateFeedback
 //
 // 人は名簿の ID(memberId)で持つ。日付は日本時間の "YYYY-MM-DD"。
@@ -2000,7 +1999,7 @@ var BtexServerCore = (function () {
       "reportThanks", "deleteThanks", "save1on1", "delete1on1",
     ],
     // 書き込みのあとに、通知(プッシュ)を送るか確かめる操作(mutating に加えて)
-    notifying: ["createPost", "commentPost", "sendMessage", "adminSaveAnnouncement"],
+    notifying: ["createPost", "commentPost", "adminSaveAnnouncement"],
     create: function (c) {
       function dateKey(ms) {
         var d = new Date(ms + JST);
@@ -3231,90 +3230,6 @@ var BtexServerCore = (function () {
       }
 
       // ============================================
-      // メッセージ(1対1・グループ)
-      // ============================================
-      function threadTitle(db, t, me) {
-        if (t.title) return t.title;
-        var others = t.members.filter(function (id) { return id !== me; }).map(function (id) { return nameOf(db, id); });
-        return others.join("、") || "自分だけ";
-      }
-      function unreadIn(t, me) {
-        var since = (t.read || {})[me] || 0;
-        return t.msgs.filter(function (m) { return m.by !== me && m.at > since; }).length;
-      }
-      function listThreads(body) {
-        var w = who(body);
-        if (w.error) return w.error;
-        var list = w.db.threads
-          .filter(function (t) { return t.members.indexOf(w.id) !== -1; })
-          .sort(function (a, b) { return b.at - a.at; })
-          .map(function (t) {
-            var last = t.msgs[t.msgs.length - 1];
-            return {
-              id: t.id, title: threadTitle(w.db, t, w.id), members: t.members, group: t.members.length > 2,
-              last: last ? { body: last.body.slice(0, 80), at: last.at, byName: nameOf(w.db, last.by), mine: last.by === w.id } : null,
-              at: t.at, unread: unreadIn(t, w.id),
-            };
-          });
-        return c.ok({ threads: list });
-      }
-      function getThread(body) {
-        var w = who(body);
-        if (w.error) return w.error;
-        var t = c.find(w.db.threads, function (x) { return x.id === body.id && x.members.indexOf(w.id) !== -1; });
-        if (!t) return c.fail("NOT_FOUND");
-        var since = Number(body.since) || 0;
-        var msgs = t.msgs.filter(function (m) { return m.at > since; }).slice(-200).map(function (m) {
-          return { id: m.id, by: m.by, byName: nameOf(w.db, m.by), body: m.body, at: m.at, mine: m.by === w.id };
-        });
-        t.read = t.read || {};
-        var lastAt = t.msgs.length ? t.msgs[t.msgs.length - 1].at : 0;
-        if ((t.read[w.id] || 0) < lastAt) { t.read[w.id] = lastAt; c.saveDb(w.db); }
-        // 相手がどこまで読んだか(1対1のときの既読表示)
-        var others = t.members.filter(function (id) { return id !== w.id; });
-        var readUpTo = others.length === 1 ? (t.read[others[0]] || 0) : 0;
-        return c.ok({
-          id: t.id, title: threadTitle(w.db, t, w.id),
-          members: t.members.map(function (id) { return { id: id, name: nameOf(w.db, id) }; }),
-          msgs: msgs, readUpTo: readUpTo,
-        });
-      }
-      // threadId があればそこへ、なければ同じ顔ぶれのやりとりを探して(なければ作って)送る
-      function sendMessage(body) {
-        var w = who(body);
-        if (w.error) return w.error;
-        var db = w.db;
-        var text = cleanText(body.body, 2000);
-        if (!text) return c.fail("INVALID_REQUEST", "メッセージを入れてください。");
-        var t;
-        if (body.threadId) {
-          t = c.find(db.threads, function (x) { return x.id === body.threadId && x.members.indexOf(w.id) !== -1; });
-          if (!t) return c.fail("NOT_FOUND");
-        } else {
-          var to = c.cleanList(body.to, null, 30).filter(function (id) { return id !== w.id && member(db, id); });
-          if (!to.length) return c.fail("INVALID_REQUEST", "送る相手を選んでください。");
-          var set = to.concat(w.id).sort();
-          var title = c.cleanStr(body.title, 40);
-          if (!title) {
-            t = c.find(db.threads, function (x) { return !x.title && x.members.slice().sort().join(",") === set.join(","); });
-          }
-          if (!t) {
-            t = { id: newId("th_"), members: set, title: title, msgs: [], read: {}, at: c.nowMs(), by: w.id };
-            db.threads.push(t);
-            trim(db.threads, LIMITS.threads);
-          }
-        }
-        var m = { id: newId("mg_"), by: w.id, body: text, at: c.nowMs() };
-        t.msgs.push(m);
-        trim(t.msgs, LIMITS.msgs);
-        t.at = m.at;
-        t.read = t.read || {};
-        t.read[w.id] = m.at;
-        c.saveDb(db);
-        return c.ok({ threadId: t.id, msg: { id: m.id, by: m.by, byName: w.me.name, body: m.body, at: m.at, mine: true } });
-      }
-
-      // ============================================
       // バグ・要望
       // ============================================
       function fbView(db, f, full) {
@@ -3470,12 +3385,12 @@ var BtexServerCore = (function () {
         });
         db.posts.forEach(function (p) {
           // 掲示板の新しい投稿(自分以外)
-          if (p.by !== me) items.push({ type: "post", at: p.at, who: p.by, whoName: nameOf(db, p.by), text: String(p.body).replace(/\s+/g, " ").slice(0, 60), cat: p.cat, link: "talk/board" });
+          if (p.by !== me) items.push({ type: "post", at: p.at, who: p.by, whoName: nameOf(db, p.by), text: String(p.body).replace(/\s+/g, " ").slice(0, 60), cat: p.cat, link: "board" });
           (p.comments || []).forEach(function (cm) {
             if (cm.by === me) return;
             var mine = p.by === me;
             var joined = !mine && (p.comments || []).some(function (x) { return x.by === me && x.at < cm.at; });
-            if (mine || joined) items.push({ type: mine ? "comment" : "reply", at: cm.at, who: cm.by, whoName: nameOf(db, cm.by), text: cm.body.slice(0, 60), link: "talk/board" });
+            if (mine || joined) items.push({ type: mine ? "comment" : "reply", at: cm.at, who: cm.by, whoName: nameOf(db, cm.by), text: cm.body.slice(0, 60), link: "board" });
           });
         });
         db.oneOnOnes.forEach(function (o) {
@@ -3485,17 +3400,7 @@ var BtexServerCore = (function () {
           if (v.by === me && v.appliedAt) items.push({ type: "visitor", at: v.appliedAt, text: v.name, link: "events" });
         });
         db.announcements.forEach(function (a) {
-          items.push({ type: "ann", at: a.at, text: a.title, link: "talk/news?open=" + a.id });
-        });
-        // メッセージ(自分あての最新の1通をやりとりごとに)
-        db.threads.forEach(function (t) {
-          if (t.members.indexOf(me) === -1) return;
-          for (var i = t.msgs.length - 1; i >= 0; i--) {
-            var m = t.msgs[i];
-            if (m.by === me) continue;
-            items.push({ type: "msg", at: m.at, who: m.by, whoName: nameOf(db, m.by), text: String(m.body).replace(/\s+/g, " ").slice(0, 60), link: "talk/msg/" + t.id });
-            break;
-          }
+          items.push({ type: "ann", at: a.at, text: a.title, link: "news?open=" + a.id });
         });
         db.events.forEach(function (e) {
           if (e.createdAt && e.date >= today()) items.push({ type: "event", at: e.createdAt, text: e.title, date: e.date, link: "events" });
@@ -3527,8 +3432,6 @@ var BtexServerCore = (function () {
           .filter(function (e) { return e.date >= t; })
           .sort(function (a, b) { return (a.date + a.start).localeCompare(b.date + b.start); });
         var unreadAnn = db.announcements.filter(function (a) { return (a.readBy || []).indexOf(w.id) === -1; });
-        var myThreads = db.threads.filter(function (x) { return x.members.indexOf(w.id) !== -1; });
-        var unreadMsgs = myThreads.reduce(function (s, x) { return s + unreadIn(x, w.id); }, 0);
         var lastBoard = seen(db, w.id).board || 0;
         var newPosts = db.posts.filter(function (p) { return p.by !== w.id && p.at > lastBoard; }).length;
         var myLogs = db.referralLogs.filter(function (l) { return memberIdOfUser(db, l.fromUserId) === w.id; });
@@ -3577,7 +3480,6 @@ var BtexServerCore = (function () {
           announcements: db.announcements.slice().sort(function (a, b) { return b.at - a.at; }).slice(0, 3).map(function (a) { return annView(w, a); }),
           badges: {
             announcements: unreadAnn.length,
-            messages: unreadMsgs,
             board: newPosts,
             inbox: inbox.filter(function (l) { return l.status === "new"; }).length,
             rsvp: upcoming.filter(function (e) { return !(e.rsvps || {})[w.id]; }).length,
@@ -3697,7 +3599,6 @@ var BtexServerCore = (function () {
           case "oneNew": return { title: "☕ " + n + "と1on1の予定", body: x.date || "" };
           case "visitor": return { title: "🙋 ビジターの申込がありました", body: x.text + " さん" };
           case "ann": return { title: "📣 運営からのお知らせ", body: x.text };
-          case "msg": return { title: "✉️ " + n + "からメッセージ", body: x.text };
           case "event": return { title: "📅 定例会の予定が出ました", body: (x.date || "") + " " + x.text };
           default: return { title: "BT-EX5", body: "新しいお知らせがあります" };
         }
@@ -3770,7 +3671,6 @@ var BtexServerCore = (function () {
           adminSaveAnnouncement: adminSaveAnnouncement, adminDeleteAnnouncement: adminDeleteAnnouncement,
           listBoard: listBoard, createPost: createPost, deletePost: deletePost, commentPost: commentPost,
           deleteComment: deleteComment, likePost: likePost,
-          listThreads: listThreads, getThread: getThread, sendMessage: sendMessage,
           sendFeedback: sendFeedback, listMyFeedback: listMyFeedback, adminListFeedback: adminListFeedback, adminUpdateFeedback: adminUpdateFeedback,
           pushConfig: pushConfig, savePushSubscription: savePushSubscription, deletePushSubscription: deletePushSubscription, pushPeek: pushPeek,
         },
