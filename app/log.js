@@ -243,7 +243,8 @@
       li.append(h("div", { class: "one-cal" },
         o.meetUrl ? h("a", { class: "app-btn small", href: o.meetUrl, target: "_blank", rel: "noopener" }, "Meet に参加") : null,
         o.synced && o.calLink ? h("a", { class: "app-btn ghost small", href: o.calLink, target: "_blank", rel: "noopener" }, "カレンダーで開く")
-          : App.calendarButtons({ uid: o.id, title: `1on1:${o.withName}さん`, date: o.date, start: o.time, end: o.end, endDate: o.endDate, place: o.mode === "meet" ? o.meetUrl || "Google Meet" : o.place })));
+          : App.calendarButtons({ uid: o.id, title: `1on1:${o.withName}さん`, date: o.date, start: o.time, end: o.end, endDate: o.endDate, place: o.mode === "meet" ? o.meetUrl || "Google Meet" : o.place }),
+        App.btn("相手に送る文をコピー", () => App.copyText(oneInviteText({ ...o, endNext: !!(o.endDate && o.endDate !== o.date) }), "コピーしました。LINE などに貼り付けて送ってください"), "ghost small")));
       return li;
     })) : App.empty("予定はありません。")));
     el.append(recommendSection(d.items));
@@ -341,12 +342,40 @@
     return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, "0")}-${String(x.getDate()).padStart(2, "0")}`;
   }
 
+  // 1on1 の相手に送る文(日時・場所・Meet の URL 入り)
+  function oneInviteText(x) {
+    const lines = [`${x.withName}さん`, "", "1on1 のお時間をいただき、ありがとうございます。下記でお願いします。", ""];
+    lines.push(`■ 日時:${App.fmtDate(x.date)} ${x.time ? `${x.time}〜${x.endNext ? "翌" : ""}${x.end}` : "(時刻はあらためてご相談させてください)"}`);
+    if (x.mode === "meet") {
+      lines.push("■ 場所:Google Meet(オンライン)");
+      if (x.meetUrl) lines.push(`■ 参加URL:${x.meetUrl}`);
+    } else {
+      lines.push(`■ 場所:${x.place || "(あらためてご相談させてください)"}`);
+    }
+    lines.push("", x.mode === "meet" && x.meetUrl ? "当日は上の URL から入ってください。どうぞよろしくお願いします!" : "どうぞよろしくお願いします!", App.session.displayName);
+    return lines.join("\n");
+  }
+  // 終わりの時刻(日付をまたぐときは endNext)
+  function oneEnd(time, minutes) {
+    if (!time) return { end: "", endNext: false };
+    const [hh, mm] = time.split(":").map(Number);
+    const m = hh * 60 + mm + minutes;
+    return { end: `${String(Math.floor(m / 60) % 24).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`, endNext: m >= 24 * 60 };
+  }
+  function oneCalItem(x) {
+    return {
+      uid: x.id || "", title: `1on1:${x.withName}さん`, date: x.date, start: x.time, end: x.end, endDate: x.endNext ? addDays(x.date, 1) : x.date,
+      place: x.mode === "meet" ? x.meetUrl || "Google Meet" : x.place,
+      body: x.mode === "meet" && x.meetUrl ? `Google Meet:${x.meetUrl}` : "",
+    };
+  }
+
   function oneForm(o, withId) {
     App.openSheet(o ? `${o.withName}さんとの 1on1` : "1on1 を予定・記録する", (body, close) => {
       const picker = o ? null : App.memberPicker({ value: withId && App.memberById(withId) ? withId : null, exclude: [App.session.memberId], label: "相手" });
       const today = App.todayKey();
       const date = h("input", { type: "date", value: o ? o.date : today, required: true });
-      const quick = h("div", { class: "app-chips" }, [["今日", 0], ["明日", 1], ["あさって", 2], ["1週間後", 7]].map(([label, n]) =>
+      const quick = h("div", { class: "app-chips" }, [["一昨日", -2], ["昨日", -1], ["今日", 0], ["明日", 1], ["あさって", 2]].map(([label, n]) =>
         h("button", { type: "button", class: "app-pill", onclick: () => { date.value = addDays(today, n); date.dispatchEvent(new Event("change")); } }, label)));
       const time = h("select", { "aria-label": "開始時刻" }, timeOptions());
       time.value = o ? o.time : "";
@@ -381,6 +410,35 @@
             App.meetHowTo(),
             meetUrl],
         o && o.meetUrl ? h("a", { class: "app-btn small", href: o.meetUrl, target: "_blank", rel: "noopener" }, "Meet に参加する") : null);
+      // 予定をカレンダーに入れる・相手に送る文をコピー(いまの入力から作る。保存の前でも使える)
+      const current = () => {
+        const withMember = o ? { name: o.withName } : App.memberById(picker.getValue());
+        const m = mode.getValue();
+        const url = (meetUrl.value.trim() || (o && o.meetUrl) || "");
+        return {
+          id: o ? o.id : "", withName: withMember ? withMember.name : "", date: date.value, time: time.value,
+          ...oneEnd(time.value, Number(duration.value)), mode: m, place: place.value.trim(), meetUrl: /^https:\/\//.test(url) ? url : "",
+        };
+      };
+      const check = (x, needTime) => {
+        if (!x.withName) { App.toast("相手を選んでください"); return false; }
+        if (!x.date) { App.toast("日付を入れてください"); return false; }
+        if (needTime && !x.time) { App.toast("開始時刻を選んでください"); return false; }
+        return true;
+      };
+      const sendBox = h("div", { class: "one-send" },
+        h("p", { class: "app-field-hint" }, "Meet を作ったら(または場所を決めたら)、自分のカレンダーに入れて、相手に日時と URL を送りましょう。"),
+        h("div", { class: "app-btn-row" },
+          App.btn("Google カレンダーに追加", () => {
+            const x = current();
+            if (!check(x, true)) return;
+            window.open(App.googleCalUrl(oneCalItem(x)), "_blank", "noopener");
+          }, "ghost small"),
+          App.btn("相手に送る文をコピー", () => {
+            const x = current();
+            if (!check(x, false)) return;
+            App.copyText(oneInviteText(x), "コピーしました。LINE などに貼り付けて送ってください");
+          }, "primary small")));
       const mode = toggleGroup([{ id: "onsite", label: "現地(対面)" }, { id: "meet", label: "Google Meet" }], o ? o.mode : "onsite", (v) => {
         onsiteBox.hidden = v !== "onsite";
         meetBox.hidden = v !== "meet";
@@ -420,6 +478,7 @@
       App.field("日付", h("div", null, date, quick)),
       h("div", { class: "app-grid2" }, App.field("開始時刻", time), App.field("時間", duration)), endNote,
       App.field("場所", h("div", null, mode, onsiteBox, meetBox)),
+      sendBox,
       o && o.awaiting ? h("p", { class: "one-ask-note" }, "予定の時刻を過ぎました。実施したら「実施した」を選んで保存してください(1on1 の回数に数えます)。") : null,
       App.field("状況", status, "予定の時刻を過ぎると「実施しましたか?」と確認が届きます。「実施した」と答えると 1on1 の回数に数えます(行わなかったときは「中止」に)"),
       App.field("メモ", note),
