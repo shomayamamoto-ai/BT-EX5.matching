@@ -699,3 +699,6 @@ html.big-text body { zoom: 1.15; }
 .ref-meet summary { cursor: pointer; padding: 10px 12px; font-weight: 800; color: var(--accent-dark); }
 .ref-meet > .app-field-hint, .ref-meet > .ref-meet-editor { padding: 0 12px 10px; }
 .ref-share { margin-top: 8px; flex-wrap: wrap; }
+
+/* 定例会の議事録 */
+.evd-minutes { border-left: 3px solid var(--accent); padding-left: 12px; }

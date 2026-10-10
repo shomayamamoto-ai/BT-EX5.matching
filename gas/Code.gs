@@ -2045,7 +2045,7 @@ var BtexServerCore = (function () {
       "reportThanks", "deleteThanks", "save1on1", "delete1on1", "confirm1on1",
     ],
     // 書き込みのあとに、通知(プッシュ)を送るか確かめる操作(mutating に加えて)
-    notifying: ["createPost", "commentPost", "adminSaveAnnouncement", "setReferralMeeting"],
+    notifying: ["createPost", "commentPost", "adminSaveAnnouncement", "setReferralMeeting", "adminSaveMinutes"],
     create: function (c) {
       function dateKey(ms) {
         var d = new Date(ms + JST);
@@ -2178,7 +2178,7 @@ var BtexServerCore = (function () {
         var my = rsvps[w.id] || "";
         var party = e.party && e.party.enabled ? e.party : null;
         var v = {
-          id: e.id, title: e.title, date: e.date, start: e.start, end: e.end, place: e.place, area: e.area,
+          id: e.id, title: e.title, date: e.date, start: e.start, end: e.end, place: e.place, area: e.area, hasMinutes: !!e.minutes,
           body: e.body, agenda: e.agenda || "", fee: e.fee, capacity: e.capacity || 0, url: e.url || "",
           online: e.area === "online",
           deadline: e.deadline || "", deadlinePassed: deadlinePassed(e),
@@ -2223,7 +2223,44 @@ var BtexServerCore = (function () {
             if (w.isAdmin || v.by === w.id) out.contact = v.contact || "";
             return out;
           });
-        return c.ok({ event: eventView(w, e), members: members, visitors: visitors, isAdmin: w.isAdmin });
+        return c.ok({
+          event: eventView(w, e), members: members, visitors: visitors, isAdmin: w.isAdmin,
+          minutes: e.minutes ? { text: e.minutes.text, at: e.minutes.at, byName: nameOf(w.db, e.minutes.by), annId: e.minutes.annId || "" } : null,
+        });
+      }
+
+      // 定例会の議事録・決定事項(管理者が書く。publish で運営連絡として全員に配る)
+      function adminSaveMinutes(body) {
+        var w = admin(body);
+        if (w.error) return w.error;
+        var e = c.find(w.db.events, function (x) { return x.id === body.id; });
+        if (!e) return c.fail("NOT_FOUND");
+        var text = cleanText(body.text, 4000);
+        if (!text) {
+          delete e.minutes;
+          c.saveDb(w.db);
+          return c.ok({ minutes: null });
+        }
+        e.minutes = { text: text, at: c.nowMs(), by: w.id, annId: (e.minutes && e.minutes.annId) || "" };
+        if (body.publish === true) {
+          var a = e.minutes.annId && c.find(w.db.announcements, function (x) { return x.id === e.minutes.annId; });
+          if (!a) {
+            a = { id: newId("a_"), at: c.nowMs(), readBy: [], by: w.id, byName: w.me.name, pinned: false };
+            w.db.announcements.push(a);
+            trim(w.db.announcements, LIMITS.announcements);
+          } else {
+            // 直したときは、もう一度読んでもらう
+            a.at = c.nowMs();
+            a.readBy = [];
+          }
+          a.title = e.date.slice(5).replace("-", "/") + " " + e.title + " の議事録・決定事項";
+          a.body = text;
+          a.cat = "定例会";
+          a.readBy.push(w.id);
+          e.minutes.annId = a.id;
+        }
+        c.saveDb(w.db);
+        return c.ok({ minutes: { text: e.minutes.text, at: e.minutes.at, byName: w.me.name, annId: e.minutes.annId } });
       }
 
       function listEvents(body) {
@@ -3335,11 +3372,25 @@ var BtexServerCore = (function () {
         return {
           id: p.id, by: p.by, byName: nameOf(w.db, p.by), cat: p.cat, body: p.body, at: p.at,
           likes: (p.likes || []).length, liked: (p.likes || []).indexOf(w.id) !== -1,
-          canDelete: p.by === w.id || w.isAdmin,
+          canDelete: p.by === w.id || w.isAdmin, canEdit: p.by === w.id, editedAt: p.editedAt || 0,
           comments: (p.comments || []).map(function (cm) {
             return { id: cm.id, by: cm.by, byName: nameOf(w.db, cm.by), body: cm.body, at: cm.at, canDelete: cm.by === w.id || w.isAdmin };
           }),
         };
+      }
+      // 自分の投稿を直す(種類と本文)
+      function editPost(body) {
+        var w = who(body);
+        if (w.error) return w.error;
+        var p = c.find(w.db.posts, function (x) { return x.id === body.id; });
+        if (!p || p.by !== w.id) return c.fail("NOT_FOUND");
+        var text = cleanText(body.body, 2000);
+        if (!text) return c.fail("INVALID_REQUEST", "本文を入れてください。");
+        p.body = text;
+        p.cat = oneOf(body.cat === "雑談" ? "告知" : body.cat, BOARD_CATS, p.cat);
+        p.editedAt = c.nowMs();
+        c.saveDb(w.db);
+        return c.ok({ item: postView(w, p) });
       }
       function listBoard(body) {
         var w = who(body);
@@ -3898,7 +3949,7 @@ var BtexServerCore = (function () {
         actions: {
           getHome: getHome, getActivity: getActivity, adminDashboard: adminDashboard, adminExport: adminExport,
           listEvents: listEvents, getEvent: getEvent, rsvpEvent: rsvpEvent, checkIn: checkIn,
-          adminSaveEvent: adminSaveEvent, adminDeleteEvent: adminDeleteEvent, adminOpenCheckIn: adminOpenCheckIn,
+          adminSaveEvent: adminSaveEvent, adminDeleteEvent: adminDeleteEvent, adminSaveMinutes: adminSaveMinutes, adminOpenCheckIn: adminOpenCheckIn,
           adminEventDetail: adminEventDetail, adminMarkAttendance: adminMarkAttendance,
           adminSyncMeetAttendance: adminSyncMeetAttendance, adminMapMeetName: adminMapMeetName,
           createVisitorInvite: createVisitorInvite, listMyVisitors: listMyVisitors, updateVisitor: updateVisitor,
@@ -3908,7 +3959,7 @@ var BtexServerCore = (function () {
           getMySettings: getMySettings, updateMySettings: updateMySettings,
           listAnnouncements: listAnnouncements, markAnnouncementsRead: markAnnouncementsRead,
           adminSaveAnnouncement: adminSaveAnnouncement, adminDeleteAnnouncement: adminDeleteAnnouncement,
-          listBoard: listBoard, createPost: createPost, deletePost: deletePost, commentPost: commentPost,
+          listBoard: listBoard, createPost: createPost, editPost: editPost, deletePost: deletePost, commentPost: commentPost,
           deleteComment: deleteComment, likePost: likePost,
           sendFeedback: sendFeedback, listMyFeedback: listMyFeedback, adminListFeedback: adminListFeedback, adminUpdateFeedback: adminUpdateFeedback,
           pushConfig: pushConfig, savePushSubscription: savePushSubscription, deletePushSubscription: deletePushSubscription, pushPeek: pushPeek,

@@ -67,6 +67,7 @@
           h("ul", { class: "app-list" }, past.map((e) => h("li", null,
             h("div", { class: "app-row" },
               h("a", { class: "app-row-main", href: `#events/detail/${e.id}` }, h("b", null, e.title), h("small", null, `${App.fmtDate(e.date)} ・ 出席 ${e.yesCount}名`)),
+              e.hasMinutes ? App.chip("議事録", "info") : null,
               e.attended ? App.chip(e.late ? "遅刻早退" : "出席", e.late ? "warn" : "good") : e.myRsvp === "no" ? App.chip("欠席", "mute") : null,
               App.isAdmin() ? App.btn("管理", () => App.go(`events/manage/${e.id}`), "ghost small") : null))))));
       }
@@ -261,6 +262,27 @@
     if (m.rsvp === "no") return { label: "事前欠席", tone: "warn" };
     return { label: "未回答", tone: "mute" };
   }
+  function minutesForm(ev, cur) {
+    App.openSheet("議事録・決定事項", (body, close) => {
+      const text = App.draft(`minutes-${ev.id}`, h("textarea", { rows: "10", maxlength: "4000", placeholder: "例:\n■ 決まったこと\n・次回は11/14(土)、テーマは「紹介の出し方」\n■ 次回までにやること\n・全員:プロフィールのリンクを登録する" }));
+      if (cur && !text.value) text.value = cur.text;
+      const publish = h("input", { type: "checkbox", checked: true });
+      body.append(h("form", { class: "app-form", onsubmit: async (e) => {
+        e.preventDefault();
+        const d = await App.api("adminSaveMinutes", { id: ev.id, text: text.value, publish: publish.checked });
+        if (!d) return;
+        App.clearDraft(`minutes-${ev.id}`);
+        close();
+        App.toast(!d.minutes ? "議事録を消しました" : publish.checked ? "保存し、運営連絡で全員に届けました" : "保存しました");
+        App.route();
+      } },
+      h("p", { class: "app-lead" }, `${App.fmtDate(ev.date)} ${ev.title}`),
+      App.field("内容", text, "URL はリンクになります。空にして保存すると消えます"),
+      h("label", { class: "app-check" }, publish, cur && cur.annId ? " 運営連絡も直して、もう一度全員に知らせる" : " 運営連絡で全員に届ける(スマホにも通知)"),
+      h("button", { type: "submit", class: "app-btn primary wide" }, "保存する")));
+    });
+  }
+
   async function renderDetail(el, id) {
     const d = await App.api("getEvent", { id });
     if (!d) return;
@@ -293,6 +315,13 @@
     if (ev.agenda) card.append(h("div", { class: "evd-block" }, h("h2", null, "当日の流れ"), App.richText(ev.agenda)));
     if (ev.body) card.append(h("div", { class: "evd-block" }, h("h2", null, "ご案内"), App.richText(ev.body)));
     if (ev.url) card.append(h("a", { class: "app-more", href: ev.url, target: "_blank", rel: "noopener" }, "案内ページを見る →"));
+    // 議事録・決定事項(終わったあとに運営が書く)
+    if (d.minutes || (d.isAdmin && (ev.past || ev.date === App.todayKey()))) {
+      card.append(h("div", { class: "evd-block evd-minutes" }, h("h2", null, "議事録・決定事項"),
+        d.minutes ? [App.richText(d.minutes.text), h("p", { class: "app-field-hint" }, `${App.fmtTime(d.minutes.at)} ・ ${d.minutes.byName}`)]
+          : h("p", { class: "app-field-hint" }, "まだありません。決まったこと・次回までにやることを残しておくと、休んだ人にも伝わります。"),
+        d.isAdmin ? App.btn(d.minutes ? "議事録を直す" : "議事録を書く", () => minutesForm(ev, d.minutes), "ghost small") : null));
+    }
 
     // 出欠の登録
     const rsvpBox = h("div", { class: "evd-block evd-rsvp" });

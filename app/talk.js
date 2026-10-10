@@ -104,6 +104,7 @@
   async function renderBoard(el, params) {
     const d = await App.api("listBoard");
     if (!d) return;
+    boardCats = d.cats;
     App.setBadges(Object.assign({}, JSON.parse(sessionStorage.getItem("btex5-badges") || "{}").badges, { board: 0 }));
     const filter = params.get("cat") || "";
     el.append(h("div", { class: "app-cta-row" }, App.btn("＋ 投稿する", () => postForm(d.cats, filter), "primary wide")));
@@ -140,7 +141,7 @@
       const comment = h("input", { type: "text", maxlength: "1000", placeholder: "コメントする", "aria-label": "コメント" });
       App.fill(card, 
         h("div", { class: "post-head" }, App.avatar(p.byName),
-          h("div", null, h("a", { href: App.profileHref(p.by) }, h("b", null, p.byName)), h("small", null, App.fmtTime(p.at))),
+          h("div", null, h("a", { href: App.profileHref(p.by) }, h("b", null, p.byName)), h("small", null, `${App.fmtTime(p.at)}${p.editedAt ? "(編集済み)" : ""}`)),
           App.chip(p.cat, p.cat === "紹介依頼" ? "warn" : p.cat === "成約・お礼" ? "good" : "info"),
           p.isNew ? h("span", { class: "ann-dot" }, "新着") : null),
         App.richText(p.body),
@@ -149,6 +150,7 @@
             const d = await App.api("likePost", { id: p.id });
             if (d) { Object.assign(p, d.item); draw(); }
           } }, p.liked ? "♥" : "♡", ` ${p.likes || ""}`),
+          p.canEdit ? h("button", { type: "button", class: "post-link", onclick: () => editForm(p, (item) => { Object.assign(p, item); draw(); }) }, "編集") : null,
           p.canDelete ? h("button", { type: "button", class: "post-link danger", onclick: async () => {
             if (!confirm("この投稿を削除しますか?")) return;
             if (await App.api("deletePost", { id: p.id })) card.closest("li").remove();
@@ -168,6 +170,28 @@
     }
     draw();
     return card;
+  }
+
+  // 自分の投稿を直す
+  let boardCats = [];
+  function editForm(p, done) {
+    App.openSheet("投稿を直す", (body, close) => {
+      let picked = p.cat;
+      const chips = h("div", { class: "board-cats" });
+      const drawChips = () => chips.replaceChildren(...boardCats.map((c) => h("button", { type: "button", class: `app-pill${c === picked ? " is-on" : ""}`, onclick: () => { picked = c; drawChips(); } }, c)));
+      drawChips();
+      const text = h("textarea", { rows: "8", maxlength: "2000" });
+      text.value = p.body;
+      body.append(h("form", { class: "app-form", onsubmit: async (e) => {
+        e.preventDefault();
+        if (!text.value.trim()) { App.toast("本文を入れてください"); return; }
+        const d = await App.api("editPost", { id: p.id, cat: picked, body: text.value });
+        if (!d) return;
+        close();
+        App.toast("直しました");
+        done(d.item);
+      } }, App.field("種類", chips), App.field("本文", text), h("button", { type: "submit", class: "app-btn primary wide" }, "保存する")));
+    });
   }
 
   function postForm(cats, cat) {
