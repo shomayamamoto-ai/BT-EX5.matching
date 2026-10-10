@@ -29,30 +29,6 @@
     const d = new Date(Number(m.slice(0, 4)), Number(m.slice(5, 7)) - 1 + n, 1);
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
   }
-  function fmtCell(v) {
-    // 日時(ミリ秒)は読める形に
-    if (typeof v === "number" && v > 1e12) {
-      const d = new Date(v);
-      return `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2, "0")}`;
-    }
-    return String(v === undefined || v === null ? "" : v);
-  }
-  // Excel で文字化けしない CSV(先頭に BOM)。数式として読まれないよう = + - @ で始まる値は ' を付ける
-  function downloadCsv(name, rows) {
-    const esc = (v) => {
-      let s = fmtCell(v);
-      if (/^[=+\-@]/.test(s)) s = `'${s}`;
-      return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-    };
-    const text = "﻿" + rows.map((r) => r.map(esc).join(",")).join("\r\n");
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(new Blob([text], { type: "text/csv;charset=utf-8" }));
-    a.download = name;
-    document.body.append(a);
-    a.click();
-    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
-  }
-
   App.renderDashboard = async function (el, monthParam) {
     const d = await App.api("adminDashboard", { month: monthParam || "" });
     if (!d) return;
@@ -180,7 +156,7 @@
       h("p", { class: "app-field-hint" }, "紹介した方の連絡先は、紹介した人と受けた人だけのものなので含めません。"),
       h("div", { class: "app-btn-row" }, EXPORTS.map((x) => App.btn(x.label, async () => {
         const r = await App.api("adminExport", { kind: x.kind });
-        if (r) downloadCsv(`BT-EX5-${x.kind}-${stamp}.csv`, r.rows);
+        if (r) App.downloadCsv(`BT-EX5-${x.kind}-${stamp}.csv`, r.rows);
       }, "ghost small")))));
   };
 })();

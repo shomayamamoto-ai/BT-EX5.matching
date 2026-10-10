@@ -38,15 +38,40 @@
     if (!d) return;
     el.append(h("div", { class: "app-cta-row" }, App.btn("＋ 紹介を記録する", () => referralForm(params.get("to"), params.get("memo")), "primary wide")));
 
-    el.append(App.section(`あなた宛ての紹介(${d.received.length})`,
-      d.received.length
-        ? h("ul", { class: "app-cards" }, d.received.map((r) => h("li", null, receivedCard(r))))
-        : App.empty("まだありません。プロフィールの「求める紹介」を具体的にすると届きやすくなります。", h("a", { class: "app-btn ghost", href: "../profile/" }, "プロフィールを見直す"))));
-
-    el.append(App.section(`あなたが出した紹介(${d.given.length})`,
-      d.given.length
-        ? h("ul", { class: "app-cards" }, d.given.map((r) => h("li", null, givenCard(r))))
-        : App.empty("紹介したら記録しておくと、相手の対応状況とお礼(マイル)がここに届きます。")));
+    // 絞り込み(状況・言葉)。紹介が増えても探しやすいように
+    let status = "all";
+    const q = h("input", { type: "search", class: "board-search", placeholder: "紹介を探す(お名前・会社・相談の内容)", "aria-label": "紹介を探す" });
+    const all = [...d.received, ...d.given];
+    const pills = h("div", { class: "board-cats ref-filter", role: "group", "aria-label": "状況で絞り込む" });
+    const recvBox = h("div"), givenBox = h("div");
+    const match = (r) => {
+      if (status !== "all" && r.status !== status) return false;
+      const words = q.value.trim().toLowerCase().split(/\s+/).filter(Boolean);
+      const text = [r.prospect, r.memo, r.fromName, r.toName, r.contact].join(" ").toLowerCase();
+      return words.every((w) => text.includes(w));
+    };
+    const draw = () => {
+      pills.replaceChildren(...[["all", "すべて"], ...Object.keys(App.REF_STATUS).map((k) => [k, App.REF_STATUS[k].label])].map(([k, label]) => {
+        const n = k === "all" ? all.length : all.filter((r) => r.status === k).length;
+        return h("button", { type: "button", class: `app-pill${k === status ? " is-on" : ""}`, "aria-pressed": k === status ? "true" : "false", onclick: () => { status = k; draw(); } }, `${label} ${n}`);
+      }));
+      const recv = d.received.filter(match), given = d.given.filter(match);
+      const filtered = status !== "all" || q.value.trim();
+      App.fill(recvBox, App.section(`あなた宛ての紹介(${filtered ? `${recv.length} / ` : ""}${d.received.length})`,
+        recv.length
+          ? h("ul", { class: "app-cards" }, recv.map((r) => h("li", null, receivedCard(r))))
+          : filtered ? App.empty("条件に合う紹介はありません。")
+          : App.empty("まだありません。プロフィールの「求める紹介」を具体的にすると届きやすくなります。", h("a", { class: "app-btn ghost", href: "../profile/" }, "プロフィールを見直す"))));
+      App.fill(givenBox, App.section(`あなたが出した紹介(${filtered ? `${given.length} / ` : ""}${d.given.length})`,
+        given.length
+          ? h("ul", { class: "app-cards" }, given.map((r) => h("li", null, givenCard(r))))
+          : filtered ? App.empty("条件に合う紹介はありません。")
+          : App.empty("紹介したら記録しておくと、相手の対応状況とお礼(マイル)がここに届きます。")));
+    };
+    q.addEventListener("input", draw);
+    if (all.length > 3) el.append(q, pills);
+    el.append(recvBox, givenBox);
+    draw();
 
     if (params.has("new")) referralForm(params.get("to"), params.get("memo"));
   }
@@ -116,6 +141,34 @@
   // ============================================
   // 紹介の顔合わせ(日時・場所 / Google Meet)と、送る文・カレンダー
   // ============================================
+  // 予定の重なり(ダブルブッキング)を調べる:自分の 1on1・紹介の顔合わせ・出席予定の定例会
+  async function scheduleConflicts(date, time, duration, skipId) {
+    if (!date || !time) return [];
+    const toMs = (d, t) => new Date(`${d}T${t.padStart(5, "0")}:00+09:00`).getTime();
+    const start = toMs(date, time), end = start + (duration || 60) * 60000;
+    const [ones, refs, evs] = await Promise.all([
+      App.api("list1on1", {}, { quiet: true }), App.api("listMyReferrals", {}, { quiet: true }), App.api("listEvents", {}, { quiet: true })]);
+    const out = [];
+    const add = (id, label, d, t, min) => {
+      if (id === skipId || !d || !t) return;
+      const s0 = toMs(d, t), e0 = s0 + (min || 60) * 60000;
+      if (s0 < end && start < e0) out.push(`${label}(${App.fmtDate(d)} ${t}〜)`);
+    };
+    (ones ? ones.items : []).filter((o) => o.status === "planned").forEach((o) => add(o.id, `${o.withName}さんとの 1on1`, o.date, o.time, o.duration));
+    (refs ? [...refs.given, ...refs.received] : []).filter((r) => r.meeting && r.status !== "lost")
+      .forEach((r) => add(r.id, `${r.prospect || "お客様"}との顔合わせ`, r.meeting.date, r.meeting.time, r.meeting.duration));
+    (evs ? evs.events : []).filter((e) => e.myRsvp === "yes" || e.rsvp === "yes").forEach((e) => {
+      if (!e.start) return;
+      const [sh, sm] = e.start.split(":").map(Number), [eh, em] = (e.end || e.start).split(":").map(Number);
+      add(e.id, e.title, e.date, e.start, Math.max(60, eh * 60 + em - (sh * 60 + sm)));
+    });
+    return out;
+  }
+  async function confirmNoConflict(date, time, duration, skipId) {
+    const list = await scheduleConflicts(date, time, duration, skipId);
+    return !list.length || confirm(`同じ時間に次の予定があります。\n・${list.join("\n・")}\n\nこのまま保存しますか?`);
+  }
+
   function meetingEditor(mt) {
     const today = App.todayKey();
     const date = h("input", { type: "date", value: mt ? mt.date : "" });
@@ -251,6 +304,7 @@
           App.btn("保存する", async () => {
             const mt = ed.get();
             if (!mt) { App.toast("日付を入れてください"); return; }
+            if (!(await confirmNoConflict(mt.date, mt.time, mt.duration, r.id))) return;
             const d = await App.api("setReferralMeeting", { id: r.id, meeting: mt });
             if (!d) return;
             Object.assign(r, d.item);
@@ -651,6 +705,7 @@
         };
         if (!payload.withMemberId) { err.textContent = "相手を選んでください。"; return; }
         if (!payload.date) { err.textContent = "日付を選んでください。"; return; }
+        if (payload.status === "planned" && !(await confirmNoConflict(payload.date, payload.time, payload.duration, payload.id))) return;
         save.disabled = true;
         const d = await App.api("save1on1", payload, { raw: true, quiet: true });
         save.disabled = false;

@@ -31,6 +31,7 @@
         menu("#me/calendar", "Google カレンダー・Meet の設定", "1on1 の招待を受け取るアドレスと、Meet で表示される名前(定例会の出欠に使います)"),
         menu("#invite", "ビジター招待", "招待URL の発行・そのまま使える文・招待履歴"),
         menu("#me/qr", "あなたのプロフィールの QR コード", "交流会でメンバーに読み取ってもらうと、あなたの詳細が開きます"),
+        menu("#me/export", "自分の記録を書き出す(Excel)", "紹介・ありがとうマイル・1on1 の記録を CSV で保存"),
         menu("#me/feedback", "バグ・要望を送る", "使いにくいところ・ほしい機能を運営へ"),
         menu("../teams/", "全体分析", "仕事が回る業種・紹介の流れ"),
         menu("#me/install", "スマホのホーム画面に追加", "アプリのようにすぐ開けます"),
@@ -64,6 +65,7 @@
       if (parts[0] === "install") installSheet();
       if (parts[0] === "calendar") calendarSheet();
       if (parts[0] === "notify") notifySheet();
+      if (parts[0] === "export") exportSheet();
       if (parts[0] === "qr") {
         const url = App.siteUrl(`../referral/#member=${encodeURIComponent(s.memberId)}`);
         App.openSheet("あなたのプロフィールの QR コード", (body) => {
@@ -202,6 +204,46 @@
       body.append(msg, row,
         h("p", { class: "app-field-hint" }, "スマホ・パソコンなど、端末ごとにオンにします。ログアウトすると、その端末の通知は止まります。"));
     }, { noFocus: true, onClose: () => { if (location.hash === "#me/notify") history.replaceState(null, "", "#me"); } });
+  }
+
+  // ---------- 自分の記録を書き出す(Excel で開ける CSV) ----------
+  function exportSheet() {
+    const stamp = App.todayKey().replace(/-/g, "");
+    const ST = (s) => (App.REF_STATUS[s] || { label: s }).label;
+    const meetText = (mt) => (mt ? `${mt.date} ${mt.time || ""} ${mt.mode === "meet" ? `Google Meet ${mt.meetUrl || ""}` : mt.place || ""}`.trim() : "");
+    const kinds = [
+      { id: "given", label: "出した紹介", run: async () => {
+        const d = await App.api("listMyReferrals");
+        return d && [["日時", "紹介先", "紹介した方", "相談の内容", "状況", "お礼(円)", "顔合わせ"],
+          ...d.given.map((r) => [r.at, r.toName, r.prospect, r.memo, ST(r.status), r.thanksAmount || "", meetText(r.meeting)])];
+      } },
+      { id: "received", label: "受けた紹介", run: async () => {
+        const d = await App.api("listMyReferrals");
+        return d && [["日時", "紹介してくれた人", "紹介された方", "連絡先", "相談の内容", "状況", "お礼(円)", "顔合わせ"],
+          ...d.received.map((r) => [r.at, r.fromName, r.prospect, r.contact, r.memo, ST(r.status), r.thanksAmount || "", meetText(r.meeting)])];
+      } },
+      { id: "miles", label: "ありがとうマイル", run: async () => {
+        const d = await App.api("listMyReferrals");
+        return d && [["日時", "受け取った/送った", "相手", "金額(円)", "メッセージ"],
+          ...d.thanksIn.map((t) => [t.at, "受け取った", t.fromName, t.amount, t.message]),
+          ...d.thanksOut.map((t) => [t.at, "送った", t.toName, t.amount, t.message])];
+      } },
+      { id: "1on1", label: "1on1", run: async () => {
+        const d = await App.api("list1on1");
+        const S = { planned: "予定", done: "実施", cancelled: "中止" };
+        return d && [["日付", "時刻", "相手", "場所", "状況", "メモ(自分だけ)", "次にやること"],
+          ...d.items.map((o) => [o.date, o.time ? `${o.time}〜${o.end}` : "", o.withName, o.mode === "meet" ? "Google Meet" : o.place, S[o.status] || o.status, o.note, o.next])];
+      } },
+    ];
+    App.openSheet("自分の記録を書き出す", (body) => {
+      body.append(h("p", { class: "app-lead" }, "押すと CSV ファイルを保存します。Excel・Google スプレッドシート・Numbers で開けます。あなたが見られる記録だけが入ります。"),
+        h("div", { class: "app-btn-row" }, kinds.map((k) => App.btn(k.label, async () => {
+          const rows = await k.run();
+          if (!rows) return;
+          App.downloadCsv(`BT-EX5-${k.id}-${stamp}.csv`, rows);
+          App.toast(`${k.label}(${rows.length - 1}件)を保存しました`);
+        }, "ghost"))));
+    }, { noFocus: true, onClose: () => { if (location.hash === "#me/export") history.replaceState(null, "", "#me"); } });
   }
 
   // ---------- バグ・要望 ----------

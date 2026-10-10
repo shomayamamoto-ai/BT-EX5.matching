@@ -556,6 +556,27 @@ const App = (function () {
     document.documentElement.classList.remove("guard-pending");
   }
 
+  // Excel で文字化けしない CSV(先頭に BOM)。数式として読まれないよう = + - @ で始まる値は ' を付ける。
+  // 日時(ミリ秒)は読める形にする
+  function downloadCsv(name, rows) {
+    const cell = (v) => {
+      let s;
+      if (typeof v === "number" && v > 1e12) {
+        const d = new Date(v);
+        s = `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2, "0")}`;
+      } else s = String(v === undefined || v === null ? "" : v);
+      if (/^[=+\-@]/.test(s)) s = `'${s}`;
+      return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    };
+    const text = "\ufeff" + rows.map((r) => r.map(cell).join(",")).join("\r\n");
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([text], { type: "text/csv;charset=utf-8" }));
+    a.download = name;
+    document.body.append(a);
+    a.click();
+    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+  }
+
   // 早見表でメンバーの詳細を開くリンク。詳細に「← ◯◯に戻る」が出て、いまの画面へ戻れる
   // back: 戻り先(#のあと)。省くといまの画面
   function profileHref(memberId, back) {
@@ -577,7 +598,7 @@ const App = (function () {
   }
 
   return {
-    profileHref, meetHowTo,
+    profileHref, meetHowTo, downloadCsv,
     h, append, fill, fmtStamp, fmtDate, fmtDateLong, fmtTime, yen, daysUntil, todayKey, chip, avatar, richText, toast, copyText, shareText,
     icon, qrImage, draft, clearDraft, calendarButtons, googleCalUrl, icsFile, api, openSheet, doneSheet, field, btn, toggle, timeSelect, segmented, empty, section, memberPicker,
     AREA_LABELS, REF_STATUS, VISITOR_STATUS,
