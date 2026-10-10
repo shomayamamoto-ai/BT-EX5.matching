@@ -515,6 +515,8 @@ const App = (function () {
     const res = await AuthApi.listReferralMembers(AuthSession.getToken());
     members = res.success ? res.data.members : [];
     document.getElementById("appMe").replaceChildren(avatar(data.displayName));
+    // 共有サーバーに切り替えたあと: この端末に残っているお試し版のプロフィールを送るか聞く
+    if (typeof ProfileTransfer !== "undefined") ProfileTransfer.offerUpload(data, memberById(data.memberId));
     document.getElementById("appMe").setAttribute("aria-label", `${data.displayName}さんのマイページ`);
     renderTabs();
     window.addEventListener("hashchange", route);

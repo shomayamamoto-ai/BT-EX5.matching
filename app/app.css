@@ -529,3 +529,8 @@ html.big-text body { zoom: 1.15; }
 .evd-no { width: 22px; text-align: right; color: var(--text-light); font-size: 12px; flex-shrink: 0; }
 .evd-members li.is-me { background: #fff3ea; }
 .evd-members .app-row { min-height: 52px; gap: 8px; }
+.meet-rule { font-weight: 800; font-size: 13.5px; margin-bottom: 6px; }
+.meet-att { text-align: left; }
+.att-row { flex-wrap: wrap; }
+.att-toggle { flex: 1 1 100%; }
+.att-toggle button { min-height: 34px; font-size: 12.5px; }

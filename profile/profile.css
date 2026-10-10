@@ -76,3 +76,12 @@ fieldset > .prof-hint { margin: -4px 0 8px; }
 }
 /* 保存ボタンの帯に重ならないよう、お知らせは少し上に出す */
 .ref-toast { bottom: calc(86px + env(safe-area-inset-bottom, 0px)) !important; }
+
+/* お試し版: 運営に送る */
+.prof-send { margin: 0 0 16px; padding: 14px 16px; border-radius: 14px; background: #fff7e6; border: 1.5px solid #f9c97a; }
+.prof-send[hidden] { display: none; }
+.prof-send-title { font-size: 14px; margin-bottom: 4px; }
+.prof-send .ref-diag-btn { margin-top: 10px; }
+.prof-send-note { margin: 0 0 12px; padding: 8px 12px; border-radius: 10px; background: #fff7e6; border: 1px solid #f9c97a; font-size: 12.5px; }
+.prof-send-note[hidden] { display: none; }
+.prof-send { margin-top: 20px; scroll-margin-top: 80px; }

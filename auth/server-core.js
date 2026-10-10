@@ -1049,6 +1049,8 @@ var BtexServerCore = (function () {
       dataList: dataList, idsOf: idsOf, clone: clone, ERRORS: ERRORS,
       // Google カレンダー(共有サーバーで設定したときだけ。なければ null)
       calendar: env.calendar || null,
+      // Google Meet の参加記録(共有サーバーで設定したときだけ。なければ null)
+      meet: env.meet || null,
     };
     var MODULE_INSTANCES = MODULES.map(function (m) {
       var inst = m.create(ctx) || {};
@@ -1068,7 +1070,16 @@ var BtexServerCore = (function () {
       }
     }
 
-    return { handle: handle };
+    // 定期実行の処理(外からは呼べない。GAS の時間主導トリガーから呼ぶ)
+    function runJob(name) {
+      var done = [];
+      MODULE_INSTANCES.forEach(function (m) {
+        if (m.jobs && typeof m.jobs[name] === "function") done.push(m.jobs[name]());
+      });
+      return done;
+    }
+
+    return { handle: handle, runJob: runJob };
   }
 
   // 書き込みを伴う操作(共有サーバーでスプレッドシートの一覧を更新する対象)
@@ -1085,6 +1096,7 @@ var BtexServerCore = (function () {
     },
     sha256Hex: sha256Hex,
     normalizeName: normalizeName,
+    SELF_EDITABLE: SELF_EDITABLE,
     ERRORS: ERRORS,
     REFERRAL_STATUSES: REFERRAL_STATUSES,
     MUTATING_ACTIONS: MUTATING_ACTIONS,

@@ -168,5 +168,24 @@
     saved = snapshot();
     renderProgress();
     document.documentElement.classList.remove("guard-pending");
+    if (me && typeof ProfileTransfer !== "undefined") {
+      // お試し版: この端末で保存した内容を運営に送れるようにする
+      $("#profSend").hidden = AuthApi.isShared();
+      $("#profSendNote").hidden = AuthApi.isShared();
+      // 共有サーバー: この端末に残っているお試し版の内容を送るか聞く
+      ProfileTransfer.offerUpload(session, me);
+    }
   })();
+
+  // 運営に送る(LINE などで共有。共有できなければコピー)
+  $("#profSendBtn").addEventListener("click", async () => {
+    if (isDirty()) { toast("先に「保存する」を押してください"); return; }
+    if (!me) return;
+    const text = ProfileTransfer.message(me);
+    if (navigator.share) {
+      try { await navigator.share({ text, title: "BT-EX5 プロフィール" }); return; } catch (e) { if (e && e.name === "AbortError") return; }
+    }
+    try { await navigator.clipboard.writeText(text); toast("コピーしました。LINE などで運営に送ってください"); }
+    catch { window.prompt("この文をコピーして運営に送ってください", text); }
+  });
 })();

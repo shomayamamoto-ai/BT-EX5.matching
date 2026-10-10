@@ -28,11 +28,19 @@
 
       // 出席コード(今日の受付が開いているときは目立たせる)
       const open = upcoming.some((e) => e.checkInOpen && !e.attended);
-      el.append(h("section", { class: `checkin-box${open ? " is-open" : ""}` },
-        h("h2", null, open ? "受付中:出席コードを入れてください" : "出席コード"),
-        h("p", null, "会場の QR コードをスマホのカメラで読み取るか、案内される4桁の数字を入れると、出席が記録されます。"),
-        App.checkInForm(),
-        past.length ? h("p", { class: "checkin-rate" }, `あなたの出席率(最近 ${past.length} 回):${Math.round((past.filter((e) => e.attended).length / past.length) * 100)}%(${past.filter((e) => e.attended).length}回出席)`) : null));
+      const venueSoon = upcoming.some((e) => !e.online && App.daysUntil(e.date, d.today) <= 1);
+      const rate = past.length ? h("p", { class: "checkin-rate" }, `あなたの出席率(最近 ${past.length} 回):${Math.round((past.filter((e) => e.attended).length / past.length) * 100)}%(${past.filter((e) => e.attended && !e.late).length}回出席${past.some((e) => e.late) ? `・${past.filter((e) => e.late).length}回遅刻早退` : ""})`) : null;
+      if (open || venueSoon) {
+        el.append(h("section", { class: `checkin-box${open ? " is-open" : ""}` },
+          h("h2", null, open ? "受付中:出席コードを入れてください" : "会場の出席コード"),
+          h("p", null, "会場の QR コードをスマホのカメラで読み取るか、案内される4桁の数字を入れると、出席が記録されます。"),
+          App.checkInForm(), rate));
+      } else {
+        el.append(h("section", { class: "checkin-box" },
+          h("h2", null, "出欠のつけ方"),
+          h("p", null, "オンラインの定例会は、Google Meet に参加した時間で自動で出欠がつきます(100分以上で出席、60分以上100分未満は遅刻早退)。出席コードは要りません。"),
+          rate));
+      }
 
       if (App.isAdmin()) el.append(h("div", { class: "app-cta-row" }, App.btn("＋ 定例会を作る(管理者)", () => eventForm(null, d.events[d.events.length - 1]), "ghost wide")));
 
@@ -57,7 +65,7 @@
           h("ul", { class: "app-list" }, past.map((e) => h("li", null,
             h("div", { class: "app-row" },
               h("a", { class: "app-row-main", href: `#events/detail/${e.id}` }, h("b", null, e.title), h("small", null, `${App.fmtDate(e.date)} ・ 出席 ${e.yesCount}名`)),
-              e.attended ? App.chip("出席", "good") : e.myRsvp === "no" ? App.chip("欠席", "mute") : null,
+              e.attended ? App.chip(e.late ? "遅刻早退" : "出席", e.late ? "warn" : "good") : e.myRsvp === "no" ? App.chip("欠席", "mute") : null,
               App.isAdmin() ? App.btn("管理", () => App.go(`events/manage/${e.id}`), "ghost small") : null))))));
       }
 
@@ -294,6 +302,7 @@
   // ---------- 定例会の詳細(全員): 出欠・参加リンク・メンバーの出欠一覧・ビジター ----------
   const KIND_LABELS = { general: "一般", link: "LINK会員" };
   function memberStatus(m) {
+    if (m.attended && m.late) return { label: "遅刻早退", tone: "warn" };
     if (m.attended) return { label: "出席", tone: "good" };
     if (m.rsvp === "yes") return { label: "申込", tone: "info" };
     if (m.rsvp === "no") return { label: "事前欠席", tone: "warn" };
@@ -415,21 +424,50 @@
     if (!d) return;
     const ev = d.event;
     el.append(h("a", { class: "app-back", href: "#events" }, "← 予定に戻る"));
-    el.append(h("h1", { class: "app-h1" }, ev.title), h("p", { class: "app-lead" }, `${App.fmtDateLong(ev.date)} ${ev.start}〜${ev.end} ・ ${ev.place}`));
+    el.append(h("h1", { class: "app-h1" }, ev.title), h("p", { class: "app-lead" }, `${App.fmtDateLong(ev.date)} ${ev.start}〜${ev.end} ・ ${ev.online ? "オンライン(Google Meet)" : ev.place || "会場未定"}`));
 
-    const codeBox = h("div", { class: "code-box" });
-    function drawCode(code) {
-      App.fill(codeBox, 
-        code ? h("p", { class: "code-big", "aria-label": `出席コード ${code}` }, code) : h("p", { class: "code-off" }, "受付は閉じています"),
-        code ? App.qrImage(App.siteUrl(`#events?checkin=${code}`), "出席の QR コード") : null,
-        h("p", { class: "app-field-hint" }, code ? "数字か QR コードを会場で見せてください(当日だけ有効)。QR をスマホのカメラで読み取ると、そのまま出席になります。" : "当日、受付を開くと4桁の出席コードと QR コードが出ます。"),
-        h("div", { class: "app-btn-row" },
-          code ? App.btn("受付を閉じる", async () => { const r = await App.api("adminOpenCheckIn", { id, open: false }); if (r) drawCode(""); }, "ghost")
-            : App.btn("受付を開く(コードを出す)", async () => { const r = await App.api("adminOpenCheckIn", { id, open: true }); if (r) drawCode(r.code); }, "primary"),
-          code ? App.btn("コードを作り直す", async () => { const r = await App.api("adminOpenCheckIn", { id, open: true }); if (r) drawCode(r.code); }, "ghost") : null));
+    if (ev.online) {
+      // オンライン: Google Meet の参加時間で出欠をつける(出席コードは使わない)
+      const mt = d.meet;
+      const box = h("div", { class: "code-box meet-att" },
+        h("p", { class: "meet-rule" }, `Google Meet に ${mt.presentMin}分以上 → 出席 / ${mt.lateMin}分以上${mt.presentMin}分未満 → 遅刻早退 / ${mt.lateMin}分未満 → 欠席`),
+        h("p", { class: "app-field-hint" }, mt.available
+          ? (mt.syncedAt ? `最後に読み込んだ時刻:${App.fmtTime(mt.syncedAt)}(終わってから15分後〜3時間、1時間ごとに自動で読み込みます)` : "定例会が終わってから15分後に、自動で読み込みます。いますぐ読み込むこともできます。")
+          : "いまはお試し版のため、Meet の参加記録は読み込めません(共有サーバーで設定すると、終わったあと自動で出欠がつきます)。下の一覧で手で付けられます。"),
+        mt.error ? h("p", { class: "app-error" }, `前回の読み込みでエラー:${mt.error}`) : null,
+        mt.available ? App.btn("いま Meet の参加記録から出欠をつける", async () => {
+          const r = await App.api("adminSyncMeetAttendance", { id });
+          if (r) { App.toast(`${r.matched}名の出欠をつけました${r.unmatched ? `(名簿に当てはまらない名前 ${r.unmatched}件)` : ""}`); App.route(); }
+        }, "primary") : null);
+      el.append(App.section("出欠の自動判定(Google Meet)", box));
+      if (mt.unmatched.length) {
+        el.append(App.section(`名簿に当てはまらなかった Meet の名前(${mt.unmatched.length})`,
+          h("p", { class: "app-field-hint" }, "誰かを選ぶと、その人の出欠になります。次からは同じ名前を自動で当てはめます。"),
+          h("ul", { class: "app-list" }, mt.unmatched.map((u) => {
+            const sel = h("select", { "aria-label": `${u.name}を誰に当てはめるか` }, h("option", { value: "" }, "メンバーを選ぶ"),
+              d.members.map((m) => h("option", { value: m.memberId }, m.name)));
+            sel.addEventListener("change", async () => {
+              if (!sel.value) return;
+              if (await App.api("adminMapMeetName", { id, name: u.name, memberId: sel.value })) { App.toast("当てはめました"); App.route(); }
+            });
+            return h("li", null, h("div", { class: "app-row" }, h("span", { class: "app-row-main" }, h("b", null, u.name), h("small", null, `${u.minutes}分`)), sel));
+          }))));
+      }
+    } else {
+      const codeBox = h("div", { class: "code-box" });
+      const drawCode = (code) => {
+        App.fill(codeBox,
+          code ? h("p", { class: "code-big", "aria-label": `出席コード ${code}` }, code) : h("p", { class: "code-off" }, "受付は閉じています"),
+          code ? App.qrImage(App.siteUrl(`#events?checkin=${code}`), "出席の QR コード") : null,
+          h("p", { class: "app-field-hint" }, code ? "数字か QR コードを会場で見せてください(当日だけ有効)。QR をスマホのカメラで読み取ると、そのまま出席になります。" : "会場で開くときは、当日に受付を開くと4桁の出席コードと QR コードが出ます。"),
+          h("div", { class: "app-btn-row" },
+            code ? App.btn("受付を閉じる", async () => { const r = await App.api("adminOpenCheckIn", { id, open: false }); if (r) drawCode(""); }, "ghost")
+              : App.btn("受付を開く(コードを出す)", async () => { const r = await App.api("adminOpenCheckIn", { id, open: true }); if (r) drawCode(r.code); }, "primary"),
+            code ? App.btn("コードを作り直す", async () => { const r = await App.api("adminOpenCheckIn", { id, open: true }); if (r) drawCode(r.code); }, "ghost") : null));
+      };
+      drawCode(d.code);
+      el.append(App.section("受付(会場の出席コード)", codeBox));
     }
-    drawCode(d.code);
-    el.append(App.section("受付(出席コード)", codeBox));
 
     const yes = d.members.filter((m) => m.rsvp === "yes").length;
     const att = d.members.filter((m) => m.attended).length;
@@ -449,24 +487,28 @@
       `出席予定(${yes}名):${d.members.filter((m) => m.rsvp === "yes").map((m) => m.name).join("、") || "なし"}`,
       `欠席(${d.members.filter((m) => m.rsvp === "no").length}名):${d.members.filter((m) => m.rsvp === "no").map((m) => m.name).join("、") || "なし"}`,
       `未回答(${noAns}名):${pending.map((m) => m.name).join("、") || "なし"}`,
-      `出席(コード・手動)(${att}名):${d.members.filter((m) => m.attended).map((m) => m.name).join("、") || "なし"}`,
+      `出席(${d.members.filter((m) => m.attendance === "present").length}名):${d.members.filter((m) => m.attendance === "present").map((m) => m.name).join("、") || "なし"}`,
+      `遅刻早退(${d.members.filter((m) => m.attendance === "late").length}名):${d.members.filter((m) => m.attendance === "late").map((m) => m.name).join("、") || "なし"}`,
       d.visitors.length ? `ビジター(${d.visitors.length}名):${d.visitors.map((v) => `${v.name || "(未入力)"}(${v.byName}さん招待)`).join("、")}` : "",
     ].filter(Boolean).join("\n");
     el.append(h("div", { class: "app-btn-row" },
       pending.length ? App.btn(`未回答の ${pending.length} 名への声かけ文をコピー`, () => App.copyText(remindText, "コピーしました。LINE グループなどに貼り付けてください"), "small") : null,
       App.btn("出欠の一覧をコピー", () => App.copyText(listText), "ghost small")));
 
-    el.append(App.section(`出欠(出席予定 ${yes} ・ 出席 ${att} ・ 未回答 ${noAns})`,
-      h("p", { class: "app-field-hint" }, "コードを入れられなかった人は、ここで出席にできます。"),
+    const late = d.members.filter((m) => m.attendance === "late").length;
+    el.append(App.section(`出欠(出席予定 ${yes} ・ 出席 ${att - late} ・ 遅刻早退 ${late} ・ 未回答 ${noAns})`,
+      h("p", { class: "app-field-hint" }, ev.online ? "Meet の記録とちがうときや、名前で当てはまらなかった人は、ここで直せます(手で直した人は自動で上書きしません)。" : "コードを入れられなかった人は、ここで出席にできます。"),
       h("ul", { class: "app-list att-list" }, d.members.map((m) => {
-        const cb = h("input", { type: "checkbox", checked: m.attended, onchange: async () => {
-          const r = await App.api("adminMarkAttendance", { id, memberId: m.memberId, attended: cb.checked });
-          if (!r) cb.checked = !cb.checked;
-        } });
-        return h("li", null, h("label", { class: "app-row" },
-          h("span", { class: "app-row-main" }, h("b", null, m.name), h("small", null, m.team || "")),
-          m.rsvp === "yes" ? App.chip("出席予定", "info") : m.rsvp === "no" ? App.chip("欠席", "mute") : App.chip("未回答", "warn"),
-          cb, h("span", { class: "att-label" }, "出席")));
+        const t = App.toggle([{ id: "present", label: "出席" }, { id: "late", label: "遅刻早退" }, { id: "", label: "—" }], m.attendance, async (v) => {
+          const r = await App.api("adminMarkAttendance", { id, memberId: m.memberId, status: v });
+          if (!r) t.setValue(m.attendance); else m.attendance = v;
+        });
+        t.classList.add("att-toggle");
+        return h("li", null, h("div", { class: "app-row att-row" },
+          h("span", { class: "app-row-main" }, h("b", null, m.name),
+            h("small", null, [m.team, typeof m.minutes === "number" ? `Meet ${m.minutes}分` : "", m.source === "manual" ? "手で修正" : ""].filter(Boolean).join(" ・ "))),
+          m.rsvp === "yes" ? App.chip("申込", "info") : m.rsvp === "no" ? App.chip("事前欠席", "mute") : App.chip("未回答", "warn"),
+          t));
       }))));
 
     if (d.visitors.length) {

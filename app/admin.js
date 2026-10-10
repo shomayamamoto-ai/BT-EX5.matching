@@ -126,6 +126,25 @@
           h("td", null, m.monthMiles ? App.yen(m.monthMiles) : "0"), h("td", null, String(m.monthOnes)),
           h("td", null, m.attendRate === null ? "—" : `${m.attendRate}%`))))))));
 
+    // メンバーから届いたプロフィール(お試し版でそれぞれの端末に入力したもの)を取り込む
+    const paste = h("textarea", { rows: "4", placeholder: "メンバーから届いた「【BT-EX5 プロフィールの送付】」の文を、そのまま貼り付けてください(何人分でも)" });
+    el.append(App.section("プロフィールを取り込む",
+      h("p", { class: "app-field-hint" }, "お試し版では、メンバーが自分の端末で入力したプロフィールはその端末にしか保存されていません。本人がプロフィール画面の「運営に送る」で送った文を、ここに貼り付けると取り込めます。"),
+      h("div", { class: "app-form" }, paste, App.btn("取り込む", async () => {
+        const list = typeof ProfileTransfer !== "undefined" ? ProfileTransfer.decodeAll(paste.value) : [];
+        if (!list.length) { App.toast("取り込めるコードが見つかりませんでした"); return; }
+        const done = [];
+        for (const p of list) {
+          if (!App.memberById(p.id)) continue;
+          const member = Object.assign({}, p);
+          delete member.editedAt;
+          const res = await AuthApi.adminSaveReferralMember(AuthSession.getToken(), member);
+          if (res.success) done.push(p.name);
+        }
+        paste.value = "";
+        App.toast(done.length ? `${done.join("、")}さんのプロフィールを取り込みました` : "取り込めませんでした(名簿にいない人です)");
+      }, "primary"))));
+
     // 書き出し
     const stamp = App.todayKey().replace(/-/g, "");
     el.append(App.section("データを書き出す(Excel で開ける CSV)",

@@ -1796,6 +1796,8 @@ var BtexServerCore = (function () {
       dataList: dataList, idsOf: idsOf, clone: clone, ERRORS: ERRORS,
       // Google カレンダー(共有サーバーで設定したときだけ。なければ null)
       calendar: env.calendar || null,
+      // Google Meet の参加記録(共有サーバーで設定したときだけ。なければ null)
+      meet: env.meet || null,
     };
     var MODULE_INSTANCES = MODULES.map(function (m) {
       var inst = m.create(ctx) || {};
@@ -1815,7 +1817,16 @@ var BtexServerCore = (function () {
       }
     }
 
-    return { handle: handle };
+    // 定期実行の処理(外からは呼べない。GAS の時間主導トリガーから呼ぶ)
+    function runJob(name) {
+      var done = [];
+      MODULE_INSTANCES.forEach(function (m) {
+        if (m.jobs && typeof m.jobs[name] === "function") done.push(m.jobs[name]());
+      });
+      return done;
+    }
+
+    return { handle: handle, runJob: runJob };
   }
 
   // 書き込みを伴う操作(共有サーバーでスプレッドシートの一覧を更新する対象)
@@ -1832,6 +1843,7 @@ var BtexServerCore = (function () {
     },
     sha256Hex: sha256Hex,
     normalizeName: normalizeName,
+    SELF_EDITABLE: SELF_EDITABLE,
     ERRORS: ERRORS,
     REFERRAL_STATUSES: REFERRAL_STATUSES,
     MUTATING_ACTIONS: MUTATING_ACTIONS,
@@ -1874,6 +1886,7 @@ var BtexServerCore = (function () {
   BtexServerCore.registerModule({
     mutating: [
       "rsvpEvent", "checkIn", "adminSaveEvent", "adminDeleteEvent", "adminOpenCheckIn", "adminMarkAttendance",
+      "adminSyncMeetAttendance", "adminMapMeetName",
       "createVisitorInvite", "updateVisitor", "visitorApply",
       "reportThanks", "deleteThanks", "save1on1", "delete1on1",
     ],
@@ -1984,7 +1997,8 @@ var BtexServerCore = (function () {
           yesNames: yes.map(function (id) { return nameOf(w.db, id); }),
           myRsvp: my,
           attended: (e.attended || []).indexOf(w.id) !== -1,
-          checkInOpen: !!e.checkIn && e.date === today(),
+          late: (e.late || []).indexOf(w.id) !== -1,
+          checkInOpen: !!e.checkIn && e.date === today() && e.area !== "online",
           visitorCount: w.db.visitors.filter(function (x) { return x.eventId === e.id && x.status !== "declined" && x.status !== "invited"; }).length,
           past: e.date < today(),
         };
@@ -2002,7 +2016,7 @@ var BtexServerCore = (function () {
           var att = (e.attended || []).indexOf(m.id) !== -1;
           return {
             id: m.id, name: m.name, team: m.team || "", category: m.company || m.category || "",
-            rsvp: rs[m.id] || "", attended: att, party: pr[m.id] || "", isMe: m.id === w.id,
+            rsvp: rs[m.id] || "", attended: att, late: (e.late || []).indexOf(m.id) !== -1, party: pr[m.id] || "", isMe: m.id === w.id,
           };
         });
         var visitors = w.db.visitors
@@ -2065,8 +2079,7 @@ var BtexServerCore = (function () {
           return c.fail(guard.checkInLockedUntil > c.nowMs() ? "LOCKED" : "CHECKIN_FAILED");
         }
         guard.checkInFailures = 0;
-        e.attended = e.attended || [];
-        if (e.attended.indexOf(w.id) === -1) e.attended.push(w.id);
+        if ((e.attended || []).indexOf(w.id) === -1) setAttendance(e, w.id, "present", "code");
         e.rsvps = e.rsvps || {};
         e.rsvps[w.id] = "yes";
         c.saveDb(w.db);
@@ -2192,6 +2205,90 @@ var BtexServerCore = (function () {
         return c.ok({ code: e.checkIn ? e.checkIn.code : "" });
       }
 
+      // ---------- 出欠(出席・遅刻早退) ----------
+      // attended: 出席した人(遅刻早退を含む) / late: そのうち遅刻早退 / meetMinutes: Meet に参加した分数
+      var MEET_PRESENT_MIN = 100; // 100分以上 → 出席
+      var MEET_LATE_MIN = 60;     // 60分以上100分未満 → 遅刻早退
+      function setAttendance(e, memberId, status, source, minutes) {
+        e.attended = (e.attended || []).filter(function (x) { return x !== memberId; });
+        e.late = (e.late || []).filter(function (x) { return x !== memberId; });
+        e.attendSource = e.attendSource || {};
+        if (status === "present" || status === "late") {
+          e.attended.push(memberId);
+          if (status === "late") e.late.push(memberId);
+          e.attendSource[memberId] = source;
+        } else {
+          delete e.attendSource[memberId];
+        }
+        if (typeof minutes === "number") { e.meetMinutes = e.meetMinutes || {}; e.meetMinutes[memberId] = minutes; }
+      }
+      function attendanceOf(e, memberId) {
+        if ((e.attended || []).indexOf(memberId) === -1) return "";
+        return (e.late || []).indexOf(memberId) !== -1 ? "late" : "present";
+      }
+      function statusByMinutes(min) { return min >= MEET_PRESENT_MIN ? "present" : min >= MEET_LATE_MIN ? "late" : ""; }
+
+      // Meet の参加者(表示名と分数)を名簿に当てはめる。手で付けた出欠は上書きしない
+      function applyMeetParticipants(db, e, list) {
+        var keys = {};
+        (db.referralMembers || []).forEach(function (m) {
+          keys[BtexServerCore.normalizeName(m.name)] = m.id;
+          var u = userOf(db, m.id);
+          if (u && u.meetName) keys[BtexServerCore.normalizeName(u.meetName)] = m.id;
+        });
+        Object.keys(db.meetAliases || {}).forEach(function (k) { keys[k] = db.meetAliases[k]; });
+        var byMember = {};
+        var unmatched = {};
+        list.forEach(function (p) {
+          var k = BtexServerCore.normalizeName(p.name);
+          var id = keys[k];
+          if (id) byMember[id] = (byMember[id] || 0) + p.minutes;
+          else if (k) unmatched[p.name] = (unmatched[p.name] || 0) + p.minutes;
+        });
+        e.attendSource = e.attendSource || {};
+        Object.keys(byMember).forEach(function (id) {
+          if (e.attendSource[id] === "manual") { e.meetMinutes = e.meetMinutes || {}; e.meetMinutes[id] = byMember[id]; return; }
+          setAttendance(e, id, statusByMinutes(byMember[id]), "meet", byMember[id]);
+        });
+        e.meetUnmatched = Object.keys(unmatched).map(function (n) { return { name: n, minutes: unmatched[n] }; })
+          .filter(function (x) { return x.minutes > 0; });
+        e.meetSyncedAt = c.nowMs();
+        return { matched: Object.keys(byMember).length, unmatched: e.meetUnmatched.length };
+      }
+      function syncMeetFor(db, e) {
+        if (!c.meet || !e.meetUrl) return { error: "unavailable" };
+        try {
+          var list = c.meet.attendance(e.meetUrl) || [];
+          return applyMeetParticipants(db, e, list);
+        } catch (err) {
+          e.meetSyncError = String(err && err.message ? err.message : err).slice(0, 200);
+          return { error: "failed" };
+        }
+      }
+      // 終わった時刻(日本時間のミリ秒)
+      function eventEndMs(e) {
+        var t = e.end || e.start || "23:59";
+        var p = e.date.split("-").map(Number);
+        var hm = t.split(":").map(Number);
+        return Date.UTC(p[0], p[1] - 1, p[2], hm[0], hm[1]) - JST;
+      }
+      // 定期実行: 終わってから15分〜3時間の間、Meet の参加記録から出欠をつける(何度実行しても同じ結果)
+      function jobSyncMeet() {
+        var db = c.ensureDb();
+        if (!c.meet) return { skipped: "no meet" };
+        var count = 0;
+        db.events.forEach(function (e) {
+          if (!e.meetUrl || e.area !== "online") return;
+          var end = eventEndMs(e);
+          var now = c.nowMs();
+          if (now < end + 15 * 60 * 1000 || now > end + 3 * 60 * 60 * 1000) return;
+          syncMeetFor(db, e);
+          count++;
+        });
+        if (count) c.saveDb(db);
+        return { synced: count };
+      }
+
       function adminEventDetail(body) {
         var w = admin(body);
         if (w.error) return w.error;
@@ -2199,10 +2296,17 @@ var BtexServerCore = (function () {
         if (!e) return c.fail("NOT_FOUND");
         var rsvps = e.rsvps || {};
         var rows = (w.db.referralMembers || []).map(function (m) {
-          return { memberId: m.id, name: m.name, team: m.team, rsvp: rsvps[m.id] || "", attended: (e.attended || []).indexOf(m.id) !== -1 };
+          var a = attendanceOf(e, m.id);
+          return {
+            memberId: m.id, name: m.name, team: m.team, rsvp: rsvps[m.id] || "", attended: !!a, attendance: a,
+            minutes: (e.meetMinutes || {})[m.id], source: (e.attendSource || {})[m.id] || "",
+          };
         });
         var visitors = w.db.visitors.filter(function (v) { return v.eventId === e.id; }).map(function (v) { return visitorView(w.db, v, true); });
-        return c.ok({ event: eventView(w, e), code: e.checkIn ? e.checkIn.code : "", members: rows, visitors: visitors });
+        return c.ok({
+          event: eventView(w, e), code: e.checkIn ? e.checkIn.code : "", members: rows, visitors: visitors,
+          meet: { available: !!c.meet, syncedAt: e.meetSyncedAt || 0, unmatched: e.meetUnmatched || [], error: e.meetSyncError || "", presentMin: MEET_PRESENT_MIN, lateMin: MEET_LATE_MIN },
+        });
       }
 
       function adminMarkAttendance(body) {
@@ -2210,8 +2314,41 @@ var BtexServerCore = (function () {
         if (w.error) return w.error;
         var e = c.find(w.db.events, function (x) { return x.id === body.id; });
         if (!e || !member(w.db, body.memberId)) return c.fail("NOT_FOUND");
-        e.attended = (e.attended || []).filter(function (x) { return x !== body.memberId; });
-        if (body.attended === true) e.attended.push(body.memberId);
+        var status = "status" in body ? oneOf(body.status, ["present", "late", ""], "") : (body.attended === true ? "present" : "");
+        setAttendance(e, body.memberId, status, "manual");
+        if (!status) { e.attendSource = e.attendSource || {}; e.attendSource[body.memberId] = "manual"; }
+        c.saveDb(w.db);
+        return c.ok({});
+      }
+
+      // 管理者: いますぐ Meet の参加記録から出欠をつける
+      function adminSyncMeetAttendance(body) {
+        var w = admin(body);
+        if (w.error) return w.error;
+        var e = c.find(w.db.events, function (x) { return x.id === body.id; });
+        if (!e) return c.fail("NOT_FOUND");
+        if (!c.meet) return c.fail("INVALID_REQUEST", "共有サーバーで Google Meet の参加記録を使う設定をすると、自動で出欠をつけられます(gas/README.md)。");
+        if (!e.meetUrl) return c.fail("INVALID_REQUEST", "この定例会には Google Meet がありません。");
+        var r = syncMeetFor(w.db, e);
+        c.saveDb(w.db);
+        if (r.error) return c.fail("SERVER_ERROR", "Google Meet の参加記録を読めませんでした。" + (e.meetSyncError || ""));
+        return c.ok(r);
+      }
+
+      // 管理者: 名簿に当てはまらなかった Meet の表示名を、メンバーに結びつける(次からは自動)
+      function adminMapMeetName(body) {
+        var w = admin(body);
+        if (w.error) return w.error;
+        var e = c.find(w.db.events, function (x) { return x.id === body.id; });
+        if (!e || !member(w.db, body.memberId)) return c.fail("NOT_FOUND");
+        var name = c.cleanStr(body.name, 80);
+        var row = c.find(e.meetUnmatched || [], function (x) { return x.name === name; });
+        if (!row) return c.fail("NOT_FOUND");
+        w.db.meetAliases = w.db.meetAliases || {};
+        w.db.meetAliases[BtexServerCore.normalizeName(name)] = body.memberId;
+        var total = ((e.meetMinutes || {})[body.memberId] || 0) + row.minutes;
+        setAttendance(e, body.memberId, statusByMinutes(total), "meet", total);
+        e.meetUnmatched = e.meetUnmatched.filter(function (x) { return x.name !== name; });
         c.saveDb(w.db);
         return c.ok({});
       }
@@ -2562,7 +2699,7 @@ var BtexServerCore = (function () {
       function getMySettings(body) {
         var w = who(body);
         if (w.error) return w.error;
-        return c.ok({ calendarEmail: w.user.calendarEmail || "", calendar: !!c.calendar });
+        return c.ok({ calendarEmail: w.user.calendarEmail || "", calendar: !!c.calendar, meetName: w.user.meetName || "", name: w.me.name });
       }
       function updateMySettings(body) {
         var w = who(body);
@@ -2572,8 +2709,9 @@ var BtexServerCore = (function () {
           if (email && !/^[\w.+-]+@[\w-]+(\.[\w-]+)+$/.test(email)) return c.fail("INVALID_REQUEST", "メールアドレスの形を確認してください。");
           w.user.calendarEmail = email;
         }
+        if ("meetName" in body) w.user.meetName = c.cleanStr(body.meetName, 60);
         c.saveDb(w.db);
-        return c.ok({ calendarEmail: w.user.calendarEmail || "" });
+        return c.ok({ calendarEmail: w.user.calendarEmail || "", meetName: w.user.meetName || "" });
       }
 
       // ============================================
@@ -2875,6 +3013,7 @@ var BtexServerCore = (function () {
               yes: Object.keys(rs).filter(function (k) { return rs[k] === "yes"; }).length,
               no: Object.keys(rs).filter(function (k) { return rs[k] === "no"; }).length,
               attended: (e.attended || []).length,
+              late: (e.late || []).length,
               visitors: db.visitors.filter(function (v) { return v.eventId === e.id && (v.status === "applied" || v.status === "attended" || v.status === "joined"); }).length,
             };
           });
@@ -3077,11 +3216,13 @@ var BtexServerCore = (function () {
 
       return {
         migrate: migrate,
+        jobs: { syncMeet: jobSyncMeet },
         actions: {
           getHome: getHome, getActivity: getActivity, adminDashboard: adminDashboard, adminExport: adminExport,
           listEvents: listEvents, getEvent: getEvent, rsvpEvent: rsvpEvent, checkIn: checkIn,
           adminSaveEvent: adminSaveEvent, adminDeleteEvent: adminDeleteEvent, adminOpenCheckIn: adminOpenCheckIn,
           adminEventDetail: adminEventDetail, adminMarkAttendance: adminMarkAttendance,
+          adminSyncMeetAttendance: adminSyncMeetAttendance, adminMapMeetName: adminMapMeetName,
           createVisitorInvite: createVisitorInvite, listMyVisitors: listMyVisitors, updateVisitor: updateVisitor,
           visitorInfo: visitorInfo, visitorApply: visitorApply,
           listMyReferrals: listMyReferrals, reportThanks: reportThanks, deleteThanks: deleteThanks, getRankings: getRankings,
@@ -3234,11 +3375,53 @@ var CALENDAR_ = typeof Calendar === "undefined" ? null : {
   },
 };
 
+// ---------- Google Meet の参加記録(出欠の自動判定) ----------
+// Google Meet REST API で、会議に参加した人の表示名と参加時間(分)を読む。
+// 使うには gas/README.md の手順(Google Cloud のプロジェクトで「Google Meet REST API」を有効にする)が必要
+function meetGet_(url) {
+  var res = UrlFetchApp.fetch(url, { headers: { Authorization: "Bearer " + ScriptApp.getOAuthToken() }, muteHttpExceptions: true });
+  if (res.getResponseCode() >= 300) throw new Error("Meet API " + res.getResponseCode() + " " + res.getContentText().slice(0, 200));
+  return JSON.parse(res.getContentText());
+}
+function meetList_(url, key) {
+  var out = [], token = "";
+  do {
+    var page = meetGet_(url + (url.indexOf("?") === -1 ? "?" : "&") + "pageSize=100" + (token ? "&pageToken=" + encodeURIComponent(token) : ""));
+    out = out.concat(page[key] || []);
+    token = page.nextPageToken || "";
+  } while (token);
+  return out;
+}
+var MEET_ = {
+  attendance: function (meetUrl) {
+    var m = String(meetUrl).match(/meet\.google\.com\/([a-z0-9-]+)/i);
+    if (!m) return [];
+    var API = "https://meet.googleapis.com/v2/";
+    var space = meetGet_(API + "spaces/" + m[1]);
+    var records = meetList_(API + "conferenceRecords?filter=" + encodeURIComponent('space.name="' + space.name + '"'), "conferenceRecords");
+    var totals = {};
+    records.forEach(function (rec) {
+      meetList_(API + rec.name + "/participants", "participants").forEach(function (p) {
+        var name = (p.signedinUser && p.signedinUser.displayName) || (p.anonymousUser && p.anonymousUser.displayName) || (p.phoneUser && p.phoneUser.displayName) || "";
+        var ms = 0;
+        meetList_(API + p.name + "/participantSessions", "participantSessions").forEach(function (sess) {
+          if (!sess.startTime) return;
+          var end = sess.endTime ? new Date(sess.endTime) : new Date();
+          ms += Math.max(0, end - new Date(sess.startTime));
+        });
+        if (name) totals[name] = (totals[name] || 0) + ms;
+      });
+    });
+    return Object.keys(totals).map(function (n) { return { name: n, minutes: Math.round(totals[n] / 60000) }; });
+  },
+};
+
 var SERVER_ = BtexServerCore.createServer({
   load: loadDb_,
   save: saveDb_,
   randomBytes: randomBytes_,
   calendar: CALENDAR_,
+  meet: MEET_,
   onError: function (err) { console.error(err && err.stack ? err.stack : err); },
 });
 
@@ -3304,11 +3487,13 @@ function refreshSheets_() {
     members.forEach(function (m) {
       var r = (e.rsvps || {})[m.id] || "";
       var att = (e.attended || []).indexOf(m.id) !== -1;
-      if (!r && !att) return;
-      rsvpRows.push([e.date, e.title, m.name, m.team, RSVP_LABELS_JA[r] || "", att ? "出席済み" : ""].map(cell_));
+      if (!r && !att && (e.meetMinutes || {})[m.id] === undefined) return;
+      var late = (e.late || []).indexOf(m.id) !== -1;
+      var min = (e.meetMinutes || {})[m.id];
+      rsvpRows.push([e.date, e.title, m.name, m.team, RSVP_LABELS_JA[r] || "", att ? (late ? "遅刻早退" : "出席") : "", min === undefined ? "" : String(min)].map(cell_));
     });
   });
-  writeSheet_("定例会の出欠", ["日付", "定例会", "氏名", "チーム", "出欠の回答", "出席コード"], rsvpRows);
+  writeSheet_("定例会の出欠", ["日付", "定例会", "氏名", "チーム", "出欠の回答", "出欠(結果)", "Meet の参加(分)"], rsvpRows);
   var eventTitle = function (id) {
     var e = events.filter(function (x) { return x.id === id; })[0];
     return e ? e.date + " " + e.title : "";
@@ -3363,11 +3548,35 @@ function doGet() {
   return json_({ success: true, data: { service: "BT-EX5 会員サイト API", status: "ok" } });
 }
 
+// ---------- 定期実行(1時間ごと) ----------
+// 定例会が終わったあと、Google Meet の参加記録から出欠をつける
+function syncMeetAttendanceJob() {
+  var lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  try {
+    var r = SERVER_.runJob("syncMeet");
+    if (r[0] && r[0].synced) refreshSheets_();
+    return r;
+  } finally {
+    lock.releaseLock();
+  }
+}
+function installTriggers_() {
+  ScriptApp.getProjectTriggers().forEach(function (t) {
+    if (t.getHandlerFunction() === "syncMeetAttendanceJob") ScriptApp.deleteTrigger(t);
+  });
+  ScriptApp.newTrigger("syncMeetAttendanceJob").timeBased().everyHours(1).create();
+}
+
 // 初回に Apps Script のエディタから一度だけ実行する(権限の承認と、名簿の作成)
 function setup() {
   SERVER_.handle({ action: "loginOptions" });
   // Google Calendar API を追加していれば、1on1 用のカレンダーを作っておく(権限の確認もここで出る)
   if (CALENDAR_) oneOnOneCalendarId_();
+  // Meet の参加記録から出欠をつける処理を、1時間ごとに動かす(カレンダー連携を設定したときだけ)
+  if (CALENDAR_) {
+    try { installTriggers_(); } catch (err) { console.error("トリガーを入れられませんでした: " + err); }
+  }
   SERVER_.handle({ action: "verifySession", sessionToken: "" });
   refreshSheets_();
   return "準備できました。名簿 " + (loadDb_().referralMembers || []).length + " 名";

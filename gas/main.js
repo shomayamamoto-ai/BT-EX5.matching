@@ -131,11 +131,53 @@ var CALENDAR_ = typeof Calendar === "undefined" ? null : {
   },
 };
 
+// ---------- Google Meet の参加記録(出欠の自動判定) ----------
+// Google Meet REST API で、会議に参加した人の表示名と参加時間(分)を読む。
+// 使うには gas/README.md の手順(Google Cloud のプロジェクトで「Google Meet REST API」を有効にする)が必要
+function meetGet_(url) {
+  var res = UrlFetchApp.fetch(url, { headers: { Authorization: "Bearer " + ScriptApp.getOAuthToken() }, muteHttpExceptions: true });
+  if (res.getResponseCode() >= 300) throw new Error("Meet API " + res.getResponseCode() + " " + res.getContentText().slice(0, 200));
+  return JSON.parse(res.getContentText());
+}
+function meetList_(url, key) {
+  var out = [], token = "";
+  do {
+    var page = meetGet_(url + (url.indexOf("?") === -1 ? "?" : "&") + "pageSize=100" + (token ? "&pageToken=" + encodeURIComponent(token) : ""));
+    out = out.concat(page[key] || []);
+    token = page.nextPageToken || "";
+  } while (token);
+  return out;
+}
+var MEET_ = {
+  attendance: function (meetUrl) {
+    var m = String(meetUrl).match(/meet\.google\.com\/([a-z0-9-]+)/i);
+    if (!m) return [];
+    var API = "https://meet.googleapis.com/v2/";
+    var space = meetGet_(API + "spaces/" + m[1]);
+    var records = meetList_(API + "conferenceRecords?filter=" + encodeURIComponent('space.name="' + space.name + '"'), "conferenceRecords");
+    var totals = {};
+    records.forEach(function (rec) {
+      meetList_(API + rec.name + "/participants", "participants").forEach(function (p) {
+        var name = (p.signedinUser && p.signedinUser.displayName) || (p.anonymousUser && p.anonymousUser.displayName) || (p.phoneUser && p.phoneUser.displayName) || "";
+        var ms = 0;
+        meetList_(API + p.name + "/participantSessions", "participantSessions").forEach(function (sess) {
+          if (!sess.startTime) return;
+          var end = sess.endTime ? new Date(sess.endTime) : new Date();
+          ms += Math.max(0, end - new Date(sess.startTime));
+        });
+        if (name) totals[name] = (totals[name] || 0) + ms;
+      });
+    });
+    return Object.keys(totals).map(function (n) { return { name: n, minutes: Math.round(totals[n] / 60000) }; });
+  },
+};
+
 var SERVER_ = BtexServerCore.createServer({
   load: loadDb_,
   save: saveDb_,
   randomBytes: randomBytes_,
   calendar: CALENDAR_,
+  meet: MEET_,
   onError: function (err) { console.error(err && err.stack ? err.stack : err); },
 });
 
@@ -201,11 +243,13 @@ function refreshSheets_() {
     members.forEach(function (m) {
       var r = (e.rsvps || {})[m.id] || "";
       var att = (e.attended || []).indexOf(m.id) !== -1;
-      if (!r && !att) return;
-      rsvpRows.push([e.date, e.title, m.name, m.team, RSVP_LABELS_JA[r] || "", att ? "出席済み" : ""].map(cell_));
+      if (!r && !att && (e.meetMinutes || {})[m.id] === undefined) return;
+      var late = (e.late || []).indexOf(m.id) !== -1;
+      var min = (e.meetMinutes || {})[m.id];
+      rsvpRows.push([e.date, e.title, m.name, m.team, RSVP_LABELS_JA[r] || "", att ? (late ? "遅刻早退" : "出席") : "", min === undefined ? "" : String(min)].map(cell_));
     });
   });
-  writeSheet_("定例会の出欠", ["日付", "定例会", "氏名", "チーム", "出欠の回答", "出席コード"], rsvpRows);
+  writeSheet_("定例会の出欠", ["日付", "定例会", "氏名", "チーム", "出欠の回答", "出欠(結果)", "Meet の参加(分)"], rsvpRows);
   var eventTitle = function (id) {
     var e = events.filter(function (x) { return x.id === id; })[0];
     return e ? e.date + " " + e.title : "";
@@ -260,11 +304,35 @@ function doGet() {
   return json_({ success: true, data: { service: "BT-EX5 会員サイト API", status: "ok" } });
 }
 
+// ---------- 定期実行(1時間ごと) ----------
+// 定例会が終わったあと、Google Meet の参加記録から出欠をつける
+function syncMeetAttendanceJob() {
+  var lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  try {
+    var r = SERVER_.runJob("syncMeet");
+    if (r[0] && r[0].synced) refreshSheets_();
+    return r;
+  } finally {
+    lock.releaseLock();
+  }
+}
+function installTriggers_() {
+  ScriptApp.getProjectTriggers().forEach(function (t) {
+    if (t.getHandlerFunction() === "syncMeetAttendanceJob") ScriptApp.deleteTrigger(t);
+  });
+  ScriptApp.newTrigger("syncMeetAttendanceJob").timeBased().everyHours(1).create();
+}
+
 // 初回に Apps Script のエディタから一度だけ実行する(権限の承認と、名簿の作成)
 function setup() {
   SERVER_.handle({ action: "loginOptions" });
   // Google Calendar API を追加していれば、1on1 用のカレンダーを作っておく(権限の確認もここで出る)
   if (CALENDAR_) oneOnOneCalendarId_();
+  // Meet の参加記録から出欠をつける処理を、1時間ごとに動かす(カレンダー連携を設定したときだけ)
+  if (CALENDAR_) {
+    try { installTriggers_(); } catch (err) { console.error("トリガーを入れられませんでした: " + err); }
+  }
   SERVER_.handle({ action: "verifySession", sessionToken: "" });
   refreshSheets_();
   return "準備できました。名簿 " + (loadDb_().referralMembers || []).length + " 名";

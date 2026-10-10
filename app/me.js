@@ -27,7 +27,7 @@
           e.currentTarget.querySelector("b").textContent = on ? "文字を元の大きさに戻す" : "文字を大きくする";
           App.toast(on ? "文字を大きくしました(この端末のすべての画面)" : "元の大きさに戻しました");
         } }, h("b", null, document.documentElement.classList.contains("big-text") ? "文字を元の大きさに戻す" : "文字を大きくする"), h("small", null, "小さい文字が読みにくいときに")),
-        menu("#me/calendar", "Google カレンダーとの連携", "1on1 の予定と Google Meet の招待が、あなたのカレンダーに自動で入ります"),
+        menu("#me/calendar", "Google カレンダー・Meet の設定", "1on1 の招待を受け取るアドレスと、Meet で表示される名前(定例会の出欠に使います)"),
         menu("#me/qr", "あなたのプロフィールの QR コード", "交流会でメンバーに読み取ってもらうと、あなたの詳細が開きます"),
         menu("#me/feedback", "バグ・要望を送る", "使いにくいところ・ほしい機能を運営へ"),
         menu("../teams/", "全体分析", "仕事が回る業種・紹介の流れ"),
@@ -108,8 +108,9 @@
   async function calendarSheet() {
     const d = await App.api("getMySettings");
     if (!d) return;
-    App.openSheet("Google カレンダーとの連携", (body, close) => {
+    App.openSheet("Google カレンダー・Meet の設定", (body, close) => {
       const email = h("input", { type: "email", maxlength: "120", autocomplete: "email", placeholder: "例:yourname@gmail.com", value: d.calendarEmail });
+      const meetName = h("input", { type: "text", maxlength: "60", placeholder: d.name, value: d.meetName });
       const err = h("p", { class: "app-error", role: "alert" });
       body.append(
         h("p", { class: "app-lead" }, "1on1 を予定すると、運営の Google カレンダーから、このメールアドレスあてに招待が届きます。Gmail・Google Workspace のアドレスなら、あなたの Google カレンダーに自動で入ります(Google Meet を選んだときは参加用のリンクつき)。"),
@@ -117,11 +118,13 @@
         d.calendar ? null : h("p", { class: "one-meet-note" }, "いまはお試し版のため、まだ自動では送られません(共有サーバーに切り替えると送られます)。先に登録しておけます。"),
         h("form", { class: "app-form", onsubmit: async (e) => {
           e.preventDefault();
-          const r = await App.api("updateMySettings", { calendarEmail: email.value.trim() }, { raw: true, quiet: true });
+          const r = await App.api("updateMySettings", { calendarEmail: email.value.trim(), meetName: meetName.value.trim() }, { raw: true, quiet: true });
           if (!r || r.success === false) { err.textContent = r ? r.error.userMessage : "保存できませんでした。"; return; }
           close();
           App.toast(r.calendarEmail ? "登録しました。次の 1on1 から招待が届きます" : "連携を外しました");
-        } }, App.field("カレンダー用のメールアドレス", email), err,
+        } }, App.field("カレンダー用のメールアドレス", email),
+        App.field("Google Meet で表示される名前", meetName, `定例会の出欠は、Meet に表示される名前で判定します。名簿の名前(${d.name})とちがう名前で参加するときは入れてください(例:ローマ字・ニックネーム)。`),
+        err,
         h("button", { type: "submit", class: "app-btn primary wide" }, "保存する")));
     }, { onClose: () => { if (location.hash === "#me/calendar") history.replaceState(null, "", "#me"); } });
   }
