@@ -818,25 +818,79 @@
     const btn = $("#csMic");
     if (!SR) return;
     btn.hidden = false;
+    // ブラウザは、しばらく黙ると聞き取りを自動で終える。ボタンでこちらが止めるまで、
+    // 終わるたびに聞き取りをつなぎ直して続ける(聞き取った文はつなげて残す)
     let rec = null;
-    btn.addEventListener("click", () => {
-      if (rec) { rec.stop(); return; }
+    let listening = false;
+    let base = "";      // つなぎ直す前までに確定した文
+    let session = "";   // いまの聞き取りで聞こえている文
+    let quickEnds = 0;  // すぐ終わってしまう(マイクが使えないなど)ときに、つなぎ直しを止めるため
+    let startedAt = 0;
+    let heard = "";     // いまの聞き取りのうち、手で直す前に聞こえていた分(二重に入れない)
+    const setText = () => { $("#csText").value = [base, session].filter(Boolean).join(" "); };
+    // 聞いている間に手で直したら、その文を土台にして続ける
+    $("#csText").addEventListener("input", () => {
+      if (!listening) return;
+      base = $("#csText").value.trim();
+      heard += session;
+      session = "";
+    });
+    const stopUi = (note) => {
+      listening = false;
+      rec = null;
+      btn.setAttribute("aria-pressed", "false");
+      btn.querySelector("span").textContent = "話して入力";
+      $("#csNote").textContent = note || "";
+    };
+    const startSession = () => {
       rec = new SR();
       rec.lang = "ja-JP";
       rec.interimResults = true;
-      rec.continuous = false;
-      const base = $("#csText").value.trim();
+      rec.continuous = true;
+      session = "";
+      heard = "";
       rec.onresult = (e) => {
-        const said = [...e.results].map((r) => r[0].transcript).join("");
-        $("#csText").value = (base ? base + " " : "") + said;
+        const all = [...e.results].map((r) => r[0].transcript).join("");
+        session = heard && all.startsWith(heard) ? all.slice(heard.length).trim() : all;
+        setText();
       };
-      const end = () => { rec = null; btn.setAttribute("aria-pressed", "false"); btn.querySelector("span").textContent = "話して入力"; $("#csNote").textContent = ""; };
-      rec.onend = end;
-      rec.onerror = (e) => { end(); $("#csNote").textContent = e.error === "not-allowed" ? "マイクの使用が許可されていません。ブラウザの設定で許可してください。" : "音声を聞き取れませんでした。もう一度お試しください。"; };
+      rec.onerror = (e) => {
+        // 黙っていた・通信が切れたなどは、つなぎ直して続ける。マイクが使えないときだけ止める
+        if (["not-allowed", "service-not-allowed", "audio-capture"].includes(e.error)) {
+          listening = false;
+          $("#csNote").dataset.error = e.error === "audio-capture" ? "マイクが見つかりません。マイクをつないでから、もう一度押してください。" : "マイクの使用が許可されていません。ブラウザの設定で許可してください。";
+        }
+      };
+      rec.onend = () => {
+        if (session) base = [base, session].filter(Boolean).join(" ");
+        session = "";
+        quickEnds = Date.now() - startedAt < 1500 ? quickEnds + 1 : 0;
+        if (listening && quickEnds < 5) {
+          startedAt = Date.now();
+          try { startSession(); return; } catch { /* 下で止める */ }
+        }
+        const note = $("#csNote").dataset.error || (listening ? "聞き取りが止まりました。もう一度押すと続けられます。" : "");
+        delete $("#csNote").dataset.error;
+        stopUi(note);
+      };
+      rec.start();
+    };
+    btn.addEventListener("click", () => {
+      if (listening) {
+        // こちらが止めたときだけ終わる
+        listening = false;
+        if (rec) rec.stop();
+        else stopUi();
+        return;
+      }
+      listening = true;
+      quickEnds = 0;
+      startedAt = Date.now();
+      base = $("#csText").value.trim();
       btn.setAttribute("aria-pressed", "true");
       btn.querySelector("span").textContent = "聞いています…(押すと止める)";
-      $("#csNote").textContent = "相談の内容を話してください。";
-      rec.start();
+      $("#csNote").textContent = "相談の内容を話してください。止めるまで聞き取りを続けます。";
+      try { startSession(); } catch { stopUi("音声入力を始められませんでした。もう一度お試しください。"); }
     });
   }
 
