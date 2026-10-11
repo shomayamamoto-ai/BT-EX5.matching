@@ -1,6 +1,8 @@
 // ============================================
-// app/pitch.js — 30秒プレゼンの練習と、今月の目標
-// ・30秒プレゼン: 原稿(本人だけが見る。サーバーに保存)・文字数と読む時間の目安・30秒タイマー(残り10秒と終わりで知らせる)・読み上げ
+// app/pitch.js — プレゼンの練習・タイマーと、今月の目標
+// ・30秒プレゼン: 原稿(本人だけが見る。サーバーに保存)・文字数と読む時間の目安・読み上げ
+// ・タイマー: 30秒・1分・3分・5分・10分・25分(ポモドーロ)。一時停止・つづける。残りわずかと 0秒で、音(鐘)・色・ふるえ。
+//   選んだ長さと音のオン・オフは、この端末に覚える。動いているあいだは画面を消さない(対応する端末)
 // ・今月の目標: 紹介・成約・1on1・ビジター招待の数を決めると、ホームの「今月のあなた」に進み具合が出る
 // ============================================
 
@@ -23,32 +25,83 @@
     ].filter(Boolean).join("\n");
   }
 
+  // タイマーの長さ(30秒プレゼン・1分・3分・5分・10分・25分のポモドーロ)
+  const LENGTHS = [[30, "30秒"], [60, "1分"], [180, "3分"], [300, "5分"], [600, "10分"], [1500, "25分"]];
+  const store = {
+    get(k, d) { try { const v = localStorage.getItem(`btex5-timer-${k}`); return v === null ? d : v; } catch { return d; } },
+    set(k, v) { try { localStorage.setItem(`btex5-timer-${k}`, String(v)); } catch { /* noop */ } },
+  };
+  const fmt = (sec) => (sec >= 60 ? `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, "0")}` : String(sec));
+  const lenLabel = (sec) => (sec >= 60 ? `${sec / 60}分` : `${sec}秒`);
+
+  // 音(Web Audio で鐘の音を作る。ファイルは使わない)。iPhone は押したときに音の準備が要るので、はじめるボタンで作る
+  let audio = null;
+  function audioReady() {
+    try {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      if (!audio) audio = new AC();
+      if (audio.state === "suspended") audio.resume();
+      return audio;
+    } catch { return null; }
+  }
+  function bell(at, freq, len, vol) {
+    const ac = audio; if (!ac) return;
+    [[1, 1], [2.76, 0.35], [5.4, 0.12]].forEach(([mul, v]) => { // 鐘らしく、少しずれた倍音を重ねる
+      const o = ac.createOscillator(), g = ac.createGain();
+      o.type = "sine"; o.frequency.value = freq * mul;
+      g.gain.setValueAtTime(0.0001, at);
+      g.gain.exponentialRampToValueAtTime(vol * v, at + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, at + len);
+      o.connect(g).connect(ac.destination); o.start(at); o.stop(at + len + 0.05);
+    });
+  }
+  function soundEnd() { const ac = audio; if (!ac) return; const t = ac.currentTime + 0.02; [0, 0.55, 1.1].forEach((d) => { bell(t + d, 880, 1.6, 0.5); bell(t + d, 1318.5, 1.2, 0.18); }); }
+  function soundWarn() { const ac = audio; if (!ac) return; bell(ac.currentTime + 0.02, 660, 0.9, 0.3); }
+  App.timerSound = { ready: audioReady, end: soundEnd, warn: soundWarn };
+
   App.pitchSheet = function () {
-    App.openSheet("30秒プレゼンの練習", async (body) => {
-      const text = h("textarea", { class: "pitch-text", rows: "7", maxlength: "800", placeholder: "例:〇〇株式会社の山田です。飲食店さまの集客を、SNS と動画でお手伝いしています。ご紹介いただきたいのは、新しくお店を始める方です。よろしくお願いいたします。" });
+    App.openSheet("プレゼンの練習・タイマー", async (body) => {
+      let total = Number(store.get("len", 30)) || 30;
+      if (!LENGTHS.some(([v]) => v === total)) total = 30;
+      let withSound = store.get("sound", "1") === "1";
+
+      const text = h("textarea", { class: "pitch-text", rows: "7", maxlength: "800", placeholder: "例:〇〇株式会社の山田です。\n飲食店さまの集客を、SNS と動画でお手伝いしています。\nご紹介いただきたいのは、新しくお店を始める方です。\nよろしくお願いいたします。" });
       const meter = h("p", { class: "pitch-meter" });
-      const clock = h("b", { class: "pitch-clock" }, "30");
-      const ring = h("div", { class: "pitch-ring" }, clock, h("small", null, "秒"));
-      const startBtn = h("button", { type: "button", class: "app-btn primary" }, "練習をはじめる");
+      const clock = h("b", { class: "pitch-clock" });
+      const unit = h("small", null);
+      const ring = h("div", { class: "pitch-ring" }, clock, unit);
+      const startBtn = h("button", { type: "button", class: "app-btn primary" }, "はじめる");
       const resetBtn = h("button", { type: "button", class: "app-btn ghost" }, "もどす");
       const sayBtn = h("button", { type: "button", class: "app-btn ghost" }, "読み上げて聞く");
       const saved = h("small", { class: "pitch-saved" });
+      const lens = h("div", { class: "pitch-lens", role: "radiogroup", "aria-label": "タイマーの長さ" }, LENGTHS.map(([v, label]) =>
+        h("button", { type: "button", class: "pitch-len", role: "radio", "data-len": String(v), onclick: () => choose(v) }, label, v === 1500 ? h("small", null, "ポモドーロ") : null)));
+      const soundBox = h("input", { type: "checkbox" });
+      soundBox.checked = withSound;
+      soundBox.addEventListener("change", () => { withSound = soundBox.checked; store.set("sound", withSound ? "1" : "0"); if (withSound) { audioReady(); soundWarn(); } });
       body.append(
-        h("p", { class: "app-lead" }, "定例会の「30秒プレゼンテーション」の原稿を書いて、時間を計って練習できます。原稿はあなただけが見られます。"),
+        h("p", { class: "app-lead" }, "定例会の「30秒プレゼンテーション」の原稿を書いて、時間を計って練習できます。原稿はあなただけが見られます。タイマーは 1分・5分・25分(ポモドーロ)なども選べます。"),
         h("div", { class: "app-btn-row pitch-tools" }, App.btn("プロフィールからひな形を入れる", () => {
           if (text.value.trim() && !confirm("いまの原稿を、ひな形で置きかえますか?")) return;
           text.value = template(); update(); save();
         }, "ghost small"), saved),
         text, meter,
+        lens,
         h("div", { class: "pitch-timer" }, ring, h("div", { class: "pitch-btns" }, startBtn, resetBtn, "speechSynthesis" in window ? sayBtn : null)),
-        h("p", { class: "app-field-hint" }, "残り10秒と、30秒になったときに、画面の色とスマホのふるえ(対応する端末)でお知らせします。"));
+        h("label", { class: "pitch-sound" }, soundBox, h("span", null, "0秒で音を鳴らす(残りわずかのときも小さく鳴らします)")),
+        h("p", { class: "app-field-hint" }, "残りわずか(1分までは残り10秒、それより長いときは残り1分)と、0秒になったときに、音・画面の色・スマホのふるえ(対応する端末)でお知らせします。マナーモードのときは音が出ないことがあります。"));
 
-      // 文字数と、読むのにかかる時間の目安
+      // 文字数と、読むのにかかる時間の目安(5分までの長さで比べる)
       function update() {
         const n = text.value.replace(/\s/g, "").length;
         const sec = Math.round(n / CHARS_PER_SEC);
-        meter.className = `pitch-meter${sec > 32 ? " is-over" : sec >= 24 ? " is-good" : ""}`;
-        meter.textContent = n ? `${n}文字 ・ 読むと約${sec}秒${sec > 32 ? "(長すぎます。30秒は 250字くらいまで)" : sec >= 24 ? "(ちょうどよい長さです)" : "(30秒は 250字くらいが目安)"}` : "30秒で話せるのは 250字くらいです";
+        const goal = total <= 300 ? total : 30;
+        const maxChars = Math.round(goal * CHARS_PER_SEC / 50) * 50; // 30秒は 250字、1分は 500字
+        meter.className = `pitch-meter${sec > goal * 1.07 ? " is-over" : sec >= goal * 0.8 ? " is-good" : ""}`;
+        meter.textContent = n
+          ? `${n}文字 ・ 読むと約${sec}秒${sec > goal * 1.07 ? `(${lenLabel(goal)}には長すぎます。${maxChars}字くらいまで)` : sec >= goal * 0.8 ? `(${lenLabel(goal)}にちょうどよい長さです)` : `(${lenLabel(goal)}は ${maxChars}字くらいが目安)`}`
+          : `${lenLabel(goal)}で話せるのは ${maxChars}字くらいです`;
       }
       // 書いたら少しして自動で保存
       let saveTimer = null;
@@ -58,29 +111,55 @@
       }
       text.addEventListener("input", () => { update(); saved.textContent = ""; clearTimeout(saveTimer); saveTimer = setTimeout(save, 900); });
 
-      // 30秒タイマー
-      let timer = null, endAt = 0;
+      // タイマー
+      let timer = null, endAt = 0, wake = null;
+      const warnAt = () => (total <= 60 ? 10 : 60);
       const draw = (left) => {
-        clock.textContent = String(Math.max(0, Math.ceil(left)));
-        ring.style.setProperty("--p", String(Math.max(0, left) / 30));
-        ring.classList.toggle("is-last", left <= 10 && left > 0);
+        const sec = Math.max(0, Math.ceil(left));
+        clock.textContent = fmt(sec);
+        clock.classList.toggle("is-long", sec >= 60);
+        unit.textContent = sec >= 60 ? "分:秒" : "秒";
+        ring.style.setProperty("--p", String(Math.max(0, left) / total));
+        ring.classList.toggle("is-last", left <= warnAt() && left > 0);
         ring.classList.toggle("is-end", left <= 0);
       };
       const buzz = (p) => { try { if (navigator.vibrate) navigator.vibrate(p); } catch { /* noop */ } };
-      function stop() { clearInterval(timer); timer = null; startBtn.textContent = "練習をはじめる"; }
+      // 動いているあいだは画面を消さない(対応する端末)
+      async function keepAwake(on) {
+        try {
+          if (on && "wakeLock" in navigator) wake = await navigator.wakeLock.request("screen");
+          else if (!on && wake) { await wake.release(); wake = null; }
+        } catch { /* noop */ }
+      }
+      function stop(label = "はじめる") { clearInterval(timer); timer = null; startBtn.textContent = label; keepAwake(false); }
+      function choose(v) {
+        if (timer && !confirm("タイマーを止めて、長さを変えますか?")) return;
+        stop(); total = v; store.set("len", v);
+        lens.querySelectorAll(".pitch-len").forEach((b) => { const on = Number(b.dataset.len) === v; b.classList.toggle("is-on", on); b.setAttribute("aria-checked", on ? "true" : "false"); });
+        draw(total); update();
+      }
+      let left0 = 0; // 一時停止したときの残り
       startBtn.addEventListener("click", () => {
-        if (timer) { stop(); return; }
-        endAt = Date.now() + 30000;
-        let warned = false;
+        if (timer) { left0 = (endAt - Date.now()) / 1000; stop("つづける"); return; }
+        if (withSound) audioReady();
+        const remain = left0 > 0 ? left0 : total;
+        endAt = Date.now() + remain * 1000;
+        let warned = remain <= warnAt();
+        left0 = 0;
         startBtn.textContent = "とめる";
+        keepAwake(true);
         timer = setInterval(() => {
           const left = (endAt - Date.now()) / 1000;
-          if (left <= 10 && !warned) { warned = true; buzz(120); }
+          if (left <= warnAt() && !warned) { warned = true; buzz(120); if (withSound) soundWarn(); }
           draw(left);
-          if (left <= 0) { stop(); buzz([200, 100, 200]); App.toast("30秒です。おつかれさまでした"); }
+          if (left <= 0) {
+            stop(); buzz([200, 100, 200, 100, 200]);
+            if (withSound) soundEnd();
+            App.toast(`${lenLabel(total)}です。おつかれさまでした`);
+          }
         }, 100);
       });
-      resetBtn.addEventListener("click", () => { stop(); draw(30); });
+      resetBtn.addEventListener("click", () => { left0 = 0; stop(); draw(total); });
       sayBtn.addEventListener("click", () => {
         if (!text.value.trim()) { App.toast("原稿を入れてください"); return; }
         speechSynthesis.cancel();
@@ -90,11 +169,11 @@
         u.onend = () => App.toast(`読み上げは約${Math.round((Date.now() - t0) / 1000)}秒でした`);
         speechSynthesis.speak(u);
       });
-      draw(30);
-      update();
+      App.pitchStop = () => { left0 = 0; stop(); };
+      choose(total);
       const d = await App.api("getMySettings", {}, { quiet: true });
       if (d && d.pitchScript && !text.value) { text.value = d.pitchScript; update(); }
-    }, { noFocus: true, onClose: () => { try { speechSynthesis.cancel(); } catch { /* noop */ } if (location.hash === "#me/pitch") history.replaceState(null, "", "#me"); } });
+    }, { noFocus: true, onClose: () => { try { if (App.pitchStop) App.pitchStop(); speechSynthesis.cancel(); } catch { /* noop */ } if (location.hash === "#me/pitch") history.replaceState(null, "", "#me"); } });
   };
 
   // ---------- 今月の目標 ----------

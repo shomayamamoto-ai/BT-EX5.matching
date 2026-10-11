@@ -8,8 +8,8 @@
 //  4.4〜6.6  金の糸で5つを結ぶ。カメラが周りを巡る          「信頼で、つながる。」
 //  5.9〜8.4  糸の上を光が巡る                               「ご縁が巡る、BT-EX5。」
 //  8.2〜9.0  五角形が集まり、金の弧が伸びて輪になる
-//  9.0       閃光・光の筋・衝撃の輪とともに、金のロゴが決まる
-//  9.4〜13.0 BT-EX5 の名前と一言。金属に光が流れ、静かに終わる
+//  9.0       閃光・光の筋・衝撃の輪・金の火の粉とともに、金のロゴが決まる。うしろに光の筋(後光)
+//  9.4〜13.0 BT-EX5 の名前と一言。金属と文字に光が流れ、静かに終わる
 // ============================================
 
 import * as THREE from "three";
@@ -155,7 +155,7 @@ const PATHS = VALUES.map((_, i) => flyPath(i));
 
 // ---------- 金の糸(五角形の辺)と、巡る光 ----------
 const threads = VALUES.map((_, i) => {
-  const mesh = new THREE.Mesh(new THREE.BufferGeometry(), new THREE.MeshPhysicalMaterial({ color: 0xe0b56a, metalness: 1, roughness: 0.3, emissive: 0x6a4410, emissiveIntensity: 0.9, transparent: true }));
+  const mesh = new THREE.Mesh(new THREE.BufferGeometry(), new THREE.MeshPhysicalMaterial({ color: 0xe0b56a, metalness: 1, roughness: 0.3, emissive: 0x6a4410, emissiveIntensity: 0.9, transparent: true, depthWrite: false }));
   world.add(mesh); return mesh;
 });
 const pulses = VALUES.map(() => { const s = new THREE.Sprite(additive(TX_GLOW, 0xfff0cc)); world.add(s); return s; });
@@ -171,28 +171,35 @@ function threadGeo(a, b, p, sag, radius) {
 // ---------- ロゴ(5つの金の弧・切れ目の5つの点・内側の細い五角形) ----------
 const logo = new THREE.Group(); logo.position.y = LOGO_Y; scene.add(logo);
 const arcs = VALUES.map(() => { const m = new THREE.Mesh(new THREE.BufferGeometry(), gold); logo.add(m); return m; });
-const ARC_SPAN = (54 * Math.PI) / 180;
+// 太さ・切れ目・球の大きさは、ロゴの画像(logo3d.html)と同じ割合
+const ARC_SPAN = (52 * Math.PI) / 180;
+const TUBE = 0.062 * LOGO_R;
+const arcMid = (i) => Math.PI / 2 - (i * 2 * Math.PI) / 5 - Math.PI / 5;
 function arcGeo(i, p) {
   const span = Math.max(0.001, ARC_SPAN * p);
-  const g = new THREE.TorusGeometry(LOGO_R, 0.034, 24, 96, span);
+  const g = new THREE.TorusGeometry(LOGO_R, TUBE, 32, 120, span);
   // i 番目の点と i+1 番目の点のあいだの、まん中から両側へ伸びる
-  const mid = Math.PI / 2 - (i * 2 * Math.PI) / 5 - Math.PI / 5;
-  g.rotateZ(mid - span / 2);
+  g.rotateZ(arcMid(i) - span / 2);
   return g;
 }
+// 弧の両はしは丸く(弧が伸びるのに合わせて動かす)
+const caps = VALUES.map(() => [0, 1].map(() => { const m = new THREE.Mesh(new THREE.SphereGeometry(TUBE, 24, 12), gold); logo.add(m); return m; }));
+const topMat = new THREE.MeshPhysicalMaterial({ color: 0xffe7b8, metalness: 0.35, roughness: 0.18, clearcoat: 1, emissive: 0xffc870, emissiveIntensity: 0.55 });
 const logoDots = VALUES.map((_, i) => {
-  const m = new THREE.Mesh(new THREE.SphereGeometry(i === 0 ? 0.05 : 0.056, 32, 16), gold); m.position.copy(vertex(i, LOGO_R)); logo.add(m); return m;
+  const m = new THREE.Mesh(new THREE.SphereGeometry((i === 0 ? 0.1 : 0.098) * LOGO_R, 40, 20), i === 0 ? topMat : gold); m.position.copy(vertex(i, LOGO_R)); logo.add(m); return m;
 });
 const topGlow = new THREE.Sprite(additive(TX_GLOW)); topGlow.position.copy(vertex(0, LOGO_R)); topGlow.position.z = 0.05; logo.add(topGlow);
 const inner = (() => {
-  // 内側の細い五角形は、1px の線ではなく細い管で(ふちがなめらかに見える)
-  const mat = new THREE.MeshBasicMaterial({ color: 0xd9b77a, transparent: true, opacity: 0, fog: false });
+  // 内側の細い五角形は、1px の線ではなく細い管で(ふちがなめらかに見える)。
+  // 見えないうちは描かない・奥行きも書かない(書くと、うしろの光をさえぎって黒い線に見える)
+  const mat = new THREE.MeshBasicMaterial({ color: 0xd9b77a, transparent: true, opacity: 0, fog: false, depthWrite: false });
   const g = new THREE.Group();
   VALUES.forEach((_, i) => {
     const a = vertex(i, LOGO_R), b = vertex(i + 1, LOGO_R);
-    g.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.LineCurve3(a, b), 1, 0.0045, 8, false), mat));
+    g.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.LineCurve3(a, b), 1, 0.009, 10, false), mat));
   });
-  logo.add(g); return { material: mat };
+  g.visible = false;
+  logo.add(g); return { material: mat, group: g };
 })();
 // ロゴに光を流すための光(左上から右へ動く)
 const key = new THREE.PointLight(0xfff0d8, 0, 30, 1.2); scene.add(key);
@@ -205,6 +212,51 @@ ring.position.y = LOGO_Y; scene.add(ring);
 const streak = new THREE.Sprite(new THREE.SpriteMaterial({ map: TX_STREAK, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, fog: false, color: 0xffe6b8 }));
 scene.add(streak);
 const flash = new THREE.Sprite(additive(TX_GLOW)); scene.add(flash);
+
+// 後光(ロゴのうしろに、ゆっくり回る細い光の筋)
+const TX_RAYS = (() => {
+  const c = document.createElement("canvas"); c.width = c.height = 1024;
+  const g = c.getContext("2d"); const r = rng(5);
+  g.translate(512, 512);
+  for (let k = 0; k < 48; k++) {
+    const a = (k / 48) * Math.PI * 2 + (r() - 0.5) * 0.08, w = 0.006 + r() * 0.014, len = 300 + r() * 210;
+    const gr = g.createLinearGradient(0, 0, Math.cos(a) * len, Math.sin(a) * len);
+    gr.addColorStop(0, `rgba(255,236,196,${0.25 + r() * 0.45})`); gr.addColorStop(1, "rgba(255,200,120,0)");
+    g.fillStyle = gr; g.beginPath(); g.moveTo(0, 0);
+    g.lineTo(Math.cos(a - w) * len, Math.sin(a - w) * len); g.lineTo(Math.cos(a + w) * len, Math.sin(a + w) * len); g.closePath(); g.fill();
+  }
+  g.globalCompositeOperation = "destination-out";
+  const hole = g.createRadialGradient(0, 0, 0, 0, 0, 230); hole.addColorStop(0, "rgba(0,0,0,1)"); hole.addColorStop(0.62, "rgba(0,0,0,1)"); hole.addColorStop(1, "rgba(0,0,0,0)");
+  g.fillStyle = hole; g.fillRect(-512, -512, 1024, 1024);
+  const tx = new THREE.CanvasTexture(c); tx.colorSpace = THREE.SRGBColorSpace; return tx;
+})();
+const rays = new THREE.Sprite(additive(TX_RAYS, 0xffd9a0)); rays.position.set(0, LOGO_Y, -0.6); scene.add(rays);
+
+// 金の火の粉(ロゴが決まる瞬間に、輪から外へはじける)
+const SPARK_N = 320;
+const sparkDir = new Float32Array(SPARK_N * 3), sparkSpeed = new Float32Array(SPARK_N), sparkLife = new Float32Array(SPARK_N), sparkPh = new Float32Array(SPARK_N);
+const sparkPos = new Float32Array(SPARK_N * 3), sparkSize = new Float32Array(SPARK_N), sparkAlpha = new Float32Array(SPARK_N);
+{
+  const r = rng(99);
+  for (let i = 0; i < SPARK_N; i++) {
+    const a = r() * Math.PI * 2, z = (r() - 0.5) * 0.9;
+    sparkDir[i * 3] = Math.cos(a); sparkDir[i * 3 + 1] = Math.sin(a); sparkDir[i * 3 + 2] = z;
+    sparkSpeed[i] = 1.2 + Math.pow(r(), 1.6) * 4.2; sparkLife[i] = 1.0 + r() * 2.2; sparkPh[i] = r() * 6.28;
+  }
+}
+const sparkGeo = new THREE.BufferGeometry();
+sparkGeo.setAttribute("position", new THREE.BufferAttribute(sparkPos, 3));
+sparkGeo.setAttribute("size", new THREE.BufferAttribute(sparkSize, 1));
+sparkGeo.setAttribute("alpha", new THREE.BufferAttribute(sparkAlpha, 1));
+const sparkMat = new THREE.ShaderMaterial({
+  transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+  uniforms: { uMap: { value: TX_DOT } },
+  vertexShader: `attribute float size; attribute float alpha; varying float vA;
+    void main(){ vec4 mv = modelViewMatrix * vec4(position,1.0); gl_Position = projectionMatrix * mv; gl_PointSize = size * (12.0 / -mv.z); vA = alpha; }`,
+  fragmentShader: `uniform sampler2D uMap; varying float vA;
+    void main(){ vec4 c = texture2D(uMap, gl_PointCoord); float a = c.a * vA; gl_FragColor = vec4(vec3(1.0, 0.86, 0.6) * a, 1.0); }`,
+});
+const sparks = new THREE.Points(sparkGeo, sparkMat); sparks.position.y = LOGO_Y; sparks.frustumCulled = false; scene.add(sparks);
 
 // ---------- 仕上げ(光のにじみ・周辺減光・フィルムの粒・わずかな色ずれ) ----------
 // 細い線や輪のふちがギザギザしないよう 4 倍のなめらか描画(MSAA)。暗い光のぼかしに段がつかないよう、中間は 16bit で持つ
@@ -342,9 +394,14 @@ function render(t) {
   // ロゴ: 弧が伸びて輪になり、点と内側の五角形が出る
   const grow = easeOut(prog(t, 8.45, 9.05));
   const logoOn = t >= 8.45;
-  arcs.forEach((m, i) => { m.visible = logoOn; if (logoOn) { m.geometry.dispose(); m.geometry = arcGeo(i, grow); } });
+  arcs.forEach((m, i) => {
+    m.visible = logoOn; if (logoOn) { m.geometry.dispose(); m.geometry = arcGeo(i, grow); }
+    const half = (Math.max(0.001, ARC_SPAN * grow)) / 2;
+    caps[i].forEach((cap, k) => { cap.visible = logoOn; const a = arcMid(i) + (k ? half : -half); cap.position.set(Math.cos(a) * LOGO_R, Math.sin(a) * LOGO_R, 0); });
+  });
   logoDots.forEach((m) => { m.visible = t >= HIT - 0.05; });
-  inner.material.opacity = 0.5 * easeOut(prog(t, 9.2, 10.4));
+  inner.material.opacity = 0.55 * easeOut(prog(t, 9.2, 10.4));
+  inner.group.visible = inner.material.opacity > 0.002;
   topGlow.material.opacity = t >= HIT ? 0.9 * (0.85 + 0.15 * Math.sin(t * 2.6)) : 0;
   topGlow.scale.setScalar(0.42 + Math.exp(-(t - HIT) * 3) * 1.0 * (t >= HIT ? 1 : 0));
   logo.rotation.set(0, t >= HIT ? Math.sin((t - HIT) * 0.55) * 0.22 * easeOut(prog(t, HIT, HIT + 1.2)) : 0, 0);
@@ -367,9 +424,26 @@ function render(t) {
   ring.material.opacity = hit >= 0 ? 0.45 * Math.exp(-hit * 2.6) : 0;
   ring.scale.setScalar(hit >= 0 ? LOGO_R * (1 + easeOut(clamp(hit / 1.6)) * 3.2) : 0.001);
   ring.lookAt(camera.position);
+  // 後光: 決まる瞬間に強く出て、そのあとは静かに回りつづける
+  rays.material.opacity = hit >= 0 ? (0.55 * Math.exp(-hit * 2.2) + 0.2 * easeOut(clamp(hit / 1.2))) * (1 - easeIn(prog(t, 12.2, 13.0))) : 0;
+  rays.material.rotation = t * 0.06;
+  rays.scale.setScalar(hit >= 0 ? lerp(2.2, 4.6, easeOut(clamp(hit / 1.4))) : 0.001);
+  // 火の粉: はじけて、空気にゆるめられ、少し落ちながら、またたいて消える
+  for (let i = 0; i < SPARK_N; i++) {
+    const life = hit >= 0 ? hit / sparkLife[i] : 1;
+    if (life >= 1) { sparkAlpha[i] = 0; sparkSize[i] = 0; continue; }
+    const d = (1 - Math.exp(-hit * 2.4)) / 2.4 * sparkSpeed[i];
+    const start = LOGO_R * (0.92 + 0.16 * ((i * 7) % 10) / 10);
+    sparkPos[i * 3] = sparkDir[i * 3] * (start + d);
+    sparkPos[i * 3 + 1] = sparkDir[i * 3 + 1] * (start + d) - 0.22 * hit * hit;
+    sparkPos[i * 3 + 2] = sparkDir[i * 3 + 2] * d;
+    sparkAlpha[i] = Math.pow(1 - life, 1.4) * (0.65 + 0.35 * Math.sin(hit * 22 + sparkPh[i]));
+    sparkSize[i] = 0.9 + 2.6 * (1 - life);
+  }
+  sparkGeo.attributes.position.needsUpdate = true; sparkGeo.attributes.size.needsUpdate = true; sparkGeo.attributes.alpha.needsUpdate = true;
 
   // 仕上げ
-  bloom.strength = 0.6 + 0.8 * (hit >= 0 ? Math.exp(-hit * 4) : 0) + splitFlash * 0.5;
+  bloom.strength = 0.6 + 0.8 * (hit >= 0 ? Math.exp(-hit * 4) : 0) + splitFlash * 0.5 - 0.15 * easeInOut(prog(t, 10.0, 11.5)); // 落ち着いたら金属の質感が見えるよう少し弱める
   renderer.toneMappingExposure = 1.05 + (hit >= 0 ? Math.exp(-hit * 7) * 0.25 : 0);
   finish.uniforms.uTime.value = Math.floor(t * 10) / 10; // 粒は 1/10 秒ごとに変わる
   finish.uniforms.uFade.value = Math.min(easeOut(prog(t, 0, 0.6)), 1 - easeIn(prog(t, 12.3, 13.0)));
@@ -387,6 +461,7 @@ function render(t) {
   $("word").style.opacity = wo * finish.uniforms.uFade.value;
   $("word").style.letterSpacing = `${lerp(0.62, 0.36, wo)}em`;
   $("word").style.filter = `blur(${(1 - wo) * 8}px)`;
+  $("word").style.backgroundPosition = `${lerp(110, -10, easeInOut(prog(t, 10.9, 12.1)))}% 0, 0 0`; // 文字に光が流れる
   $("rule").style.transform = `scaleX(${easeInOut(prog(t, 9.9, 11.0))})`;
   $("rule").style.opacity = finish.uniforms.uFade.value;
   const to = easeOut(prog(t, 10.5, 11.6));

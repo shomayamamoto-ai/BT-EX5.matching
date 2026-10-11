@@ -27,7 +27,7 @@
           e.currentTarget.querySelector("b").textContent = on ? "文字を元の大きさに戻す" : "文字を大きくする";
           App.toast(on ? "文字を大きくしました(この端末のすべての画面)" : "元の大きさに戻しました");
         } }, h("b", null, document.documentElement.classList.contains("big-text") ? "文字を元の大きさに戻す" : "文字を大きくする"), h("small", null, "小さい文字が読みにくいときに")),
-        menu("#me/pitch", "30秒プレゼンの練習", "定例会のプレゼンの原稿と、30秒タイマー(原稿はあなただけが見られます)"),
+        menu("#me/pitch", "プレゼンの練習・タイマー", "30秒プレゼンの原稿と、30秒・1分・5分・25分(ポモドーロ)などのタイマー。0秒で音が鳴ります"),
         menu("#me/goals", "今月の目標", "紹介・成約・1on1・ビジターの数を決めて、ホームで進み具合を見る"),
         menu("#me/notify", "通知を受け取る(iPhone・Android)", "紹介・掲示板・運営連絡が届いたら、スマホに通知します"),
         menu("#me/calendar", "Google カレンダー・Meet の設定", "1on1 の招待を受け取るアドレスと、Meet で表示される名前(定例会の出欠に使います)"),
