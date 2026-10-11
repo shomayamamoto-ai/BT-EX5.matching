@@ -33,6 +33,11 @@ ffmpeg -framerate 30 -i frames/f%04d.png -i opening.wav -vf "scale=1280:720:flag
 
 ログイン画面では、パソコンなど大きな画面(長い辺 1100px 以上・短い辺 600px 以上)は 1080p、スマホは 720p を流します(`opening/intro.js`)。もう一度見るときは `/opening/`。
 
+## ロゴ(3D の金のロゴの画像)
+
+- `logo3d.html`: ムービーと同じ形・同じ金の質感のロゴを、背景なし(透明)で描いて PNG にする(`window.exportLogo(1024)`)
+- 1024px で書き出し、256px(`assets/bt-ex5-mark-3d.png`)と 512px に縮める。アプリのアイコンはこの画像を暗い背景に重ねて作る
+
 ## 前の版
 
 `opening/opening.js` は、前の平面(SVG)の版です(同じ時間割)。

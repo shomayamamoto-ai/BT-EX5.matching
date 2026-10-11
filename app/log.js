@@ -33,6 +33,21 @@
   // ============================================
   // 紹介
   // ============================================
+  // あなたが出した紹介の進み具合(状況ごとの割合と成約率)
+  function refSummary(given) {
+    const keys = Object.keys(App.REF_STATUS);
+    const count = (k) => given.filter((r) => r.status === k).length;
+    const won = count("won"), lost = count("lost");
+    const decided = won + lost;
+    return h("section", { class: "ref-sum", "aria-label": "あなたが出した紹介の進み具合" },
+      h("div", { class: "ref-sum-head" },
+        h("b", null, `あなたが出した紹介 ${given.length}件`),
+        h("span", null, decided ? `成約率 ${Math.round((won / decided) * 100)}%(結果が出た ${decided}件中 ${won}件)` : `成約 ${won}件`)),
+      h("div", { class: "ref-sum-bar", role: "img", "aria-label": keys.map((k) => `${App.REF_STATUS[k].label} ${count(k)}件`).join("、") },
+        keys.filter((k) => count(k)).map((k) => h("i", { class: `is-${k}`, style: `flex:${count(k)}` }))),
+      h("div", { class: "ref-sum-legend" }, keys.map((k) => h("span", { class: `is-${k}` }, `${App.REF_STATUS[k].label} ${count(k)}`))));
+  }
+
   async function renderRefs(el, params) {
     const d = await App.api("listMyReferrals");
     if (!d) return;
@@ -69,6 +84,7 @@
           : App.empty("紹介したら記録しておくと、相手の対応状況とお礼(マイル)がここに届きます。")));
     };
     q.addEventListener("input", draw);
+    if (d.given.length) el.append(refSummary(d.given));
     if (all.length > 3) el.append(q, pills);
     el.append(recvBox, givenBox);
     draw();

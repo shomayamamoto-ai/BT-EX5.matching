@@ -191,3 +191,6 @@ body.tabs-left .app-tab.is-on::after, body.tabs-right .app-tab.is-on::after { bo
 
 /* フォーカスの線も金 */
 :focus-visible { outline-color: var(--lux-gold); }
+
+/* 立体の金のロゴ(画像)を、黒い枠いっぱいに */
+.brand-mark { padding: 1px !important; object-fit: contain; }

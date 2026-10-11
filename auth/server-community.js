@@ -1321,7 +1321,7 @@
       function getMySettings(body) {
         var w = who(body);
         if (w.error) return w.error;
-        return c.ok({ calendarEmail: w.user.calendarEmail || "", calendar: !!c.calendar, meetName: w.user.meetName || "", name: w.me.name, goals: w.user.goals || null, pitchScript: w.user.pitchScript || "" });
+        return c.ok({ calendarEmail: w.user.calendarEmail || "", calendar: !!c.calendar, meetName: w.user.meetName || "", name: w.me.name, goals: w.user.goals || null, pitchScript: w.user.pitchScript || "", notifyOff: w.user.notifyOff || [] });
       }
       function updateMySettings(body) {
         var w = who(body);
@@ -1338,10 +1338,12 @@
           ["given", "won", "oneOnOnes", "visitors"].forEach(function (k) { var n = Math.round(Number(body.goals[k]) || 0); g[k] = Math.max(0, Math.min(99, n)); });
           w.user.goals = g;
         }
+        // スマホに通知しない種類
+        if (Array.isArray(body.notifyOff)) w.user.notifyOff = body.notifyOff.filter(function (g, i, a) { return PUSH_GROUPS[g] && a.indexOf(g) === i; });
         // 30秒プレゼンの原稿(本人だけが見る)
         if ("pitchScript" in body) w.user.pitchScript = cleanText(body.pitchScript, 800);
         c.saveDb(w.db);
-        return c.ok({ calendarEmail: w.user.calendarEmail || "", meetName: w.user.meetName || "", goals: w.user.goals || null, pitchScript: w.user.pitchScript || "" });
+        return c.ok({ calendarEmail: w.user.calendarEmail || "", meetName: w.user.meetName || "", goals: w.user.goals || null, pitchScript: w.user.pitchScript || "", notifyOff: w.user.notifyOff || [] });
       }
 
       // ============================================
@@ -1988,8 +1990,25 @@
         var s = String(v || "");
         return /^[A-Za-z0-9_-]{1,200}$/.test(s) ? s : "";
       }
-      function latestActivityAt(db, memberId) {
+      // スマホの通知の種類(本人が切ったものは通知しない。ベルのお知らせには、これまでどおり全部出す)
+      var PUSH_GROUPS = {
+        ref: ["refIn", "refStatus", "refMeet", "refMeetSoon", "thanks"],
+        one: ["oneNew", "oneSoon", "oneAsk"],
+        board: ["post", "comment", "reply"],
+        news: ["ann", "rsvpSoon", "event"],
+        task: ["taskNew", "taskDue", "taskSoon"],
+        visitor: ["visitor"],
+      };
+      function pushItems(db, memberId) {
+        var u = userOf(db, memberId);
+        var off = (u && Array.isArray(u.notifyOff)) ? u.notifyOff : [];
+        var muted = [];
+        off.forEach(function (g) { (PUSH_GROUPS[g] || []).forEach(function (t) { muted.push(t); }); });
         var items = activityItems(db, memberId);
+        return muted.length ? items.filter(function (x) { return muted.indexOf(x.type) === -1; }) : items;
+      }
+      function latestActivityAt(db, memberId) {
+        var items = pushItems(db, memberId);
         return items.length ? items[0].at : 0;
       }
 
@@ -2084,7 +2103,7 @@
         var row = endpoint && peek ? c.find(db.pushSubs, function (s) { return s.endpoint === endpoint; }) : null;
         if (!row || row.peek !== c.sha256Hex(peek)) return c.fail("SESSION_INVALID");
         var lastSeen = seen(db, row.memberId).feed || 0;
-        var fresh = activityItems(db, row.memberId).filter(function (x) { return x.at > lastSeen; });
+        var fresh = pushItems(db, row.memberId).filter(function (x) { return x.at > lastSeen; });
         var top = fresh[0];
         var t = top ? pushText(top) : { title: "BT-EX5", body: "新しいお知らせがあります" };
         return c.ok({

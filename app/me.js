@@ -154,13 +154,31 @@
         state.textContent = on ? "🔔 この端末で通知を受け取っています" : "🔕 この端末ではまだ受け取っていません";
       };
       drawState(st.on);
+      // 通知する内容を選ぶ(切ったものはスマホに通知しない。ベル🔔には出る)
+      const KINDS = [
+        ["ref", "🤝 紹介・ありがとうマイル", "あなたあての紹介、紹介した案件の進み具合、顔合わせの予定"],
+        ["one", "☕ 1on1", "1on1 の予定・もうすぐ・実施の確認"],
+        ["board", "📝 掲示板", "新しい投稿、あなたの投稿へのコメント"],
+        ["news", "📣 運営連絡・📅 定例会", "運営からのお知らせ、定例会の予定・出欠のお願い"],
+        ["task", "✅ やること", "届いたやること、期限・時刻が近いとき"],
+        ["visitor", "🙋 ビジター", "あなたが招待したビジターの申込"],
+      ];
+      const kinds = h("div", { class: "notify-kinds", "aria-label": "通知する内容" });
+      let off = [];
+      const drawKinds = () => App.fill(kinds, KINDS.map(([id, label, sub]) => {
+        const box = h("input", { type: "checkbox", checked: !off.includes(id) });
+        box.addEventListener("change", async () => {
+          off = box.checked ? off.filter((x) => x !== id) : [...off, id];
+          const r = await App.api("updateMySettings", { notifyOff: off }, { quiet: true });
+          App.toast(r ? (box.checked ? `「${label.replace(/^\S+ /, "")}」を通知します` : `「${label.replace(/^\S+ /, "")}」は通知しません(ベルには出ます)`) : "保存できませんでした");
+        });
+        return h("label", { class: "notify-kind" }, box, h("span", null, h("b", null, label), h("small", null, sub)));
+      }));
+      drawKinds();
+      App.api("getMySettings", {}, { quiet: true }).then((d) => { if (d && Array.isArray(d.notifyOff)) { off = d.notifyOff; drawKinds(); } });
       body.append(
-        h("p", { class: "app-lead" }, "次のことがあると、この端末に通知が届きます。通知を押すと、その画面が開きます。"),
-        h("ul", { class: "notify-list" },
-          h("li", null, "🤝 あなたあての紹介・紹介した案件の進み具合"),
-          h("li", null, "📝 掲示板の新しい投稿・あなたの投稿へのコメント"),
-          h("li", null, "📣 運営からのお知らせ・📅 定例会の予定"),
-          h("li", null, "🎉 ありがとうマイル・☕ 1on1 の予定・🙋 ビジターの申込")),
+        h("p", { class: "app-lead" }, "チェックした内容があると、この端末に通知が届きます。通知を押すと、その画面が開きます(チェックを外しても、アプリ内のベル🔔には出ます)。"),
+        kinds,
         state);
 
       if (!st.shared) {

@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>BT-EX5 ロゴ(3D)を書き出す</title>
+  <!-- オープニングムービーと同じ 3D の金のロゴを、背景なし(透明)の PNG にする。
+       作り方: このフォルダで npm i three@0.170.0 → python3 -m http.server → このページを開き、window.exportLogo(1024) の結果(dataURL)を保存 -->
+  <script type="importmap">{ "imports": { "three": "./node_modules/three/build/three.module.js", "three/addons/": "./node_modules/three/examples/jsm/" } }</script>
+  <style>html, body { margin: 0; background: #120e0b; } #out { display: block; width: 512px; height: 512px; }</style>
+</head>
+<body>
+  <img id="out" alt="">
+  <script type="module">
+    import * as THREE from "three";
+    import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
+
+    const R = 1; // 輪の大きさ(ムービーと同じ形。5つの弧・切れ目の5つの球・内側の細い五角形)
+    const vertex = (i, r) => { const a = -Math.PI / 2 + (i * 2 * Math.PI) / 5; return new THREE.Vector3(Math.cos(a) * r, -Math.sin(a) * r, 0); };
+
+    function render3D(size) {
+      const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
+      renderer.setPixelRatio(1);
+      renderer.setSize(size, size, false);
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.15;
+      renderer.outputColorSpace = THREE.SRGBColorSpace;
+      renderer.setClearColor(0x000000, 0);
+      const scene = new THREE.Scene();
+      const pmrem = new THREE.PMREMGenerator(renderer);
+      scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.03).texture;
+      scene.environmentIntensity = 0.85;
+
+      const camera = new THREE.PerspectiveCamera(24, 1, 0.1, 50);
+      camera.position.set(0, 0, 7.1);
+      camera.lookAt(0, 0, 0);
+
+      // 金(磨いた金属。ムービーと同じ色味)
+      const gold = new THREE.MeshPhysicalMaterial({ color: 0xd6a75a, metalness: 1, roughness: 0.2, clearcoat: 0.8, clearcoatRoughness: 0.12, emissive: 0x2a1906, emissiveIntensity: 0.3 });
+      const logo = new THREE.Group();
+      // 少しだけ傾けて、立体であることがわかるように
+      logo.rotation.set(-0.12, 0.2, 0.0);
+      scene.add(logo);
+      const SPAN = (52 * Math.PI) / 180;
+      for (let i = 0; i < 5; i++) {
+        const g = new THREE.TorusGeometry(R, 0.062, 48, 160, SPAN);
+        const mid = Math.PI / 2 - (i * 2 * Math.PI) / 5 - Math.PI / 5;
+        g.rotateZ(mid - SPAN / 2);
+        logo.add(new THREE.Mesh(g, gold));
+        // 弧の両はしは丸く
+        [mid - SPAN / 2, mid + SPAN / 2].forEach((a) => {
+          const cap = new THREE.Mesh(new THREE.SphereGeometry(0.062, 32, 16), gold);
+          cap.position.set(Math.cos(a) * R, Math.sin(a) * R, 0); logo.add(cap);
+        });
+      }
+      for (let i = 0; i < 5; i++) {
+        const ball = new THREE.Mesh(new THREE.SphereGeometry(i === 0 ? 0.1 : 0.098, 48, 24), i === 0 ? new THREE.MeshPhysicalMaterial({ color: 0xffe7b8, metalness: 0.35, roughness: 0.18, clearcoat: 1, emissive: 0xffc870, emissiveIntensity: 0.55 }) : gold);
+        ball.position.copy(vertex(i, R)); logo.add(ball);
+        const a = vertex(i, R), b = vertex(i + 1, R);
+        logo.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.LineCurve3(a, b), 1, 0.012, 12, false), new THREE.MeshPhysicalMaterial({ color: 0xe3be7a, metalness: 1, roughness: 0.3, emissive: 0x3a2408, emissiveIntensity: 0.4 })));
+      }
+      // 光: 左上から主光、右下から縁の光、正面からやわらかい光
+      const key = new THREE.PointLight(0xfff2dc, 60, 30, 1.2); key.position.set(-3, 3.2, 4); scene.add(key);
+      const rim = new THREE.PointLight(0xffb45a, 30, 20, 1.4); rim.position.set(3, -2.5, -1.5); scene.add(rim);
+      const fill = new THREE.DirectionalLight(0xffe8c8, 0.8); fill.position.set(0.5, 0.2, 5); scene.add(fill);
+      scene.add(new THREE.AmbientLight(0x3a2814, 0.8));
+      renderer.render(scene, camera);
+      const top = vertex(0, R).applyEuler(logo.rotation).project(camera);
+      return { canvas: renderer.domElement, top: [(top.x * 0.5 + 0.5) * size, (-top.y * 0.5 + 0.5) * size] };
+    }
+
+    // 3D の絵に、やわらかい影と頂点の光を重ねて PNG にする(背景は透明)
+    window.exportLogo = (size = 1024) => {
+      const { canvas, top } = render3D(size);
+      const out = document.createElement("canvas"); out.width = out.height = size;
+      const g = out.getContext("2d");
+      // 影
+      g.save(); g.filter = `blur(${size * 0.018}px)`; g.globalAlpha = 0.55; g.drawImage(canvas, size * 0.004, size * 0.022); g.restore();
+      g.globalCompositeOperation = "source-in"; g.fillStyle = "#120a03"; g.fillRect(0, 0, size, size);
+      g.globalCompositeOperation = "source-over";
+      g.drawImage(canvas, 0, 0);
+      // 頂点の光(ひとつの出会い)
+      const r = size * 0.13;
+      const gr = g.createRadialGradient(top[0], top[1], 0, top[0], top[1], r);
+      gr.addColorStop(0, "rgba(255,246,220,0.7)"); gr.addColorStop(0.3, "rgba(255,220,150,0.35)"); gr.addColorStop(1, "rgba(240,190,100,0)");
+      g.globalCompositeOperation = "lighter"; g.fillStyle = gr; g.beginPath(); g.arc(top[0], top[1], r, 0, Math.PI * 2); g.fill();
+      g.globalCompositeOperation = "source-over";
+      return out.toDataURL("image/png");
+    };
+    document.getElementById("out").src = window.exportLogo(1024);
+    window.ready = true;
+  </script>
+</body>
+</html>

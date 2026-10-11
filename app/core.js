@@ -567,6 +567,11 @@ const App = (function () {
     if (typeof ProfileTransfer !== "undefined") ProfileTransfer.offerUpload(data, memberById(data.memberId));
     document.getElementById("appMe").setAttribute("aria-label", `${data.displayName}さんのマイページ`);
     renderTabs();
+    // 電波がないときは、上に「オフライン」と出す(保存できないことがわかるように)
+    const offline = h("div", { class: "app-offline", role: "status", hidden: navigator.onLine !== false }, "オフラインです。電波が戻ると、また保存できます(見るだけならこのまま使えます)");
+    document.body.append(offline);
+    window.addEventListener("offline", () => { offline.hidden = false; });
+    window.addEventListener("online", () => { offline.hidden = true; toast("オンラインに戻りました"); });
     // 長い画面で、下までいったら「上へ」ボタンを出す
     const toTop = h("button", { type: "button", class: "app-to-top", "aria-label": "いちばん上へ", hidden: true, onclick: () => window.scrollTo({ top: 0, behavior: "smooth" }) }, "↑");
     document.body.append(toTop);
