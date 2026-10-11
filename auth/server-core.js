@@ -287,6 +287,11 @@ var BtexServerCore = (function () {
             var add = clone((seedMember.links || []).filter(function (l) { return r.addLinks.indexOf(l.type) !== -1 && have.indexOf(l.url) === -1; }));
             next.links = (r.linksFirst ? add.concat(next.links || []) : (next.links || []).concat(add)).slice(0, LINKS_MAX);
           }
+          // addTriggers: 編集済みのメンバーにも、「こんな話が出たら」の言葉をないものだけ足す(ほかの言葉はそのまま)
+          if (Array.isArray(r.addTriggers)) {
+            next.triggers = (Array.isArray(next.triggers) ? next.triggers : []).slice();
+            r.addTriggers.forEach(function (t) { if (next.triggers.indexOf(t) === -1) next.triggers.push(t); });
+          }
           if (r.addTopics && Array.isArray(next.topics)) {
             next.topics = next.topics.concat((seedMember.topics || []).filter(function (t) {
               return r.addTopics.indexOf(t) !== -1 && next.topics.indexOf(t) === -1;

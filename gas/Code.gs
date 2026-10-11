@@ -172,11 +172,11 @@ const TOPICS = [
 const REF_NEEDS = [
   { id: "hire", label: "人を採用したい・人手が足りない", desc: "求人・採用・人手不足", methods: [
     { label: "採用・人材紹介の相談", topics: ["hiring"] },
+    { label: "システム開発で人手を補う", desc: "業務をシステム・AIで減らし、人を増やさずに回す", topics: ["efficiency", "ai"] },
     { label: "社員の離職を減らす(定着)", desc: "辞めない職場・人が続く組織にする", topics: ["retention"] },
     { label: "求人ページ・採用サイトを作る", topics: ["web"] },
     { label: "SNSで採用を強くする", topics: ["sns"] },
     { label: "採用動画を作る", topics: ["prvideo"] },
-    { label: "業務をシステム・AIで減らす", desc: "人を増やさずに回す", topics: ["efficiency", "ai"] },
     { label: "助成金・労務の相談", topics: ["labor"] },
   ] },
   { id: "grow", label: "人を育てたい・組織を強くしたい", desc: "社員教育・マインド・チームづくり", methods: [
@@ -279,7 +279,9 @@ const REF_NEEDS = [
 // CONSULT_PHRASES: 困りごとの言い方 → そのとき役に立つジャンル(どれか1つできればよい)
 const CONSULT_PHRASES = [
   { label: "集客", words: ["集客", "お客様を増やしたい", "お客さんを増やしたい", "客が来ない", "お客が来ない", "新規客", "問い合わせを増やしたい", "売上が伸びない", "知名度"], topics: ["seo", "web", "sns", "consult", "ad"] },
-  { label: "採用・人手不足", words: ["人が採れない", "人が足りない", "人手が足りない", "人手不足", "スタッフが足りない", "スタッフ採用", "求人", "採用したい"], topics: ["hiring", "sns", "prvideo", "efficiency"] },
+  { label: "採用・人手不足", words: ["人が採れない", "人が足りな", "人手が足りな", "人手不足", "スタッフが足りな", "従業員が足りな", "人員が足りな", "スタッフ採用", "求人", "採用したい"], topics: ["hiring", "sns", "prvideo", "efficiency"] },
+  // 人手が足りないときは、採用だけでなく「仕組みで人手を補う」システム開発・業務効率化も出す(運営の依頼)
+  { label: "システム開発で人手を補う", words: ["人が足りな", "人手が足りな", "人手不足", "スタッフが足りな", "人が採れない", "人員不足", "人員が足りな", "従業員が足りな", "手が回らな", "人が辞めて回らな", "少人数で回したい", "人件費を減らしたい", "人件費を抑えたい"], topics: ["efficiency", "ai", "line"] },
   { label: "離職・定着", words: ["辞める", "辞めて", "離職", "定着しない", "人が続かない"], topics: ["retention", "org", "coaching"] },
   { label: "人材育成", words: ["育たない", "育てたい", "社員教育", "研修したい", "人材育成"], topics: ["org", "aitraining", "mindset", "coaching"] },
   { label: "単価アップ", words: ["高く売りたい", "単価", "値上げ", "安売り", "価格競争", "付加価値"], topics: ["branding", "consult", "design"] },
@@ -488,7 +490,7 @@ const REF_SEED_MEMBERS = [
     note: "相談・見積り無料、48時間以内に返信。最低発注額なし、1業務・研修1回から。動画制作とキャスト手配は制作パートナー(AdvoVisions)と対応。",
     wants:
       "紙・Excel・電話で業務を回している中小企業や複数店舗の経営者(飲食・小売・サロン・士業事務所など)/AIを導入したいが何から始めるか決まっていない会社/動画・SNS・LINEで集客や採用を強くしたい会社",
-    triggers: ["手作業に時間がかかる", "予約・在庫管理がバラバラ", "電話予約を取りこぼしている", "HPを作ったきり", "社員にAIを使わせたい", "動画を作りたい", "SNSの運用を任せたい", "公式LINEを作りたい", "ロゴ・チラシ・ポスターを作りたい", "モデル・MCを手配したい", "名刺を営業リストにしたい", "契約書づくりに時間がかかる"],
+    triggers: ["手作業に時間がかかる", "予約・在庫管理がバラバラ", "電話予約を取りこぼしている", "HPを作ったきり", "社員にAIを使わせたい", "動画を作りたい", "SNSの運用を任せたい", "公式LINEを作りたい", "ロゴ・チラシ・ポスターを作りたい", "モデル・MCを手配したい", "名刺を営業リストにしたい", "契約書づくりに時間がかかる", "人手が足りない", "人が足りない", "スタッフが足りない", "従業員が足りない", "人員が足りない", "人が採れない"],
     face: "関東(東京拠点)",
     faceAreas: ["tokyo"],
     online: "all",
@@ -753,6 +755,8 @@ const REF_SEED_REVISIONS = [
   { rev: "2026-10-amamiya-profile-2", ids: ["m02"], fields: ["business", "wants", "triggers"], force: true },
   // 運営の依頼で、品川さんを「Web制作」から、桜羽さんを「声・司会・キャスティング」から外す(編集済みでも外す)
   { rev: "2026-10-category-fix-1", ids: ["m11", "m16"], fields: ["topics"], removeTopics: { m11: ["web"], m16: ["casting"] } },
+  // 本人の依頼で、人手が足りないなどの相談のとき、システム開発として山本 捷真が上位に出るように「こんな話が出たら」を足す
+  { rev: "2026-10-yamamoto-hitode", ids: ["yamamoto"], fields: ["triggers"], addTriggers: ["人手が足りない", "人が足りない", "スタッフが足りない", "従業員が足りない", "人員が足りない", "人が採れない"] },
   // 本人の依頼で、山本 捷真のパーソナルブランディングシートを資料のいちばん上に追加(ほかのリンクはそのまま)
   { rev: "2026-10-yamamoto-branding", ids: ["yamamoto"], fields: ["links"], addLinks: ["proposal"], linksFirst: true },
 ];
@@ -941,6 +945,7 @@ const REF_SEED_ANNOUNCEMENTS = [
       "・1on1 の日付に「昨日」「一昨日」を付けました。Meet を作ったあと、Google カレンダーへの追加と、相手に送る文のコピーができます。",
       "・紹介にも、顔合わせの予定・カレンダー追加・送る文のコピーを付けました。",
       "・予定のリマインド、予定の重なりの確認、紹介の絞り込み、自分の記録の書き出し(CSV)を入れました。",
+      "・「人手が足りない」などの相談では、採用だけでなく「システム開発で人手を補う」方法と紹介先も出すようにしました。",
       "",
       "■ 定例会・掲示板・やること",
       "・定例会の1時間前からは「開始まで あと◯分」と、大きな「いま Google Meet に参加する」ボタンが出ます。",
@@ -1272,6 +1277,11 @@ var BtexServerCore = (function () {
             var have = (next.links || []).map(function (l) { return l.url; });
             var add = clone((seedMember.links || []).filter(function (l) { return r.addLinks.indexOf(l.type) !== -1 && have.indexOf(l.url) === -1; }));
             next.links = (r.linksFirst ? add.concat(next.links || []) : (next.links || []).concat(add)).slice(0, LINKS_MAX);
+          }
+          // addTriggers: 編集済みのメンバーにも、「こんな話が出たら」の言葉をないものだけ足す(ほかの言葉はそのまま)
+          if (Array.isArray(r.addTriggers)) {
+            next.triggers = (Array.isArray(next.triggers) ? next.triggers : []).slice();
+            r.addTriggers.forEach(function (t) { if (next.triggers.indexOf(t) === -1) next.triggers.push(t); });
           }
           if (r.addTopics && Array.isArray(next.topics)) {
             next.topics = next.topics.concat((seedMember.topics || []).filter(function (t) {
