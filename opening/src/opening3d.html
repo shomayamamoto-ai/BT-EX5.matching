@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>BT-EX5 オープニング(3D)</title>
+  <!-- 作り方は README.md。npm i three@0.170.0 @fontsource/shippori-mincho@5.1.0 @fontsource/montserrat@5.1.0 をこのフォルダで行ってから開く -->
+  <link rel="stylesheet" href="node_modules/@fontsource/shippori-mincho/500.css">
+  <link rel="stylesheet" href="node_modules/@fontsource/montserrat/300.css">
+  <style>
+    html, body { margin: 0; background: #000; overflow: hidden; }
+    .frame { position: relative; width: 1920px; height: 1080px; overflow: hidden; background: #050302; }
+    #stage { position: absolute; inset: 0; width: 1920px; height: 1080px; display: block; }
+    .text { position: absolute; inset: 0; pointer-events: none; }
+    #line { position: absolute; left: 0; right: 0; bottom: 120px; text-align: center; font-family: "Shippori Mincho", serif; font-weight: 500; font-size: 54px; color: #f6ead2; letter-spacing: 0.3em; text-shadow: 0 0 24px rgba(255, 200, 120, 0.35); }
+    .label { position: absolute; left: 0; top: 0; font-family: "Shippori Mincho", serif; font-weight: 500; font-size: 30px; letter-spacing: 0.32em; color: #ecd09a; text-shadow: 0 0 14px rgba(255, 190, 100, 0.45); white-space: nowrap; }
+    #word { position: absolute; left: 0; right: 0; top: 655px; text-align: center; font-family: "Montserrat", sans-serif; font-weight: 300; font-size: 112px; line-height: 1; padding-left: 0.36em;
+      background: linear-gradient(180deg, #fff6df 0%, #ead09a 45%, #b58a45 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    #rule { position: absolute; left: 50%; top: 805px; width: 520px; margin-left: -260px; height: 1px; background: linear-gradient(90deg, rgba(217, 183, 122, 0), #d9b77a 30%, #f3dfb3 50%, #d9b77a 70%, rgba(217, 183, 122, 0)); transform: scaleX(0); }
+    #tag { position: absolute; left: 0; right: 0; top: 838px; text-align: center; font-family: "Shippori Mincho", serif; font-weight: 500; font-size: 32px; letter-spacing: 0.26em; color: #d6bd8f; }
+  </style>
+  <script type="importmap">{ "imports": { "three": "./node_modules/three/build/three.module.js", "three/addons/": "./node_modules/three/examples/jsm/" } }</script>
+</head>
+<body>
+  <div class="frame">
+    <canvas id="stage" width="1920" height="1080"></canvas>
+    <div class="text">
+      <div id="labels"></div>
+      <div id="line"></div>
+      <div id="word">BT-EX5</div>
+      <div id="rule"></div>
+      <div id="tag">新潟・東京 日本海側最大の経営者コミュニティ</div>
+    </div>
+  </div>
+  <script type="module" src="opening3d.js"></script>
+</body>
+</html>
