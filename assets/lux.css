@@ -144,6 +144,8 @@ body.tabs-left .app-tab.is-on::after, body.tabs-right .app-tab.is-on::after { bo
   border: 1px solid rgba(201, 164, 92, 0.45);
   font-family: var(--lux-serif);
 }
+.ev-date b { font-family: var(--lux-num); font-size: 32px; font-weight: 600; line-height: 1; }
+.ev-date span { border-top-color: rgba(201, 164, 92, 0.35); font-family: "Inter", "Noto Sans JP", sans-serif; }
 
 /* ホーム */
 .home-me {

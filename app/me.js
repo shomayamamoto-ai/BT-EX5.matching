@@ -119,7 +119,7 @@
       const email = h("input", { type: "email", maxlength: "120", autocomplete: "email", placeholder: "例:yourname@gmail.com", value: d.calendarEmail });
       const meetName = h("input", { type: "text", maxlength: "60", placeholder: d.name, value: d.meetName });
       const err = h("p", { class: "app-error", role: "alert" });
-      body.append(
+      App.append(body, [
         h("p", { class: "app-lead" }, "1on1 を予定すると、運営の Google カレンダーから、このメールアドレスあてに招待が届きます。Gmail・Google Workspace のアドレスなら、あなたの Google カレンダーに自動で入ります(Google Meet を選んだときは参加用のリンクつき)。"),
         h("p", { class: "app-field-hint" }, "このアドレスはカレンダーの招待にだけ使い、ほかのメンバーには表示しません。"),
         d.calendar ? null : h("p", { class: "one-meet-note" }, "いまはお試し版のため、まだ自動では送られません(共有サーバーに切り替えると送られます)。先に登録しておけます。"),
@@ -132,7 +132,7 @@
         } }, App.field("カレンダー用のメールアドレス", email),
         App.field("Google Meet で表示される名前", meetName, `定例会の出欠は、Meet に表示される名前で判定します。名簿の名前(${d.name})とちがう名前で参加するときは入れてください(例:ローマ字・ニックネーム)。`),
         err,
-        h("button", { type: "submit", class: "app-btn primary wide" }, "保存する")));
+        h("button", { type: "submit", class: "app-btn primary wide" }, "保存する"))]);
     }, { onClose: () => { if (location.hash === "#me/calendar") history.replaceState(null, "", "#me"); } });
   }
 

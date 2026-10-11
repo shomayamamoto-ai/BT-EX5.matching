@@ -45,7 +45,8 @@
     const openId = params.get("open");
     el.append(h("ul", { class: "ann-list" }, d.items.map((a) => {
       const det = h("details", { class: `ann${a.read ? "" : " is-unread"}`, open: a.id === openId });
-      det.append(
+      // 入っていない部分(null)は「null」の文字にせず飛ばす(App.append を使う)
+      App.append(det, [
         h("summary", null,
           h("span", { class: "ann-head" }, a.pinned ? h("span", { class: "ann-pin" }, "固定") : null, App.chip(a.cat, a.cat === "重要" ? "warn" : "info"), a.read ? null : h("span", { class: "ann-dot" }, "未読")),
           h("b", null, a.title),
@@ -66,7 +67,7 @@
           App.btn("削除", async () => {
             if (!confirm("この運営連絡を削除しますか?")) return;
             if (await App.api("adminDeleteAnnouncement", { id: a.id })) App.route();
-          }, "ghost small danger")) : null);
+          }, "ghost small danger")) : null]);
       det.addEventListener("toggle", async () => {
         if (!det.open || a.read) return;
         a.read = true;

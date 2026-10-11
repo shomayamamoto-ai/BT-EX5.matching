@@ -248,7 +248,16 @@
       const days = App.daysUntil(ev.date, today);
       const when = days === 0 ? "今日" : days === 1 ? "明日" : days > 0 ? `あと${days}日` : "終了";
       App.fill(card, 
-        h("div", { class: "ev-date" }, h("b", null, App.fmtDate(ev.date)), h("span", null, when)),
+        // 日付は「月」「日(大きく)」「曜日」「あと◯日」に分けて、狭い画面でもはみ出さないように
+        (() => {
+          const [, mo, da] = ev.date.split("-").map(Number);
+          const wd = App.fmtDate(ev.date).replace(/^.*\((.)\).*$/, "$1");
+          return h("div", { class: "ev-date", "aria-label": `${App.fmtDate(ev.date)} ${when}` },
+            h("small", { class: "ev-date-m" }, `${mo}月`),
+            h("b", null, String(da)),
+            h("small", { class: "ev-date-w" }, wd),
+            h("span", null, when));
+        })(),
         h("div", { class: "ev-main" },
           h("h3", null, h("a", { href: `#events/detail/${ev.id}` }, ev.title)),
           h("p", { class: "ev-meta" }, [ev.start && `${ev.start}${ev.end ? `〜${ev.end}` : ""}`, ev.online ? "オンライン(Google Meet)" : App.AREA_LABELS[ev.area], ev.online ? "" : ev.place].filter(Boolean).join(" ・ ")),
