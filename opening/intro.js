@@ -11,7 +11,7 @@
 
   // パソコンなど大きな画面は 1080p、スマホは 720p(どちらも高画質)。
   // Chrome・Android は軽い WebM(VP9)を先に、Safari(iPhone・Mac)は確実に再生できる MP4 を先に
-  const V = "3d3";
+  const V = "3d4";
   const BIG = Math.max(window.innerWidth, window.innerHeight) >= 1100 && Math.min(window.innerWidth, window.innerHeight) >= 600;
   const SAFARI = /^((?!chrome|chromium|android|crios|fxios).)*safari/i.test(navigator.userAgent);
   const base = BIG ? "bt-ex5-opening" : "bt-ex5-opening-720p";
