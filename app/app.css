@@ -158,30 +158,126 @@ a.app-row:active, button.app-row:active { background: #fff3ea; }
 .app-cards { list-style: none; display: grid; gap: 10px; }
 
 /* ---------- ホーム ---------- */
-.home-hello h1 { font-size: 20px; font-weight: 900; line-height: 1.4; }
-.home-date { color: var(--text-light); font-size: 12.5px; font-weight: 700; }
-.home-todo { display: grid; gap: 8px; margin-top: 14px; }
-.home-alert {
-  display: flex; flex-direction: column; gap: 2px; padding: 14px 16px;
-  border-radius: var(--radius); background: var(--info-bg); color: var(--info); text-decoration: none;
-  border: 1px solid rgba(47, 95, 154, 0.15);
+/* 上から: あいさつ → 今月のあなた → 紹介先を探す → すぐできること → やること・次の定例会(パソコンは右にチャレンジ・お知らせ) */
+.home-hello { padding: 2px 2px 0; }
+.home-hello h1 { font-size: 19px; font-weight: 900; line-height: 1.4; letter-spacing: 0.01em; }
+.home-date { color: var(--text-light); font-size: 12px; font-weight: 700; }
+.home-sum { display: flex; flex-wrap: wrap; gap: 4px 6px; margin-top: 6px; font-size: 12px; font-weight: 700; color: var(--text-sub); }
+.home-sum span { padding: 2px 10px; border-radius: 999px; background: #fff; border: 1px solid var(--line); }
+.home-sum .is-todo { color: var(--warn); border-color: rgba(181, 84, 29, 0.25); background: var(--warn-bg); }
+.home-sum .is-clear { color: var(--good); border-color: rgba(47, 122, 91, 0.2); background: var(--good-bg); }
+.home-go { flex-shrink: 0; font-size: 22px; line-height: 1; color: var(--text-light); }
+
+/* 今月のあなた(順位と数字を1枚に) */
+.home-me { margin-top: 12px; padding: 14px 16px 12px; border-radius: 20px; color: #fff; background: radial-gradient(120% 140% at 100% 0%, #5a3a24 0%, #2c1f17 55%, #1d1410 100%); box-shadow: 0 10px 26px rgba(44, 31, 23, 0.22); }
+.home-rank { display: flex; align-items: center; gap: 12px; color: inherit; text-decoration: none; }
+.home-rank-no { display: flex; flex-direction: column; align-items: center; min-width: 58px; line-height: 1.1; }
+.home-rank-no > span { font-size: 13px; font-weight: 800; color: #f3d38c; }
+.home-rank-no b { font-family: "Inter", sans-serif; font-size: 32px; font-weight: 800; margin-right: 1px; }
+.home-rank-no small { font-size: 10.5px; color: #d9c4b0; }
+.home-rank-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.home-rank-main b { font-size: 14px; }
+.home-rank-main em { font-style: normal; font-family: "Inter", sans-serif; color: #f3d38c; }
+.home-rank-main small { font-size: 12px; line-height: 1.5; color: #d9c4b0; }
+.home-rank .home-go { color: #d9c4b0; }
+.home-me-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); margin-top: 12px; padding-top: 10px; border-top: 1px solid rgba(255, 255, 255, 0.12); color: inherit; text-decoration: none; }
+.home-rank + .home-me-stats { margin-top: 12px; }
+.home-me-stat { display: flex; flex-direction: column; align-items: center; gap: 1px; min-width: 0; }
+.home-me-stat + .home-me-stat { border-left: 1px solid rgba(255, 255, 255, 0.1); }
+.home-me-stat b { font-family: "Inter", sans-serif; font-size: 21px; font-weight: 800; line-height: 1.2; }
+.home-me-stat b small { font-size: 11px; font-weight: 700; margin-left: 1px; color: #d9c4b0; }
+.home-me-stat > span { font-size: 11px; font-weight: 700; color: #d9c4b0; white-space: nowrap; }
+.home-me-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255, 255, 255, 0.12); font-size: 12px; color: #d9c4b0; }
+.home-me-foot b { font-family: "Inter", sans-serif; font-size: 14px; color: #f3d38c; }
+.home-me-foot small { font-size: 11px; }
+.home-share { flex-shrink: 0; min-height: 32px; padding: 4px 14px; border-radius: 999px; border: 1px solid rgba(243, 211, 140, 0.5); background: transparent; color: #f3d38c; font-size: 12px; font-weight: 800; cursor: pointer; }
+
+/* 紹介先を探す(相談を入れてそのまま検索) */
+.home-ask { display: flex; align-items: center; gap: 8px; margin-top: 14px; padding: 6px 6px 6px 14px; background: #fff; border: 1.5px solid var(--line-strong); border-radius: 999px; box-shadow: var(--shadow); transition: border-color 0.15s, box-shadow 0.15s; }
+.home-ask:focus-within { border-color: var(--accent); box-shadow: 0 0 0 4px rgba(244, 105, 75, 0.12); }
+.home-ask svg { width: 20px; height: 20px; flex-shrink: 0; fill: var(--accent); }
+.home-ask input { flex: 1; min-width: 0; height: 40px; border: none; outline: none; background: none; font-size: 16px; }
+.home-ask input::placeholder { color: var(--text-light); font-size: 14px; }
+.home-ask button { flex-shrink: 0; min-height: 40px; padding: 0 18px; border: none; border-radius: 999px; background: var(--grad); color: #fff; font-weight: 800; font-size: 14px; cursor: pointer; box-shadow: 0 4px 12px rgba(244, 105, 75, 0.28); }
+
+/* すぐできること(アイコンを横1列) */
+.home-actions { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; margin-top: 14px; }
+.home-action { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 4px 0; border-radius: 14px; color: var(--text); text-decoration: none; text-align: center; }
+.home-action-icon { display: grid; place-items: center; width: 50px; height: 50px; border-radius: 16px; background: #fff; border: 1px solid var(--line); box-shadow: 0 4px 12px rgba(220, 110, 60, 0.08); transition: transform 0.12s; }
+.home-action-icon svg { width: 22px; height: 22px; fill: var(--accent); }
+.home-action:active .home-action-icon { transform: scale(0.94); }
+.home-action-label { font-size: clamp(9.5px, 2.75vw, 11.5px); font-weight: 800; line-height: 1.35; letter-spacing: -0.01em; word-break: keep-all; overflow-wrap: anywhere; }
+
+/* 見出しの右に小さなリンク */
+.home-sec { margin-top: 24px; }
+.home-sec-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+.home-sec-head .app-h2 { margin: 0; }
+.home-sec-link { flex-shrink: 0; border: none; background: none; padding: 4px 0; font-size: 12.5px; font-weight: 800; color: var(--accent-dark); text-decoration: none; cursor: pointer; }
+
+/* やること(押すと開く行。左の色で種類がわかる) */
+.home-todo { display: grid; gap: 8px; }
+.home-todo + .task-list { margin-top: 8px; }
+.home-alert { position: relative; display: flex; flex-direction: column; gap: 1px; padding: 11px 34px 11px 14px; border-radius: 14px; background: #fff; border: 1px solid var(--line); border-left: 4px solid var(--accent); color: var(--text); text-decoration: none; box-shadow: 0 2px 8px rgba(220, 110, 60, 0.05); }
+a.home-alert::after { content: "›"; position: absolute; right: 13px; top: 50%; transform: translateY(-52%); font-size: 22px; color: var(--text-light); }
+a.home-alert:active { background: #fff6ef; }
+.home-alert b { font-size: 14px; line-height: 1.5; }
+.home-alert span { font-size: 12px; line-height: 1.55; color: var(--text-sub); }
+.home-alert.is-warn { border-left-color: #e8833a; }
+.home-alert.is-warn b { color: var(--warn); }
+.home-alert.is-good { border-left-color: var(--good); }
+.home-alert.is-good b { color: var(--good); }
+.home-alert.is-info { border-left-color: var(--info); }
+.home-alert.is-hot { padding-right: 14px; border: 2px solid var(--accent); box-shadow: var(--shadow); }
+.home-allclear { padding: 12px 14px; border-radius: 14px; background: var(--good-bg); color: var(--good); font-size: 12.5px; font-weight: 700; line-height: 1.6; }
+.home-allclear::before { content: "✓ "; font-weight: 900; }
+
+/* 次の定例会: リンクを1行に */
+.ev-links { display: flex; flex-wrap: wrap; align-items: center; gap: 0 18px; margin-top: 8px; }
+.ev-links .ev-more, .ev-links .cal-add { margin-top: 0; }
+.ev-links .cal-add[open] { flex-basis: 100%; }
+
+/* 今週の紹介チャレンジ */
+.home-spot { margin-top: 24px; padding: 14px 16px 16px; border-radius: 20px; background: linear-gradient(160deg, #fff 0%, #fff6ee 100%); border: 1px solid var(--line-strong); box-shadow: var(--shadow); }
+.home-spot-label { display: inline-block; margin: 0 0 10px; padding: 2px 10px; border-radius: 999px; background: var(--grad); color: #fff; font-size: 11.5px; font-weight: 800; letter-spacing: 0.04em; }
+.home-spot-head { display: flex; align-items: center; gap: 10px; color: inherit; text-decoration: none; }
+.home-spot-head > span { min-width: 0; display: flex; flex-direction: column; }
+.home-spot-head b { font-size: 16px; line-height: 1.4; }
+.home-spot-head small { color: var(--text-sub); font-size: 12px; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.home-spot-q { margin-top: 12px; font-size: 11.5px; font-weight: 800; color: var(--text-sub); }
+.home-spot-wants { font-size: 13.5px; line-height: 1.7; overflow-wrap: anywhere; }
+.home-spot-wants.is-clamped { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.home-spot-more { border: none; background: none; padding: 2px 0; font-size: 12.5px; font-weight: 800; color: var(--accent-dark); cursor: pointer; }
+.home-spot-trig { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.home-spot-trig small { flex-basis: 100%; font-size: 11.5px; font-weight: 800; color: var(--text-sub); }
+.home-spot-trig span { padding: 3px 10px; border-radius: 999px; background: #fff; border: 1px solid var(--line-strong); font-size: 12px; color: var(--text-sub); }
+.home-spot-offer { margin-top: 10px; font-size: 12.5px; font-weight: 700; color: var(--good); }
+.home-spot .app-btn-row { margin-top: 12px; }
+
+/* おすすめの設定 */
+.home-tips { display: grid; gap: 8px; margin-top: 24px; }
+.home-tips:empty { display: none; }
+.home-nudge { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 14px; background: #fff; border: 1px dashed var(--line-strong); color: var(--text); text-decoration: none; }
+.home-nudge-icon { font-size: 20px; flex-shrink: 0; }
+.home-nudge-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.home-nudge-main b { font-size: 13.5px; }
+.home-nudge-main span { font-size: 12px; color: var(--text-sub); line-height: 1.55; }
+
+/* パソコン: あいさつ・今月のあなた を横に並べ、下は左右2列 */
+@media (min-width: 900px) {
+  .page-home { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); column-gap: 24px; align-items: end; }
+  .page-home > .home-hello { grid-column: 1; align-self: center; }
+  .page-home > .home-me { grid-column: 2; grid-row: 1 / span 2; margin-top: 0; }
+  .page-home > .home-ask { grid-column: 1; margin-top: 10px; }
+  .page-home > .home-actions, .page-home > .home-grid { grid-column: 1 / -1; }
+  .home-hello h1 { font-size: 22px; }
+  .home-actions { margin-top: 18px; gap: 10px; }
+  .home-action { flex-direction: row; justify-content: center; gap: 10px; padding: 10px 12px; background: #fff; border: 1px solid var(--line); box-shadow: 0 4px 12px rgba(220, 110, 60, 0.06); transition: border-color 0.15s, transform 0.12s; }
+  .home-action:hover { border-color: var(--accent); transform: translateY(-1px); }
+  .home-action-icon { width: 36px; height: 36px; border-radius: 12px; border: none; box-shadow: none; background: #fff2ea; }
+  .home-action-label { font-size: 13px; text-align: left; }
+  .home-grid { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 28px; align-items: start; }
+  .home-col > :first-child { margin-top: 24px; }
 }
-.home-alert b { font-size: 14.5px; }
-.home-alert span { font-size: 12.5px; opacity: 0.85; }
-.home-alert.is-warn { background: var(--warn-bg); color: var(--warn); border-color: rgba(181, 84, 29, 0.18); }
-.home-alert.is-hot { background: #fff; color: var(--text); border: 2px solid var(--accent); box-shadow: var(--shadow); }
-.home-actions { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
-.home-action {
-  display: flex; flex-direction: column; gap: 2px; padding: 14px; min-height: 96px;
-  background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
-  text-decoration: none; color: var(--text); box-shadow: var(--shadow);
-}
-.home-action svg { width: 24px; height: 24px; fill: var(--accent); margin-bottom: 4px; }
-.home-action b { font-size: 14px; }
-.home-action small { font-size: 11.5px; color: var(--text-sub); line-height: 1.5; }
-.home-action.is-primary { grid-column: 1 / -1; background: var(--grad); color: #fff; border: none; min-height: 0; flex-direction: row; align-items: center; gap: 10px; }
-.home-action.is-primary svg { fill: #fff; margin: 0; }
-.home-action.is-primary small { color: rgba(255, 255, 255, 0.9); margin-left: auto; }
 .home-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
 .home-stat { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 10px; text-align: center; display: flex; flex-direction: column; }
 .home-stat span { font-size: 11.5px; color: var(--text-sub); font-weight: 700; }
@@ -191,9 +287,6 @@ a.app-row:active, button.app-row:active { background: #fff3ea; }
 .home-stat.is-wide b { color: var(--gold); }
 .home-stat > small { font-size: 11px; color: var(--text-light); }
 .home-stats .home-stat.is-wide:last-child:nth-child(5) { grid-column: 1 / -1; }
-.home-nudge { display: flex; flex-direction: column; gap: 2px; margin-top: 22px; padding: 16px; border-radius: var(--radius); background: #fff; border: 1.5px dashed var(--accent); color: var(--text); text-decoration: none; }
-.home-nudge span { font-size: 13px; color: var(--text-sub); }
-.home-nudge .home-nudge-go { color: var(--accent-dark); font-weight: 800; }
 
 /* ---------- 定例会 ---------- */
 .ev-list { display: grid; gap: 12px; }
@@ -428,7 +521,6 @@ a.site-maker { display: inline-flex; flex-direction: column; align-items: center
 .cal-add summary::before { content: "📅"; }
 .cal-add-menu { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
 .has-draft { border-color: var(--amber) !important; }
-.home-alert.is-good { background: var(--good-bg); color: var(--good); border-color: rgba(47, 122, 91, 0.2); }
 .one-cal { padding: 0 14px 10px 66px; margin-top: -6px; }
 .rec-item { padding-bottom: 10px; }
 .rec-actions { display: flex; gap: 8px; padding: 0 14px 0 66px; }
@@ -469,8 +561,6 @@ a.site-maker { display: inline-flex; flex-direction: column; align-items: center
 @media (max-width: 380px) { .dash-kpis { grid-template-columns: repeat(2, 1fr); } }
 .ann-unread { padding-bottom: 8px; }
 html.big-text body { zoom: 1.15; }
-.home-stat-links { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
-.home-share { border: none; background: none; cursor: pointer; color: var(--accent-dark); }
 
 /* ---------- 選んで切り替えるボタン・1on1 ---------- */
 .app-toggle { display: flex; gap: 4px; padding: 4px; background: #f6e9de; border-radius: 12px; }
@@ -551,14 +641,6 @@ html.big-text body { zoom: 1.15; }
 .ref-card.is-cancelled { opacity: 0.6; }
 
 /* ---------- チームのランキング ---------- */
-.home-rank { display: flex; align-items: center; gap: 14px; margin-top: 22px; padding: 14px 16px; border-radius: var(--radius); background: linear-gradient(120deg, #2c1f17, #4a3020); color: #fff; text-decoration: none; box-shadow: var(--shadow); }
-.home-rank-no { display: flex; flex-direction: column; align-items: center; line-height: 1.1; min-width: 64px; }
-.home-rank-no b { font-size: 34px; font-family: "Inter", sans-serif; color: #f3d38c; }
-.home-rank-no small { font-size: 10.5px; color: #e8d6c4; }
-.home-rank-main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
-.home-rank-main b { font-size: 14.5px; }
-.home-rank-main small { font-size: 12px; color: #e8d6c4; }
-.home-rank-go { font-size: 24px; color: #e8d6c4; }
 .rk-me { display: grid; grid-template-columns: auto 1fr; gap: 6px 16px; align-items: center; margin-top: 14px; padding: 16px; border-radius: var(--radius); background: linear-gradient(120deg, #2c1f17, #4a3020); color: #fff; }
 .rk-me-rank { display: flex; flex-direction: column; align-items: center; line-height: 1.15; }
 .rk-me-rank span { font-size: 11px; color: #e8d6c4; max-width: 110px; text-align: center; }
@@ -725,16 +807,6 @@ html.big-text body { zoom: 1.15; }
 .app-row-main small.is-over { color: #c23b22; font-weight: 700; }
 
 /* 今週の紹介チャレンジ */
-.home-spot { margin-top: 18px; padding: 14px 16px; border-radius: var(--radius); background: linear-gradient(135deg, #fff4ea, #fffaf5); border: 1px solid var(--line-strong); }
-.home-spot-label { margin: 0 0 8px; font-size: 12px; font-weight: 900; color: var(--accent-dark); letter-spacing: .08em; }
-.home-spot-head { display: flex; align-items: center; gap: 10px; }
-.home-spot-head b { display: block; font-size: 16px; }
-.home-spot-head small { color: var(--text-sub); font-size: 12px; }
-.home-spot-wants { margin: 10px 0 4px; font-size: 14px; line-height: 1.6; overflow-wrap: anywhere; }
-.home-spot-wants span { display: block; font-size: 12px; font-weight: 800; color: var(--text-sub); }
-.home-spot-trig { margin: 4px 0; font-size: 12.5px; color: var(--text-sub); }
-.home-spot-trig span { margin-left: 2px; }
-.home-spot-offer { margin: 4px 0; font-size: 13px; font-weight: 700; color: var(--good); }
 
 /* ---------- パソコン ---------- */
 /* 上の見出しを、画面のちょうど真ん中に(ロゴと右のボタンの幅のちがいでずれないように) */
@@ -745,10 +817,6 @@ html.big-text body { zoom: 1.15; }
 /* 広い画面では横幅を広く使う: 本文を広げ、ホームは2段組、一覧のカードは2列 */
 @media (min-width: 1100px) {
   .app-main { max-width: 1120px; padding-left: 32px; padding-right: 32px; }
-  .page-home { columns: 2; column-gap: 28px; }
-  .page-home > * { break-inside: avoid; }
-  .page-home > .home-hello, .page-home > .home-todo { column-span: all; }
-  .page-home > .app-section:first-of-type, .page-home > .home-spot { margin-top: 0; }
   .page-log .app-cards, .page-admin .app-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
   .page-events .ev-list { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
   .page-board .board-list { display: block; columns: 2; column-gap: 16px; }
@@ -758,3 +826,135 @@ html.big-text body { zoom: 1.15; }
   .page-board .board-list:has(> li:only-child) { columns: 1; }
   .app-cards > :only-child, .ev-list > :only-child, .task-list > :only-child { grid-column: 1 / -1; }
 }
+
+/* ============================================
+   予定: 時計とカレンダー(app/calendar.js)
+   ============================================ */
+.cal-panel { display: grid; gap: 14px; grid-template-areas: "clock" "main" "day"; margin-bottom: 18px; }
+.cal-clock-card { grid-area: clock; }
+.cal-main { grid-area: main; }
+.cal-day { grid-area: day; }
+
+/* 時計のカード: 黒×金 */
+.cal-clock-card {
+  display: flex; align-items: center; gap: 18px; padding: 18px 18px 18px 14px; border-radius: 22px; color: #f5e9d6;
+  background: radial-gradient(130% 120% at 0% 0%, #3d2a1c 0%, #1c1310 55%, #0f0a08 100%);
+  box-shadow: 0 14px 34px rgba(30, 18, 10, 0.28), inset 0 1px 0 rgba(255, 230, 180, 0.08);
+}
+.cal-now { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.cal-now-date { font-size: 12.5px; font-weight: 700; color: #d9c4b0; letter-spacing: 0.04em; }
+.cal-now-time {
+  font-family: "Inter", sans-serif; font-size: 38px; font-weight: 800; line-height: 1.1; letter-spacing: 0.02em;
+  background: linear-gradient(180deg, #fff3c9 0%, #e2b866 45%, #a8742e 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+}
+.cal-now-next { margin-top: 4px; font-size: 12px; font-weight: 800; color: #f3d38c; }
+
+/* 立体的な時計 */
+.lux-clock { --size: 128px; position: relative; flex-shrink: 0; width: var(--size); height: var(--size); }
+.lux-lug { position: absolute; left: 50%; width: 46%; height: 16%; transform: translateX(-50%); border-radius: 6px;
+  background: linear-gradient(90deg, #7a5320, #e9c77b 30%, #fff1c2 50%, #c99a52 70%, #6e4a1a); box-shadow: 0 2px 6px rgba(0, 0, 0, 0.45); }
+.lux-lug.is-top { top: -9%; }
+.lux-lug.is-bottom { bottom: -9%; }
+.lux-crown { position: absolute; right: -5.5%; top: 50%; width: 8%; height: 17%; transform: translateY(-50%); border-radius: 3px;
+  background: repeating-linear-gradient(180deg, #f6dfa0 0 1.5px, #8a5f22 1.5px 3px); box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5); }
+.lux-bezel {
+  position: absolute; inset: 0; border-radius: 50%; padding: 7.5%;
+  background:
+    radial-gradient(circle at 30% 22%, rgba(255, 250, 225, 0.85), rgba(255, 250, 225, 0) 34%),
+    conic-gradient(from 200deg, #6e4a1a, #e9c77b, #fff1c2, #c99a52, #7a5320, #d9b06a, #fff3c9, #a8742e, #6e4a1a);
+  box-shadow:
+    0 10px 22px rgba(0, 0, 0, 0.55), 0 2px 4px rgba(0, 0, 0, 0.4),
+    inset 0 2px 2px rgba(255, 250, 225, 0.9), inset 0 -3px 5px rgba(60, 35, 10, 0.75);
+}
+.lux-dial {
+  position: relative; width: 100%; height: 100%; border-radius: 50%; overflow: hidden;
+  background:
+    repeating-conic-gradient(from 0deg, rgba(255, 255, 255, 0.035) 0deg 1.2deg, rgba(0, 0, 0, 0) 1.2deg 2.4deg),
+    radial-gradient(circle at 50% 38%, #24324a 0%, #111a2b 48%, #070b14 100%);
+  box-shadow: inset 0 4px 10px rgba(0, 0, 0, 0.9), inset 0 -2px 6px rgba(255, 255, 255, 0.06), 0 0 0 1.5px #3a2a14;
+}
+.lux-dial svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.lux-brand { font-family: "Inter", sans-serif; font-size: 10px; font-weight: 800; letter-spacing: 0.12em; fill: #e9c77b; }
+.lux-sub { font-family: "Inter", sans-serif; font-size: 5px; font-weight: 600; letter-spacing: 0.22em; fill: #b8935a; }
+.lux-date { font-family: "Inter", sans-serif; font-size: 10px; font-weight: 800; fill: #1d1410; }
+/* ガラスの映り込み */
+.lux-glass { position: absolute; inset: 7.5%; border-radius: 50%; pointer-events: none;
+  background:
+    linear-gradient(140deg, rgba(255, 255, 255, 0.28) 0%, rgba(255, 255, 255, 0.06) 32%, rgba(255, 255, 255, 0) 46%),
+    radial-gradient(circle at 70% 85%, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0) 40%);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12); }
+
+/* 月のカレンダー */
+.cal-main { padding: 14px 12px 12px; background: var(--card); border: 1px solid var(--line); border-radius: 20px; box-shadow: var(--shadow); }
+.cal-head { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+.cal-title { flex: 1; text-align: center; font-size: 17px; font-weight: 900; font-family: "Inter", "Noto Sans JP", sans-serif; letter-spacing: 0.02em; }
+.cal-nav { width: 38px; height: 38px; border-radius: 50%; border: 1px solid var(--line-strong); background: #fff; font-size: 20px; line-height: 1; color: var(--text-sub); cursor: pointer; }
+.cal-nav:hover { border-color: var(--accent); color: var(--accent-dark); }
+.cal-today { order: -1; min-height: 32px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--line-strong); background: #fff6ef; font-size: 12px; font-weight: 800; color: var(--accent-dark); cursor: pointer; }
+.cal-head .cal-today { order: 0; }
+.cal-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 3px; }
+.cal-wd { padding: 4px 0; text-align: center; font-size: 11px; font-weight: 800; color: var(--text-light); }
+.cal-wd.is-sun, .cal-cell.is-sun .cal-num { color: #d0453a; }
+.cal-wd.is-sat, .cal-cell.is-sat .cal-num { color: #3a6bb5; }
+.cal-cell { position: relative; display: flex; flex-direction: column; align-items: center; gap: 3px; min-height: 50px; padding: 5px 2px 4px; border: 1px solid transparent; border-radius: 12px; background: none; color: var(--text); cursor: pointer; min-width: 0; }
+.cal-cell.is-blank { cursor: default; }
+.cal-cell:not(.is-blank):hover { background: #fff6ef; }
+.cal-cell.is-past .cal-num { opacity: 0.5; }
+.cal-num { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; font-family: "Inter", sans-serif; font-size: 13.5px; font-weight: 700; }
+.cal-cell.is-today .cal-num { background: var(--grad); color: #fff !important; opacity: 1; box-shadow: 0 4px 10px rgba(244, 105, 75, 0.35); }
+.cal-cell.is-sel { border-color: var(--accent); background: #fff6ef; }
+.cal-dots { display: flex; gap: 3px; }
+.cal-dots i { width: 6px; height: 6px; border-radius: 50%; }
+.cal-labels { display: none; }
+.is-event { --kind: #f4694b; }
+.is-one { --kind: #2f5f9a; }
+.is-ref { --kind: #2f7a5b; }
+.is-task { --kind: #d88a1c; }
+.cal-dots i { background: var(--kind); }
+.cal-legend { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 14px; margin-top: 10px; font-size: 11.5px; font-weight: 700; color: var(--text-sub); }
+.cal-legend span::before { content: ""; display: inline-block; width: 8px; height: 8px; margin-right: 5px; border-radius: 50%; background: var(--kind); vertical-align: 1px; }
+
+/* 選んだ日の予定 */
+.cal-day { padding: 14px; background: var(--card); border: 1px solid var(--line); border-radius: 20px; box-shadow: var(--shadow); }
+.cal-day h3 { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 900; margin-bottom: 8px; }
+.cal-day-today { padding: 1px 8px; border-radius: 999px; background: var(--grad); color: #fff; font-size: 11px; }
+.cal-day-list { list-style: none; display: grid; gap: 8px; }
+.cal-day-list li { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-radius: 14px; background: #fffaf6; border: 1px solid var(--line); border-left: 4px solid var(--kind); }
+.cal-day-list li > a:first-child { flex: 1; min-width: 0; display: flex; gap: 12px; color: inherit; text-decoration: none; }
+.cal-day-time { flex-shrink: 0; width: 42px; font-family: "Inter", sans-serif; font-size: 13px; font-weight: 800; color: var(--kind); padding-top: 14px; }
+.cal-day-main { min-width: 0; display: flex; flex-direction: column; }
+.cal-day-main small { font-size: 11px; font-weight: 800; color: var(--kind); }
+.cal-day-main b { font-size: 14px; line-height: 1.45; overflow-wrap: anywhere; }
+.cal-day-main span { font-size: 12px; color: var(--text-sub); line-height: 1.5; }
+.cal-day-meet { flex-shrink: 0; padding: 6px 10px; border-radius: 999px; background: var(--info); color: #fff; font-size: 12px; font-weight: 800; text-decoration: none; }
+.cal-day-empty { padding: 10px 0 2px; font-size: 13px; color: var(--text-light); }
+.cal-day-add { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+
+@media (min-width: 700px) {
+  .cal-cell { min-height: 74px; align-items: stretch; }
+  .cal-num { align-self: center; }
+  .cal-dots { display: none; }
+  .cal-labels { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .cal-labels > span { display: block; padding: 1px 5px; border-radius: 5px; background: color-mix(in srgb, var(--kind) 13%, #fff); color: var(--kind); font-size: 10.5px; font-weight: 800; line-height: 1.45; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .cal-labels small { font-size: 10px; color: var(--text-light); text-align: center; }
+  .lux-clock { --size: 150px; }
+}
+/* パソコン: 左に時計と選んだ日、右に月のカレンダー */
+@media (min-width: 900px) {
+  .cal-panel { grid-template-columns: minmax(280px, 340px) minmax(0, 1fr); grid-template-areas: "clock main" "day main"; grid-template-rows: auto 1fr; align-items: start; gap: 18px; }
+  .cal-clock-card { flex-direction: column; align-items: center; text-align: center; padding: 26px 18px 22px; gap: 18px; }
+  .cal-now { align-items: center; }
+  .lux-clock { --size: 200px; }
+  .cal-main { padding: 18px; }
+  .cal-cell { min-height: 92px; }
+}
+@media (max-width: 360px) {
+  .lux-clock { --size: 104px; }
+  .cal-now-time { font-size: 30px; }
+}
+
+/* PCのメニュー: すりガラスをやめて不透明に(Chrome で動かしたあとに残像が出るのを防ぐ) */
+@media (min-width: 900px) {
+  .app-tabs { background: #fff; backdrop-filter: none; -webkit-backdrop-filter: none; }
+}
+body.tabs-left .app-tabs, body.tabs-right .app-tabs, body.tabs-free .app-tabs, body.tabs-top .app-tabs { background: #fff; backdrop-filter: none; -webkit-backdrop-filter: none; isolation: isolate; }

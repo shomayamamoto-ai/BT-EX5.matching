@@ -46,12 +46,12 @@
     return li;
   };
 
-  // やることを追加する。admin なら担当者をだれでも選べる(選ばなければ自分)
+  // やることを追加する。admin なら担当者をだれでも選べる(選ばなければ自分)。opt.due で期限を先に入れておける(カレンダーから)
   App.taskForm = function (opt, onSaved) {
     const o = opt || {};
     App.openSheet(o.eventTitle ? `やることを追加(${o.eventTitle})` : "やることを追加", (body, close) => {
       const title = h("input", { type: "text", maxlength: "100", placeholder: "例:プロフィールのリンクを登録する" });
-      const due = h("input", { type: "date" });
+      const due = h("input", { type: "date", value: /^\d{4}-\d{2}-\d{2}$/.test(o.due || "") ? o.due : undefined });
       const quick = h("div", { class: "app-chips" }, [["今日", 0], ["明日", 1], ["1週間後", 7], ["次の定例会まで", 14]].map(([label, n]) =>
         h("button", { type: "button", class: "app-pill", onclick: () => {
           const d = new Date(`${App.todayKey()}T12:00:00`); d.setDate(d.getDate() + n);

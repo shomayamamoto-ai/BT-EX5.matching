@@ -109,6 +109,17 @@
             changed = true;
           });
         }
+        // これまでの改善点の運営連絡(REF_SEED_ANNOUNCEMENTS)を一度だけ入れる(投稿日は改善した日)
+        if (typeof REF_SEED_ANNOUNCEMENTS !== "undefined") {
+          if (!Array.isArray(db.announcementSeeds)) { db.announcementSeeds = []; changed = true; }
+          REF_SEED_ANNOUNCEMENTS.forEach(function (sa) {
+            if (db.announcementSeeds.indexOf(sa.seedId) !== -1) return;
+            db.announcementSeeds.push(sa.seedId);
+            db.announcements.push({ id: newId("a_"), at: Math.min(sa.at, c.nowMs()), readBy: [], by: "yamamoto", byName: "山本 捷真", title: sa.title, body: sa.body, cat: "お知らせ", pinned: false, seedId: sa.seedId });
+            trim(db.announcements, LIMITS.announcements);
+            changed = true;
+          });
+        }
         // お試し版のときの掲示板の投稿(REF_SEED_POSTS)を一度だけ入れる。
         // 書いた本人の端末には同じ投稿が既にあるので、本文の書き出しが同じなら入れない
         if (typeof REF_SEED_POSTS !== "undefined") {

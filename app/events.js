@@ -1,5 +1,5 @@
 // ============================================
-// app/events.js — 予定(定例会・出欠・出席コード・ビジター招待)
+// app/events.js — 予定(時計・カレンダー・定例会・出欠・出席コード・ビジター招待)
 // 管理者は定例会の作成・受付(出席コード)・出欠一覧もここで行う
 // ============================================
 
@@ -32,17 +32,21 @@
       const attendedN = past.filter((e) => e.attended).length;
       const lateN = past.filter((e) => e.late).length;
       const rate = past.length ? h("p", { class: "checkin-rate" }, `あなたの出席:${past.length}回中 ${attendedN}回(出席率 ${Math.round((attendedN / past.length) * 100)}%${lateN ? `・うち遅刻早退 ${lateN}回` : ""})`) : null;
-      if (open || venueSoon) {
-        el.append(h("section", { class: `checkin-box${open ? " is-open" : ""}` },
+      const checkBox = open || venueSoon
+        ? h("section", { class: `checkin-box${open ? " is-open" : ""}` },
           h("h2", null, open ? "受付中:出席コードを入れてください" : "会場の出席コード"),
           h("p", null, "会場の QR コードをスマホのカメラで読み取るか、案内される4桁の数字を入れると、出席が記録されます。"),
-          App.checkInForm(), rate));
-      } else {
-        el.append(h("section", { class: "checkin-box" },
+          App.checkInForm(), rate)
+        : h("section", { class: "checkin-box" },
           h("h2", null, "出欠のつけ方"),
           h("p", null, "オンラインの定例会は、Google Meet に参加した時間で自動で出欠がつきます(100分以上で出席、60分以上100分未満は遅刻早退)。出席コードは要りません。"),
-          rate));
-      }
+          rate);
+      // 受付中・会場の日は出席コードをいちばん上に。ふだんは時計とカレンダーを上に
+      if (open || venueSoon) el.append(checkBox);
+      const cal = App.calendarPanel(d.events, d.today);
+      el.append(h("section", { class: "cal-panel", "aria-label": "カレンダー" },
+        App.clockCard(upcoming[0], d.today), cal.main, cal.day));
+      if (!(open || venueSoon)) el.append(checkBox);
 
       if (App.isAdmin()) el.append(h("div", { class: "app-cta-row" }, App.btn("＋ 定例会を作る(管理者)", () => eventForm(null, d.events[d.events.length - 1]), "ghost wide")));
 

@@ -952,6 +952,15 @@
       openDiag();
       return;
     }
+    // #ask=… は会員アプリのホームの「紹介先を探す」から来たとき(入れた相談でそのまま探す)
+    const am = /^#ask=(.*)$/.exec(hash);
+    if (am) {
+      history.replaceState(null, "", location.pathname);
+      let q = "";
+      try { q = decodeURIComponent(am[1]).trim().slice(0, 600); } catch { q = ""; }
+      if (q) { $("#csText").value = q; runConsult(); }
+      return;
+    }
     const mm = /^#member=([\w-]+)(?:&back=([^&#]*))?$/.exec(hash);
     if (mm && members.some((m) => m.id === mm[1])) {
       // 戻り先は会員アプリの中の画面だけ(文字の種類と長さを限る)
@@ -1179,7 +1188,7 @@
   // ---------- 初期化(会員限定) ----------
   (async function init() {
     // ログイン前にメンバーのリンクを開いたときは、ログイン後に開けるように覚えておく
-    try { if (/^#member=/.test(location.hash)) sessionStorage.setItem("btex5-pending-hash", location.hash); } catch { /* noop */ }
+    try { if (/^#(member|ask)=/.test(location.hash)) sessionStorage.setItem("btex5-pending-hash", location.hash); } catch { /* noop */ }
     const session = await AuthSession.guardPage({ next: "referral", loginPath: "../login/" });
     if (!session) return;
     const res = await AuthApi.listReferralMembers(AuthSession.getToken());
