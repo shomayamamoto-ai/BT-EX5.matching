@@ -48,6 +48,9 @@
             "来月もよろしくお願いします!",
           ].join("\n"), "今月の活動") }, "シェア"))));
 
+      // ---------- BT-EX5 シグナル(直近6か月の活動の信号。本人だけに表示) ----------
+      if (d.signal) el.append(signalCard(d.signal));
+
       // ---------- 紹介先を探す(聞いた相談を入れてそのまま検索) ----------
       const ask = h("input", { type: "search", name: "ask", maxlength: "600", enterkeyhint: "search", placeholder: "聞いた相談を入れて、紹介先を探す", "aria-label": "聞いた相談", autocomplete: "off" });
       el.append(h("form", { class: "home-ask", role: "search", "data-home": "ask", onsubmit: (e) => {
@@ -71,6 +74,9 @@
       const main = h("div", { class: "home-col is-main" });
       const side = h("div", { class: "home-col is-side" });
       el.append(h("div", { class: "home-grid" }, main, side));
+
+      // ---------- はじめての方へ(終わるか閉じるまで) ----------
+      if (App.welcomeCard) { const wc = App.welcomeCard(d); if (wc) main.append(wc); }
 
       // ---------- やること(声かけ・お知らせ・自分のやることを1つに) ----------
       const todo = [];
@@ -284,8 +290,10 @@
   // 同じ列(上・左・右)の中で並べかえる。消したものは「ホームの表示を変える」からいつでも戻せる
   const HOME_PARTS = [
     ["me", "今月のあなた(順位・数字・目標)", "top"],
+    ["signal", "BT-EX5 シグナル(直近6か月の信号)", "top"],
     ["ask", "紹介先を探す", "top"],
     ["actions", "すぐできること", "top"],
+    ["welcome", "はじめての方へ(7つのステップ)", "main"],
     ["todo", "あなたのやること", "main"],
     ["sched", "今日・明日の予定", "main"],
     ["timer", "タイマー", "main"],
@@ -361,6 +369,45 @@
     }, { noFocus: true });
   }
   function tag(key, node) { node.setAttribute("data-home", key); return node; }
+
+  // ---------- BT-EX5 シグナル ----------
+  const SIGNAL = {
+    green: ["緑", "とてもよい活動です"],
+    yellow: ["黄", "あと少しで緑です"],
+    red: ["赤", "まずは1つ、できることから"],
+    gray: ["これから", "はじめの一歩を"],
+  };
+  function signalCard(sg) {
+    const [label, lead] = SIGNAL[sg.color] || SIGNAL.gray;
+    const goal = sg.total >= 70 ? null : sg.total >= 50 ? 70 : sg.total >= 30 ? 50 : 30;
+    const fmtV = (it) => (it.unit === "円" ? App.yen(it.value) : it.unit === "%" ? `${it.value}%` : `${it.value}${it.unit}`);
+    const tipText = (it) => (it.next.more ? `あと${it.next.more}${it.count}で` : it.unit === "%" ? `出席率が ${it.next.at}% になると` : `${App.yen(it.next.at)}に届くと`);
+    // 次の段に上がるといちばん点が増えるものから、おすすめを2つ
+    const tips = sg.items.filter((it) => it.next).sort((a, b) => b.next.pt - a.next.pt).slice(0, 2);
+    const how = h("div", { class: "home-signal-how", hidden: true },
+      h("p", null, "直近6か月のあなたの活動を、100点で見たものです(BNI の「信号」と同じ考え方)。点数はあなたにだけ表示され、ほかのメンバーには見えません。"),
+      h("ul", null,
+        h("li", null, "定例会の出席(最大20点):出席率 90%で20点・75%で15点・50%で10点"),
+        h("li", null, "1on1(最大20点):月2回で20点・月1回で15点・2か月に1回で10点"),
+        h("li", null, "出した紹介(最大25点):月2件で25点・月1件で20点・2か月に1件で12点"),
+        h("li", null, "紹介からの売上(あなたの紹介で決まった仕事の金額=受け取ったありがとうマイル。最大15点):100万円で15点・30万円で10点・1円から5点"),
+        h("li", null, "ビジター招待(最大20点):3人で20点・2人で15点・1人で10点")),
+      h("p", null, "70点から緑・50点から黄・30点から赤です。"));
+    return h("section", { class: `home-signal is-${sg.color}`, "data-home": "signal", "aria-label": "BT-EX5 シグナル" },
+      h("div", { class: "home-signal-head" },
+        h("span", { class: "home-signal-light", "aria-hidden": "true" }),
+        h("span", { class: "home-signal-title" }, h("b", null, "BT-EX5 シグナル ", h("em", null, label)), h("small", null, `直近6か月 ・ あなただけに表示 ・ ${lead}`)),
+        h("span", { class: "home-signal-score" }, h("b", null, String(sg.total)), h("small", null, "/100点"))),
+      h("div", { class: "home-signal-bars" }, sg.items.map((it) => h("div", { class: "home-signal-row" },
+        h("span", { class: "home-signal-label" }, it.label),
+        h("span", { class: "home-goal-bar", "aria-hidden": "true" }, h("i", { style: `width:${Math.round((it.points / it.max) * 100)}%` })),
+        h("span", { class: "home-signal-val" }, fmtV(it), h("small", null, ` ${it.points}/${it.max}`))))),
+      tips.length && goal ? h("div", { class: "home-signal-tips" },
+        h("p", null, `${label === "これから" ? "赤" : label === "赤" ? "黄" : "緑"}まであと ${goal - sg.total}点。おすすめ:`),
+        h("ul", null, tips.map((it) => h("li", null, `${it.tip}(${tipText(it)} +${it.next.pt}点)`)))) : null,
+      h("button", { type: "button", class: "home-signal-more", onclick: (e) => { how.hidden = !how.hidden; e.currentTarget.textContent = how.hidden ? "点数のつけ方" : "閉じる"; } }, "点数のつけ方"),
+      how);
+  }
 
   // ---------- 1on1 のおすすめ ----------
   // まだ 1on1 をしていない(予定もない)メンバーから、週ごとに決まった3人。その週のあいだは同じ人が出る

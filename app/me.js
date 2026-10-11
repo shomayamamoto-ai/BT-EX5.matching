@@ -32,8 +32,9 @@
         menu("#me/notify", "通知を受け取る(iPhone・Android)", "紹介・掲示板・運営連絡が届いたら、スマホに通知します"),
         menu("#me/calendar", "Google カレンダー・Meet の設定", "1on1 の招待を受け取るアドレスと、Meet で表示される名前(定例会の出欠に使います)"),
         menu("#invite", "ビジター招待", "招待URL の発行・そのまま使える文・招待履歴"),
-        menu("#me/qr", "あなたのプロフィールの QR コード", "交流会でメンバーに読み取ってもらうと、あなたの詳細が開きます"),
+        menu("#me/card", "デジタル会員証・QR コード", "交流会でメンバーに QR を読み取ってもらうと、あなたの詳細が開きます"),
         menu("#me/export", "自分の記録を書き出す(Excel)", "紹介・ありがとうマイル・1on1 の記録を CSV で保存"),
+        menu("#help", "使い方・よくある質問", "できること・だれに何が見えるか・困ったとき"),
         menu("#me/feedback", "バグ・要望を送る", "使いにくいところ・ほしい機能を運営へ"),
         menu("../teams/", "全体分析", "仕事が回る業種・紹介の流れ"),
         menu("#me/install", "スマホのホーム画面に追加", "アプリのようにすぐ開けます"),
@@ -73,14 +74,7 @@
         const st = await App.api("getMySettings", {}, { quiet: true });
         App.goalsSheet(st && st.goals, () => App.go("home"));
       }
-      if (parts[0] === "qr") {
-        const url = App.siteUrl(`../referral/#member=${encodeURIComponent(s.memberId)}`);
-        App.openSheet("あなたのプロフィールの QR コード", (body) => {
-          body.append(h("div", { class: "qr-box" }, App.qrImage(url, "プロフィールの QR コード"),
-            h("p", null, "BT-EX5 のメンバーがスマホのカメラで読み取ると、早見表であなたの詳細が開きます(メンバーだけが見られます)。")),
-            h("div", { class: "app-btn-row" }, App.btn("リンクをコピー", () => App.copyText(url), "ghost")));
-        }, { noFocus: true, onClose: () => { if (location.hash === "#me/qr") history.replaceState(null, "", "#me"); } });
-      }
+      if (parts[0] === "card" || parts[0] === "qr") App.memberCardSheet();
     },
   };
 

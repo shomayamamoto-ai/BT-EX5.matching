@@ -4219,6 +4219,43 @@ var BtexServerCore = (function () {
       // ============================================
       // ホーム: 1回の通信で、やること・未読・予定・数字をまとめて返す
       // ============================================
+      // BT-EX5 シグナル(直近6か月の、自分の活動の信号。本人にだけ返す)
+      // 参加(出席・1on1)と、価値の提供(紹介・ありがとうマイル・ビジター)を 100点で見る。緑 70〜・黄 50〜・赤 30〜・灰 〜29
+      var SIGNAL_RULES = [
+        { key: "attend", label: "定例会の出席", unit: "%", steps: [[90, 20], [75, 15], [50, 10], [0.01, 5]], tip: "定例会に出席する" },
+        { key: "ones", label: "1on1", unit: "回/月", steps: [[2, 20], [1, 15], [0.5, 10], [0.01, 5]], tip: "1on1 をする", count: "回" },
+        { key: "given", label: "出した紹介", unit: "件/月", steps: [[2, 25], [1, 20], [0.5, 12], [0.01, 6]], tip: "紹介を記録する", count: "件" },
+        { key: "miles", label: "紹介からの売上", unit: "円", steps: [[1000000, 15], [300000, 10], [1, 5]], tip: "紹介が成約したら、お礼(ありがとうマイル)の記録をお願いする" },
+        { key: "visitors", label: "ビジター招待", unit: "人", steps: [[3, 20], [2, 15], [1, 10]], tip: "ビジターを招待する", count: "人" },
+      ];
+      function signalOf(db, memberId) {
+        var since = c.nowMs() - 182 * DAY;
+        var t = today();
+        var sinceDate = dateKey(since);
+        var held = db.events.filter(function (e) { return e.date >= sinceDate && e.date <= t; });
+        var attended = held.filter(function (e) { return (e.attended || []).indexOf(memberId) !== -1; }).length;
+        var vals = {
+          attend: held.length ? Math.round((attended / held.length) * 100) : 100,
+          ones: Math.round((db.oneOnOnes.filter(function (o) { return o.status === "done" && (o.a === memberId || o.b === memberId) && o.date >= sinceDate; }).length / 6) * 10) / 10,
+          given: Math.round((db.referralLogs.filter(function (l) { return memberIdOfUser(db, l.fromUserId) === memberId && l.at >= since; }).length / 6) * 10) / 10,
+          miles: db.thanks.filter(function (x) { return x.to === memberId && x.at >= since; }).reduce(function (sum, x) { return sum + x.amount; }, 0),
+          visitors: db.visitors.filter(function (v) { return v.by === memberId && v.at >= since && v.status !== "declined" && v.status !== "invited"; }).length,
+        };
+        var total = 0;
+        var items = SIGNAL_RULES.map(function (r) {
+          var v = vals[r.key], pt = 0, next = null;
+          for (var i = 0; i < r.steps.length; i++) { if (v >= r.steps[i][0]) { pt = r.steps[i][1]; break; } }
+          // 次の段まであといくつ(いちばん上ならなし)
+          for (var j = r.steps.length - 1; j >= 0; j--) { if (r.steps[j][1] > pt) { next = { at: r.steps[j][0], pt: r.steps[j][1] - pt }; break; } }
+          total += pt;
+          // 次の段まで「あと何回・何件」(月あたりのものは6か月の回数に直す)
+          if (next && r.count) next.more = Math.max(1, Math.ceil(r.unit.indexOf("/月") !== -1 ? next.at * 6 - v * 6 - 1e-9 : next.at - v));
+          return { key: r.key, label: r.label, unit: r.unit, value: v, points: pt, max: r.steps[0][1], next: next, tip: r.tip, count: r.count || "" };
+        });
+        var color = total >= 70 ? "green" : total >= 50 ? "yellow" : total >= 30 ? "red" : "gray";
+        return { total: total, color: color, items: items, held: held.length, attended: attended };
+      }
+
       function getHome(body) {
         var w = who(body);
         if (w.error) return w.error;
@@ -4336,6 +4373,7 @@ var BtexServerCore = (function () {
             givenAll: myLogs.length,
             milesInAll: db.thanks.filter(function (x) { return x.to === w.id; }).reduce(function (s, x) { return s + x.amount; }, 0),
           },
+          signal: signalOf(db, w.id),
           // BT-EX5 全体の今月(みんなの動き)
           community: {
             given: db.referralLogs.filter(function (l) { return monthMs(l.at); }).length,

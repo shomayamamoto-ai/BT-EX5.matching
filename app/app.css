@@ -1185,3 +1185,69 @@ html.round-open, html.round-open body { overflow: hidden; }
 .home-onesug-row { display: flex; align-items: center; gap: 8px; }
 .home-onesug-row .app-row { flex: 1; min-width: 0; }
 .home-onesug-row .app-btn { flex-shrink: 0; }
+
+/* ---------- BT-EX5 シグナル(app/home.js) ---------- */
+.home-signal { --sig: #9a8f84; margin: 14px 0; padding: 16px; border-radius: 18px; background: #fffdf8; border: 1px solid var(--line); box-shadow: 0 6px 18px rgba(30, 22, 12, 0.05); }
+.home-signal.is-green { --sig: #2f8a55; }
+.home-signal.is-yellow { --sig: #c9922b; }
+.home-signal.is-red { --sig: #b8432f; }
+.home-signal-head { display: flex; align-items: center; gap: 12px; }
+.home-signal-light { flex-shrink: 0; width: 18px; height: 18px; border-radius: 50%; background: var(--sig); box-shadow: 0 0 0 5px color-mix(in srgb, var(--sig) 18%, transparent), 0 0 14px color-mix(in srgb, var(--sig) 55%, transparent); }
+.home-signal-title { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.home-signal-title b { font-size: 15px; }
+.home-signal-title em { font-style: normal; color: var(--sig); }
+.home-signal-title small { font-size: 11.5px; color: var(--text-sub); }
+.home-signal-score { text-align: right; line-height: 1; }
+.home-signal-score b { font-family: "Cormorant Garamond", "Inter", serif; font-size: 34px; color: var(--sig); }
+.home-signal-score small { display: block; font-size: 10.5px; color: var(--text-light); }
+.home-signal-bars { display: grid; gap: 7px; margin-top: 14px; }
+.home-signal-row { display: grid; grid-template-columns: 7.5em 1fr auto; align-items: center; gap: 10px; font-size: 12.5px; }
+.home-signal-label { color: var(--text-sub); font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.home-signal-row .home-goal-bar i { background: var(--sig); }
+.home-signal-val { font-weight: 800; font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+.home-signal-val small { color: var(--text-light); font-weight: 600; }
+.home-signal-tips { margin-top: 12px; padding: 10px 12px; border-radius: 12px; background: color-mix(in srgb, var(--sig) 8%, #fff); font-size: 12.5px; }
+.home-signal-tips p { margin: 0 0 4px; font-weight: 800; }
+.home-signal-tips ul { margin: 0; padding-left: 1.2em; }
+.home-signal-more { margin-top: 10px; padding: 0; border: none; background: none; color: var(--accent-dark); font-size: 12.5px; font-weight: 800; cursor: pointer; }
+.home-signal-how { margin-top: 8px; font-size: 12px; color: var(--text-sub); }
+.home-signal-how ul { margin: 6px 0; padding-left: 1.2em; }
+@media (max-width: 420px) { .home-signal-row { grid-template-columns: 7.6em 1fr auto; gap: 8px; } }
+
+/* ---------- デジタル会員証・はじめての方へ・使い方(app/guide.js) ---------- */
+.mcard { --mx: 30%; --my: 20%; position: relative; overflow: hidden; min-height: 240px; max-width: 420px; margin: 4px auto 14px; padding: 20px 22px; gap: 14px; border-radius: 20px; display: flex; flex-direction: column; justify-content: space-between;
+  color: #f6e7c4; background: radial-gradient(circle at 85% 0%, rgba(233, 207, 152, 0.18), transparent 45%), linear-gradient(145deg, #2b2119 0%, #120d0a 55%, #1d1611 100%);
+  border: 1px solid rgba(233, 207, 152, 0.45); box-shadow: 0 18px 40px rgba(18, 12, 8, 0.35), inset 0 1px 0 rgba(255, 240, 210, 0.15); touch-action: pan-y; }
+.mcard::before { content: ""; position: absolute; inset: 8px; border-radius: 14px; border: 1px solid rgba(233, 207, 152, 0.18); pointer-events: none; }
+.mcard-shine { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(circle at var(--mx) var(--my), rgba(255, 236, 190, 0.22), transparent 40%); }
+.mcard-top { display: flex; align-items: center; gap: 10px; }
+.mcard-logo { width: 44px; height: 44px; object-fit: contain; }
+.mcard-brand b { display: block; font-family: "Cormorant Garamond", "Inter", serif; font-size: 22px; letter-spacing: 0.14em; color: #f3dfb3; }
+.mcard-brand small { font-size: 9.5px; letter-spacing: 0.32em; color: #b9a688; }
+.mcard-main { position: relative; }
+.mcard-name { margin: 0; font-family: "Shippori Mincho", serif; font-size: 24px; font-weight: 600; letter-spacing: 0.12em; color: #fff3dc; }
+.mcard-company { margin: 4px 0 0; font-size: 12.5px; color: #e2cfa4; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 70%; }
+.mcard-meta { margin: 2px 0 0; font-size: 11px; color: #b9a688; }
+.mcard-foot { display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; }
+.mcard-foot small { font-size: 10px; letter-spacing: 0.12em; color: #b9a688; }
+.mcard-qr { flex-shrink: 0; width: 76px; height: 76px; padding: 5px; border-radius: 10px; background: #fff; }
+.mcard-qr img, .mcard-qr canvas, .mcard-qr svg { display: block; width: 100%; height: 100%; }
+.mcard-lead { text-align: center; }
+.home-welcome-lead { margin: 0 2px 6px; font-size: 12.5px; color: var(--text-sub); }
+.home-welcome-bar { display: block; margin-bottom: 10px; }
+.home-welcome-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.home-welcome-list li { display: flex; align-items: center; gap: 8px; }
+.home-welcome-list a { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 12px; background: #fffdf8; border: 1px solid var(--line); color: var(--text); text-decoration: none; font-size: 13.5px; font-weight: 700; }
+.home-welcome-list li.is-done a { color: var(--text-light); background: transparent; }
+.home-welcome-list li.is-done a > span:nth-child(2) { text-decoration: line-through; }
+.home-welcome-list a small { margin-left: auto; color: var(--good); font-weight: 800; }
+.home-welcome-check { flex-shrink: 0; width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--line-strong); display: grid; place-content: center; font-size: 12px; font-weight: 900; color: #fff; }
+.home-welcome-list li.is-done .home-welcome-check { background: var(--good); border-color: var(--good); }
+.home-welcome-mark { flex-shrink: 0; padding: 8px 10px; border-radius: 10px; border: 1px solid var(--line-strong); background: #fff; font-size: 12px; font-weight: 700; cursor: pointer; }
+.help-item { border-bottom: 1px solid var(--line); }
+.help-item summary { padding: 14px 4px; font-size: 14.5px; font-weight: 800; cursor: pointer; list-style: none; display: flex; justify-content: space-between; gap: 10px; }
+.help-item summary::-webkit-details-marker { display: none; }
+.help-item summary::after { content: "＋"; color: var(--accent-dark); flex-shrink: 0; }
+.help-item[open] summary::after { content: "－"; }
+.help-item p { margin: 0 4px 14px; font-size: 13.5px; line-height: 1.8; color: var(--text-sub); }
+.help-contact p { font-size: 13.5px; color: var(--text-sub); }
