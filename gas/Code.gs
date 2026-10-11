@@ -3547,7 +3547,7 @@ var BtexServerCore = (function () {
       function getMySettings(body) {
         var w = who(body);
         if (w.error) return w.error;
-        return c.ok({ calendarEmail: w.user.calendarEmail || "", calendar: !!c.calendar, meetName: w.user.meetName || "", name: w.me.name });
+        return c.ok({ calendarEmail: w.user.calendarEmail || "", calendar: !!c.calendar, meetName: w.user.meetName || "", name: w.me.name, goals: w.user.goals || null, pitchScript: w.user.pitchScript || "" });
       }
       function updateMySettings(body) {
         var w = who(body);
@@ -3558,8 +3558,16 @@ var BtexServerCore = (function () {
           w.user.calendarEmail = email;
         }
         if ("meetName" in body) w.user.meetName = c.cleanStr(body.meetName, 60);
+        // 今月の目標(紹介・成約・1on1・ビジター。0 は目標なし)
+        if (body.goals && typeof body.goals === "object") {
+          var g = {};
+          ["given", "won", "oneOnOnes", "visitors"].forEach(function (k) { var n = Math.round(Number(body.goals[k]) || 0); g[k] = Math.max(0, Math.min(99, n)); });
+          w.user.goals = g;
+        }
+        // 30秒プレゼンの原稿(本人だけが見る)
+        if ("pitchScript" in body) w.user.pitchScript = cleanText(body.pitchScript, 800);
         c.saveDb(w.db);
-        return c.ok({ calendarEmail: w.user.calendarEmail || "", meetName: w.user.meetName || "" });
+        return c.ok({ calendarEmail: w.user.calendarEmail || "", meetName: w.user.meetName || "", goals: w.user.goals || null, pitchScript: w.user.pitchScript || "" });
       }
 
       // ============================================
@@ -4154,7 +4162,7 @@ var BtexServerCore = (function () {
         return c.ok({
           tasks: myTasks,
           spotlight: spotlight,
-          me: { id: w.id, name: w.me.name, team: w.me.team || "", isAdmin: w.isAdmin, hasPassword: !!w.user.pw },
+          me: { id: w.id, name: w.me.name, team: w.me.team || "", isAdmin: w.isAdmin, hasPassword: !!w.user.pw, goals: w.user.goals || null },
           today: t,
           events: upcoming.slice(0, 3).map(function (e) { return eventView(w, e); }),
           checkInOpen: upcoming.some(function (e) { return e.date === t && e.checkIn; }),
@@ -4173,6 +4181,7 @@ var BtexServerCore = (function () {
             milesIn: db.thanks.filter(function (x) { return x.to === w.id && monthMs(x.at); }).reduce(function (s, x) { return s + x.amount; }, 0),
             milesOut: db.thanks.filter(function (x) { return x.from === w.id && monthMs(x.at); }).reduce(function (s, x) { return s + x.amount; }, 0),
             oneOnOnes: ones.filter(function (o) { return o.status === "done" && o.date.slice(0, 7) === month; }).length,
+            visitors: db.visitors.filter(function (v) { return v.by === w.id && monthMs(v.at); }).length,
             givenAll: myLogs.length,
             milesInAll: db.thanks.filter(function (x) { return x.to === w.id; }).reduce(function (s, x) { return s + x.amount; }, 0),
           },

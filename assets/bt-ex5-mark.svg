@@ -1,24 +1,68 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="BT-EX5">
-  <!-- 5つの縁(点)を結ぶ輪。輪の切れ目に5人がいて、内側の細い線が5人を結ぶ。頂点の光は「ひとつの出会い」 -->
+  <!-- 5つの縁(点)を結ぶ金の輪(オープニングムービーの立体のロゴと同じ形)。
+       輪は金属の管のように: 暗いふち → 金の地(光の当たる左上は明るく、右下は暗く) → 上側の細い照り返し。
+       5つの点は金の球、頂点の光は「ひとつの出会い」 -->
   <defs>
-    <linearGradient id="mk-gold" x1="8" y1="8" x2="56" y2="56" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#ecd29b"/>
-      <stop offset="0.45" stop-color="#b98a45"/>
-      <stop offset="1" stop-color="#e3c48a"/>
+    <linearGradient id="mk-body" x1="10" y1="8" x2="54" y2="58" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fbe9b8"/>
+      <stop offset="0.28" stop-color="#e2b965"/>
+      <stop offset="0.55" stop-color="#a8742c"/>
+      <stop offset="0.78" stop-color="#d9ac5c"/>
+      <stop offset="1" stop-color="#7a5220"/>
     </linearGradient>
-    <radialGradient id="mk-light" cx="32" cy="11" r="7" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#fff3d6" stop-opacity="0.9"/>
+    <linearGradient id="mk-hi" x1="12" y1="10" x2="50" y2="54" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fffaf0" stop-opacity="0.95"/>
+      <stop offset="0.45" stop-color="#fff3d2" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#fff3d2" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="mk-line" x1="12" y1="11" x2="52" y2="49" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#f3dca4"/>
+      <stop offset="1" stop-color="#b98a45"/>
+    </linearGradient>
+    <radialGradient id="mk-ball" cx="0.36" cy="0.3" r="0.75">
+      <stop offset="0" stop-color="#fffbef"/>
+      <stop offset="0.22" stop-color="#f4d898"/>
+      <stop offset="0.62" stop-color="#c08a3a"/>
+      <stop offset="1" stop-color="#5e3f14"/>
+    </radialGradient>
+    <radialGradient id="mk-light" cx="32" cy="11" r="8.5" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fff6dc" stop-opacity="0.95"/>
+      <stop offset="0.35" stop-color="#f6d48f" stop-opacity="0.45"/>
       <stop offset="1" stop-color="#e0b86e" stop-opacity="0"/>
     </radialGradient>
+    <radialGradient id="mk-core" cx="0.4" cy="0.35" r="0.7">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="0.45" stop-color="#fff1cf"/>
+      <stop offset="1" stop-color="#e9c57c"/>
+    </radialGradient>
+    <filter id="mk-shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="1.1" stdDeviation="1.1" flood-color="#1a0f05" flood-opacity="0.55"/>
+    </filter>
   </defs>
-  <path d="M35.29 11.26A21 21 0 0 1 50.71 22.47 M52.74 28.71A21 21 0 0 1 46.85 46.85 M41.53 50.71A21 21 0 0 1 22.47 50.71 M17.15 46.85A21 21 0 0 1 11.26 28.71 M13.29 22.47A21 21 0 0 1 28.71 11.26" fill="none" stroke="url(#mk-gold)" stroke-width="2.2" stroke-linecap="round"/>
-  <path d="M32 11 51.97 25.51 44.34 48.99H19.66L12.03 25.51Z" fill="none" stroke="url(#mk-gold)" stroke-width="0.8" opacity="0.55"/>
-  <g fill="url(#mk-gold)">
-    <circle cx="51.97" cy="25.51" r="1.8"/>
-    <circle cx="44.34" cy="48.99" r="1.8"/>
-    <circle cx="19.66" cy="48.99" r="1.8"/>
-    <circle cx="12.03" cy="25.51" r="1.8"/>
+  <g filter="url(#mk-shadow)">
+    <!-- 内側の細い五角形(5人を結ぶ糸) -->
+    <path d="M32 11 51.97 25.51 44.34 48.99H19.66L12.03 25.51Z" fill="none" stroke="url(#mk-line)" stroke-width="0.7" stroke-linejoin="round" opacity="0.75"/>
+    <!-- 輪: 暗いふち → 金の地 → 照り返し -->
+    <g fill="none" stroke-linecap="round">
+      <path d="M36.55 11.50A21 21 0 0 1 50.09 21.34 M52.90 29.99A21 21 0 0 1 47.73 45.92 M40.37 51.26A21 21 0 0 1 23.63 51.26 M16.27 45.92A21 21 0 0 1 11.10 29.99 M13.91 21.34A21 21 0 0 1 27.45 11.50" stroke="#3f2a0e" stroke-width="3.5"/>
+      <path d="M36.55 11.50A21 21 0 0 1 50.09 21.34 M52.90 29.99A21 21 0 0 1 47.73 45.92 M40.37 51.26A21 21 0 0 1 23.63 51.26 M16.27 45.92A21 21 0 0 1 11.10 29.99 M13.91 21.34A21 21 0 0 1 27.45 11.50" stroke="url(#mk-body)" stroke-width="2.75"/>
+      <path d="M36.90 12.35A20.25 20.25 0 0 1 49.17 21.27 M52.20 30.59A20.25 20.25 0 0 1 47.51 45.02 M39.59 50.78A20.25 20.25 0 0 1 24.41 50.78 M16.49 45.02A20.25 20.25 0 0 1 11.80 30.59 M14.83 21.27A20.25 20.25 0 0 1 27.10 12.35" stroke="url(#mk-hi)" stroke-width="0.75"/>
+    </g>
+    <!-- 4つの金の球 -->
+    <g>
+      <circle cx="51.97" cy="25.51" r="2.35" fill="url(#mk-ball)"/>
+      <circle cx="44.34" cy="48.99" r="2.35" fill="url(#mk-ball)"/>
+      <circle cx="19.66" cy="48.99" r="2.35" fill="url(#mk-ball)"/>
+      <circle cx="12.03" cy="25.51" r="2.35" fill="url(#mk-ball)"/>
+    </g>
+    <g fill="#fffdf6" opacity="0.85">
+      <circle cx="51.2" cy="24.75" r="0.6"/>
+      <circle cx="43.57" cy="48.23" r="0.6"/>
+      <circle cx="18.89" cy="48.23" r="0.6"/>
+      <circle cx="11.26" cy="24.75" r="0.6"/>
+    </g>
   </g>
-  <circle cx="32" cy="11" r="7" fill="url(#mk-light)"/>
-  <circle cx="32" cy="11" r="2.4" fill="#fbecc8"/>
+  <!-- 頂点の光(ひとつの出会い) -->
+  <circle cx="32" cy="11" r="8.5" fill="url(#mk-light)"/>
+  <circle cx="32" cy="11" r="2.6" fill="url(#mk-core)"/>
 </svg>

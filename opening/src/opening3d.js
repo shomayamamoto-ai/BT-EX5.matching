@@ -185,9 +185,14 @@ const logoDots = VALUES.map((_, i) => {
 });
 const topGlow = new THREE.Sprite(additive(TX_GLOW)); topGlow.position.copy(vertex(0, LOGO_R)); topGlow.position.z = 0.05; logo.add(topGlow);
 const inner = (() => {
-  const pts = VALUES.map((_, i) => vertex(i, LOGO_R)); pts.push(pts[0].clone());
-  const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color: 0xd9b77a, transparent: true, opacity: 0 }));
-  logo.add(line); return line;
+  // 内側の細い五角形は、1px の線ではなく細い管で(ふちがなめらかに見える)
+  const mat = new THREE.MeshBasicMaterial({ color: 0xd9b77a, transparent: true, opacity: 0, fog: false });
+  const g = new THREE.Group();
+  VALUES.forEach((_, i) => {
+    const a = vertex(i, LOGO_R), b = vertex(i + 1, LOGO_R);
+    g.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.LineCurve3(a, b), 1, 0.0045, 8, false), mat));
+  });
+  logo.add(g); return { material: mat };
 })();
 // ロゴに光を流すための光(左上から右へ動く)
 const key = new THREE.PointLight(0xfff0d8, 0, 30, 1.2); scene.add(key);
@@ -202,7 +207,8 @@ scene.add(streak);
 const flash = new THREE.Sprite(additive(TX_GLOW)); scene.add(flash);
 
 // ---------- 仕上げ(光のにじみ・周辺減光・フィルムの粒・わずかな色ずれ) ----------
-const composer = new EffectComposer(renderer);
+// 細い線や輪のふちがギザギザしないよう 4 倍のなめらか描画(MSAA)。暗い光のぼかしに段がつかないよう、中間は 16bit で持つ
+const composer = new EffectComposer(renderer, new THREE.WebGLRenderTarget(W, H, { type: THREE.HalfFloatType, samples: 4 }));
 composer.setSize(W, H);
 composer.addPass(new RenderPass(scene, camera));
 const bloom = new UnrealBloomPass(new THREE.Vector2(W, H), 0.6, 0.55, 0.32);
@@ -217,7 +223,8 @@ const finish = new ShaderPass({
       vec2 off = d * uAberr * (0.5 + r);
       vec3 col = vec3(texture2D(tDiffuse, vUv + off).r, texture2D(tDiffuse, vUv).g, texture2D(tDiffuse, vUv - off).b);
       col *= smoothstep(0.95, 0.25, r * 1.08);           // 周辺減光
-      col += (hash(vUv * 1000.0) - 0.5) * 0.012;          // フィルムの粒(動画が重くならないよう、うっすら)
+      col += (hash(vUv * 1000.0) - 0.5) * 0.010;          // フィルムの粒(動画が重くならないよう、うっすら)
+      col += (fract(sin(dot(gl_FragCoord.xy, vec2(12.9898, 78.233))) * 43758.5453) - 0.5) / 255.0; // 暗い所の段差を消すディザ
       gl_FragColor = vec4(col * uFade, 1.0);
     }`,
 });
