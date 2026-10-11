@@ -3379,7 +3379,7 @@ var BtexServerCore = (function () {
           likes: (p.likes || []).length, liked: (p.likes || []).indexOf(w.id) !== -1,
           canDelete: p.by === w.id || w.isAdmin, canEdit: p.by === w.id, editedAt: p.editedAt || 0,
           comments: (p.comments || []).map(function (cm) {
-            return { id: cm.id, by: cm.by, byName: nameOf(w.db, cm.by), body: cm.body, at: cm.at, canDelete: cm.by === w.id || w.isAdmin };
+            return { id: cm.id, by: cm.by, byName: nameOf(w.db, cm.by), body: cm.body, at: cm.at, canDelete: cm.by === w.id || w.isAdmin, canEdit: cm.by === w.id, edited: !!cm.editedAt };
           }),
         };
       }
@@ -3453,6 +3453,21 @@ var BtexServerCore = (function () {
         w.db.tasks = w.db.tasks.filter(function (x) { return x.id !== t.id; });
         c.saveDb(w.db);
         return c.ok({});
+      }
+
+      // 自分のコメントを直す
+      function editComment(body) {
+        var w = who(body);
+        if (w.error) return w.error;
+        var p = c.find(w.db.posts, function (x) { return x.id === body.postId; });
+        var cm = p && c.find(p.comments || [], function (x) { return x.id === body.id; });
+        if (!cm || cm.by !== w.id) return c.fail("NOT_FOUND");
+        var text = c.cleanStr(body.body, 1000);
+        if (!text) return c.fail("INVALID_REQUEST", "コメントを入れてください。");
+        cm.body = text;
+        cm.editedAt = c.nowMs();
+        c.saveDb(w.db);
+        return c.ok({ item: postView(w, p) });
       }
 
       // 自分の投稿を直す(種類と本文)
@@ -3855,11 +3870,28 @@ var BtexServerCore = (function () {
           var other = o.a === w.id ? o.b : o.a;
           followUps.push({ type: "oneMemo", id: o.id, with: other, withName: nameOf(db, other), date: o.date });
         });
+        // 今週の紹介チャレンジ: 最近(60日)紹介を受けていない人を優先し、週ごとに1人。自分は除く。
+        // 求める紹介が入っている人だけ(紹介のしようがないため)
+        var spotlight = (function () {
+          var since = c.nowMs() - 60 * DAY;
+          var week = Math.floor((c.nowMs() + JST) / (7 * DAY));
+          var pool = (db.referralMembers || []).filter(function (m) { return m.id !== w.id && m.wants; }).map(function (m) {
+            var got = db.referralLogs.filter(function (l) { return l.toMemberId === m.id && l.at >= since; }).length;
+            var h = 0, key = m.id + ":" + week;
+            for (var i = 0; i < key.length; i++) h = (h * 31 + key.charCodeAt(i)) % 100003;
+            return { m: m, got: got, h: h };
+          });
+          if (!pool.length) return null;
+          pool.sort(function (a, b) { return a.got - b.got || a.h - b.h; });
+          var p = pool[0].m;
+          return { id: p.id, name: p.name, company: p.company || "", wants: p.wants, triggers: (p.triggers || []).slice(0, 4), offer: p.offer || "", received: pool[0].got };
+        })();
         var myTasks = db.tasks.filter(function (tk) { return tk.assignees.indexOf(w.id) !== -1 && !(tk.done || {})[w.id]; })
           .sort(function (a, b) { return (a.due || "9999").localeCompare(b.due || "9999") || a.at - b.at; })
           .map(function (tk) { return taskView(db, tk, w.id); });
         return c.ok({
           tasks: myTasks,
+          spotlight: spotlight,
           me: { id: w.id, name: w.me.name, team: w.me.team || "", isAdmin: w.isAdmin, hasPassword: !!w.user.pw },
           today: t,
           events: upcoming.slice(0, 3).map(function (e) { return eventView(w, e); }),
@@ -4064,7 +4096,7 @@ var BtexServerCore = (function () {
           listAnnouncements: listAnnouncements, markAnnouncementsRead: markAnnouncementsRead,
           adminSaveAnnouncement: adminSaveAnnouncement, adminDeleteAnnouncement: adminDeleteAnnouncement,
           listTasks: listTasks, saveTask: saveTask, toggleTask: toggleTask, deleteTask: deleteTask,
-          listBoard: listBoard, createPost: createPost, editPost: editPost, deletePost: deletePost, commentPost: commentPost,
+          listBoard: listBoard, createPost: createPost, editPost: editPost, editComment: editComment, deletePost: deletePost, commentPost: commentPost,
           deleteComment: deleteComment, likePost: likePost,
           sendFeedback: sendFeedback, listMyFeedback: listMyFeedback, adminListFeedback: adminListFeedback, adminUpdateFeedback: adminUpdateFeedback,
           pushConfig: pushConfig, savePushSubscription: savePushSubscription, deletePushSubscription: deletePushSubscription, pushPeek: pushPeek,

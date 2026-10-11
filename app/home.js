@@ -64,6 +64,22 @@
       }
       if (todo.length) el.append(h("div", { class: "home-todo" }, todo));
 
+      // ---------- 今週の紹介チャレンジ(最近紹介を受けていない人から、週ごとに1人) ----------
+      if (d.spotlight) {
+        const sp = d.spotlight;
+        el.append(h("section", { class: "home-spot" },
+          h("p", { class: "home-spot-label" }, "今週の紹介チャレンジ"),
+          h("div", { class: "home-spot-head" }, App.avatar(sp.name),
+            h("div", null, h("b", null, `${sp.name}さん`), h("small", null, sp.company))),
+          h("p", { class: "home-spot-wants" }, h("span", null, "こんな人を紹介してほしい:"), sp.wants),
+          sp.triggers.length ? h("p", { class: "home-spot-trig" }, "こんな話が出たら:", sp.triggers.map((t) => h("span", null, `「${t}」`))) : null,
+          sp.offer ? h("p", { class: "home-spot-offer" }, `🎁 紹介特典:${sp.offer}`) : null,
+          h("p", { class: "app-field-hint" }, "思い当たる人がいたら、ひと声かけて紹介を記録しましょう。"),
+          h("div", { class: "app-btn-row" },
+            h("a", { class: "app-btn primary small", href: `#log/ref?new&to=${encodeURIComponent(sp.id)}` }, "紹介を記録する"),
+            h("a", { class: "app-btn ghost small", href: App.profileHref(sp.id, "home") }, "プロフィールを見る"))));
+      }
+
       // ---------- あなたのやること ----------
       const tasks = d.tasks || [];
       const taskList = h("ul", { class: "task-list" }, tasks.map((t) => App.taskRow(t, { showEvent: true, onChange: (x) => {

@@ -723,3 +723,15 @@ html.big-text body { zoom: 1.15; }
 .home-stats > *, .dash-kpis > *, .evd-info > *, .ref-card-body > * { min-width: 0; }
 .ref-card-body dd { overflow-wrap: anywhere; }
 .app-row-main small.is-over { color: #c23b22; font-weight: 700; }
+
+/* 今週の紹介チャレンジ */
+.home-spot { margin-top: 18px; padding: 14px 16px; border-radius: var(--radius); background: linear-gradient(135deg, #fff4ea, #fffaf5); border: 1px solid var(--line-strong); }
+.home-spot-label { margin: 0 0 8px; font-size: 12px; font-weight: 900; color: var(--accent-dark); letter-spacing: .08em; }
+.home-spot-head { display: flex; align-items: center; gap: 10px; }
+.home-spot-head b { display: block; font-size: 16px; }
+.home-spot-head small { color: var(--text-sub); font-size: 12px; }
+.home-spot-wants { margin: 10px 0 4px; font-size: 14px; line-height: 1.6; overflow-wrap: anywhere; }
+.home-spot-wants span { display: block; font-size: 12px; font-weight: 800; color: var(--text-sub); }
+.home-spot-trig { margin: 4px 0; font-size: 12.5px; color: var(--text-sub); }
+.home-spot-trig span { margin-left: 2px; }
+.home-spot-offer { margin: 4px 0; font-size: 13px; font-weight: 700; color: var(--good); }

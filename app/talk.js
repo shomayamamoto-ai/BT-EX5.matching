@@ -156,7 +156,13 @@
             if (await App.api("deletePost", { id: p.id })) card.closest("li").remove();
           } }, "削除") : null),
         p.comments.length ? h("ul", { class: "post-comments" }, p.comments.map((c) => h("li", null,
-          h("b", null, c.byName), " ", c.body, h("small", null, ` ${App.fmtTime(c.at)}`),
+          h("b", null, c.byName), " ", c.body, h("small", null, ` ${App.fmtTime(c.at)}${c.edited ? "(編集済み)" : ""}`),
+          c.canEdit ? h("button", { type: "button", class: "post-link", "aria-label": "コメントを直す", onclick: async () => {
+            const text = prompt("コメントを直す", c.body);
+            if (text === null || !text.trim() || text.trim() === c.body) return;
+            const d = await App.api("editComment", { postId: p.id, id: c.id, body: text.trim() });
+            if (d) { Object.assign(p, d.item); draw(); App.toast("直しました"); }
+          } }, "編集") : null,
           c.canDelete ? h("button", { type: "button", class: "post-link danger", "aria-label": "コメントを削除", onclick: async () => {
             const d = await App.api("deleteComment", { postId: p.id, id: c.id });
             if (d) { Object.assign(p, d.item); draw(); }
