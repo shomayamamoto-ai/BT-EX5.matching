@@ -21,7 +21,7 @@
 var DATA_SHEET = "_data";
 var CHUNK_SIZE = 40000; // セルの上限(5万文字)より小さく
 var STATUS_LABELS_JA = { new: "未対応", contacted: "連絡済み", meeting: "商談中", won: "成約", lost: "見送り" };
-var VISITOR_LABELS_JA = { invited: "招待中", applied: "参加申込", attended: "参加済み", joined: "入会", declined: "見送り" };
+var VISITOR_LABELS_JA = { invited: "招待中", applied: "参加申込", confirmed: "参加確定", attended: "参加済み", joined: "入会", declined: "見送り" };
 var RSVP_LABELS_JA = { yes: "出席", no: "欠席" };
 
 function spreadsheet_() {
@@ -48,12 +48,18 @@ function loadDb_() {
     .map(function (r) { return String(r[0]).slice(1); })
     .join("");
   if (!text) return null;
-  return JSON.parse(text); // 壊れていたら例外 → SERVER_ERROR(データを上書きしない)
+  var db = JSON.parse(text); // 壊れていたら例外 → SERVER_ERROR(データを上書きしない)
+  LAST_TEXT_ = JSON.stringify(db);
+  return db;
 }
 
+// 読んだときと中身が同じなら書かない(見るだけの操作で、シートへの書きこみを待たせない)
+var LAST_TEXT_ = null;
 function saveDb_(db) {
   var sh = dataSheet_();
   var text = JSON.stringify(db);
+  if (text === LAST_TEXT_) return;
+  LAST_TEXT_ = text;
   var rows = [];
   for (var i = 0; i < text.length; i += CHUNK_SIZE) rows.push(["j" + text.slice(i, i + CHUNK_SIZE)]);
   sh.getRange(1, 1, rows.length, 1).setValues(rows);
@@ -105,6 +111,8 @@ var CALENDAR_ = typeof Calendar === "undefined" ? null : {
       // 日付をまたぐ 1on1(22:30〜翌3:00 など)は、終わりの日付 x.endDate を使う
       end: x.start ? calTime_(x.endDate || x.date, x.end) : { date: nextDay(x.date) },
       attendees: (x.guests || []).map(function (e) { return { email: e }; }),
+      // 招待された人どうしで、相手のメールアドレスが見えないようにする(カレンダー用のメールは本人だけのもの)
+      guestsCanSeeOtherGuests: false,
       reminders: { useDefault: false, overrides: [{ method: "popup", minutes: 60 }] },
     };
     var opts = { conferenceDataVersion: 1, sendUpdates: "all" };
@@ -230,7 +238,39 @@ function sendPushes_(job) {
   }
 }
 
+// パスコードのハッシュ(ソルトと SHA-256)を Script Properties に置くと、そちらを使う。
+// ページから配っている auth/server-core.js のハッシュは使われなくなる(総当たりで当てられないように)。
+// プロパティ: BTEX5_PASSCODE_MEMBER_SALT / BTEX5_PASSCODE_MEMBER_HASH / BTEX5_PASSCODE_ADMIN_SALT / BTEX5_PASSCODE_ADMIN_HASH
+// 作り方は gas/README.md の「パスコードを変える」
+function passcodes_() {
+  if (typeof PropertiesService === "undefined") return null;
+  var p = PropertiesService.getScriptProperties();
+  var ms = p.getProperty("BTEX5_PASSCODE_MEMBER_SALT"), mh = p.getProperty("BTEX5_PASSCODE_MEMBER_HASH");
+  var as = p.getProperty("BTEX5_PASSCODE_ADMIN_SALT"), ah = p.getProperty("BTEX5_PASSCODE_ADMIN_HASH");
+  if (!ms || !mh || !as || !ah) return null;
+  return { member: { salt: ms, hash: mh }, admin: { salt: as, hash: ah } };
+}
+
+// パスコードを新しくするとき(おすすめ): 下の2行に新しいパスコードを書いて、エディタでこの関数を1回実行する。
+// 実行したら、2行は必ず空に戻して保存する(平文を残さない)。ハッシュだけが Script Properties に入る
+function setupPasscodes() {
+  var MEMBER = ""; // 会員用の共通パスコード(例: abcd-efgh)
+  var ADMIN = "";  // 管理者用パスコード(例: abcd-efgh-ijkl)
+  if (!MEMBER || !ADMIN) throw new Error("MEMBER と ADMIN に新しいパスコードを書いてから実行してください");
+  var hex = function (bytes) { return bytes.map(function (b) { return ("0" + (b & 0xff).toString(16)).slice(-2); }).join(""); };
+  var norm = function (c) { return String(c).trim().toLowerCase().replace(/[\s-]/g, ""); };
+  var digest = function (t) { return hex(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, t, Utilities.Charset.UTF_8)); };
+  var p = PropertiesService.getScriptProperties();
+  var ms = hex(randomBytes_(16)), as = hex(randomBytes_(16));
+  p.setProperties({
+    BTEX5_PASSCODE_MEMBER_SALT: ms, BTEX5_PASSCODE_MEMBER_HASH: digest(ms + ":" + norm(MEMBER)),
+    BTEX5_PASSCODE_ADMIN_SALT: as, BTEX5_PASSCODE_ADMIN_HASH: digest(as + ":" + norm(ADMIN)),
+  });
+  Logger.log("パスコードを設定しました。MEMBER と ADMIN の行を空に戻して保存し、「新しいバージョン」でデプロイしてください。");
+}
+
 var SERVER_ = BtexServerCore.createServer({
+  passcodes: passcodes_(),
   load: loadDb_,
   save: saveDb_,
   randomBytes: randomBytes_,
@@ -348,12 +388,10 @@ function doPost(e) {
   } catch (err) {
     return json_({ success: false, error: { code: "SERVER_ERROR", message: BtexServerCore.ERRORS.SERVER_ERROR } });
   }
-  var result, pushJob = null;
+  var result, pushJob = null, changed = false;
   try {
     result = SERVER_.handle(body);
-    if (result.success && body && BtexServerCore.MUTATING_ACTIONS.indexOf(body.action) !== -1) {
-      try { refreshSheets_(); } catch (err) { console.error(err); }
-    }
+    changed = result.success && body && BtexServerCore.MUTATING_ACTIONS.indexOf(body.action) !== -1;
     if (result.success && body && BtexServerCore.NOTIFY_ACTIONS.indexOf(body.action) !== -1) {
       // 新しいお知らせが届く人の端末を選んでおく(送るのはロックを外してから)
       try { pushJob = SERVER_.runJob("takePushOutbox")[0]; } catch (err) { console.error(err); }
@@ -362,6 +400,15 @@ function doPost(e) {
     lock.releaseLock();
   }
   try { sendPushes_(pushJob); } catch (err) { console.error(err); }
+  // 運営者向けの一覧シートは、ロックを外してから、多くても1分に1回だけ作り直す
+  // (定例会の受付などで一度に多くの人が押しても、待たせない。残りは1時間ごとの処理で作り直す)
+  if (changed) {
+    try {
+      var cache = typeof CacheService === "undefined" ? null : CacheService.getScriptCache();
+      if (!cache || !cache.get("btex5-sheets")) { if (cache) cache.put("btex5-sheets", "1", 60); refreshSheets_(); }
+      else PropertiesService.getScriptProperties().setProperty("BTEX5_SHEETS_DIRTY", "1");
+    } catch (err) { console.error(err); }
+  }
   return json_(result);
 }
 
@@ -373,6 +420,11 @@ function doGet() {
 // 定例会が終わったあと、Google Meet の参加記録から出欠をつける。
 // あわせて、時刻を過ぎた 1on1 の「実施しましたか?」などをスマホに通知する
 function syncMeetAttendanceJob() {
+  // 後回しにした一覧シートの作り直し
+  try {
+    var props = PropertiesService.getScriptProperties();
+    if (props.getProperty("BTEX5_SHEETS_DIRTY")) { props.deleteProperty("BTEX5_SHEETS_DIRTY"); refreshSheets_(); }
+  } catch (err) { console.error(err); }
   var lock = LockService.getScriptLock();
   lock.waitLock(30000);
   var r, pushJob = null;

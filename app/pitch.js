@@ -17,12 +17,13 @@
   function template() {
     const s = App.session;
     const me = App.memberById(s.memberId) || {};
-    const cut = (t, n) => { const x = String(t || "").replace(/\s+/g, " ").trim(); return x.length > n ? `${x.slice(0, n)}…` : x; };
+    // プロフィールの文はそのまま全部使う(途中で切らない)。改行・空白はまとめ、文末の「。」は重ねない
+    const full = (t) => String(t || "").replace(/\s+/g, " ").trim().replace(/[。．.、,\s]+$/, "");
     return [
-      `${me.company ? `${me.company}の` : ""}${s.displayName}です。`,
-      me.business ? `${cut(me.business, 60)}をしています。` : "(どんな仕事をしているか)",
-      me.wants ? `ご紹介いただきたいのは、${cut(me.wants, 60)}です。` : "(どんな人を紹介してほしいか)",
-      me.offer ? `BT-EX5 のメンバーからのご紹介には、${cut(me.offer, 30)}。` : "",
+      `${me.company ? `${full(me.company)}の` : ""}${s.displayName}です。`,
+      me.business ? `${full(me.business)}をしています。` : "(どんな仕事をしているか)",
+      me.wants ? `ご紹介いただきたいのは、${full(me.wants)}です。` : "(どんな人を紹介してほしいか)",
+      me.offer ? `BT-EX5 のメンバーからのご紹介には、${full(me.offer)}。` : "",
       "よろしくお願いいたします。",
     ].filter(Boolean).join("\n");
   }
@@ -203,7 +204,7 @@
 
   App.pitchSheet = function () {
     App.openSheet("プレゼンの練習・タイマー", async (body) => {
-      const text = h("textarea", { class: "pitch-text", rows: "7", maxlength: "800", placeholder: "例:〇〇株式会社の山田です。\n飲食店さまの集客を、SNS と動画でお手伝いしています。\nご紹介いただきたいのは、新しくお店を始める方です。\nよろしくお願いいたします。" });
+      const text = h("textarea", { class: "pitch-text", rows: "7", maxlength: "2000", placeholder: "例:〇〇株式会社の山田です。\n飲食店さまの集客を、SNS と動画でお手伝いしています。\nご紹介いただきたいのは、新しくお店を始める方です。\nよろしくお願いいたします。" });
       const meter = h("p", { class: "pitch-meter" });
       const sayBtn = h("button", { type: "button", class: "app-btn ghost" }, "読み上げて聞く");
       const saved = h("small", { class: "pitch-saved" });

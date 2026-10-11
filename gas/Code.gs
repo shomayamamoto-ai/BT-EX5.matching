@@ -1510,9 +1510,11 @@ var BtexServerCore = (function () {
       return i < 0 ? null : list[i];
     }
 
-    // 管理者かどうか: 管理者用パスコードで入ったセッション、または管理者に指定された会員
+    // 管理者かどうか: 管理者用パスコードで入ったセッション、または管理者に指定された会員が「自分のパスワード」で入ったセッション
+    // (会員用の共通パスコードで入ったセッションは、管理者に指定された人の名前でも管理者にしない)
     function sessionIsAdmin(db, session, user) {
       if (session.isAdmin === true) return true;
+      if (session.via === "passcode") return false;
       return !!(db.settings && db.settings.admins.indexOf(user.memberId) !== -1);
     }
 
@@ -1538,9 +1540,20 @@ var BtexServerCore = (function () {
       };
     }
 
+    // セッションは、トークンそのものではなくハッシュで保存する(保存データを見られてもなりすませない)。
+    // 前の版で保存した(トークンそのままの)セッションも、期限まではそのまま使える
+    function tokenKey(token) { return "h:" + sha256Hex("btex5-session:" + String(token || "")); }
+    function sessionKeyOf(db, token) {
+      var t = String(token || "");
+      if (!t) return "";
+      var k = tokenKey(t);
+      if (db.sessions[k]) return k;
+      return db.sessions[t] ? t : "";
+    }
+
     // セッショントークンから { session, user } を解決(無効なら null)
     function authSession(db, token) {
-      var session = db.sessions[String(token || "")];
+      var session = db.sessions[sessionKeyOf(db, token)];
       if (!session || session.revoked || session.expiresAt <= nowMs()) return null;
       var user = find(db.users, function (u) { return u.userId === session.userId; });
       if (!user) return null;
@@ -1556,13 +1569,16 @@ var BtexServerCore = (function () {
 
     // 入力されたパスコードの種類を返す("admin" / "member" / null)。
     // どちらの照合も必ず行い、どちらに一致したかで処理時間が変わらないようにする
+    // 共有サーバー(GAS)では、パスコードのハッシュを Script Properties から渡せる(env.passcodes)。
+    // そうすると、ページから配っているこのファイルのハッシュは使われない
     function matchPasscode(code) {
+      var PC = (env.passcodes && env.passcodes.member && env.passcodes.admin) ? env.passcodes : PASSCODES;
       var normalized = String(code || "").trim().toLowerCase().replace(/[\s-]/g, "");
-      var adminHash = sha256Hex(PASSCODES.admin.salt + ":" + normalized);
-      var memberHash = sha256Hex(PASSCODES.member.salt + ":" + normalized);
+      var adminHash = sha256Hex(PC.admin.salt + ":" + normalized);
+      var memberHash = sha256Hex(PC.member.salt + ":" + normalized);
       if (!normalized) return null;
-      if (adminHash === PASSCODES.admin.hash) return "admin";
-      if (memberHash === PASSCODES.member.hash) return "member";
+      if (adminHash === PC.admin.hash) return "admin";
+      if (memberHash === PC.member.hash) return "member";
       return null;
     }
 
@@ -1605,6 +1621,11 @@ var BtexServerCore = (function () {
       if (!member) return fail("INVALID_REQUEST");
 
       var user = find(db.users, function (u) { return u.memberId === member.id; });
+      // 自分のパスワードを決めた人・管理者に指定された人には、会員用の共通パスコードでは入れない(なりすまし防止)
+      if (role === "member" && ((user && user.pw) || db.settings.admins.indexOf(member.id) !== -1)) {
+        saveDb(db);
+        return fail("ACCOUNT_FAILED", "この方は、ご自分のパスワードでログインしてください(共通パスコードでは入れません)。");
+      }
       if (!user) {
         user = { userId: "usr_" + randomHex(16), memberId: member.id, name: member.name, createdAt: nowMs() };
         db.users.push(user);
@@ -1639,7 +1660,7 @@ var BtexServerCore = (function () {
         revoked: false,
         userAgent: String(opt.userAgent || "").slice(0, 300),
       };
-      db.sessions[token] = session;
+      db.sessions[tokenKey(token)] = session;
       user.lastLoginAt = nowMs();
       saveDb(db);
       return ok({
@@ -1746,13 +1767,16 @@ var BtexServerCore = (function () {
         if (!mem || !password) return fail("ACCOUNT_FAILED");
         var u0 = find(db.users, function (u) { return u.memberId === mem.id; });
         if (!u0 || !u0.pw) {
-          if (db.passcodeGuard.lockedUntil > nowMs()) return fail("LOCKED");
+          // 失敗の回数はその人ごとに数える(だれかが間違えても、ほかの人は入れる)
+          var g0 = userForMember(db, mem);
+          if ((g0.lockedUntil || 0) > nowMs()) return fail("LOCKED");
           var role = db.settings.memberPasscode !== false ? matchPasscode(password) : null;
+          if (role === "member" && db.settings.admins.indexOf(mem.id) !== -1) role = null; // 管理者に指定された人は自分のパスワードで
           if (role !== "member" && role !== "admin") {
-            db.passcodeGuard.failures += 1;
-            if (db.passcodeGuard.failures >= LOGIN_FAILURE_LIMIT) {
-              db.passcodeGuard.lockedUntil = nowMs() + LOCK_DURATION_MINUTES * 60 * 1000;
-              db.passcodeGuard.failures = 0;
+            g0.failures = (g0.failures || 0) + 1;
+            if (g0.failures >= LOGIN_FAILURE_LIMIT) {
+              g0.lockedUntil = nowMs() + LOCK_DURATION_MINUTES * 60 * 1000;
+              g0.failures = 0;
               saveDb(db);
               return fail("LOCKED");
             }
@@ -1761,8 +1785,8 @@ var BtexServerCore = (function () {
               ? "パスワード(まだ決めていない方は共通パスコード)が正しくありません。"
               : "まだパスワードが決まっていません。運営者から届く招待コードで、パスワードを決めてください。");
           }
-          db.passcodeGuard.failures = 0;
-          var user0 = userForMember(db, mem);
+          g0.failures = 0;
+          var user0 = g0;
           // ここは会員としてのログイン(管理者用パスコードでも、管理者にはしない)
           return issueSession(db, user0, { remember: body.remember === true, userAgent: body.userAgent, via: "passcode" });
         }
@@ -1809,7 +1833,7 @@ var BtexServerCore = (function () {
       user.activatedAt = user.activatedAt || nowMs();
       // このセッション以外のログインは切る
       Object.keys(db.sessions).forEach(function (t) {
-        if (db.sessions[t].userId === user.userId && t !== String(body.sessionToken)) delete db.sessions[t];
+        if (db.sessions[t].userId === user.userId && t !== sessionKeyOf(db, body.sessionToken)) delete db.sessions[t];
       });
       saveDb(db);
       return ok({});
@@ -1917,8 +1941,8 @@ var BtexServerCore = (function () {
     // ---------- logout ----------
     function logout(body) {
       var db = ensureDb();
-      var token = String(body.sessionToken || "");
-      if (db.sessions[token]) {
+      var token = sessionKeyOf(db, body.sessionToken);
+      if (token && db.sessions[token]) {
         delete db.sessions[token];
         saveDb(db);
       }
@@ -2373,8 +2397,10 @@ var BtexServerCore = (function () {
         return /^\d{4}-\d{2}-\d{2}$/.test(s) ? s : "";
       }
       function cleanTime(v) {
-        var s = c.cleanStr(v, 5);
-        return /^\d{1,2}:\d{2}$/.test(s) ? s : "";
+        // 0:00〜23:59 だけを受け付け、「7:00」は「07:00」にそろえる(カレンダー連携が時刻を読めるように)
+        var m = /^(\d{1,2}):(\d{2})$/.exec(c.cleanStr(v, 5));
+        if (!m || Number(m[1]) > 23 || Number(m[2]) > 59) return "";
+        return ("0" + Number(m[1])).slice(-2) + ":" + m[2];
       }
       function cleanText(v, max) {
         return c.cleanStr(String(v === undefined || v === null ? "" : v).replace(/\r\n?/g, "\n"), max);
@@ -3153,7 +3179,10 @@ var BtexServerCore = (function () {
         if (w.error) return w.error;
         var db = w.db;
         var amount = Math.round(Number(String(body.amount || "").replace(/[^\d.]/g, "")) || 0);
-        if (amount < 0 || amount > 1000000000) return c.fail("INVALID_REQUEST");
+        // 1件は1億円まで。1日に記録できるのは20件まで(打ちまちがい・いたずらでランキングがこわれないように)
+        if (amount < 0 || amount > 100000000) return c.fail("INVALID_REQUEST", "金額は1億円までで入れてください。");
+        var dayAgo = c.nowMs() - 24 * 60 * 60 * 1000;
+        if (db.thanks.filter(function (x) { return x.from === w.id && x.at > dayAgo; }).length >= 20) return c.fail("RATE_LIMITED", "今日はたくさん記録しています。続きは明日にお願いします。");
         var to = c.cleanStr(body.toMemberId, 40);
         var referralId = c.cleanStr(body.referralId, 40);
         if (referralId) {
@@ -3675,7 +3704,7 @@ var BtexServerCore = (function () {
         // スマホに通知しない種類
         if (Array.isArray(body.notifyOff)) w.user.notifyOff = body.notifyOff.filter(function (g, i, a) { return PUSH_GROUPS[g] && a.indexOf(g) === i; });
         // 30秒プレゼンの原稿(本人だけが見る)
-        if ("pitchScript" in body) w.user.pitchScript = cleanText(body.pitchScript, 800);
+        if ("pitchScript" in body) w.user.pitchScript = cleanText(body.pitchScript, 2000);
         c.saveDb(w.db);
         return c.ok({ calendarEmail: w.user.calendarEmail || "", meetName: w.user.meetName || "", goals: w.user.goals || null, pitchScript: w.user.pitchScript || "", notifyOff: w.user.notifyOff || [] });
       }
@@ -4700,7 +4729,7 @@ var WebPush = (function () {
 var DATA_SHEET = "_data";
 var CHUNK_SIZE = 40000; // セルの上限(5万文字)より小さく
 var STATUS_LABELS_JA = { new: "未対応", contacted: "連絡済み", meeting: "商談中", won: "成約", lost: "見送り" };
-var VISITOR_LABELS_JA = { invited: "招待中", applied: "参加申込", attended: "参加済み", joined: "入会", declined: "見送り" };
+var VISITOR_LABELS_JA = { invited: "招待中", applied: "参加申込", confirmed: "参加確定", attended: "参加済み", joined: "入会", declined: "見送り" };
 var RSVP_LABELS_JA = { yes: "出席", no: "欠席" };
 
 function spreadsheet_() {
@@ -4727,12 +4756,18 @@ function loadDb_() {
     .map(function (r) { return String(r[0]).slice(1); })
     .join("");
   if (!text) return null;
-  return JSON.parse(text); // 壊れていたら例外 → SERVER_ERROR(データを上書きしない)
+  var db = JSON.parse(text); // 壊れていたら例外 → SERVER_ERROR(データを上書きしない)
+  LAST_TEXT_ = JSON.stringify(db);
+  return db;
 }
 
+// 読んだときと中身が同じなら書かない(見るだけの操作で、シートへの書きこみを待たせない)
+var LAST_TEXT_ = null;
 function saveDb_(db) {
   var sh = dataSheet_();
   var text = JSON.stringify(db);
+  if (text === LAST_TEXT_) return;
+  LAST_TEXT_ = text;
   var rows = [];
   for (var i = 0; i < text.length; i += CHUNK_SIZE) rows.push(["j" + text.slice(i, i + CHUNK_SIZE)]);
   sh.getRange(1, 1, rows.length, 1).setValues(rows);
@@ -4784,6 +4819,8 @@ var CALENDAR_ = typeof Calendar === "undefined" ? null : {
       // 日付をまたぐ 1on1(22:30〜翌3:00 など)は、終わりの日付 x.endDate を使う
       end: x.start ? calTime_(x.endDate || x.date, x.end) : { date: nextDay(x.date) },
       attendees: (x.guests || []).map(function (e) { return { email: e }; }),
+      // 招待された人どうしで、相手のメールアドレスが見えないようにする(カレンダー用のメールは本人だけのもの)
+      guestsCanSeeOtherGuests: false,
       reminders: { useDefault: false, overrides: [{ method: "popup", minutes: 60 }] },
     };
     var opts = { conferenceDataVersion: 1, sendUpdates: "all" };
@@ -4909,7 +4946,39 @@ function sendPushes_(job) {
   }
 }
 
+// パスコードのハッシュ(ソルトと SHA-256)を Script Properties に置くと、そちらを使う。
+// ページから配っている auth/server-core.js のハッシュは使われなくなる(総当たりで当てられないように)。
+// プロパティ: BTEX5_PASSCODE_MEMBER_SALT / BTEX5_PASSCODE_MEMBER_HASH / BTEX5_PASSCODE_ADMIN_SALT / BTEX5_PASSCODE_ADMIN_HASH
+// 作り方は gas/README.md の「パスコードを変える」
+function passcodes_() {
+  if (typeof PropertiesService === "undefined") return null;
+  var p = PropertiesService.getScriptProperties();
+  var ms = p.getProperty("BTEX5_PASSCODE_MEMBER_SALT"), mh = p.getProperty("BTEX5_PASSCODE_MEMBER_HASH");
+  var as = p.getProperty("BTEX5_PASSCODE_ADMIN_SALT"), ah = p.getProperty("BTEX5_PASSCODE_ADMIN_HASH");
+  if (!ms || !mh || !as || !ah) return null;
+  return { member: { salt: ms, hash: mh }, admin: { salt: as, hash: ah } };
+}
+
+// パスコードを新しくするとき(おすすめ): 下の2行に新しいパスコードを書いて、エディタでこの関数を1回実行する。
+// 実行したら、2行は必ず空に戻して保存する(平文を残さない)。ハッシュだけが Script Properties に入る
+function setupPasscodes() {
+  var MEMBER = ""; // 会員用の共通パスコード(例: abcd-efgh)
+  var ADMIN = "";  // 管理者用パスコード(例: abcd-efgh-ijkl)
+  if (!MEMBER || !ADMIN) throw new Error("MEMBER と ADMIN に新しいパスコードを書いてから実行してください");
+  var hex = function (bytes) { return bytes.map(function (b) { return ("0" + (b & 0xff).toString(16)).slice(-2); }).join(""); };
+  var norm = function (c) { return String(c).trim().toLowerCase().replace(/[\s-]/g, ""); };
+  var digest = function (t) { return hex(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, t, Utilities.Charset.UTF_8)); };
+  var p = PropertiesService.getScriptProperties();
+  var ms = hex(randomBytes_(16)), as = hex(randomBytes_(16));
+  p.setProperties({
+    BTEX5_PASSCODE_MEMBER_SALT: ms, BTEX5_PASSCODE_MEMBER_HASH: digest(ms + ":" + norm(MEMBER)),
+    BTEX5_PASSCODE_ADMIN_SALT: as, BTEX5_PASSCODE_ADMIN_HASH: digest(as + ":" + norm(ADMIN)),
+  });
+  Logger.log("パスコードを設定しました。MEMBER と ADMIN の行を空に戻して保存し、「新しいバージョン」でデプロイしてください。");
+}
+
 var SERVER_ = BtexServerCore.createServer({
+  passcodes: passcodes_(),
   load: loadDb_,
   save: saveDb_,
   randomBytes: randomBytes_,
@@ -5027,12 +5096,10 @@ function doPost(e) {
   } catch (err) {
     return json_({ success: false, error: { code: "SERVER_ERROR", message: BtexServerCore.ERRORS.SERVER_ERROR } });
   }
-  var result, pushJob = null;
+  var result, pushJob = null, changed = false;
   try {
     result = SERVER_.handle(body);
-    if (result.success && body && BtexServerCore.MUTATING_ACTIONS.indexOf(body.action) !== -1) {
-      try { refreshSheets_(); } catch (err) { console.error(err); }
-    }
+    changed = result.success && body && BtexServerCore.MUTATING_ACTIONS.indexOf(body.action) !== -1;
     if (result.success && body && BtexServerCore.NOTIFY_ACTIONS.indexOf(body.action) !== -1) {
       // 新しいお知らせが届く人の端末を選んでおく(送るのはロックを外してから)
       try { pushJob = SERVER_.runJob("takePushOutbox")[0]; } catch (err) { console.error(err); }
@@ -5041,6 +5108,15 @@ function doPost(e) {
     lock.releaseLock();
   }
   try { sendPushes_(pushJob); } catch (err) { console.error(err); }
+  // 運営者向けの一覧シートは、ロックを外してから、多くても1分に1回だけ作り直す
+  // (定例会の受付などで一度に多くの人が押しても、待たせない。残りは1時間ごとの処理で作り直す)
+  if (changed) {
+    try {
+      var cache = typeof CacheService === "undefined" ? null : CacheService.getScriptCache();
+      if (!cache || !cache.get("btex5-sheets")) { if (cache) cache.put("btex5-sheets", "1", 60); refreshSheets_(); }
+      else PropertiesService.getScriptProperties().setProperty("BTEX5_SHEETS_DIRTY", "1");
+    } catch (err) { console.error(err); }
+  }
   return json_(result);
 }
 
@@ -5052,6 +5128,11 @@ function doGet() {
 // 定例会が終わったあと、Google Meet の参加記録から出欠をつける。
 // あわせて、時刻を過ぎた 1on1 の「実施しましたか?」などをスマホに通知する
 function syncMeetAttendanceJob() {
+  // 後回しにした一覧シートの作り直し
+  try {
+    var props = PropertiesService.getScriptProperties();
+    if (props.getProperty("BTEX5_SHEETS_DIRTY")) { props.deleteProperty("BTEX5_SHEETS_DIRTY"); refreshSheets_(); }
+  } catch (err) { console.error(err); }
   var lock = LockService.getScriptLock();
   lock.waitLock(30000);
   var r, pushJob = null;

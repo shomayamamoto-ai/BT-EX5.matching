@@ -261,7 +261,8 @@
       (m.topics || []).map(tagOf).join("・"), m.business, m.customers, m.wants, (m.triggers || []).join("・"),
       m.face, online[m.online] || "", m.offer, `${fillRate(m)}%`, missingProfileItems(m).map((it) => it.label).join("・"),
     ]);
-    const cell = (v) => `"${String(v == null ? "" : v).replace(/"/g, '""')}"`;
+    // 「=」「+」「-」「@」・タブ・改行で始まる値は、Excel で数式として動かないよう先頭に ' を付ける
+    const cell = (v) => { let x = String(v == null ? "" : v); if (/^[=+\-@\t\r]/.test(x)) x = `'${x}`; return `"${x.replace(/"/g, '""')}"`; };
     const csv = "\ufeff" + [head, ...rows].map((r) => r.map(cell).join(",")).join("\r\n");
     const blob = new Blob([csv], { type: "text/csv" });
     const a = document.createElement("a");

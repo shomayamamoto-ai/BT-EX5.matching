@@ -95,11 +95,38 @@ const AuthSession = (function () {
     }
     const result = await AuthApi.verifySession(token);
     if (!result.success) {
-      clearToken();
-      location.replace(loginUrl);
+      // ログインが切れた(無効なトークン)ときだけ、ログイン画面へ。
+      // 電波が弱い・サーバーが混んでいるだけのときは、ログインしたまま「もう一度」を出す
+      if (result.error && result.error.code === "SESSION_INVALID") {
+        clearToken();
+        location.replace(loginUrl);
+      } else {
+        showOffline(result.error && result.error.userMessage);
+      }
       return null;
     }
     return result.data;
+  }
+
+  // 通信できなかったときの画面(ログインは消さない)
+  function showOffline(message) {
+    const box = document.createElement("div");
+    box.className = "auth-offline";
+    box.setAttribute("role", "alert");
+    box.style.cssText = "position:fixed;inset:0;z-index:300;display:grid;place-content:center;gap:14px;padding:24px;text-align:center;background:#f6f2ea;color:#2a211b;font:500 15px/1.7 'Noto Sans JP',sans-serif";
+    const title = document.createElement("p");
+    title.style.cssText = "margin:0;font-size:18px;font-weight:800";
+    title.textContent = "いまサーバーにつながりません";
+    const text = document.createElement("p");
+    text.style.cssText = "margin:0;color:#6b5d50";
+    text.textContent = (message || "通信に失敗しました。") + " ログインはそのままです。電波のよい場所で、もう一度お試しください。";
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.textContent = "もう一度読み込む";
+    btn.style.cssText = "justify-self:center;padding:12px 22px;border-radius:999px;border:none;background:#1a120c;color:#f6e7c4;font:800 15px 'Noto Sans JP',sans-serif;cursor:pointer";
+    btn.addEventListener("click", () => location.reload());
+    box.append(title, text, btn);
+    document.body.appendChild(box);
   }
 
   return {

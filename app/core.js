@@ -253,8 +253,21 @@ const App = (function () {
   }
 
   // ---------- 通信 ----------
+  // 書きこむ操作は、同じ内容を送っている途中にもう一度押されても、2回送らない(2重の投稿・通知を防ぐ)
+  const inflight = new Map();
+  const READ_ONLY = /^(get|list|verify|search)/;
+  function call(action, payload) {
+    if (READ_ONLY.test(action)) return AuthApi.call(action, payload);
+    let key;
+    try { key = `${action}:${JSON.stringify(payload || {})}`; } catch { return AuthApi.call(action, payload); }
+    if (inflight.has(key)) return inflight.get(key);
+    const p = AuthApi.call(action, payload).finally(() => inflight.delete(key));
+    inflight.set(key, p);
+    return p;
+  }
+
   async function api(action, payload, opt) {
-    const res = await AuthApi.call(action, payload);
+    const res = await call(action, payload);
     if (!res.success) {
       if (res.error.code === "SESSION_INVALID") {
         AuthSession.clearToken();
@@ -645,8 +658,8 @@ const App = (function () {
         const d = new Date(v);
         s = `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2, "0")}`;
       } else s = String(v === undefined || v === null ? "" : v);
-      if (/^[=+\-@]/.test(s)) s = `'${s}`;
-      return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+      if (/^[=+\-@\t\r]/.test(s)) s = `'${s}`;
+      return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
     };
     const text = "\ufeff" + rows.map((r) => r.map(cell).join(",")).join("\r\n");
     const a = document.createElement("a");

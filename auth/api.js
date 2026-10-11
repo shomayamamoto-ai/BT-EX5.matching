@@ -52,11 +52,15 @@ const AuthApi = (function () {
 
     try {
       // application/json はプリフライトを発生させるため text/plain を用いる(§5)
+      // 30秒たっても返らなければあきらめる(ボタンが押せないまま固まらないように)
+      const ctrl = typeof AbortController !== "undefined" ? new AbortController() : null;
+      const timer = ctrl ? setTimeout(() => ctrl.abort(), 30000) : null;
       const res = await fetch(API_BASE_URL, {
         method: "POST",
         headers: { "Content-Type": "text/plain;charset=utf-8" },
         body: JSON.stringify(body),
-      });
+        signal: ctrl ? ctrl.signal : undefined,
+      }).finally(() => { if (timer) clearTimeout(timer); });
       if (!res.ok) {
         return { success: false, error: { code: "NETWORK", userMessage: NETWORK_MESSAGE } };
       }

@@ -51,8 +51,10 @@
         return /^\d{4}-\d{2}-\d{2}$/.test(s) ? s : "";
       }
       function cleanTime(v) {
-        var s = c.cleanStr(v, 5);
-        return /^\d{1,2}:\d{2}$/.test(s) ? s : "";
+        // 0:00〜23:59 だけを受け付け、「7:00」は「07:00」にそろえる(カレンダー連携が時刻を読めるように)
+        var m = /^(\d{1,2}):(\d{2})$/.exec(c.cleanStr(v, 5));
+        if (!m || Number(m[1]) > 23 || Number(m[2]) > 59) return "";
+        return ("0" + Number(m[1])).slice(-2) + ":" + m[2];
       }
       function cleanText(v, max) {
         return c.cleanStr(String(v === undefined || v === null ? "" : v).replace(/\r\n?/g, "\n"), max);
@@ -831,7 +833,10 @@
         if (w.error) return w.error;
         var db = w.db;
         var amount = Math.round(Number(String(body.amount || "").replace(/[^\d.]/g, "")) || 0);
-        if (amount < 0 || amount > 1000000000) return c.fail("INVALID_REQUEST");
+        // 1件は1億円まで。1日に記録できるのは20件まで(打ちまちがい・いたずらでランキングがこわれないように)
+        if (amount < 0 || amount > 100000000) return c.fail("INVALID_REQUEST", "金額は1億円までで入れてください。");
+        var dayAgo = c.nowMs() - 24 * 60 * 60 * 1000;
+        if (db.thanks.filter(function (x) { return x.from === w.id && x.at > dayAgo; }).length >= 20) return c.fail("RATE_LIMITED", "今日はたくさん記録しています。続きは明日にお願いします。");
         var to = c.cleanStr(body.toMemberId, 40);
         var referralId = c.cleanStr(body.referralId, 40);
         if (referralId) {
@@ -1353,7 +1358,7 @@
         // スマホに通知しない種類
         if (Array.isArray(body.notifyOff)) w.user.notifyOff = body.notifyOff.filter(function (g, i, a) { return PUSH_GROUPS[g] && a.indexOf(g) === i; });
         // 30秒プレゼンの原稿(本人だけが見る)
-        if ("pitchScript" in body) w.user.pitchScript = cleanText(body.pitchScript, 800);
+        if ("pitchScript" in body) w.user.pitchScript = cleanText(body.pitchScript, 2000);
         c.saveDb(w.db);
         return c.ok({ calendarEmail: w.user.calendarEmail || "", meetName: w.user.meetName || "", goals: w.user.goals || null, pitchScript: w.user.pitchScript || "", notifyOff: w.user.notifyOff || [] });
       }
