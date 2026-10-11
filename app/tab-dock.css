@@ -36,6 +36,10 @@ body.tabs-top .app-tabs {
 }
 body.tabs-top .app-main { padding-top: 84px; padding-bottom: 30px; }
 body.tabs-top.has-app-tabs { padding-bottom: 0; padding-top: 70px; }
+/* 早見表・プロフィールなど(上に固定の見出し .ref-header があるページ): 余白を見出しの上ではなく下に入れる。
+   上に入れると見出しが下へずれて、メニューの上にかぶる */
+body.tabs-top.has-app-tabs:has(> .ref-header) { padding-top: 0; }
+body.tabs-top.has-app-tabs > .ref-header ~ .ref-main { margin-top: 70px; }
 body.tabs-top .app-footer { padding-bottom: 30px; }
 body.tabs-top .tab-grip { right: 6px; }
 
