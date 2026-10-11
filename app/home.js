@@ -26,7 +26,7 @@
       // ---------- 今月のあなた(順位・数字を1枚に) ----------
       const s = d.stats;
       const r = d.teamRank;
-      el.append(h("section", { class: "home-me", "aria-label": "今月のあなた" },
+      el.append(h("section", { class: "home-me", "aria-label": "今月のあなた", "data-home": "me" },
         r ? h("a", { class: "home-rank", href: "#log/rank" },
           h("span", { class: "home-rank-no" }, h("small", null, "BT-EX5 で"), h("span", null, h("b", null, String(r.rank)), "位"), h("small", null, `/ ${r.size}名`)),
           h("span", { class: "home-rank-main" },
@@ -50,7 +50,7 @@
 
       // ---------- 紹介先を探す(聞いた相談を入れてそのまま検索) ----------
       const ask = h("input", { type: "search", name: "ask", maxlength: "600", enterkeyhint: "search", placeholder: "聞いた相談を入れて、紹介先を探す", "aria-label": "聞いた相談", autocomplete: "off" });
-      el.append(h("form", { class: "home-ask", role: "search", onsubmit: (e) => {
+      el.append(h("form", { class: "home-ask", role: "search", "data-home": "ask", onsubmit: (e) => {
         e.preventDefault();
         const q = ask.value.trim();
         location.href = q ? `../referral/#ask=${encodeURIComponent(q)}` : "../referral/";
@@ -60,7 +60,7 @@
         h("button", { type: "submit" }, "探す")));
 
       // ---------- すぐできること(アイコンを横1列に) ----------
-      el.append(h("nav", { class: "home-actions", "aria-label": "すぐできること" },
+      el.append(h("nav", { class: "home-actions", "aria-label": "すぐできること", "data-home": "actions" },
         action("#log/ref?new", "紹介を記録", "紹介を記録", "M4 12h12l-4-4 1.4-1.4L20 13l-6.6 6.4L12 18l4-4H4z"),
         action("#log/miles?new", "ありがとう", "ありがとうを送る", "M12 21s-7.5-4.6-9.3-9.4C1.4 8 3.6 4.5 7 4.5c2 0 3.4 1.1 5 3 1.6-1.9 3-3 5-3 3.4 0 5.6 3.5 4.3 7.1C19.5 16.4 12 21 12 21Z"),
         action("#log/1on1?new", "1on1記録", "1on1を記録", "M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm8 0a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM1 20c0-3.3 3.6-6 8-6s8 2.7 8 6v1H1zm16.5-5.9c2.9.4 5.5 2.4 5.5 4.9v1h-4.2c0-2.3-.5-4.3-1.3-5.9Z"),
@@ -118,7 +118,7 @@
         if (x.myDone) setTimeout(() => { const li = taskList.querySelector(".task-row.is-done"); if (li) li.remove(); }, 600);
       } })));
       const count = todo.length + tasks.length;
-      main.append(h("section", { class: "app-section home-sec" },
+      main.append(h("section", { class: "app-section home-sec", "data-home": "todo" },
         h("div", { class: "home-sec-head" },
           h("h2", { class: "app-h2" }, `あなたのやること(${count})`),
           h("button", { type: "button", class: "home-sec-link", onclick: () => App.taskForm({}, () => App.route()) }, "＋ 追加")),
@@ -127,7 +127,7 @@
         count ? null : h("p", { class: "home-allclear" }, "いまやることはありません。定例会で決まったことや自分の予定は「＋ 追加」から入れておけます。")));
 
       // ---------- 今日・明日の予定(1on1・顔合わせ・やること。定例会は下のカードで) ----------
-      const sched = h("section", { class: "app-section home-sec home-sched", hidden: true });
+      const sched = h("section", { class: "app-section home-sec home-sched", hidden: true, "data-home": "sched" });
       main.append(sched);
       if (App.collectSchedule) {
         const tmr = (() => { const x = new Date(`${d.today}T12:00:00`); x.setDate(x.getDate() + 1); return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, "0")}-${String(x.getDate()).padStart(2, "0")}`; })();
@@ -156,7 +156,7 @@
 
       // ---------- タイマー(プレゼンの練習・ポモドーロ。練習のシートと同じタイマー) ----------
       if (App.timerWidget) {
-        const timerSec = h("section", { class: "app-section home-sec home-timer", id: "home-timer" },
+        const timerSec = h("section", { class: "app-section home-sec home-timer", id: "home-timer", "data-home": "timer" },
           h("div", { class: "home-sec-head" },
             h("h2", { class: "app-h2" }, "タイマー"),
             h("a", { class: "home-sec-link", href: "#me/pitch" }, "プレゼンの原稿を書く")),
@@ -174,7 +174,7 @@
         count ? h("span", { class: "is-todo" }, `やること ${count}件`) : h("span", { class: "is-clear" }, "やることはありません"),
         next && days >= 0 ? h("span", null, days === 0 ? "今日は定例会です" : `次の定例会まであと${days}日`) : null,
         d.inboxNew.length ? h("span", { class: "is-todo" }, `新しい紹介 ${d.inboxNew.length}件`) : null);
-      main.append(h("section", { class: "app-section home-sec" },
+      main.append(h("section", { class: "app-section home-sec", "data-home": "event" },
         h("div", { class: "home-sec-head" },
           h("h2", { class: "app-h2" }, "次の定例会"),
           h("a", { class: "home-sec-link", href: "#events" }, "予定をすべて見る")),
@@ -182,25 +182,25 @@
 
       // ---------- あなた宛ての新しい紹介・1on1 の予定(あるときだけ) ----------
       if (d.inboxNew.length) {
-        main.append(App.section("あなた宛ての新しい紹介",
+        main.append(tag("inbox", App.section("あなた宛ての新しい紹介",
           h("ul", { class: "app-list" }, d.inboxNew.map((x) => h("li", null,
             h("a", { class: "app-row", href: "#log/ref" },
               App.avatar(x.fromName),
               h("span", { class: "app-row-main" }, h("b", null, `${x.fromName}さんから`), h("small", null, `${x.prospect || "お相手"} ${x.memo ? `— ${x.memo}` : ""}`)),
-              App.chip("未対応", "warn")))))));
+              App.chip("未対応", "warn"))))))));
       }
       if (d.nextOneOnOnes.length) {
-        main.append(App.section("1on1 の予定",
+        main.append(tag("ones", App.section("1on1 の予定",
           h("ul", { class: "app-list" }, d.nextOneOnOnes.map((o) => h("li", null,
             h("a", { class: "app-row", href: "#log/1on1" },
               App.avatar(o.withName),
-              h("span", { class: "app-row-main" }, h("b", null, `${o.withName}さん`), h("small", null, `${App.fmtDate(o.date)} ${o.time} ${o.place}`))))))));
+              h("span", { class: "app-row-main" }, h("b", null, `${o.withName}さん`), h("small", null, `${App.fmtDate(o.date)} ${o.time} ${o.place}`)))))))));
       }
 
       // ---------- BT-EX5 全体の今月(みんなの動き) ----------
       if (d.community) {
         const cm = d.community;
-        side.append(h("section", { class: "home-pulse", "aria-label": "BT-EX5 全体の今月" },
+        side.append(h("section", { class: "home-pulse", "aria-label": "BT-EX5 全体の今月", "data-home": "pulse" },
           h("p", { class: "home-pulse-head" }, h("b", null, "BT-EX5 全体の今月"), h("small", null, `メンバー ${cm.members}名`)),
           h("div", { class: "home-pulse-grid" },
             pulse("紹介", cm.given, "件"), pulse("成約", cm.won, "件"), pulse("1on1", cm.ones, "回"), pulse("掲示板", cm.posts, "件")),
@@ -213,7 +213,7 @@
         const wants = h("p", { class: "home-spot-wants" }, sp.wants);
         const long = (sp.wants || "").length > 70;
         if (long) wants.classList.add("is-clamped");
-        side.append(h("section", { class: "home-spot" },
+        side.append(h("section", { class: "home-spot", "data-home": "spot" },
           h("p", { class: "home-spot-label" }, "今週の紹介チャレンジ"),
           h("a", { class: "home-spot-head", href: App.profileHref(sp.id, "home") }, App.avatar(sp.name),
             h("span", null, h("b", null, `${sp.name}さん`), h("small", null, sp.company))),
@@ -232,7 +232,7 @@
 
       // ---------- 運営連絡(あるときだけ。新しい3件) ----------
       if (d.announcements.length) {
-        side.append(h("section", { class: "app-section home-sec" },
+        side.append(h("section", { class: "app-section home-sec", "data-home": "news" },
           h("div", { class: "home-sec-head" },
             h("h2", { class: "app-h2" }, "運営連絡"),
             h("a", { class: "home-sec-link", href: "#news" }, "すべて見る")),
@@ -243,7 +243,12 @@
       }
 
       // ---------- おすすめの設定(プロフィール・通知) ----------
-      const tips = h("div", { class: "home-tips" });
+      // ---------- 1on1 のおすすめ(まだ 1on1 をしていない人から、週ごとに3人) ----------
+      const oneSug = h("section", { class: "app-section home-sec home-onesug", hidden: true, "data-home": "onesug" });
+      side.append(oneSug);
+      oneSuggest(oneSug, d.today);
+
+      const tips = h("div", { class: "home-tips", "data-home": "tips" });
       side.append(tips);
       if (d.missing.length) {
         const total = typeof PROFILE_ITEMS !== "undefined" ? PROFILE_ITEMS.length : d.missing.length + 1;
@@ -268,8 +273,119 @@
             h("span", { class: "home-go", "aria-hidden": "true" }, "›")));
         }).catch(() => {});
       }
+
+      // ---------- ホームの表示(出すもの・順番。この端末に覚える) ----------
+      applyLayout(el);
+      el.append(h("button", { type: "button", class: "home-layout-btn", onclick: () => layoutSheet() }, "⚙ ホームの表示を変える(出すもの・順番)"));
     },
   };
+
+  // ---------- ホームの表示を選ぶ ----------
+  // 同じ列(上・左・右)の中で並べかえる。消したものは「ホームの表示を変える」からいつでも戻せる
+  const HOME_PARTS = [
+    ["me", "今月のあなた(順位・数字・目標)", "top"],
+    ["ask", "紹介先を探す", "top"],
+    ["actions", "すぐできること", "top"],
+    ["todo", "あなたのやること", "main"],
+    ["sched", "今日・明日の予定", "main"],
+    ["timer", "タイマー", "main"],
+    ["event", "次の定例会", "main"],
+    ["inbox", "あなた宛ての新しい紹介", "main"],
+    ["ones", "1on1 の予定", "main"],
+    ["pulse", "BT-EX5 全体の今月", "side"],
+    ["spot", "今週の紹介チャレンジ", "side"],
+    ["news", "運営連絡", "side"],
+    ["onesug", "1on1 のおすすめ", "side"],
+    ["tips", "おすすめの設定(プロフィール・通知)", "side"],
+  ];
+  const COLS = { top: "上", main: "左の列(スマホは上から)", side: "右の列(スマホは下)" };
+  function layoutKey() { return `btex5-home-layout-${(App.session && App.session.memberId) || "guest"}`; }
+  function loadLayout() {
+    try {
+      const v = JSON.parse(localStorage.getItem(layoutKey()) || "null");
+      if (v && Array.isArray(v.order) && Array.isArray(v.hide)) return v;
+    } catch { /* noop */ }
+    return { order: HOME_PARTS.map(([k]) => k), hide: [] };
+  }
+  function saveLayout(v) { try { localStorage.setItem(layoutKey(), JSON.stringify(v)); } catch { /* noop */ } }
+  function applyLayout(root) {
+    const lay = loadLayout();
+    const rank = (k) => { const i = lay.order.indexOf(k); return i === -1 ? HOME_PARTS.findIndex(([x]) => x === k) + 100 : i; };
+    const parts = [...root.querySelectorAll("[data-home]")];
+    parts.forEach((p) => { if (lay.hide.includes(p.dataset.home)) p.classList.add("is-home-off"); });
+    // 親ごとに、並べる順へ入れなおす(ほかの要素の位置は変えない)
+    const parents = [...new Set(parts.map((p) => p.parentNode))];
+    parents.forEach((parent) => {
+      const mine = parts.filter((p) => p.parentNode === parent);
+      const slots = mine.map((p) => { const mark = document.createComment("home"); parent.insertBefore(mark, p); return mark; });
+      mine.slice().sort((a, b) => rank(a.dataset.home) - rank(b.dataset.home)).forEach((p, i) => slots[i].replaceWith(p));
+    });
+  }
+  function layoutSheet() {
+    App.openSheet("ホームの表示を変える", (body, close) => {
+      const lay = loadLayout();
+      let order = HOME_PARTS.map(([k]) => k).sort((a, b) => {
+        const ia = lay.order.indexOf(a), ib = lay.order.indexOf(b);
+        return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
+      });
+      const hide = new Set(lay.hide);
+      const list = h("div", { class: "home-layout" });
+      function draw() {
+        App.fill(list, Object.keys(COLS).map((col) => {
+          const keys = order.filter((k) => HOME_PARTS.find(([x]) => x === k)[2] === col);
+          return h("div", { class: "home-layout-col" }, h("p", { class: "home-layout-head" }, COLS[col]),
+            keys.map((k, i) => {
+              const label = HOME_PARTS.find(([x]) => x === k)[1];
+              const box = h("input", { type: "checkbox", onchange: () => { if (box.checked) hide.delete(k); else hide.add(k); } });
+              box.checked = !hide.has(k);
+              const move = (dir) => {
+                const other = keys[i + dir]; if (!other) return;
+                const a = order.indexOf(k), b = order.indexOf(other);
+                [order[a], order[b]] = [order[b], order[a]]; draw();
+              };
+              return h("div", { class: "home-layout-row" },
+                h("label", null, box, h("span", null, label)),
+                h("span", { class: "round-move" },
+                  h("button", { type: "button", "aria-label": `${label}を上へ`, disabled: i === 0, onclick: () => move(-1) }, "↑"),
+                  h("button", { type: "button", "aria-label": `${label}を下へ`, disabled: i === keys.length - 1, onclick: () => move(1) }, "↓")));
+            }));
+        }));
+      }
+      draw();
+      body.append(
+        h("p", { class: "app-lead" }, "ホームに出すものと順番を選べます。チェックを外したものは出しません(あとから戻せます)。この端末に覚えます。"),
+        list,
+        h("div", { class: "app-btn-row" },
+          h("button", { type: "button", class: "app-btn primary", onclick: () => { saveLayout({ order, hide: [...hide] }); close(); App.toast("ホームの表示を変えました"); App.route(); } }, "この表示にする"),
+          h("button", { type: "button", class: "app-btn ghost", onclick: () => { saveLayout({ order: HOME_PARTS.map(([k]) => k), hide: [] }); close(); App.toast("はじめの表示に戻しました"); App.route(); } }, "はじめに戻す")));
+    }, { noFocus: true });
+  }
+  function tag(key, node) { node.setAttribute("data-home", key); return node; }
+
+  // ---------- 1on1 のおすすめ ----------
+  // まだ 1on1 をしていない(予定もない)メンバーから、週ごとに決まった3人。その週のあいだは同じ人が出る
+  async function oneSuggest(box, today) {
+    const d = await App.api("list1on1", {}, { quiet: true });
+    if (!d || !box.isConnected && !box.parentNode) return;
+    const met = new Set(d.items.filter((o) => o.status !== "canceled" && o.status !== "cancelled").map((o) => o.with));
+    const me = App.session && App.session.memberId;
+    const cand = (App.members || []).filter((m) => m.id !== me && !met.has(m.id));
+    if (!cand.length) return;
+    const week = Math.floor(new Date(`${today}T12:00:00`).getTime() / (7 * 86400000));
+    const score = (id) => { let x = week * 2654435761; for (const ch of String(id)) x = Math.imul(x ^ ch.charCodeAt(0), 2246822519) >>> 0; return x; };
+    const pick = cand.slice().sort((a, b) => score(a.id) - score(b.id)).slice(0, 3);
+    App.fill(box,
+      h("div", { class: "home-sec-head" },
+        h("h2", { class: "app-h2" }, "1on1 のおすすめ"),
+        h("a", { class: "home-sec-link", href: "#log/1on1" }, "1on1 を見る")),
+      h("p", { class: "home-onesug-lead" }, `まだ 1on1 をしていないメンバーが ${cand.length}名います。今週はこの方々はいかがですか?`),
+      h("ul", { class: "app-list" }, pick.map((m) => h("li", { class: "home-onesug-row" },
+        h("a", { class: "app-row", href: App.profileHref(m.id, "home") },
+          App.avatar(m.name),
+          h("span", { class: "app-row-main" }, h("b", null, `${m.name}さん`), h("small", null, m.company || ""))),
+        h("a", { class: "app-btn ghost small", href: `#log/1on1?new&with=${encodeURIComponent(m.id)}` }, "1on1 を予定")))));
+    box.hidden = false;
+  }
 
   // 今月の目標の進み具合(目標がなければ「決める」だけ)
   function goalsBlock(goals, s) {

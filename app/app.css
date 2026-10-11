@@ -1172,3 +1172,16 @@ html.round-open, html.round-open body { overflow: hidden; }
 .round-btn.is-main { background: linear-gradient(180deg, #e9cf98, #b8873f); color: #1a120c; border-color: transparent; }
 .round-btn:disabled { opacity: 0.35; cursor: default; }
 .round-end { flex: 0 1 90px; }
+
+/* ---------- ホームの表示を選ぶ・1on1 のおすすめ(app/home.js) ---------- */
+.is-home-off { display: none !important; }
+.home-layout-btn { display: block; margin: 22px auto 6px; padding: 10px 16px; border-radius: 999px; border: 1px solid var(--line-strong); background: transparent; color: var(--text-sub); font-size: 13px; font-weight: 700; cursor: pointer; }
+.home-layout { display: grid; gap: 14px; margin: 12px 0; }
+.home-layout-head { margin: 0 2px 6px; font-size: 12.5px; font-weight: 800; color: var(--text-sub); }
+.home-layout-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 6px 10px; margin-bottom: 6px; border-radius: 12px; background: #fffdf8; border: 1px solid var(--line); }
+.home-layout-row label { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; font-size: 14px; font-weight: 700; cursor: pointer; }
+.home-layout-row input { width: 20px; height: 20px; accent-color: var(--accent); flex-shrink: 0; }
+.home-onesug-lead { margin: 0 2px 8px; font-size: 12.5px; color: var(--text-sub); }
+.home-onesug-row { display: flex; align-items: center; gap: 8px; }
+.home-onesug-row .app-row { flex: 1; min-width: 0; }
+.home-onesug-row .app-btn { flex-shrink: 0; }
