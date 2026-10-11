@@ -1079,3 +1079,32 @@ body.tabs-right .app-to-top { right: calc(var(--dock-w) + 22px); }
 .ref-sum .is-meeting { --c: #34506f; } .ref-sum-bar .is-meeting { background: #34506f; }
 .ref-sum .is-won { --c: #2f6a50; } .ref-sum-bar .is-won { background: #2f6a50; }
 .ref-sum .is-lost { --c: #b5a99b; } .ref-sum-bar .is-lost { background: #b5a99b; }
+/* 引っぱって更新 */
+.app-ptr { --k: 0; position: fixed; left: 50%; top: calc(58px + env(safe-area-inset-top)); z-index: 41; display: flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; background: #241c16; color: #ead39f; border: 1px solid rgba(201, 164, 92, 0.45); font-size: 12px; font-weight: 700;
+  transform: translate(-50%, calc(-120% + var(--k) * 140%)); opacity: 0; transition: opacity 0.15s; pointer-events: none; }
+.app-ptr.is-show { opacity: 1; }
+.app-ptr span { display: inline-block; transition: transform 0.2s; }
+.app-ptr.is-ready span { transform: rotate(180deg); }
+.app-ptr.is-loading { --k: 1; }
+.app-ptr.is-loading span { animation: ptr-spin 0.8s linear infinite; }
+@keyframes ptr-spin { to { transform: rotate(360deg); } }
+/* ホーム: BT-EX5 全体の今月 */
+.home-pulse { margin-top: 24px; padding: 14px 16px; border-radius: 18px; background: var(--card); border: 1px solid var(--line); box-shadow: var(--shadow); }
+.home-pulse-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 8px; }
+.home-pulse-head b { font-size: 14px; font-family: var(--lux-serif, inherit); }
+.home-pulse-head small { font-size: 11.5px; color: var(--text-light); font-weight: 700; }
+.home-pulse-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); text-align: center; }
+.home-pulse-item { display: flex; flex-direction: column; }
+.home-pulse-item + .home-pulse-item { border-left: 1px solid var(--line); }
+.home-pulse-item b { font-family: "Cormorant Garamond", "Inter", serif; font-size: 24px; font-weight: 600; line-height: 1.2; }
+.home-pulse-item b small { font-family: "Inter", sans-serif; font-size: 10.5px; margin-left: 1px; color: var(--text-sub); }
+.home-pulse-item > span { font-size: 11px; font-weight: 700; color: var(--text-sub); }
+.home-pulse-miles { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); font-size: 12px; color: var(--text-sub); text-align: center; }
+.home-pulse-miles b { color: #8a5f22; font-family: "Inter", sans-serif; }
+/* 掲示板: @ で名前の候補 */
+.mention-wrap { position: relative; flex: 1; min-width: 0; }
+.mention-wrap > input, .mention-wrap > textarea { width: 100%; }
+.mention-list { position: absolute; left: 0; right: 0; top: 100%; z-index: 20; margin-top: 4px; list-style: none; background: #fff; border: 1px solid var(--line-strong); border-radius: 12px; box-shadow: 0 12px 30px rgba(30, 22, 12, 0.18); overflow: hidden; }
+.mention-list button { display: flex; align-items: center; gap: 8px; width: 100%; padding: 8px 12px; border: none; background: none; font-size: 14px; font-weight: 700; text-align: left; cursor: pointer; color: var(--text); }
+.mention-list li + li { border-top: 1px solid var(--line); }
+.mention-list button:hover, .mention-list button:focus { background: #f7f1e5; }

@@ -184,6 +184,16 @@
               h("span", { class: "app-row-main" }, h("b", null, `${o.withName}さん`), h("small", null, `${App.fmtDate(o.date)} ${o.time} ${o.place}`))))))));
       }
 
+      // ---------- BT-EX5 全体の今月(みんなの動き) ----------
+      if (d.community) {
+        const cm = d.community;
+        side.append(h("section", { class: "home-pulse", "aria-label": "BT-EX5 全体の今月" },
+          h("p", { class: "home-pulse-head" }, h("b", null, "BT-EX5 全体の今月"), h("small", null, `メンバー ${cm.members}名`)),
+          h("div", { class: "home-pulse-grid" },
+            pulse("紹介", cm.given, "件"), pulse("成約", cm.won, "件"), pulse("1on1", cm.ones, "回"), pulse("掲示板", cm.posts, "件")),
+          h("p", { class: "home-pulse-miles" }, "ありがとうマイル ", h("b", null, App.yen(cm.miles)), h("small", null, " がメンバーの間で生まれました"))));
+      }
+
       // ---------- 今週の紹介チャレンジ(最近紹介を受けていない人から、週ごとに1人) ----------
       if (d.spotlight) {
         const sp = d.spotlight;
@@ -269,6 +279,9 @@
   }
   function action(href, label, title, icon) {
     return h("a", { class: "home-action", href, title, "aria-label": title }, h("span", { class: "home-action-icon" }, App.icon(icon)), h("span", { class: "home-action-label" }, label));
+  }
+  function pulse(label, value, unit) {
+    return h("span", { class: "home-pulse-item" }, h("b", null, String(value), h("small", null, unit)), h("span", null, label));
   }
   function meStat(label, value, unit) {
     return h("span", { class: "home-me-stat" }, h("b", null, String(value), h("small", null, unit)), h("span", null, label));

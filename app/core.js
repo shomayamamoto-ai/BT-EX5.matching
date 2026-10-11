@@ -572,6 +572,35 @@ const App = (function () {
     document.body.append(offline);
     window.addEventListener("offline", () => { offline.hidden = false; });
     window.addEventListener("online", () => { offline.hidden = true; toast("オンラインに戻りました"); });
+    // いちばん上で下に引っぱると、読み込み直す(ホーム画面に追加したアプリには再読み込みのボタンがないため)
+    const ptr = h("div", { class: "app-ptr", "aria-hidden": "true" }, h("span", null, "↓"), h("small", null, "引っぱって更新"));
+    document.body.append(ptr);
+    let pull = null;
+    document.addEventListener("touchstart", (e) => {
+      if (window.scrollY > 0 || e.touches.length !== 1 || e.target.closest(".app-tabs, .app-sheet-wrap, textarea, .cal-grid, input")) { pull = null; return; }
+      pull = { y: e.touches[0].clientY, dy: 0 };
+    }, { passive: true });
+    document.addEventListener("touchmove", (e) => {
+      if (!pull) return;
+      pull.dy = Math.max(0, e.touches[0].clientY - pull.y);
+      if (window.scrollY > 0) { pull = null; ptr.classList.remove("is-show", "is-ready"); return; }
+      const k = Math.min(1, pull.dy / 90);
+      ptr.classList.toggle("is-show", pull.dy > 12);
+      ptr.classList.toggle("is-ready", pull.dy > 90);
+      ptr.style.setProperty("--k", String(k));
+      ptr.querySelector("small").textContent = pull.dy > 90 ? "はなすと更新" : "引っぱって更新";
+    }, { passive: true });
+    document.addEventListener("touchend", async () => {
+      if (!pull) return;
+      const go = pull.dy > 90;
+      pull = null;
+      if (!go) { ptr.classList.remove("is-show", "is-ready"); return; }
+      ptr.classList.add("is-loading");
+      ptr.querySelector("small").textContent = "更新しています…";
+      badgesAt = 0;
+      await route();
+      ptr.classList.remove("is-show", "is-ready", "is-loading");
+    });
     // 長い画面で、下までいったら「上へ」ボタンを出す
     const toTop = h("button", { type: "button", class: "app-to-top", "aria-label": "いちばん上へ", hidden: true, onclick: () => window.scrollTo({ top: 0, behavior: "smooth" }) }, "↑");
     document.body.append(toTop);

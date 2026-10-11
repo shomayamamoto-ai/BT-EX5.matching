@@ -821,7 +821,8 @@ const REF_SEED_POSTS = [
   },
 ];
 
-// これまでのシステムの改善点を、日ごとに運営連絡へ一度だけ入れる(本人の依頼で、改善した日を投稿日にする)
+// これまでのシステムの改善点を、日ごとに運営連絡へ一度だけ入れる(本人の依頼で、改善した日を投稿日にする)。
+// 入れたあとで中身を直すときは rev を1つ上げる(共有サーバーの投稿も、件名・本文が新しくなる。既読はそのまま)
 const REF_SEED_ANNOUNCEMENTS = [
   {
     seedId: "2026-10-08-changelog",
@@ -1019,6 +1020,7 @@ const REF_SEED_ANNOUNCEMENTS = [
 
   {
     seedId: "2026-10-11-features-2",
+    rev: 2, // 2: 「さらに」(3D のロゴ・通知の種類・紹介の進み具合・オフライン)を書き足した
     at: Date.UTC(2026, 9, 11, 12, 30), // 2026/10/11 21:30(日本時間。まだその時刻でなければ、入れた時刻)
     title: "【新機能】30秒プレゼンの練習・今月の目標・新しいロゴ",
     body: [
@@ -1040,6 +1042,28 @@ const REF_SEED_ANNOUNCEMENTS = [
       "・マイページ →「通知を受け取る」で、スマホに通知する種類(紹介・1on1・掲示板・運営連絡と定例会・やること・ビジター)を選べます。",
       "・記録 → 紹介の上に、出した紹介の進み具合と成約率が出ます。",
       "・電波がないときは「オフラインです」と出ます。",
+    ].join("\n"),
+  },
+  {
+    seedId: "2026-10-11-features-3",
+    at: Date.UTC(2026, 9, 11, 14, 0), // 2026/10/11 23:00(日本時間)
+    title: "【新機能】@で名前を呼ぶ・BT-EX5 全体の今月・引っぱって更新",
+    body: [
+      "新しい機能を入れました。",
+      "",
+      "■ 掲示板で「@名前」",
+      "・投稿やコメントに「@」と入れると、メンバーの候補が出ます。選ぶと「@山本捷真」のように入ります。",
+      "・名前を出された人には、お知らせ(ベル)とスマホに「掲示板であなたの名前を出しました」と届きます。",
+      "・届けたくない人は、マイページ →「通知を受け取る」で「＠ あなたの名前が出たとき」を切れます。",
+      "",
+      "■ ホームに「BT-EX5 全体の今月」",
+      "・今月、メンバー全体で出た紹介・成約・1on1・掲示板の投稿の数が出ます。",
+      "",
+      "■ 引っぱって更新",
+      "・スマホで、画面の一番上から下へ引っぱってはなすと、最新の内容に更新されます。",
+      "",
+      "■ 運営連絡の書き足し",
+      "・前回の「【新機能】30秒プレゼンの練習・今月の目標・新しいロゴ」の「■ さらに」も、この更新から表示されるようになりました(既読はそのままです)。",
     ].join("\n"),
   },
 ];
@@ -2391,9 +2415,21 @@ var BtexServerCore = (function () {
         // これまでの改善点の運営連絡(REF_SEED_ANNOUNCEMENTS)を一度だけ入れる(投稿日は改善した日)
         if (typeof REF_SEED_ANNOUNCEMENTS !== "undefined") {
           if (!Array.isArray(db.announcementSeeds)) { db.announcementSeeds = []; changed = true; }
+          if (!db.announcementSeedRevs || typeof db.announcementSeedRevs !== "object") { db.announcementSeedRevs = {}; changed = true; }
           REF_SEED_ANNOUNCEMENTS.forEach(function (sa) {
-            if (db.announcementSeeds.indexOf(sa.seedId) !== -1) return;
+            var rev = sa.rev || 1;
+            if (db.announcementSeeds.indexOf(sa.seedId) !== -1) {
+              // すでに入っている投稿: 中身を直した(rev を上げた)ときだけ、件名・本文を新しくする。
+              // 既読・投稿日はそのまま。運営が消した投稿は戻さない
+              if ((db.announcementSeedRevs[sa.seedId] || 1) >= rev) return;
+              db.announcementSeedRevs[sa.seedId] = rev;
+              var cur = c.find(db.announcements, function (a) { return a.seedId === sa.seedId; });
+              if (cur) { cur.title = sa.title; cur.body = sa.body; cur.editedAt = c.nowMs(); }
+              changed = true;
+              return;
+            }
             db.announcementSeeds.push(sa.seedId);
+            db.announcementSeedRevs[sa.seedId] = rev;
             db.announcements.push({ id: newId("a_"), at: Math.min(sa.at, c.nowMs()), readBy: [], by: "yamamoto", byName: "山本 捷真", title: sa.title, body: sa.body, cat: "お知らせ", pinned: false, seedId: sa.seedId });
             trim(db.announcements, LIMITS.announcements);
             changed = true;
@@ -4008,6 +4044,16 @@ var BtexServerCore = (function () {
       // ============================================
       // お知らせ(自分に関係する出来事)。保存はせず、記録から毎回組み立てる
       // ============================================
+      // 「@名前」で呼ばれたか(フルネーム・空白なし・名字だけ。名字だけは同じ名字の人がいないときだけ。全角の＠も)
+      function mentions(db, me, text) {
+        var t = String(text || "").replace(/＠/g, "@");
+        if (t.indexOf("@") === -1) return false;
+        var m = member(db, me);
+        if (!m || !m.name) return false;
+        var full = String(m.name).trim(), flat = full.replace(/\s+/g, ""), fam = full.split(/\s+/)[0];
+        var famUnique = fam && fam !== full && (db.referralMembers || []).filter(function (x) { return String(x.name || "").split(/\s+/)[0] === fam; }).length === 1;
+        return t.indexOf("@" + full) !== -1 || t.indexOf("@" + flat) !== -1 || (famUnique && t.indexOf("@" + fam) !== -1);
+      }
       function activityItems(db, me) {
         var items = [];
         db.referralLogs.forEach(function (l) {
@@ -4034,8 +4080,10 @@ var BtexServerCore = (function () {
         db.posts.forEach(function (p) {
           // 掲示板の新しい投稿(自分以外)
           if (p.by !== me) items.push({ type: "post", at: p.at, who: p.by, whoName: nameOf(db, p.by), text: String(p.body).replace(/\s+/g, " ").slice(0, 60), cat: p.cat, link: "board" });
+          if (p.by !== me && mentions(db, me, p.body)) items.push({ type: "mention", at: p.at + 1, who: p.by, whoName: nameOf(db, p.by), text: String(p.body).replace(/\s+/g, " ").slice(0, 60), link: "board?post=" + p.id });
           (p.comments || []).forEach(function (cm) {
             if (cm.by === me) return;
+            if (mentions(db, me, cm.body)) { items.push({ type: "mention", at: cm.at + 1, who: cm.by, whoName: nameOf(db, cm.by), text: String(cm.body).slice(0, 60), link: "board?post=" + p.id }); return; }
             var mine = p.by === me;
             var joined = !mine && (p.comments || []).some(function (x) { return x.by === me && x.at < cm.at; });
             if (mine || joined) items.push({ type: mine ? "comment" : "reply", at: cm.at, who: cm.by, whoName: nameOf(db, cm.by), text: cm.body.slice(0, 60), link: "board" });
@@ -4213,6 +4261,15 @@ var BtexServerCore = (function () {
             givenAll: myLogs.length,
             milesInAll: db.thanks.filter(function (x) { return x.to === w.id; }).reduce(function (s, x) { return s + x.amount; }, 0),
           },
+          // BT-EX5 全体の今月(みんなの動き)
+          community: {
+            given: db.referralLogs.filter(function (l) { return monthMs(l.at); }).length,
+            won: db.referralLogs.filter(function (l) { return l.status === "won" && monthMs(l.statusAt || l.at); }).length,
+            miles: db.thanks.filter(function (x) { return monthMs(x.at); }).reduce(function (s2, x) { return s2 + x.amount; }, 0),
+            ones: db.oneOnOnes.filter(function (o) { return o.status === "done" && o.date.slice(0, 7) === month; }).length,
+            posts: db.posts.filter(function (p) { return monthMs(p.at); }).length,
+            members: (db.referralMembers || []).length,
+          },
           inboxNew: inbox.filter(function (l) { return l.status === "new"; }).slice(-3).reverse().map(function (l) { return referralView(db, l, w.id); }),
           nextOneOnOnes: nextOnes,
           missing: missing,
@@ -4247,6 +4304,7 @@ var BtexServerCore = (function () {
         ref: ["refIn", "refStatus", "refMeet", "refMeetSoon", "thanks"],
         one: ["oneNew", "oneSoon", "oneAsk"],
         board: ["post", "comment", "reply"],
+        mention: ["mention"],
         news: ["ann", "rsvpSoon", "event"],
         task: ["taskNew", "taskDue", "taskSoon"],
         visitor: ["visitor"],
@@ -4338,6 +4396,7 @@ var BtexServerCore = (function () {
           case "refMeetSoon": return { title: "🤝 " + (x.time || "") + " から紹介の顔合わせです", body: x.text + " × " + n + (x.meetUrl ? "(Google Meet:" + x.meetUrl + ")" : "") };
           case "taskNew": return { title: "✅ " + n + "から やること", body: x.text + (x.date ? "(期限 " + x.date.slice(5).replace("-", "/") + ")" : "") };
           case "taskDue": return { title: "⏰ やることの期限が近づいています", body: x.text + "(期限 " + x.date.slice(5).replace("-", "/") + ")" };
+          case "mention": return { title: "＠ " + n + "が掲示板であなたの名前を出しました", body: x.text };
           case "taskSoon": return { title: "⏰ " + (x.time || "") + " から:" + x.text, body: "やることの時刻が近づいています" };
           case "oneAsk": return { title: "☕ " + n + "との1on1 は実施しましたか?", body: "「実施した」を押すと 1on1 の回数に数えます" };
           case "visitor": return { title: "🙋 ビジターの申込がありました", body: x.text + " さん" };

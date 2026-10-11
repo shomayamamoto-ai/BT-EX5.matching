@@ -139,9 +139,21 @@
         // これまでの改善点の運営連絡(REF_SEED_ANNOUNCEMENTS)を一度だけ入れる(投稿日は改善した日)
         if (typeof REF_SEED_ANNOUNCEMENTS !== "undefined") {
           if (!Array.isArray(db.announcementSeeds)) { db.announcementSeeds = []; changed = true; }
+          if (!db.announcementSeedRevs || typeof db.announcementSeedRevs !== "object") { db.announcementSeedRevs = {}; changed = true; }
           REF_SEED_ANNOUNCEMENTS.forEach(function (sa) {
-            if (db.announcementSeeds.indexOf(sa.seedId) !== -1) return;
+            var rev = sa.rev || 1;
+            if (db.announcementSeeds.indexOf(sa.seedId) !== -1) {
+              // すでに入っている投稿: 中身を直した(rev を上げた)ときだけ、件名・本文を新しくする。
+              // 既読・投稿日はそのまま。運営が消した投稿は戻さない
+              if ((db.announcementSeedRevs[sa.seedId] || 1) >= rev) return;
+              db.announcementSeedRevs[sa.seedId] = rev;
+              var cur = c.find(db.announcements, function (a) { return a.seedId === sa.seedId; });
+              if (cur) { cur.title = sa.title; cur.body = sa.body; cur.editedAt = c.nowMs(); }
+              changed = true;
+              return;
+            }
             db.announcementSeeds.push(sa.seedId);
+            db.announcementSeedRevs[sa.seedId] = rev;
             db.announcements.push({ id: newId("a_"), at: Math.min(sa.at, c.nowMs()), readBy: [], by: "yamamoto", byName: "山本 捷真", title: sa.title, body: sa.body, cat: "お知らせ", pinned: false, seedId: sa.seedId });
             trim(db.announcements, LIMITS.announcements);
             changed = true;
@@ -1756,6 +1768,16 @@
       // ============================================
       // お知らせ(自分に関係する出来事)。保存はせず、記録から毎回組み立てる
       // ============================================
+      // 「@名前」で呼ばれたか(フルネーム・空白なし・名字だけ。名字だけは同じ名字の人がいないときだけ。全角の＠も)
+      function mentions(db, me, text) {
+        var t = String(text || "").replace(/＠/g, "@");
+        if (t.indexOf("@") === -1) return false;
+        var m = member(db, me);
+        if (!m || !m.name) return false;
+        var full = String(m.name).trim(), flat = full.replace(/\s+/g, ""), fam = full.split(/\s+/)[0];
+        var famUnique = fam && fam !== full && (db.referralMembers || []).filter(function (x) { return String(x.name || "").split(/\s+/)[0] === fam; }).length === 1;
+        return t.indexOf("@" + full) !== -1 || t.indexOf("@" + flat) !== -1 || (famUnique && t.indexOf("@" + fam) !== -1);
+      }
       function activityItems(db, me) {
         var items = [];
         db.referralLogs.forEach(function (l) {
@@ -1782,8 +1804,10 @@
         db.posts.forEach(function (p) {
           // 掲示板の新しい投稿(自分以外)
           if (p.by !== me) items.push({ type: "post", at: p.at, who: p.by, whoName: nameOf(db, p.by), text: String(p.body).replace(/\s+/g, " ").slice(0, 60), cat: p.cat, link: "board" });
+          if (p.by !== me && mentions(db, me, p.body)) items.push({ type: "mention", at: p.at + 1, who: p.by, whoName: nameOf(db, p.by), text: String(p.body).replace(/\s+/g, " ").slice(0, 60), link: "board?post=" + p.id });
           (p.comments || []).forEach(function (cm) {
             if (cm.by === me) return;
+            if (mentions(db, me, cm.body)) { items.push({ type: "mention", at: cm.at + 1, who: cm.by, whoName: nameOf(db, cm.by), text: String(cm.body).slice(0, 60), link: "board?post=" + p.id }); return; }
             var mine = p.by === me;
             var joined = !mine && (p.comments || []).some(function (x) { return x.by === me && x.at < cm.at; });
             if (mine || joined) items.push({ type: mine ? "comment" : "reply", at: cm.at, who: cm.by, whoName: nameOf(db, cm.by), text: cm.body.slice(0, 60), link: "board" });
@@ -1961,6 +1985,15 @@
             givenAll: myLogs.length,
             milesInAll: db.thanks.filter(function (x) { return x.to === w.id; }).reduce(function (s, x) { return s + x.amount; }, 0),
           },
+          // BT-EX5 全体の今月(みんなの動き)
+          community: {
+            given: db.referralLogs.filter(function (l) { return monthMs(l.at); }).length,
+            won: db.referralLogs.filter(function (l) { return l.status === "won" && monthMs(l.statusAt || l.at); }).length,
+            miles: db.thanks.filter(function (x) { return monthMs(x.at); }).reduce(function (s2, x) { return s2 + x.amount; }, 0),
+            ones: db.oneOnOnes.filter(function (o) { return o.status === "done" && o.date.slice(0, 7) === month; }).length,
+            posts: db.posts.filter(function (p) { return monthMs(p.at); }).length,
+            members: (db.referralMembers || []).length,
+          },
           inboxNew: inbox.filter(function (l) { return l.status === "new"; }).slice(-3).reverse().map(function (l) { return referralView(db, l, w.id); }),
           nextOneOnOnes: nextOnes,
           missing: missing,
@@ -1995,6 +2028,7 @@
         ref: ["refIn", "refStatus", "refMeet", "refMeetSoon", "thanks"],
         one: ["oneNew", "oneSoon", "oneAsk"],
         board: ["post", "comment", "reply"],
+        mention: ["mention"],
         news: ["ann", "rsvpSoon", "event"],
         task: ["taskNew", "taskDue", "taskSoon"],
         visitor: ["visitor"],
@@ -2086,6 +2120,7 @@
           case "refMeetSoon": return { title: "🤝 " + (x.time || "") + " から紹介の顔合わせです", body: x.text + " × " + n + (x.meetUrl ? "(Google Meet:" + x.meetUrl + ")" : "") };
           case "taskNew": return { title: "✅ " + n + "から やること", body: x.text + (x.date ? "(期限 " + x.date.slice(5).replace("-", "/") + ")" : "") };
           case "taskDue": return { title: "⏰ やることの期限が近づいています", body: x.text + "(期限 " + x.date.slice(5).replace("-", "/") + ")" };
+          case "mention": return { title: "＠ " + n + "が掲示板であなたの名前を出しました", body: x.text };
           case "taskSoon": return { title: "⏰ " + (x.time || "") + " から:" + x.text, body: "やることの時刻が近づいています" };
           case "oneAsk": return { title: "☕ " + n + "との1on1 は実施しましたか?", body: "「実施した」を押すと 1on1 の回数に数えます" };
           case "visitor": return { title: "🙋 ビジターの申込がありました", body: x.text + " さん" };

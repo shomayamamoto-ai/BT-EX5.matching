@@ -216,7 +216,7 @@
           if (!comment.value.trim()) return;
           const d = await App.api("commentPost", { postId: p.id, body: comment.value.trim() });
           if (d) { Object.assign(p, d.item); draw(); }
-        } }, comment, h("button", { type: "submit", class: "app-btn small" }, "送信")));
+        } }, mentionWrap(comment), h("button", { type: "submit", class: "app-btn small" }, "送信")));
     }
     draw();
     return card;
@@ -240,8 +240,41 @@
         close();
         App.toast("直しました");
         done(d.item);
-      } }, App.field("種類", chips), App.field("本文", text), h("button", { type: "submit", class: "app-btn primary wide" }, "保存する")));
+      } }, App.field("種類", chips), App.field("本文", mentionWrap(text), "「@名前」と書くと、その人に通知が届きます"), h("button", { type: "submit", class: "app-btn primary wide" }, "保存する")));
     });
+  }
+
+  // 「@」のあとに名前を打つと、メンバーの候補を出す。押すと「@名前 」が入る(その人に通知が届く)
+  function mentionWrap(field) {
+    const list = h("ul", { class: "mention-list", role: "listbox", hidden: true });
+    const wrap = h("div", { class: "mention-wrap" }, field, list);
+    const token = () => {
+      const before = field.value.slice(0, field.selectionStart || 0);
+      const m = /[@＠]([^\s@＠]{0,12})$/.exec(before);
+      return m ? { q: m[1], start: before.length - m[0].length } : null;
+    };
+    const close = () => { list.hidden = true; };
+    const draw = () => {
+      const t = token();
+      if (!t) { close(); return; }
+      const q = t.q.replace(/\s/g, "");
+      const hits = App.members.filter((m) => m.id !== App.session.memberId && (!q || String(m.name).replace(/\s+/g, "").includes(q))).slice(0, 6);
+      if (!hits.length) { close(); return; }
+      list.replaceChildren(...hits.map((m) => h("li", null, h("button", { type: "button", role: "option", onmousedown: (e) => e.preventDefault(), onclick: () => {
+        const name = String(m.name).replace(/\s+/g, "");
+        const end = field.selectionStart || field.value.length;
+        field.value = `${field.value.slice(0, t.start)}@${name} ${field.value.slice(end)}`;
+        const pos = t.start + name.length + 2;
+        field.focus(); field.setSelectionRange(pos, pos);
+        field.dispatchEvent(new Event("input"));
+        close();
+      } }, App.avatar(m.name, "sm"), h("span", null, m.name)))));
+      list.hidden = false;
+    };
+    field.addEventListener("input", draw);
+    field.addEventListener("click", draw);
+    field.addEventListener("blur", () => setTimeout(close, 150));
+    return wrap;
   }
 
   function postForm(cats, cat) {
@@ -260,7 +293,7 @@
         close();
         App.toast("投稿しました");
         App.go("board");
-      } }, App.field("種類", chips), App.field("本文", text), h("button", { type: "submit", class: "app-btn primary wide" }, "投稿する")));
+      } }, App.field("種類", chips), App.field("本文", mentionWrap(text), "「@名前」と書くと、その人に通知が届きます"), h("button", { type: "submit", class: "app-btn primary wide" }, "投稿する")));
     }, { confirmClose: () => false });
   }
 })();
