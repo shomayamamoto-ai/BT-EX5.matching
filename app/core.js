@@ -76,7 +76,13 @@ const App = (function () {
   // "YYYY-MM-DDTHH:MM" → "10/15(木) 0:00(あと4日)"
   function fmtStamp(stamp) {
     if (!stamp) return "";
-    const date = stamp.slice(0, 10), time = stamp.slice(11);
+    let date = stamp.slice(0, 10), time = stamp.slice(11);
+    // 「0:00 まで」は前の日の「23:59 まで」と書く(どちらの日か迷わないように)
+    if (time === "00:00") {
+      const d = new Date(`${date}T12:00:00`); d.setDate(d.getDate() - 1);
+      date = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+      time = "23:59";
+    }
     const days = daysUntil(date, todayKey());
     return `${fmtDate(date)} ${Number(time.slice(0, 2))}:${time.slice(3)}${days > 0 ? `(あと${days}日)` : days === 0 ? "(今日まで)" : ""}`;
   }
@@ -124,13 +130,17 @@ const App = (function () {
 
   // ---------- お知らせ(画面下に少し出る) ----------
   let toastTimer = null;
-  function toast(msg) {
+  // 画面の下に短いお知らせ。kind が "error" のときは赤い印で、少し長めに出す
+  function toast(msg, kind) {
     let el = document.getElementById("appToast");
     if (!el) { el = h("div", { id: "appToast", class: "app-toast", role: "status" }); document.body.append(el); }
-    el.textContent = msg;
+    const isError = kind === "error";
+    el.className = `app-toast${isError ? " is-error" : ""}`;
+    el.replaceChildren(h("span", { class: "app-toast-icon", "aria-hidden": "true" }, isError ? "!" : "✓"), h("span", { class: "app-toast-text" }, msg));
+    el.setAttribute("role", isError ? "alert" : "status");
     el.hidden = false;
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => { el.hidden = true; }, 2800);
+    toastTimer = setTimeout(() => { el.hidden = true; }, isError ? 4500 : 2800);
   }
 
   async function copyText(text, done) {
@@ -274,7 +284,7 @@ const App = (function () {
         location.replace(`../login/?next=home`);
         return null;
       }
-      if (!(opt && opt.quiet)) toast(res.error.userMessage);
+      if (!(opt && opt.quiet)) toast(res.error.userMessage, "error");
       return opt && opt.raw ? res : null;
     }
     return res.data;
@@ -338,6 +348,28 @@ const App = (function () {
     if (single) return h("label", { class: "app-field" }, h("span", { class: "app-field-label" }, label), hint ? h("span", { class: "app-field-hint" }, hint) : null, input);
     return h("div", { class: "app-field", role: "group", "aria-label": label }, h("span", { class: "app-field-label" }, label), hint ? h("span", { class: "app-field-hint" }, hint) : null, input);
   }
+  // 入力のまちがいを、その欄のすぐ下に出す(枠を赤く・画面をその欄まで動かす・入力欄へ)。
+  // 直すと消える。target は入力欄・メンバー選び(App.memberPicker の結果)・その欄を包む要素のどれでもよい
+  function fieldError(target, message) {
+    if (!target) { toast(message); return; }
+    const box = (target.closest && target.closest(".app-field")) || target;
+    const old = box.querySelector(":scope > .app-field-error");
+    if (old) old.remove();
+    const id = `fe-${Math.random().toString(36).slice(2, 8)}`;
+    const msg = h("p", { class: "app-field-error", id, role: "alert" }, message);
+    box.append(msg);
+    box.classList.add("is-invalid");
+    const focusEl = /^(INPUT|SELECT|TEXTAREA)$/.test(target.tagName) ? target : box.querySelector("input:not([hidden]):not([type=hidden]), select, textarea, button");
+    if (focusEl) focusEl.setAttribute("aria-describedby", id);
+    const clear = () => { msg.remove(); box.classList.remove("is-invalid"); box.removeEventListener("input", clear); box.removeEventListener("change", clear); box.removeEventListener("click", clearSoon); };
+    const clearSoon = () => setTimeout(clear, 0);
+    box.addEventListener("input", clear);
+    box.addEventListener("change", clear);
+    box.addEventListener("click", clearSoon);
+    box.scrollIntoView({ behavior: "smooth", block: "center" });
+    if (focusEl) setTimeout(() => focusEl.focus({ preventScroll: true }), 250);
+  }
+
   // 選んで切り替えるボタンの並び(押したものが選ばれる)
   function toggle(options, value, onchange) {
     let cur = value;
@@ -493,7 +525,9 @@ const App = (function () {
     });
     const main = document.getElementById("appView");
     document.getElementById("appTitle").textContent = views[view].title || "";
-    main.replaceChildren(h("p", { class: "app-loading" }, "読み込み中…"));
+    // 読み込みのあいだは、カードの形の薄いひな形を出す(文字だけの「読み込み中」より落ち着いて見える)
+    main.replaceChildren(h("div", { class: "app-skel", role: "status", "aria-label": "読み込み中" },
+      h("div", { class: "app-skel-line is-title" }), h("div", { class: "app-skel-card" }), h("div", { class: "app-skel-card is-short" }), h("div", { class: "app-skel-card" })));
     window.scrollTo({ top: 0, behavior: "instant" });
     const el = h("div", { class: `app-page page-${view}` });
     try {
@@ -693,7 +727,7 @@ const App = (function () {
   return {
     profileHref, meetHowTo, downloadCsv,
     h, append, fill, fmtStamp, fmtDate, fmtDateLong, fmtTime, yen, daysUntil, todayKey, chip, avatar, richText, toast, copyText, shareText,
-    icon, qrImage, draft, clearDraft, calendarButtons, googleCalUrl, icsFile, api, openSheet, doneSheet, field, btn, toggle, timeSelect, segmented, empty, section, memberPicker,
+    icon, qrImage, draft, clearDraft, fieldError, calendarButtons, googleCalUrl, icsFile, api, openSheet, doneSheet, field, btn, toggle, timeSelect, segmented, empty, section, memberPicker,
     AREA_LABELS, REF_STATUS, VISITOR_STATUS,
     views, go, route, setBadges, start,
     get members() { return members; },

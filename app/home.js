@@ -28,10 +28,14 @@
       const r = d.teamRank;
       el.append(h("section", { class: "home-me", "aria-label": "今月のあなた", "data-home": "me" },
         r ? h("a", { class: "home-rank", href: "#log/rank" },
-          h("span", { class: "home-rank-no" }, h("small", null, "BT-EX5 で"), h("span", null, h("b", null, String(r.rank)), "位"), h("small", null, `/ ${r.size}名`)),
+          // 0pt のうちは順位を出さない。同点は「同率」と出す
+          r.points ? h("span", { class: "home-rank-no" }, h("small", null, r.tied > 1 ? "BT-EX5 で同率" : "BT-EX5 で"), h("span", null, h("b", null, String(r.rank)), "位"), h("small", null, r.tied > 1 ? `${r.tied}名 / ${r.size}名` : `/ ${r.size}名`))
+            : h("span", { class: "home-rank-no is-none" }, h("small", null, "今月の順位"), h("span", null, h("b", null, "—")), h("small", null, "これから")),
           h("span", { class: "home-rank-main" },
             h("b", null, "今月の貢献ポイント ", h("em", null, `${r.points}pt`)),
-            h("small", null, r.rank > 1 && r.gap ? `あと ${r.gap}pt で ${r.rank - 1}位(${r.gapName}さん)。紹介1件で +1pt・成約で +3pt` : r.points ? "1位です!この調子で" : "紹介を1件記録すると +1pt")),
+            h("small", null, !r.points ? "紹介を1件記録すると +1pt。今月の順位がつきます"
+              : r.rank > 1 && r.gap ? `あと ${r.gap}pt で ${r.rank - 1}位(${r.gapName}さん)。紹介1件で +1pt・成約で +3pt`
+              : r.tied > 1 ? `${r.tied}名が同じ点です。紹介1件で +1pt、ひとつ抜け出しましょう` : "1位です!この調子で")),
           h("span", { class: "home-go", "aria-hidden": "true" }, "›")) : null,
         h("a", { class: "home-me-stats", href: "#log/stats", "aria-label": "今月の数字をくわしく見る" },
           meStat("紹介した", s.given, "件"),
@@ -204,7 +208,8 @@
       }
 
       // ---------- BT-EX5 全体の今月(みんなの動き) ----------
-      if (d.community) {
+      // 全体の今月は、まだ何も動いていない(すべて0)ときは出さない
+      if (d.community && (d.community.given || d.community.won || d.community.ones || d.community.posts || d.community.miles)) {
         const cm = d.community;
         side.append(h("section", { class: "home-pulse", "aria-label": "BT-EX5 全体の今月", "data-home": "pulse" },
           h("p", { class: "home-pulse-head" }, h("b", null, "BT-EX5 全体の今月"), h("small", null, `メンバー ${cm.members}名`)),
@@ -499,7 +504,7 @@
           h("h3", null, h("a", { href: `#events/detail/${ev.id}` }, ev.title)),
           h("p", { class: "ev-meta" }, [ev.start && `${ev.start}${ev.end ? `〜${ev.end}` : ""}`, ev.online ? "オンライン(Google Meet)" : App.AREA_LABELS[ev.area], ev.online ? "" : ev.place].filter(Boolean).join(" ・ ")),
           ev.fee ? h("p", { class: "ev-meta" }, `参加費 ${ev.fee}`) : null,
-          ev.deadline && !ev.past ? h("p", { class: `ev-deadline${ev.deadlinePassed ? " is-closed" : ""}` }, ev.deadlinePassed ? "申込の受付は終了しました" : `申込締切 ${App.fmtStamp(ev.deadline)}`) : null,
+          ev.deadline && !ev.past ? h("p", { class: `ev-deadline${ev.deadlinePassed ? " is-closed" : ""}` }, ev.deadlinePassed ? "申込の受付は終了しました" : `申込締切 ${App.fmtStamp(ev.deadline).replace(/(\d+:\d+)/, "$1まで")}`) : null,
           h("p", { class: "ev-count" }, `出席予定 ${ev.yesCount}名`, ev.visitorCount ? ` ・ ビジター ${ev.visitorCount}名` : "", ev.attended ? h("span", { class: "ev-done" }, ev.late ? "遅刻早退" : "出席済み") : null),
           ev.past || ev.attended || ev.deadlinePassed ? null : h("div", { class: "ev-rsvp", role: "group", "aria-label": "出欠" },
             rsvpBtn("yes", "出席する"), rsvpBtn("no", "欠席する")),

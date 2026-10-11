@@ -14,7 +14,7 @@ body.has-app-tabs { padding-bottom: calc(var(--app-tabs-h) + env(safe-area-inset
 .app-tab {
   min-width: 0; white-space: nowrap;
   position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
-  color: #8f8173; text-decoration: none; font-size: 11px; font-weight: 800; line-height: 1.2;
+  color: #8f8173; text-decoration: none; font-size: 12px; font-weight: 800; line-height: 1.2;
 }
 .app-tab svg { width: 24px; height: 24px; fill: currentColor; }
 .app-tab.is-on { color: #a8813e; }
@@ -22,7 +22,7 @@ body.has-app-tabs { padding-bottom: calc(var(--app-tabs-h) + env(safe-area-inset
   position: absolute; top: 6px; left: calc(50% + 6px);
   display: inline-flex; align-items: center; justify-content: center;
   min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px;
-  background: #a3261d; color: #fff; font-size: 11px; font-weight: 800; line-height: 1;
+  background: #a3261d; color: #fff; font-size: 12px; font-weight: 800; line-height: 1;
 }
 /* 下に固定していたもの(保存ボタン・上に戻る・お知らせ)をタブの上へ */
 body.has-app-tabs .prof-actions { bottom: calc(var(--app-tabs-h) + env(safe-area-inset-bottom, 0px)); }

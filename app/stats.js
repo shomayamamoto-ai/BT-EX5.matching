@@ -20,7 +20,13 @@
   const DEFAULT_SORT = COLS[0].id;
 
   // 100.9万 のような表記
-  function man(n) { return `${(Number(n || 0) / 10000).toFixed(1)}万`; }
+  // 0 は「—」、1万円未満は円、それより上は「◯.◯万」
+  function man(n) {
+    const v = Number(n || 0);
+    if (!v) return "—";
+    if (v < 10000) return `¥${v.toLocaleString("ja-JP")}`;
+    return `${(v / 10000).toFixed(1)}万`;
+  }
   function ymOf(key) { return key.slice(0, 7); }
   function shiftYm(ym, n) {
     const d = new Date(Number(ym.slice(0, 4)), Number(ym.slice(5, 7)) - 1 + n, 1);

@@ -158,6 +158,8 @@
       setTimeout(() => {
         const card = document.getElementById(`post-${target}`);
         if (!card) return;
+        const more = card.querySelector(".post-more");
+        if (more) more.click(); // リンクから開いた投稿は、折りたたまずに全部見せる
         card.scrollIntoView({ block: "center", behavior: "smooth" });
         card.classList.add("is-focus");
         setTimeout(() => card.classList.remove("is-focus"), 2400);
@@ -178,6 +180,16 @@
     ].join("\n");
   }
 
+  // 長い投稿は6行ほどで折りたたみ、「続きを読む」で全部見せる(一覧がひとつの投稿で埋まらないように)
+  function clampBody(p) {
+    const body = App.richText(p.body);
+    const long = (p.body || "").length > 220 || (p.body || "").split("\n").length > 6;
+    if (!long || p._open) return body;
+    body.classList.add("is-clamped");
+    const more = h("button", { type: "button", class: "post-more", onclick: () => { p._open = true; body.classList.remove("is-clamped"); more.remove(); } }, "続きを読む");
+    return h("div", { class: "post-body-wrap" }, body, more);
+  }
+
   function postCard(p) {
     const card = h("article", { class: `post${p.isNew ? " is-new" : ""}`, id: `post-${p.id}` });
     function draw() {
@@ -187,12 +199,12 @@
           h("div", null, h("a", { href: App.profileHref(p.by) }, h("b", null, p.byName)), h("small", null, `${App.fmtTime(p.at)}${p.editedAt ? "(編集済み)" : ""}`)),
           App.chip(p.cat, p.cat === "紹介依頼" ? "warn" : p.cat === "成約・お礼" ? "good" : "info"),
           p.isNew ? h("span", { class: "ann-dot" }, "新着") : null),
-        App.richText(p.body),
+        clampBody(p),
         h("div", { class: "post-actions" },
           h("button", { type: "button", class: `post-like${p.liked ? " is-on" : ""}`, "aria-pressed": p.liked ? "true" : "false", onclick: async () => {
             const d = await App.api("likePost", { id: p.id });
             if (d) { Object.assign(p, d.item); draw(); }
-          } }, p.liked ? "♥" : "♡", ` ${p.likes || ""}`),
+          }, "aria-label": p.liked ? "いいねを取り消す" : "いいね" }, p.liked ? "♥ いいね" : "♡ いいね", ` ${p.likes || ""}`),
           h("button", { type: "button", class: "post-link", onclick: () => App.copyText(postLineText(p), "コピーしました。LINE のトークに貼り付けてください") }, "LINE 用にコピー"),
           p.canEdit ? h("button", { type: "button", class: "post-link", onclick: () => editForm(p, (item) => { Object.assign(p, item); draw(); }) }, "編集") : null,
           p.canDelete ? h("button", { type: "button", class: "post-link danger", onclick: async () => {
@@ -286,7 +298,7 @@
       const text = App.draft("board", h("textarea", { rows: "6", maxlength: "2000", placeholder: "例:〇〇で困っている知り合いがいます。△△に詳しい方いませんか?" }));
       body.append(h("form", { class: "app-form", onsubmit: async (e) => {
         e.preventDefault();
-        if (!text.value.trim()) { App.toast("本文を入れてください"); return; }
+        if (!text.value.trim()) { App.fieldError(text, "本文を入れてください。"); return; }
         const d = await App.api("createPost", { cat: picked, body: text.value });
         if (!d) return;
         App.clearDraft("board");

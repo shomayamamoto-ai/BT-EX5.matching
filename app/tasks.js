@@ -90,7 +90,7 @@
       syncPicker();
       body.append(h("form", { class: "app-form", onsubmit: async (e) => {
         e.preventDefault();
-        if (!title.value.trim()) { App.toast("やることを入れてください"); return; }
+        if (!title.value.trim()) { App.fieldError(title, "やることを入れてください。"); return; }
         const isPrivate = !!(priv && priv.checked);
         const assignees = isPrivate ? [] : all && all.checked ? App.members.map((m) => m.id) : picker ? picker.getValue() : [];
         const d = await App.api("saveTask", { item: { title: title.value.trim(), due: due.value, time: due.value ? time.value : "", note: note.value, assignees, eventId: o.eventId || "", private: isPrivate } });

@@ -194,3 +194,24 @@ body.tabs-left .app-tab.is-on::after, body.tabs-right .app-tab.is-on::after { bo
 
 /* 立体の金のロゴ(画像)を、黒い枠いっぱいに */
 .brand-mark { padding: 1px !important; object-fit: contain; }
+
+/* ============================================
+   仕上げ(有料版の品質): 読みやすさ・色の統一・コントラスト
+   ============================================ */
+:root {
+  /* 補足の文字は、白っぽい地でも読める濃さに(コントラスト 4.5:1 以上) */
+  --text-light: #6e6255;
+  --text-sub: #5c5045;
+}
+/* キーボードで動かしたときの枠は、はっきり見える濃い金 */
+:focus-visible { outline: 2px solid #7d5a22; outline-offset: 2px; }
+/* 1〜2文字だけが次の行に落ちないように(対応するブラウザ) */
+p, li, h1, h2, h3, small, b, summary, .app-row-main, .app-lead { text-wrap: pretty; word-break: auto-phrase; }
+/* 名前の丸は、虹色ではなく墨色に金の頭文字でそろえる */
+.app-avatar { background: linear-gradient(145deg, #2f261e, #15110d) !important; color: var(--lux-gold-hi) !important; border: 1px solid var(--lux-gold-line); font-family: var(--lux-serif); font-weight: 700; }
+/* チップ(状態の印)は控えめな色に */
+.tone-good { background: #e7f0ea; color: #2f6a50; }
+.tone-info { background: #f1ebdf; color: #6b4f22; }
+.tone-mute { background: #eee8df; color: #5c5045; }
+/* 選んでいる切り替えは、どの画面でも墨色に金 */
+.app-seg .is-on, .app-seg button.is-on, .app-seg [aria-pressed="true"] { background: var(--grad) !important; color: var(--lux-gold-hi) !important; border-color: transparent !important; }

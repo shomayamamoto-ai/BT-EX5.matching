@@ -364,8 +364,8 @@
       body.append(h("form", { class: "app-form", onsubmit: async (e) => {
         e.preventDefault();
         const to = picker.getValue();
-        if (!to) { err.textContent = "紹介先のメンバーを選んでください。"; return; }
-        if (!prospect.value.trim()) { err.textContent = "紹介した方のお名前を入れてください。"; prospect.focus(); return; }
+        if (!to) { App.fieldError(picker, "紹介先のメンバーを選んでください。"); return; }
+        if (!prospect.value.trim()) { App.fieldError(prospect, "紹介した方のお名前を入れてください。"); return; }
         save.disabled = true;
         const res = await AuthApi.recordReferral(AuthSession.getToken(), to, prospect.value.trim(), [], memo.value.trim(), contact.value.trim());
         save.disabled = false;
@@ -440,7 +440,7 @@
       body.append(h("form", { class: "app-form", onsubmit: async (e) => {
         e.preventDefault();
         const to = r ? "" : picker.getValue();
-        if (!r && !to) { err.textContent = "お礼を送る相手を選んでください。"; return; }
+        if (!r && !to) { App.fieldError(picker, "お礼を送る相手を選んでください。"); return; }
         const d = await App.api("reportThanks", { referralId: r ? r.id : "", toMemberId: to, amount: amount.value, message: message.value.trim() }, { raw: true, quiet: true });
         if (!d || d.success === false) { err.textContent = d ? d.error.userMessage : "送れませんでした。"; return; }
         App.clearDraft("thanks-msg");
@@ -719,8 +719,8 @@
           mode: mode.getValue(), place: place.value.trim(), meetUrl: meetUrl.value.trim(), status: status.getValue(),
           note: note.value, next: next.value.trim(), appUrl: App.siteUrl("#log/1on1"),
         };
-        if (!payload.withMemberId) { err.textContent = "相手を選んでください。"; return; }
-        if (!payload.date) { err.textContent = "日付を選んでください。"; return; }
+        if (!payload.withMemberId) { App.fieldError(picker, "相手を選んでください。"); return; }
+        if (!payload.date) { App.fieldError(date, "日付を選んでください。"); return; }
         if (payload.status === "planned" && !(await confirmNoConflict(payload.date, payload.time, payload.duration, payload.id))) return;
         save.disabled = true;
         const d = await App.api("save1on1", payload, { raw: true, quiet: true });
@@ -793,9 +793,13 @@
 
     // ---------- あなた ----------
     if (me) {
-      const next = me.rank > 1 && me.gap ? `あと ${me.gap}pt で ${me.rank - 1}位(${me.gapName}さん)` : me.points > 0 ? "1位です!" : `紹介を1件記録すると +${P.referral}pt`;
+      const tied = d.members.filter((x) => x.points === me.points).length;
+      const next = !me.points ? `紹介を1件記録すると +${P.referral}pt。順位がつきます`
+        : me.rank > 1 && me.gap ? `あと ${me.gap}pt で ${me.rank - 1}位(${me.gapName}さん)`
+        : tied > 1 ? `${tied}名が同じ点です。紹介1件で抜け出せます` : "1位です!";
       el.append(h("section", { class: "rk-me" },
-        h("div", { class: "rk-me-rank" }, h("span", null, "BT-EX5 の中で"), h("b", null, `${me.rank}`, h("small", null, `位 / ${d.members.length}名`))),
+        h("div", { class: "rk-me-rank" }, h("span", null, me.points && tied > 1 ? "BT-EX5 の中で同率" : "BT-EX5 の中で"),
+          me.points ? h("b", null, `${me.rank}`, h("small", null, `位 / ${d.members.length}名`)) : h("b", null, "—", h("small", null, " まだ順位なし"))),
         h("div", { class: "rk-me-main" },
           h("p", { class: "rk-me-pt" }, h("b", null, String(me.points)), " pt"),
           h("p", { class: "rk-me-next" }, next),
@@ -842,7 +846,7 @@
       if (prev === null || r[metric.id] !== prev) rank = i + 1;
       prev = r[metric.id];
       return h("li", { class: r.isMe ? "is-me" : "" },
-        h("span", { class: `rank-no${rank <= 3 && r[metric.id] > 0 ? ` top${rank}` : ""}` }, String(rank)),
+        h("span", { class: `rank-no${rank <= 3 && r[metric.id] > 0 ? ` top${rank}` : ""}` }, r[metric.id] > 0 ? String(rank) : "—"),
         h("span", { class: "rank-name" }, h("b", null, nameOf(r), r.isMe ? "(あなた)" : ""), h("small", null, detailOf(r))),
         h("span", { class: "rank-bar", "aria-hidden": "true" }, h("span", { style: `width:${top && r[metric.id] ? Math.max(4, (r[metric.id] / top) * 100) : 0}%` })),
         h("b", { class: "rank-v" }, fmtV(metric, r[metric.id])));

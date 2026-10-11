@@ -3326,6 +3326,10 @@ var BtexServerCore = (function () {
           r.gap = above ? round1(above[key] - r[key]) : 0;
           r.gapName = above ? (above.name || above.team) : "";
         });
+        // 同じ順位の人数(「同率1位(15名)」と出すため)
+        var same = {};
+        sorted.forEach(function (r) { same[r.rank] = (same[r.rank] || 0) + 1; });
+        sorted.forEach(function (r) { r.tied = same[r.rank]; });
         return sorted;
       }
       // BT-EX5 全体の月の目標(管理者が設定。決めていなければ紹介は1人1件)
@@ -4392,7 +4396,7 @@ var BtexServerCore = (function () {
             if (!rows[w.id]) return null;
             var ms = rankRows(Object.keys(rows).map(function (k) { return rows[k]; }), "points");
             var me = ms.filter(function (r) { return r.id === w.id; })[0];
-            return { rank: me.rank, size: ms.length, points: me.points, gap: me.gap, gapName: me.gapName };
+            return { rank: me.rank, size: ms.length, points: me.points, gap: me.gap, gapName: me.gapName, tied: me.tied || 1 };
           })(),
         });
       }

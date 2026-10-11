@@ -16,31 +16,39 @@
       el.append(h("div", { class: "me-head" }, App.avatar(s.displayName, "lg"),
         h("div", null, h("h1", null, `${s.displayName}さん`), h("p", null, [me && me.company, me && me.team, App.isAdmin() ? "管理者" : ""].filter(Boolean).join(" ・ ")))));
 
-      el.append(h("nav", { class: "me-menu", "aria-label": "マイページのメニュー" },
-        menu("../profile/", "プロフィール・1on1シートを編集", "紹介されるための情報。入れるほど紹介が届きます"),
-        menu(me ? App.profileHref(me.id, "me") : "../referral/", "ほかのメンバーからの見え方", "早見表のあなたのカード"),
-        menu("#me/password", s.hasPassword ? "パスワードを変える" : "パスワードを決める", s.hasPassword ? "" : "共通パスコードの代わりに、あなた専用のパスワードで入れます", !s.hasPassword),
-        h("button", { type: "button", class: "me-item", onclick: (e) => {
-          const on = !document.documentElement.classList.contains("big-text");
-          document.documentElement.classList.toggle("big-text", on);
-          try { localStorage.setItem("btex5-big-text", on ? "1" : "0"); } catch { /* noop */ }
-          e.currentTarget.querySelector("b").textContent = on ? "文字を元の大きさに戻す" : "文字を大きくする";
-          App.toast(on ? "文字を大きくしました(この端末のすべての画面)" : "元の大きさに戻しました");
-        } }, h("b", null, document.documentElement.classList.contains("big-text") ? "文字を元の大きさに戻す" : "文字を大きくする"), h("small", null, "小さい文字が読みにくいときに")),
-        menu("#me/pitch", "プレゼンの練習・タイマー", "30秒プレゼンの原稿と、30秒・1分・5分・25分(ポモドーロ)などのタイマー。0秒で音が鳴ります"),
-        menu("#me/goals", "今月の目標", "紹介・成約・1on1・ビジターの数を決めて、ホームで進み具合を見る"),
-        menu("#me/notify", "通知を受け取る(iPhone・Android)", "紹介・掲示板・運営連絡が届いたら、スマホに通知します"),
-        menu("#me/calendar", "Google カレンダー・Meet の設定", "1on1 の招待を受け取るアドレスと、Meet で表示される名前(定例会の出欠に使います)"),
-        menu("#invite", "ビジター招待", "招待URL の発行・そのまま使える文・招待履歴"),
-        menu("#me/card", "デジタル会員証・QR コード", "交流会でメンバーに QR を読み取ってもらうと、あなたの詳細が開きます"),
-        menu("#me/export", "自分の記録を書き出す(Excel)", "紹介・ありがとうマイル・1on1 の記録を CSV で保存"),
-        menu("#help", "使い方・よくある質問", "できること・だれに何が見えるか・困ったとき"),
-        menu("#me/feedback", "バグ・要望を送る", "使いにくいところ・ほしい機能を運営へ"),
-        menu("../teams/", "全体分析", "仕事が回る業種・紹介の流れ"),
-        menu("#me/install", "スマホのホーム画面に追加", "アプリのようにすぐ開けます"),
-        h("button", { type: "button", class: "me-item", "data-open-movie": "" }, h("b", null, "オープニングムービー"), h("small", null, "BT-EX5 の紹介動画")),
-        App.isAdmin() ? menu("#admin", "管理者メニュー", "会員の招待・ログイン設定・要望への返信", true) : null,
-        App.isAdmin() ? menu("../admin/", "名簿の管理", "メンバーの追加・編集") : null));
+      // メニューは4つのまとまりに分ける(パソコンでは2列)
+      const bigText = h("button", { type: "button", class: "me-item", onclick: (e) => {
+        const on = !document.documentElement.classList.contains("big-text");
+        document.documentElement.classList.toggle("big-text", on);
+        try { localStorage.setItem("btex5-big-text", on ? "1" : "0"); } catch { /* noop */ }
+        e.currentTarget.querySelector("b").textContent = on ? "文字を元の大きさに戻す" : "文字を大きくする";
+        App.toast(on ? "文字を大きくしました(この端末のすべての画面)" : "元の大きさに戻しました");
+      } }, h("b", null, document.documentElement.classList.contains("big-text") ? "文字を元の大きさに戻す" : "文字を大きくする"), h("small", null, "小さい文字が読みにくいときに"));
+      const group = (title, ...items) => h("section", { class: "me-group" }, h("h2", { class: "me-group-title" }, title), h("div", { class: "me-menu" }, items.filter(Boolean)));
+      el.append(h("nav", { class: "me-groups", "aria-label": "マイページのメニュー" },
+        group("プロフィール",
+          menu("../profile/", "プロフィール・1on1シートを編集", "紹介されるための情報。入れるほど紹介が届きます"),
+          menu(me ? App.profileHref(me.id, "me") : "../referral/", "ほかのメンバーからの見え方", "早見表のあなたのカード"),
+          menu("#me/card", "デジタル会員証・QR コード", "交流会でメンバーに QR を読み取ってもらうと、あなたの詳細が開きます")),
+        group("記録・目標",
+          menu("#me/goals", "今月の目標", "紹介・成約・1on1・ビジターの数を決めて、ホームで進み具合を見る"),
+          menu("#me/pitch", "プレゼンの練習・タイマー", "30秒プレゼンの原稿と、30秒〜25分(ポモドーロ)のタイマー。0秒で音が鳴ります"),
+          menu("#invite", "ビジター招待", "招待URL の発行・そのまま使える文・招待履歴"),
+          menu("#me/export", "自分の記録を書き出す(Excel)", "紹介・ありがとうマイル・1on1 の記録を CSV で保存"),
+          menu("../teams/", "全体分析", "仕事が回る業種・紹介の流れ")),
+        group("通知・設定",
+          menu("#me/password", s.hasPassword ? "パスワードを変える" : "パスワードを決める", s.hasPassword ? "" : "共通パスコードの代わりに、あなた専用のパスワードで入れます", !s.hasPassword),
+          menu("#me/notify", "通知を受け取る(iPhone・Android)", "紹介・掲示板・運営連絡が届いたら、スマホに通知します"),
+          menu("#me/calendar", "Google カレンダー・Meet の設定", "1on1 の招待を受け取るアドレスと、Meet で表示される名前"),
+          menu("#me/install", "スマホのホーム画面に追加", "アプリのようにすぐ開けます"),
+          bigText),
+        group("サポート",
+          menu("#help", "使い方・よくある質問", "できること・だれに何が見えるか・困ったとき"),
+          menu("#me/feedback", "バグ・要望を送る", "使いにくいところ・ほしい機能を運営へ"),
+          h("button", { type: "button", class: "me-item", "data-open-movie": "" }, h("b", null, "オープニングムービー"), h("small", null, "BT-EX5 の紹介動画"))),
+        App.isAdmin() ? group("運営",
+          menu("#admin", "管理者メニュー", "会員の招待・ログイン設定・要望への返信", true),
+          menu("../admin/", "名簿の管理", "メンバーの追加・編集")) : null));
 
       // お気に入り(早見表のカードの☆。この端末に保存)
       let favIds = [];

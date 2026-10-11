@@ -300,7 +300,7 @@
       App.chip(ev.online ? "オンライン" : App.AREA_LABELS[ev.area] || "会場", "info"),
       App.chip(ev.past ? "終了" : open ? "受付中" : "受付終了", ev.past || !open ? "mute" : "good"),
       ev.past ? null : App.chip(ev.myRsvp === "yes" ? "申込済" : ev.myRsvp === "no" ? "欠席で登録済" : "未申込", ev.myRsvp ? "good" : "warn"),
-      ev.deadline && !ev.past ? App.chip(`申込締切 ${App.fmtStamp(ev.deadline)}`, ev.deadlinePassed ? "mute" : "warn") : null));
+      ev.deadline && !ev.past ? App.chip(`申込締切 ${App.fmtStamp(ev.deadline).replace(/(\d+:\d+)/, "$1まで")}`, ev.deadlinePassed ? "mute" : "warn") : null));
 
     const card = h("section", { class: "evd-card" });
     const yesN = d.members.filter((m) => m.rsvp === "yes").length;
@@ -308,7 +308,7 @@
       h("div", null, h("dt", null, "開催日時"), h("dd", null, `${App.fmtDate(ev.date)} ${ev.start || ""}${ev.end ? `〜${ev.end}` : ""}`)),
       h("div", null, h("dt", null, "参加費"), h("dd", null, ev.fee || "—")),
       h("div", null, h("dt", null, "参加予定"), h("dd", null, `${yesN}名${d.visitors.length ? `(ビジター ${d.visitors.length}名)` : ""}`)),
-      h("div", null, h("dt", null, "申込締切"), h("dd", null, ev.deadline ? App.fmtStamp(ev.deadline) : "当日まで"))));
+      h("div", null, h("dt", null, "申込締切"), h("dd", null, ev.deadline ? App.fmtStamp(ev.deadline).replace(/(\d+:\d+)/, "$1まで") : "当日まで"))));
     // 開催場所(オンラインは、申し込んだ人だけに参加リンク)
     card.append(h("div", { class: "evd-block" }, h("h2", null, "開催場所"),
       ev.online

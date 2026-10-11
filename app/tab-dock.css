@@ -78,7 +78,7 @@ body.tabs-top .app-toast, body.tabs-left .app-toast, body.tabs-right .app-toast 
 }
 @media (max-width: 899px) {
   :root { --dock-w: 64px; }
-  body.tabs-left .app-tab span, body.tabs-right .app-tab span { font-size: 10px; }
+  body.tabs-left .app-tab span, body.tabs-right .app-tab span { font-size: 12px; }
 }
 
 /* ---------- 好きな場所(浮かせて置く) ----------
@@ -97,7 +97,7 @@ body.tabs-free-v .tab-grip { top: auto; bottom: 4px; right: 50%; transform: tran
 body.tabs-free-v .app-tab .app-badge { top: 4px; left: calc(50% + 6px); }
 body.tabs-free .app-toast { bottom: 24px; }
 @media (max-width: 899px) {
-  body.tabs-free-v .app-tab span { font-size: 10px; }
+  body.tabs-free-v .app-tab span { font-size: 12px; }
 }
 /* リンク(タブ)をつかんだときに、ブラウザがリンクのドラッグを始めないように */
 .app-tabs a, .app-tabs svg { -webkit-user-drag: none; user-drag: none; }
