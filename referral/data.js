@@ -39,11 +39,12 @@ const REF_CATEGORY_GROUPS = [
 
 // 業種と話題の対応。業種で絞り込むと、その業種の人に加えて、この話題を扱う人も出る
 // (例: 本業がシステム開発でも、Web制作を扱う人は「Web制作」に出る)。
-// その業種の仕事を「自分で作れる」話題だけを入れる(公式LINEの運用・AIシステムの導入・
-// パーソナルブランディング・SEO だけの人が、システム開発・デザイン・Web制作に出ないように)
+// その業種の仕事を「自分で作れる」話題だけを入れる(公式LINEの運用・パーソナルブランディング・
+// SEO だけの人が、システム開発・デザイン・Web制作に出ないように)。
+// システム開発は「システム開発・業務効率化」を扱う人(山本さん・柳橋さん)
 const REF_CATEGORY_TOPICS = {
   "AI研修・AI活用": ["ai", "aitraining"],
-  "システム開発": [],
+  "システム開発": ["efficiency"],
   "Web制作": ["web"],
   "SNS運用・集客": ["sns", "line"],
   "動画編集・映像制作": ["video", "prvideo"],
@@ -566,7 +567,7 @@ const REF_SEED_MEMBERS = [
     targets: ["salon", "any"],
     prospects: ["owner", "individual"],
   }),
-  rosterMember("m11", "品川 瑞樹", "株式会社アドバンス/集客・コンサル", "", "SNS運用・集客", ["sns", "web", "consult"]),
+  rosterMember("m11", "品川 瑞樹", "株式会社アドバンス/集客・コンサル", "", "SNS運用・集客", ["sns", "consult"]),
   Object.assign(rosterMember("m12", "菅野 節子", "リンパレディアソック 代表者/誰でも健康アドバイザー", "Team Bloom∞🌸", "美容・健康", ["health"]), {
     business: "リンパレディ講座。",
     customers: "セラピスト、施術者、一般のお客様、OL、主婦",
@@ -584,7 +585,7 @@ const REF_SEED_MEMBERS = [
     targets: ["any"],
     prospects: ["owner", "staff", "individual"],
   }),
-  Object.assign(rosterMember("m16", "桜羽 李果", "株式会社LEFANA/女性向けSNSブランディング", "Team Bloom∞🌸", "デザイン・ブランディング", ["branding", "sns", "web", "design", "video", "photo", "casting"]), {
+  Object.assign(rosterMember("m16", "桜羽 李果", "株式会社LEFANA/女性向けSNSブランディング", "Team Bloom∞🌸", "デザイン・ブランディング", ["branding", "sns", "web", "design", "video", "photo"]), {
     business: "女性向けに特化したデザイン会社。ブランディング、Web制作・運営・コンサルティング、グラフィックデザイン、SNS運用代行、インフルエンサー・モデルのキャスティング、写真・映像撮影、ビジネスマッチング。",
     customers: "女性向けの商材をお持ちの方、美容クリニック、お菓子・スイーツ業界、不動産",
     wants: "Webディレクター、Webデザイナー、SNS運用ディレクター、営業など(一緒に働く仲間)",
@@ -741,6 +742,8 @@ const REF_SEED_REVISIONS = [
   { rev: "2026-10-amamiya-hp", ids: ["m02"], fields: ["links"], addLinks: ["website"] },
   // BVB・イケボスパルタ塾のページの内容で、あまみや 七音さんの事業内容・求める紹介・こんな話が出たらをさらに充実
   { rev: "2026-10-amamiya-profile-2", ids: ["m02"], fields: ["business", "wants", "triggers"], force: true },
+  // 運営の依頼で、品川さんを「Web制作」から、桜羽さんを「声・司会・キャスティング」から外す(編集済みでも外す)
+  { rev: "2026-10-category-fix-1", ids: ["m11", "m16"], fields: ["topics"], removeTopics: { m11: ["web"], m16: ["casting"] } },
 ];
 
 // 紹介に効く項目(重要な順)。足りない項目は管理者ページの「お願い文」と、
