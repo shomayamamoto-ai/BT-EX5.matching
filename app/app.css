@@ -716,3 +716,10 @@ html.big-text body { zoom: 1.15; }
 .task-due.is-soon { color: var(--warn); }
 .task-due.is-over { color: #c23b22; }
 .task-note, .task-people { color: var(--text-light) !important; }
+
+/* 狭い画面(幅320pxなど)で、中身の最小幅に引っぱられて枠が画面からはみ出さないように */
+.app-cards > *, .home-todo > *, .ev-list > *, .ann-list > *, .board-list > *, .app-form > *, .app-picker > *,
+.one-mode-box > *, .tpl-list > *, .task-list > *, .rank-controls > *, .app-grid2 > *, .home-actions > *,
+.home-stats > *, .dash-kpis > *, .evd-info > *, .ref-card-body > * { min-width: 0; }
+.ref-card-body dd { overflow-wrap: anywhere; }
+.app-row-main small.is-over { color: #c23b22; font-weight: 700; }

@@ -102,6 +102,28 @@
           h("td", null, m.monthMiles ? App.yen(m.monthMiles) : "0"), h("td", null, String(m.monthOnes)),
           h("td", null, m.attendRate === null ? "—" : `${m.attendRate}%`))))))));
 
+    // やることの進み具合(終わっていないもの。期限の近い順)
+    const tasks = d.tasks || [];
+    const overdueMembers = d.members.filter((m) => m.overdueTasks).sort((a, b) => b.overdueTasks - a.overdueTasks);
+    const remindText = (t) => [
+      "【BT-EX5 運営より】やることのお願い",
+      `「${t.title}」${t.due ? `(期限 ${App.fmtDate(t.due)})` : ""}`,
+      `まだの方:${t.notDone.map((n) => `${n}さん`).join("、")}`,
+      "終わったら、会員サイトのホーム「あなたのやること」でチェックを入れてください。",
+      App.siteUrl("#home"),
+    ].join("\n");
+    el.append(App.section(`やることの進み具合(終わっていない ${tasks.length}件)`,
+      tasks.length ? h("ul", { class: "app-list" }, tasks.map((t) => {
+        const over = t.due && t.due < App.todayKey();
+        return h("li", null, h("div", { class: "app-row" },
+          h("span", { class: "app-row-main" },
+            h("b", null, t.title),
+            h("small", { class: over ? "is-over" : "" }, [t.due ? `${over ? "期限切れ " : "期限 "}${App.fmtDate(t.due)}` : "期限なし", t.eventTitle ? ` ・ ${t.eventTitle}` : "", ` ・ 済 ${t.doneCount}/${t.total}`].join("")),
+            t.notDone.length <= 6 ? h("small", null, `まだ:${t.notDone.join("、")}`) : null),
+          App.btn("声かけ文", () => App.copyText(remindText(t), "コピーしました。LINE などで送ってください"), "ghost small")));
+      })) : App.empty("終わっていないやることはありません。定例会の詳細から、担当と期限つきで配れます。"),
+      overdueMembers.length ? h("p", { class: "app-field-hint" }, `期限切れのやることがある人:${overdueMembers.map((m) => `${m.name}(${m.overdueTasks})`).join("、")}`) : null));
+
     // 検索での表示(紹介診断・相談アシスタント・ジャンルで探す の結果に出た回数)
     const s = d.search || { total: 0, misses: [] };
     const bySearch = d.members.slice().sort((a, b) => b.searchShown - a.searchShown || b.searchTop - a.searchTop);

@@ -1625,6 +1625,13 @@
           };
         });
         var sc = searchCounts(db, month + "-01", month + "-31");
+        // やることの進み具合(終わっていないもの)
+        var openTasks = db.tasks.filter(function (t) { return t.assignees.some(function (id) { return !(t.done || {})[id]; }); });
+        members.forEach(function (row) {
+          var mine = openTasks.filter(function (t) { return t.assignees.indexOf(row.id) !== -1 && !(t.done || {})[row.id]; });
+          row.openTasks = mine.length;
+          row.overdueTasks = mine.filter(function (t) { return t.due && t.due < today(); }).length;
+        });
         members.forEach(function (row) {
           var m = member(db, row.id);
           row.topicCount = m && Array.isArray(m.topics) ? m.topics.length : 0;
@@ -1633,6 +1640,11 @@
         });
         return c.ok({
           month: month, prevMonth: prev, totals: totals(month), prevTotals: totals(prev), events: monthEvents, members: members, now: c.nowMs(),
+          tasks: openTasks.sort(function (a, b) { return (a.due || "9999").localeCompare(b.due || "9999"); }).slice(0, 30).map(function (t) {
+            var v = taskView(db, t, w.id);
+            return { id: v.id, title: v.title, due: v.due, eventTitle: v.eventTitle, byName: v.byName, doneCount: v.doneCount, total: v.assignees.length,
+              notDone: v.assignees.filter(function (a) { return !a.done; }).map(function (a) { return a.name; }) };
+          }),
           search: { total: sc.n, misses: db.searchMisses.slice(-20).reverse().map(function (x) { return { at: x.at, text: x.text, byName: nameOf(db, x.by) }; }) },
         });
       }

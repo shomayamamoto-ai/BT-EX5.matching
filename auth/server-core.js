@@ -339,6 +339,11 @@ var BtexServerCore = (function () {
         if (userIds.indexOf(db.sessions[t].userId) !== -1) delete db.sessions[t];
       });
       if (Array.isArray(db.pushSubs)) db.pushSubs = db.pushSubs.filter(function (s) { return s.memberId !== id; });
+      // やることの担当から外す(担当がいなくなったものは消す)
+      if (Array.isArray(db.tasks)) {
+        db.tasks.forEach(function (t) { t.assignees = (t.assignees || []).filter(function (x) { return x !== id; }); });
+        db.tasks = db.tasks.filter(function (t) { return t.assignees.length; });
+      }
     }
 
     function removeMember(db, id) {
