@@ -38,6 +38,7 @@
           meStat("紹介された", s.received, "件"),
           meStat("成約", s.won, "件"),
           meStat("1on1", s.oneOnOnes, "回")),
+        goalsBlock(d.me.goals, s),
         h("div", { class: "home-me-foot" },
           h("span", null, "ありがとうマイル ", h("b", null, App.yen(s.milesIn)), h("small", null, ` ・ 累計 ${App.yen(s.milesInAll)}`)),
           h("button", { type: "button", class: "home-share", onclick: () => App.shareText([
@@ -222,10 +223,13 @@
       const tips = h("div", { class: "home-tips" });
       side.append(tips);
       if (d.missing.length) {
+        const total = typeof PROFILE_ITEMS !== "undefined" ? PROFILE_ITEMS.length : d.missing.length + 1;
+        const pct = Math.max(0, Math.round(((total - d.missing.length) / total) * 100));
         tips.append(h("a", { class: "home-nudge", href: "../profile/" },
           h("span", { class: "home-nudge-icon", "aria-hidden": "true" }, "✍️"),
           h("span", { class: "home-nudge-main" },
-            h("b", null, "紹介されやすくするために"),
+            h("b", null, `紹介されやすくするために(プロフィール ${pct}%)`),
+            h("span", { class: "home-goal-bar is-profile", "aria-hidden": "true" }, h("i", { style: `width:${pct}%` })),
             h("span", null, `まだ入っていない項目:${d.missing.slice(0, 4).join("・")}${d.missing.length > 4 ? " ほか" : ""}`)),
           h("span", { class: "home-go", "aria-hidden": "true" }, "›")));
       }
@@ -243,6 +247,22 @@
       }
     },
   };
+
+  // 今月の目標の進み具合(目標がなければ「決める」だけ)
+  function goalsBlock(goals, s) {
+    const list = (App.GOALS || []).filter(([k]) => goals && goals[k] > 0);
+    if (!list.length) return h("button", { type: "button", class: "home-goal-set", onclick: () => App.goalsSheet(goals, () => App.route()) }, "＋ 今月の目標を決める");
+    return h("div", { class: "home-goals" },
+      list.map(([k, label, unit]) => {
+        const now = s[k] || 0, goal = goals[k];
+        const done = now >= goal;
+        return h("div", { class: `home-goal${done ? " is-done" : ""}` },
+          h("span", { class: "home-goal-label" }, label),
+          h("span", { class: "home-goal-bar", "aria-hidden": "true" }, h("i", { style: `width:${Math.min(100, Math.round((now / goal) * 100))}%` })),
+          h("span", { class: "home-goal-num" }, done ? `達成 ${now}${unit}` : `${now} / ${goal}${unit}`));
+      }),
+      h("button", { type: "button", class: "home-goal-edit", onclick: () => App.goalsSheet(goals, () => App.route()) }, "目標を変える"));
+  }
 
   function alertLink(href, title, sub, cls) {
     return h("a", { class: `home-alert ${cls || ""}`, href }, h("b", null, title), h("span", null, sub));

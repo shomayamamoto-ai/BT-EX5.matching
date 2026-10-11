@@ -1010,3 +1010,49 @@ body.tabs-right .app-to-top { right: calc(var(--dock-w) + 22px); }
 @media (max-width: 380px) { .app-top .op-movie-btn span { display: none; } }
 .srch-results > *, .srch-sec, .srch-sec .app-list { min-width: 0; max-width: 100%; }
 .srch-sec .app-row-main b { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+
+/* ---------- 今月の目標(ホームの「今月のあなた」の中) ---------- */
+.home-goals { display: grid; gap: 7px; margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255, 255, 255, 0.12); }
+.home-goal { display: grid; grid-template-columns: 6.2em minmax(0, 1fr) auto; align-items: center; gap: 10px; font-size: 12px; color: #d9c4b0; }
+.home-goal-label { font-weight: 700; white-space: nowrap; }
+.home-goal-bar { position: relative; display: block; height: 6px; border-radius: 6px; background: rgba(255, 255, 255, 0.12); overflow: hidden; }
+.home-goal-bar i { position: absolute; inset: 0 auto 0 0; border-radius: 6px; background: linear-gradient(90deg, #9c7433, #ead39f); }
+.home-goal-num { font-family: "Inter", sans-serif; font-weight: 700; color: #f3e6cb; white-space: nowrap; }
+.home-goal.is-done .home-goal-num { color: #f3d38c; }
+.home-goal.is-done .home-goal-bar i { background: linear-gradient(90deg, #c9a45c, #fff1c2); box-shadow: 0 0 10px rgba(243, 211, 140, 0.6); }
+.home-goal-edit, .home-goal-set { justify-self: end; border: none; background: none; padding: 2px 0; font-size: 11.5px; font-weight: 700; color: #cbb38c; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+.home-goal-set { display: block; margin: 10px 0 0 auto; }
+.home-nudge .home-goal-bar.is-profile { margin: 5px 0 3px; background: #eee5d6; height: 5px; }
+
+/* 目標を決めるシート */
+.goal-rows { display: grid; gap: 10px; margin: 6px 0 16px; }
+.goal-row { display: grid; grid-template-columns: minmax(0, 1fr) 44px 3em 1.6em 44px; align-items: center; gap: 6px; padding: 10px 12px; border-radius: 14px; background: #fff; border: 1px solid var(--line); }
+.goal-row > span { font-weight: 800; font-size: 14px; }
+.goal-row > b { text-align: center; font-family: "Inter", sans-serif; font-size: 22px; }
+.goal-row > small { color: var(--text-sub); font-size: 12px; }
+.goal-step { width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--line-strong); background: #fffdf8; font-size: 20px; font-weight: 800; color: var(--accent-dark); cursor: pointer; }
+
+/* ---------- 30秒プレゼンの練習 ---------- */
+.pitch-tools { align-items: center; margin-top: 0; margin-bottom: 8px; }
+.pitch-saved { font-size: 11.5px; color: var(--good); font-weight: 700; }
+.pitch-text { width: 100%; padding: 12px 14px; border-radius: 12px; border: 1.5px solid var(--line-strong); background: #fffdf8; font-size: 16px; line-height: 1.75; resize: vertical; }
+.pitch-text:focus { outline: none; border-color: var(--accent); }
+.pitch-meter { margin: 6px 2px 12px; font-size: 12.5px; font-weight: 700; color: var(--text-sub); }
+.pitch-meter.is-good { color: var(--good); }
+.pitch-meter.is-over { color: #a3342a; }
+.pitch-timer { display: flex; align-items: center; gap: 18px; padding: 16px; border-radius: 18px; background: var(--grad); color: #f4e6c4; border: 1px solid rgba(201, 164, 92, 0.45); }
+.pitch-ring { --p: 1; position: relative; flex-shrink: 0; width: 112px; height: 112px; border-radius: 50%; display: grid; place-content: center; text-align: center;
+  background: conic-gradient(#ead39f calc(var(--p) * 360deg), rgba(255, 255, 255, 0.1) 0); transition: background 0.1s; }
+.pitch-ring::before { content: ""; position: absolute; inset: 7px; border-radius: 50%; background: #17120e; }
+.pitch-ring > * { position: relative; }
+.pitch-clock { font-family: "Cormorant Garamond", "Inter", serif; font-size: 46px; font-weight: 600; line-height: 1; color: #f6e7c4; }
+.pitch-ring small { font-size: 11px; color: #cbb38c; }
+.pitch-ring.is-last { background: conic-gradient(#e8a24a calc(var(--p) * 360deg), rgba(255, 255, 255, 0.1) 0); }
+.pitch-ring.is-last .pitch-clock { color: #ffcf8a; }
+.pitch-ring.is-end { background: #a3342a; animation: pitch-end 0.6s ease 2; }
+@keyframes pitch-end { 50% { transform: scale(1.06); } }
+.pitch-btns { display: grid; gap: 8px; flex: 1; min-width: 0; }
+.pitch-btns .app-btn.ghost { background: transparent; color: #ead39f; border-color: rgba(234, 211, 159, 0.45); }
+.evd-pitch { margin-top: 10px; }
+/* スマホでは上の見出しが詰まらないよう、ムービーのボタンはマイページのメニューから */
+@media (max-width: 480px) { .app-top .op-movie-btn { display: none; } }
