@@ -1127,3 +1127,48 @@ body.tabs-right .app-to-top { right: calc(var(--dock-w) + 22px); }
 .mention-list button { display: flex; align-items: center; gap: 8px; width: 100%; padding: 8px 12px; border: none; background: none; font-size: 14px; font-weight: 700; text-align: left; cursor: pointer; color: var(--text); }
 .mention-list li + li { border-top: 1px solid var(--line); }
 .mention-list button:hover, .mention-list button:focus { background: #f7f1e5; }
+
+/* ---------- 30秒プレゼンの進行(app/round.js) ---------- */
+.pitch-round { margin-top: 12px; }
+.home-timer-round { display: block; width: 100%; margin-top: 12px; padding: 12px 14px; border-radius: 14px; border: 1.5px dashed rgba(168, 129, 62, 0.55); background: #fffaf0; color: var(--accent-dark); font-size: 13.5px; font-weight: 800; text-align: left; cursor: pointer; }
+.round-label { margin: 14px 2px 8px; font-size: 13px; font-weight: 800; color: var(--text-sub); }
+.round-per { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; }
+.round-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.round-head .app-btn-row { margin-top: 6px; }
+.round-list { list-style: none; margin: 8px 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; max-height: 44vh; overflow-y: auto; overflow-x: hidden; }
+.round-item { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 12px; background: #fffdf8; border: 1px solid var(--line); }
+.round-no { flex-shrink: 0; width: 26px; height: 26px; border-radius: 50%; display: grid; place-content: center; background: var(--grad); color: #f6e7c4; font-size: 12px; font-weight: 800; }
+.round-name { flex: 1; min-width: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; }
+.round-name b { font-size: 14.5px; }
+.round-name small { width: 100%; color: var(--text-light); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.round-move { display: flex; gap: 4px; flex-shrink: 0; }
+.round-move button { width: 34px; height: 34px; border-radius: 10px; border: 1px solid var(--line-strong); background: #fff; font-weight: 800; cursor: pointer; }
+.round-move button:disabled { opacity: 0.35; cursor: default; }
+.round-add { width: 100%; padding: 10px 12px; border-radius: 12px; border: 1.5px solid var(--line-strong); background: #fff; font-size: 14px; }
+.round-total { margin: 10px 2px 0; font-size: 13px; font-weight: 800; color: var(--accent-dark); }
+.round-go { margin-top: 14px; }
+html.round-open, html.round-open body { overflow: hidden; }
+.round-run { position: fixed; inset: 0; z-index: 210; display: flex; flex-direction: column; align-items: center; justify-content: space-between; gap: 12px;
+  padding: calc(18px + env(safe-area-inset-top)) 16px calc(18px + env(safe-area-inset-bottom));
+  background: radial-gradient(ellipse at 50% 35%, #2a1f16 0%, #0d0907 70%); color: #f6e7c4; text-align: center; }
+.round-title { margin: 0; font-size: 13px; letter-spacing: 0.2em; color: #cbb38c; }
+.round-stage { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; width: 100%; min-height: 0; }
+.round-stage.is-in { animation: round-in 0.45s ease; }
+@keyframes round-in { from { opacity: 0; transform: translateY(14px); } }
+.round-count { margin: 0; font-size: 14px; font-weight: 700; color: #cbb38c; letter-spacing: 0.1em; }
+.round-now-name { margin: 0; font-family: "Shippori Mincho", serif; font-size: clamp(30px, 7vw, 76px); font-weight: 600; line-height: 1.2; color: #fff3dc; overflow-wrap: anywhere; }
+.round-now-sub { margin: 0; font-size: clamp(14px, 2.4vw, 22px); color: #d9c08e; }
+.round-ring { --p: 1; position: relative; width: min(56vw, 46vh, 340px); aspect-ratio: 1; margin-top: 8px; border-radius: 50%; display: grid; place-content: center;
+  background: conic-gradient(#e9cf98 calc(var(--p) * 360deg), rgba(255, 255, 255, 0.1) 0); }
+.round-ring::before { content: ""; position: absolute; inset: 4%; border-radius: 50%; background: #120d0a; }
+.round-clock { position: relative; font-family: "Cormorant Garamond", "Inter", serif; font-size: clamp(54px, 13vw, 132px); font-weight: 600; line-height: 1; color: #f6e7c4; font-variant-numeric: tabular-nums; }
+.round-clock.is-gap { font-family: "Noto Sans JP", sans-serif; font-size: clamp(18px, 3.4vw, 30px); font-weight: 800; color: #d9c08e; }
+.round-ring.is-last { background: conic-gradient(#e8a24a calc(var(--p) * 360deg), rgba(255, 255, 255, 0.1) 0); }
+.round-ring.is-last .round-clock { color: #ffcf8a; }
+.round-ring.is-end { background: #a3342a; }
+.round-next { margin: 4px 0 0; font-size: clamp(14px, 2.4vw, 20px); color: #cbb38c; }
+.round-ctrl { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; width: 100%; max-width: 640px; }
+.round-btn { flex: 1 1 120px; min-height: 52px; border-radius: 14px; border: 1px solid rgba(234, 211, 159, 0.5); background: rgba(255, 255, 255, 0.04); color: #f3dfb3; font-size: 15px; font-weight: 800; cursor: pointer; }
+.round-btn.is-main { background: linear-gradient(180deg, #e9cf98, #b8873f); color: #1a120c; border-color: transparent; }
+.round-btn:disabled { opacity: 0.35; cursor: default; }
+.round-end { flex: 0 1 90px; }

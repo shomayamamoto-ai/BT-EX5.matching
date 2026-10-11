@@ -266,9 +266,9 @@ composer.addPass(new RenderPass(scene, camera));
 const bloom = new UnrealBloomPass(new THREE.Vector2(W, H), 0.6, 0.55, 0.32);
 composer.addPass(bloom);
 const finish = new ShaderPass({
-  uniforms: { tDiffuse: { value: null }, uTime: { value: 0 }, uFade: { value: 1 }, uAberr: { value: 0.0012 } },
+  uniforms: { tDiffuse: { value: null }, uTime: { value: 0 }, uAberr: { value: 0.0012 } },
   vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`,
-  fragmentShader: `uniform sampler2D tDiffuse; uniform float uTime; uniform float uFade; uniform float uAberr; varying vec2 vUv;
+  fragmentShader: `uniform sampler2D tDiffuse; uniform float uTime; uniform float uAberr; varying vec2 vUv;
     float hash(vec2 p){ return fract(sin(dot(p, vec2(12.9898,78.233)) + uTime * 37.0) * 43758.5453); }
     void main(){
       vec2 d = vUv - 0.5; float r = length(d);
@@ -277,11 +277,20 @@ const finish = new ShaderPass({
       col *= smoothstep(0.95, 0.25, r * 1.08);           // 周辺減光
       col += (hash(vUv * 1000.0) - 0.5) * 0.010;          // フィルムの粒(動画が重くならないよう、うっすら)
       col += (fract(sin(dot(gl_FragCoord.xy, vec2(12.9898, 78.233))) * 43758.5453) - 0.5) / 255.0; // 暗い所の段差を消すディザ
-      gl_FragColor = vec4(col * uFade, 1.0);
+      gl_FragColor = vec4(col, 1.0);
     }`,
 });
 composer.addPass(finish);
 composer.addPass(new OutputPass());
+// 始まりと終わりの暗転は、色を整えたあと(見たままの明るさ)でかける。
+// 前でかけると、明るい金は色の調整で明るさが残り、黒まで落ちきらない
+const fadePass = new ShaderPass({
+  uniforms: { tDiffuse: { value: null }, uFade: { value: 1 } },
+  vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`,
+  fragmentShader: `uniform sampler2D tDiffuse; uniform float uFade; varying vec2 vUv;
+    void main(){ vec4 c = texture2D(tDiffuse, vUv); gl_FragColor = vec4(c.rgb * uFade, 1.0); }`,
+});
+composer.addPass(fadePass);
 
 // ---------- 文字(DOM。明朝の字幕・名前・一言・五つの言葉) ----------
 const $ = (id) => document.getElementById(id);
@@ -374,21 +383,28 @@ function render(t) {
   const FLY_DONE = SPLIT + FLY_T + 0.2;
 
   // 金の糸(順番に伸びる)・巡る光
+  const curves = [];
   threads.forEach((m, i) => {
     const p = easeInOut(prog(t, 4.4 + i * 0.28, 5.2 + i * 0.28));
     const fadeOut = 1 - easeIn(prog(t, 8.3, 9.0));
     m.visible = t > FLY_DONE && p > 0.01 && fadeOut > 0.01;
-    if (!m.visible) { pulses[i].material.opacity = 0; return; }
+    if (!m.visible) return;
     const a = vertex(i, pentR), b = vertex(i + 1, pentR);
     a.z = nodes[i].g.position.z; b.z = nodes[(i + 1) % 5].g.position.z;
     const { geo, curve } = threadGeo(a, b, p, 0.14 * (1 - gather), 0.01);
     m.geometry.dispose(); m.geometry = geo;
     m.material.opacity = fadeOut;
-    const run = prog(t, 5.9, 8.4);
-    const q = ((t - 5.9) * 0.55 + i * 0.2) % 1;
-    pulses[i].position.copy(curve.getPoint(clamp(q)));
-    pulses[i].material.opacity = run > 0 ? 0.9 * fadeInOut(t, 5.9, 6.3, 8.1, 8.6) : 0;
-    pulses[i].scale.setScalar(0.32);
+    curves[i] = curve;
+  });
+  // 巡る光: 5つの光が等しい間をあけて、同じ速さで五角形をひと回りする(辺から辺へ途切れずに移る)
+  pulses.forEach((s, k) => {
+    const on = fadeInOut(t, 6.25, 6.65, 8.1, 8.6);
+    const P = (((t - 6.25) * 0.5 + k) % 5 + 5) % 5; // 五角形の上の位置(0〜5。整数のところが頂点)
+    const side = Math.floor(P), c = curves[side];
+    if (!c || on <= 0 || !threads[side].visible) { s.material.opacity = 0; return; }
+    s.position.copy(c.getPointAt(P - side)); // 長さに沿って同じ速さで
+    s.material.opacity = 0.9 * on;
+    s.scale.setScalar(0.3);
   });
 
   // ロゴ: 弧が伸びて輪になり、点と内側の五角形が出る
@@ -446,7 +462,8 @@ function render(t) {
   bloom.strength = 0.6 + 0.8 * (hit >= 0 ? Math.exp(-hit * 4) : 0) + splitFlash * 0.5 - 0.15 * easeInOut(prog(t, 10.0, 11.5)); // 落ち着いたら金属の質感が見えるよう少し弱める
   renderer.toneMappingExposure = 1.05 + (hit >= 0 ? Math.exp(-hit * 7) * 0.25 : 0);
   finish.uniforms.uTime.value = Math.floor(t * 10) / 10; // 粒は 1/10 秒ごとに変わる
-  finish.uniforms.uFade.value = Math.min(easeOut(prog(t, 0, 0.6)), 1 - easeIn(prog(t, 12.3, 13.0)));
+  // 終わり: 12.0 秒からなめらかに暗くなり、12.75 秒で真っ黒(最後の 0.25 秒は黒のまま)
+  fadePass.uniforms.uFade.value = Math.min(easeOut(prog(t, 0, 0.6)), 1 - easeInOut(prog(t, 12.0, 12.75)));
   finish.uniforms.uAberr.value = 0.0012 + (hit >= 0 ? Math.exp(-hit * 5) * 0.006 : 0);
 
   // 字幕
@@ -458,14 +475,14 @@ function render(t) {
   $("line").style.letterSpacing = `${0.3 + (1 - la) * 0.12}em`;
   // 名前と一言
   const wo = easeOut(prog(t, 9.35, 10.6));
-  $("word").style.opacity = wo * finish.uniforms.uFade.value;
+  $("word").style.opacity = wo * fadePass.uniforms.uFade.value;
   $("word").style.letterSpacing = `${lerp(0.62, 0.36, wo)}em`;
   $("word").style.filter = `blur(${(1 - wo) * 8}px)`;
   $("word").style.backgroundPosition = `${lerp(110, -10, easeInOut(prog(t, 10.9, 12.1)))}% 0, 0 0`; // 文字に光が流れる
   $("rule").style.transform = `scaleX(${easeInOut(prog(t, 9.9, 11.0))})`;
-  $("rule").style.opacity = finish.uniforms.uFade.value;
+  $("rule").style.opacity = fadePass.uniforms.uFade.value;
   const to = easeOut(prog(t, 10.5, 11.6));
-  $("tag").style.opacity = to * finish.uniforms.uFade.value;
+  $("tag").style.opacity = to * fadePass.uniforms.uFade.value;
   $("tag").style.transform = `translateY(${(1 - to) * 14}px)`;
 
   composer.render();

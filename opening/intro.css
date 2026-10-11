@@ -3,14 +3,17 @@
   position: fixed;
   inset: 0;
   z-index: 200;
-  background: #0d0807;
+  background: #000;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: opacity 0.45s ease;
 }
 .op-intro.is-closing { opacity: 0; pointer-events: none; }
-.op-intro-video { width: 100%; height: 100%; object-fit: contain; background: #0d0807; }
+/* 終わり: 映像を黒へ溶かし、ボタンと案内も消す(そのあと全体が消えて、うしろの画面が出る) */
+.op-intro-video, .op-intro-btn, .op-intro-hint { transition: opacity 0.5s ease; }
+.op-intro.is-ending .op-intro-video, .op-intro.is-ending .op-intro-btn, .op-intro.is-ending .op-intro-hint { opacity: 0; }
+.op-intro-video { width: 100%; height: 100%; object-fit: contain; background: #000; }
 .op-intro { cursor: pointer; }
 .op-intro-skip,
 .op-intro-sound {

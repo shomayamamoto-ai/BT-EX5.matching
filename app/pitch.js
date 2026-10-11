@@ -215,6 +215,7 @@
         }, "ghost small"), saved),
         text, meter,
         App.timerWidget({ extra: "speechSynthesis" in window ? sayBtn : null, onChange: () => update() }),
+        App.roundSheet ? h("button", { type: "button", class: "app-btn ghost wide pitch-round", onclick: () => App.roundSheet() }, "⏱ 定例会で、みんなの30秒プレゼンを順番に進行する") : null,
         h("p", { class: "app-field-hint" }, "残りわずか(1分までは残り10秒、それより長いときは残り1分)と、0秒になったときに、音・画面の色・スマホのふるえ(対応する端末)でお知らせします。マナーモードのときは音が出ないことがあります。シートを閉じても、タイマーは動きつづけます。"));
 
       // 文字数と、読むのにかかる時間の目安(5分までの長さで比べる)

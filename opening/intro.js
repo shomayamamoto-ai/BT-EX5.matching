@@ -54,7 +54,11 @@
     }
     function onKey(e) { if (e.key === "Escape") close(); }
 
-    video.addEventListener("ended", () => setTimeout(close, 600));
+    // 終わり: 映像は最後に真っ黒になる。念のため最後の 0.6 秒で映像を黒へ溶かし、ボタンも消してから閉じる
+    video.addEventListener("timeupdate", () => {
+      if (video.duration && video.duration - video.currentTime < 0.6) current.classList.add("is-ending");
+    });
+    video.addEventListener("ended", () => { current.classList.add("is-ending"); setTimeout(close, 450); });
     // どの形式も再生できなかったとき(最後の source のエラー)は閉じる
     const lastSource = video.querySelector("source:last-of-type");
     if (lastSource) lastSource.addEventListener("error", close);
