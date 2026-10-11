@@ -12,6 +12,7 @@ const RefScoring = (function () {
   // 配点: 話題50 + 業種15 + 相手のタイプ10 + 会い方・エリア25 = 100
   //   話題50 = 選んだ方法(ジャンル)をどれだけ扱えるか42 + そのジャンルがその人の本業に近いか8
   //   (扱う話題が少ない専門の人ほど高い。何でも扱う人ばかりが上に来ないようにする)
+  // 言葉を入れて探したのに、その言葉が本人の説明に1つもない人は、表示の一致度を70%(言いかえの一致は75%)までにする。
   // キーワード一致で+15(上限100。入力した言葉が本人の説明に含まれるのは最も具体的な一致なので、
   // 活動範囲の入力の有無より重くする。話題の言いかえでの一致は+8)。話題もキーワードも一致しない人は30%で頭打ち。
   // 話題かキーワードが合った人には、役職・役割の基礎ポイント(REF_BASE_POINTS、+5〜+10)を足す。
@@ -102,7 +103,11 @@ const RefScoring = (function () {
     // 役職・役割の基礎ポイント(data.js の REF_BASE_POINTS)。話題かキーワードが合った人だけに足す
     else if (typeof refBasePoints === "function" && refBasePoints(m.id)) s += refBasePoints(m.id);
 
-    return { score: Math.round(Math.min(100, s)), raw: s, reasons, topicHits, keywordHits };
+    // 表示する一致度: 入力した言葉が本人の説明に1つもないときは、話題が合っていても高く見せない
+    // (言いかえだけの一致は75%、言葉の一致なしは70%まで)。並び順(raw)は変えない
+    let score = Math.round(Math.min(100, s));
+    if (tokens.length && !textHits.length) score = Math.min(score, synonymHits.length ? 75 : 70);
+    return { score, raw: s, reasons, topicHits, keywordHits };
   }
 
   // 日替わりの並び用(同じ日・同じ人は同じ値)
@@ -124,7 +129,9 @@ const RefScoring = (function () {
   const FAIR_MARGIN = 5;
   function rankMembers(members, a, opts) {
     const o = Object.assign({ min: 40, limit: 5, fair: true, day: todayKey() }, opts);
+    // 表示する一致度の順(上の人ほど%が高く見えるように)、同じ%の中は raw(役職・役割の基礎ポイントを含む)の順
     const byScore = (x, y) =>
+      y.sc.score - x.sc.score ||
       y.sc.raw - x.sc.raw ||
       y.sc.keywordHits.length - x.sc.keywordHits.length ||
       x.m.topics.length - y.m.topics.length;

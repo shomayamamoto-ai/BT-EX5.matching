@@ -1347,3 +1347,25 @@ a.ref-btn { display: inline-flex; align-items: center; justify-content: center; 
   font-size: 14px; font-weight: 800; text-decoration: none;
 }
 .md-back:hover { border-color: #a8813e; }
+
+/* ---------- スマホ: メンバーの一覧まで早くたどりつけるように ---------- */
+@media (max-width: 720px) {
+  .ref-steps { display: none; }
+  .ref-intro { margin-bottom: 12px; }
+  .ref-intro .ref-lead { font-size: 14px; margin-top: 4px; }
+  .cs-box .cs-lead { display: none; }
+  .diag-cta-sub { display: none; }
+  /* 紹介し合えそうな人は、横にすべらせて見る1列に */
+  .pt-list { display: flex; gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 6px; -webkit-overflow-scrolling: touch; }
+  .pt-list > * { flex: 0 0 82%; scroll-snap-align: start; }
+}
+/* タップしやすい大きさ(見出しのリンク・ジャンル) */
+.ref-header-link { display: inline-flex; align-items: center; min-height: 40px; padding: 0 4px; }
+.ref-genre { min-height: 36px; }
+
+/* 見つからなかったときの次の一手 */
+.ref-empty-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 12px; }
+/* メンバーの詳細: 紹介を記録・紹介文をコピーは、いつも下に見えるように */
+.md-actions { position: sticky; bottom: 0; z-index: 2; margin: 16px -4px 0; padding: 10px 4px calc(10px + env(safe-area-inset-bottom, 0px)); background: linear-gradient(180deg, rgba(255, 253, 248, 0), #fffdf8 30%); }
+/* ↑ボタンが「条件をすべてクリア」に重ならないように */
+.ref-count-row { padding-right: 56px; }

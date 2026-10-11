@@ -358,6 +358,7 @@
       <div class="md-actions">
         <button type="button" class="ref-btn" data-copy="${m.id}">紹介文をコピー</button>
         <button type="button" class="ref-btn ghost" data-ask="${m.id}">打診文をコピー</button>
+        <button type="button" class="ref-btn ghost" data-share-member="${escapeHtml(m.id)}">この人を共有</button>
         <button type="button" class="ref-btn ghost" data-close-detail>閉じる</button>
       </div>`;
   }
@@ -519,7 +520,18 @@
     }
     $("#refList").innerHTML = list.length
       ? list.map(cardHtml).join("")
-      : '<p class="ref-empty">条件に合うメンバーが見つかりませんでした。<br>キーワードや絞り込みを変えてみてください。</p>';
+      : `<div class="ref-empty"><p>条件に合うメンバーが見つかりませんでした。<br>キーワードや絞り込みを変えてみてください。</p>
+        <div class="ref-empty-actions">
+          <button type="button" class="ref-btn" data-empty-consult>相談の文章で探す</button>
+          <button type="button" class="ref-btn ghost" data-open-diag-fresh>紹介診断をはじめる</button>
+          <a class="ref-btn ghost" href="../teams/">BT-EX5 にいない業種を見る</a>
+        </div></div>`;
+    // 見つからなかった言葉も記録する(運営が、迎えたい業種を考える材料)。打っている途中は送らず、手が止まってから
+    clearTimeout(missTimer);
+    if (!list.length && filter.search && filter.search.trim().length >= 2) {
+      const text = filter.search.trim();
+      missTimer = setTimeout(() => { try { AuthApi.call("logSearch", { kind: "consult", miss: true, text }).catch(() => {}); } catch { /* noop */ } }, 1500);
+    }
     $("#countShown").textContent = list.length;
     $("#countTotal").textContent = members.length;
     renderFilterState();
@@ -570,7 +582,7 @@
   function renderTopicSelect() {
     $("#topicSelect").innerHTML = '<option value="all">すべてのジャンル</option>' + TOPIC_GROUPS
       .map((g) => `<optgroup label="${escapeHtml(g.label)}">${TOPICS.filter((t) => t.group === g.id)
-        .map((t) => `<option value="${t.id}"${filter.topic === t.id ? " selected" : ""}>${escapeHtml(t.label)}(${members.filter((m) => m.topics.includes(t.id)).length}名)</option>`)
+        .map((t) => { const n = members.filter((m) => m.topics.includes(t.id)).length; return `<option value="${t.id}"${filter.topic === t.id ? " selected" : ""}${n ? "" : " disabled"}>${escapeHtml(t.label)}(${n ? `${n}名` : "まだいません"})</option>`; })
         .join("")}</optgroup>`)
       .join("");
   }
@@ -684,10 +696,11 @@
     $("#diagQuestion").focus({ preventScroll: true });
   }
 
-  function openDiag() {
+  // fresh: 「紹介診断をはじめる」から開いたときは、前の相談・診断の結果ではなく、はじめから
+  function openDiag(fresh) {
     $("#diagOverlay").hidden = false;
     document.body.style.overflow = "hidden";
-    if (scores) {
+    if (scores && fresh !== true) {
       $("#diagIntro").hidden = true;
       $("#diagWizard").hidden = true;
       $("#diagResults").hidden = false;
@@ -725,6 +738,7 @@
   }
 
   // 検索の結果に出た人を記録する(管理者のダッシュボードと、本人の「数字」に出る)。失敗しても画面は止めない
+  let missTimer = null;
   function logSearch(kind, ids) {
     try { AuthApi.call("logSearch", { kind, shown: ids.slice(0, 10) }).catch(() => {}); } catch { /* noop */ }
   }
@@ -752,7 +766,9 @@
     ].filter(Boolean);
     $("#diagSummary").innerHTML = summary.map((s) => `<span>${escapeHtml(s)}</span>`).join("");
 
-    const ranked = RefScoring.rankMembers(members, answers);
+    // 自分は候補に出さない(自分あての紹介はできないため)
+    const others = members.filter((m) => m.id !== myMemberId);
+    const ranked = RefScoring.rankMembers(others, answers);
     lastRanked = ranked;
     if (!fromRestore) logSearch(answers.consult ? "consult" : "diag", ranked.map((x) => x.m.id));
     renderTeam();
@@ -792,7 +808,7 @@
   let lastTeam = [];
   function renderTeam() {
     const box = $("#diagTeam");
-    lastTeam = answers.consult ? RefConsult.team(members, answers.consult, answers) : [];
+    lastTeam = answers.consult ? RefConsult.team(members.filter((m) => m.id !== myMemberId), answers.consult, answers) : [];
     box.hidden = lastTeam.length < 2;
     if (box.hidden) { box.innerHTML = ""; return; }
     box.innerHTML = `
@@ -951,7 +967,7 @@
     // #diag はマイページなどから「紹介診断をはじめる」で来たとき
     if (hash === "#diag") {
       history.replaceState(null, "", location.pathname);
-      openDiag();
+      openDiag(true);
       return;
     }
     // #ask=… は会員アプリのホームの「紹介先を探す」から来たとき(入れた相談でそのまま探す)
@@ -1057,6 +1073,20 @@
       toast(ok ? "紹介文をコピーしました" : "コピーできませんでした");
       return;
     }
+    // メンバーのリンクを共有(開いた人はログインのあと、その人の詳細が開く。メンバーだけが見られる)
+    const shareBtn = t.closest("[data-share-member]");
+    if (shareBtn) {
+      const m = members.find((x) => x.id === shareBtn.dataset.shareMember);
+      const url = new URL(`./#member=${encodeURIComponent(m.id)}`, location.href).href;
+      const text = `BT-EX5 の ${m.name}さん(${m.company || m.category || ""})\n${url}`;
+      if (navigator.share) {
+        try { await navigator.share({ title: `${m.name}さん`, text, url }); return; }
+        catch (err) { if (err && err.name === "AbortError") return; /* 共有できなければコピーにする */ }
+      }
+      const ok = await copyText(text);
+      toast(ok ? `${m.name}さんのリンクをコピーしました(メンバーだけが開けます)` : "コピーできませんでした");
+      return;
+    }
     const askBtn = t.closest("[data-ask]");
     if (askBtn) {
       const m = members.find((x) => x.id === askBtn.dataset.ask);
@@ -1099,7 +1129,15 @@
     if (gotoBtn) { gotoCard(gotoBtn.dataset.goto); return; }
   });
 
-  document.querySelectorAll("[data-open-diag]").forEach((b) => b.addEventListener("click", openDiag));
+  document.querySelectorAll("[data-open-diag]").forEach((b) => b.addEventListener("click", () => openDiag(true)));
+  // 見つからなかったときの次の一手
+  $("#refList").addEventListener("click", (e) => {
+    if (e.target.closest("[data-open-diag-fresh]")) { openDiag(true); return; }
+    if (e.target.closest("[data-empty-consult]")) {
+      const box = $("#csText");
+      if (box) { if (!box.value.trim() && filter.search) box.value = filter.search; box.scrollIntoView({ behavior: "smooth", block: "center" }); setTimeout(() => box.focus({ preventScroll: true }), 300); }
+    }
+  });
   $("#diagClose").addEventListener("click", closeDiag);
   $("#detailClose").addEventListener("click", closeDetail);
   $("#detailOverlay").addEventListener("click", (e) => { if (e.target.id === "detailOverlay") closeDetail(); });
