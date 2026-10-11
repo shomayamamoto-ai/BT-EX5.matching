@@ -401,6 +401,14 @@ function refreshSheets_() {
     });
   });
   writeSheet_("定例会の出欠", ["日付", "定例会", "氏名", "チーム", "出欠の回答", "出欠(結果)", "Meet の参加(分)"], rsvpRows);
+  // 会費(auth/server-billing.js の明細。新しい期間から)
+  var bill = db.billing || { invoices: [] };
+  var BILL_LABELS = { free: "無料", unpaid: "未払い", paid: "支払い済み", exempt: "免除" };
+  var nameById = {};
+  members.forEach(function (m) { nameById[m.id] = m.name; });
+  writeSheet_("会費", ["期間", "氏名", "金額(税込)", "状態", "支払い日", "方法", "領収書番号"],
+    (bill.invoices || []).slice().sort(function (a, b) { return b.period.localeCompare(a.period) || String(nameById[a.memberId] || "").localeCompare(String(nameById[b.memberId] || "")); })
+      .map(function (x) { return [cell_(x.period), cell_(nameById[x.memberId] || "(退会したメンバー)"), x.amount, BILL_LABELS[x.status] || x.status, x.paidAt ? fmtTime_(x.paidAt) : "", cell_(x.method || ""), cell_(x.receiptNo || "")]; }));
   var eventTitle = function (id) {
     var e = events.filter(function (x) { return x.id === id; })[0];
     return e ? e.date + " " + e.title : "";

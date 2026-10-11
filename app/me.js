@@ -29,7 +29,8 @@
         group("プロフィール",
           menu("../profile/", "プロフィール・1on1シートを編集", "紹介されるための情報。入れるほど紹介が届きます"),
           menu(me ? App.profileHref(me.id, "me") : "../referral/", "ほかのメンバーからの見え方", "早見表のあなたのカード"),
-          menu("#me/card", "デジタル会員証・QR コード", "交流会でメンバーに QR を読み取ってもらうと、あなたの詳細が開きます")),
+          menu("#me/card", "デジタル会員証・QR コード", "交流会でメンバーに QR を読み取ってもらうと、あなたの詳細が開きます"),
+          menu("#me/billing", "会費・領収書", "会費のプランと明細。領収書・明細書を PDF で保存")),
         group("記録・目標",
           menu("#me/goals", "今月の目標", "紹介・成約・1on1・ビジターの数を決めて、ホームで進み具合を見る"),
           menu("#me/pitch", "プレゼンの練習・タイマー", "30秒プレゼンの原稿と、30秒〜25分(ポモドーロ)のタイマー。0秒で音が鳴ります"),
@@ -83,6 +84,7 @@
         App.goalsSheet(st && st.goals, () => App.go("home"));
       }
       if (parts[0] === "card" || parts[0] === "qr") App.memberCardSheet();
+      if (parts[0] === "billing" && App.billingSheet) App.billingSheet();
     },
   };
 

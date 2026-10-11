@@ -1291,3 +1291,19 @@ html.round-open, html.round-open body { overflow: hidden; }
 .line-steps { margin: 4px 0 10px; padding-left: 1.3em; font-size: 14px; display: grid; gap: 8px; }
 .line-steps .line-add { margin-left: 8px; background: #06c755 !important; color: #fff !important; border-color: #06c755 !important; }
 .line-code { margin: 6px 0; text-align: center; font-family: "Cormorant Garamond", "Inter", serif; font-size: 44px; font-weight: 700; letter-spacing: 0.3em; color: var(--text); }
+
+/* ---------- 会費・領収書(app/billing.js) ---------- */
+.bill-plan { padding: 20px; border-radius: 18px; text-align: center; color: #f6e7c4; background: var(--grad); border: 1px solid rgba(201, 164, 92, 0.45); margin-bottom: 14px; }
+.bill-plan-name { margin: 0; font-size: 13px; letter-spacing: 0.12em; color: #d9c08e; }
+.bill-plan-price { margin: 6px 0; display: flex; align-items: baseline; justify-content: center; gap: 6px; }
+.bill-plan-price b { font-family: "Cormorant Garamond", "Inter", serif; font-size: 44px; color: #fff3dc; }
+.bill-plan-price small { font-size: 12px; color: #d9c08e; }
+.bill-plan-note { margin: 0; font-size: 13px; display: flex; gap: 8px; justify-content: center; align-items: center; }
+.bill-row { align-items: center; gap: 10px; }
+.bill-ctrl { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
+.bill-ctrl select { min-height: 36px; border-radius: 10px; border: 1.5px solid var(--line-strong); background: #fff; padding: 4px 8px; font-size: 13px; }
+.bill-settings { margin-top: 12px; padding: 12px 14px; border-radius: 14px; border: 1px solid var(--line); background: #fffdf8; }
+.bill-settings summary { cursor: pointer; font-weight: 800; }
+.bill-grid { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 10px; }
+@media (max-width: 520px) { .bill-grid { grid-template-columns: 1fr 1fr; } .bill-grid > :first-child { grid-column: 1 / -1; } }
+.bill-nav { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
