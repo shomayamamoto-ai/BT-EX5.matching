@@ -269,8 +269,60 @@ function setupPasscodes() {
   Logger.log("パスコードを設定しました。MEMBER と ADMIN の行を空に戻して保存し、「新しいバージョン」でデプロイしてください。");
 }
 
+// ---------- LINE 公式アカウント(任意) ----------
+// LINE で通知を送るときだけ使う。設定は setupLine を1回実行するだけ(手順は gas/README.md の「LINE で通知を送る」)
+// Script Properties: BTEX5_LINE_TOKEN(チャネルアクセストークン)/ BTEX5_LINE_ADD_URL(友だち追加の URL)/ BTEX5_LINE_HOOK(Webhook の合言葉)
+function lineConfig_() {
+  if (typeof PropertiesService === "undefined") return null;
+  var p = PropertiesService.getScriptProperties();
+  var token = p.getProperty("BTEX5_LINE_TOKEN");
+  if (!token) return null;
+  return { addUrl: p.getProperty("BTEX5_LINE_ADD_URL") || "", monthlyLimit: Number(p.getProperty("BTEX5_LINE_LIMIT") || 200) };
+}
+function setupLine() {
+  var TOKEN = "";   // LINE Developers →「Messaging API設定」のチャネルアクセストークン(長期)
+  var ADD_URL = ""; // 友だち追加の URL(例: https://lin.ee/xxxx または https://line.me/R/ti/p/@xxxx)
+  if (!TOKEN || !ADD_URL) throw new Error("TOKEN と ADD_URL を書いてから実行してください");
+  var p = PropertiesService.getScriptProperties();
+  var hook = Utilities.getUuid().replace(/-/g, "");
+  p.setProperties({ BTEX5_LINE_TOKEN: TOKEN, BTEX5_LINE_ADD_URL: ADD_URL, BTEX5_LINE_HOOK: hook });
+  var url = ScriptApp.getService().getUrl();
+  Logger.log("LINE の設定を保存しました。TOKEN と ADD_URL の行を空に戻して保存し、「新しいバージョン」でデプロイしてください。\n"
+    + "LINE Developers の「Webhook URL」に次を入れて、「Webhookの利用」をオンにしてください:\n" + (url || "(ウェブアプリの URL)") + "?line=" + hook);
+}
+function lineToken_() { return PropertiesService.getScriptProperties().getProperty("BTEX5_LINE_TOKEN"); }
+function lineFetch_(path, payload) {
+  return {
+    url: "https://api.line.me/v2/bot/message/" + path, method: "post", contentType: "application/json",
+    headers: { Authorization: "Bearer " + lineToken_() }, payload: JSON.stringify(payload), muteHttpExceptions: true,
+  };
+}
+// LINE で送る(スクリプトロックを外してから呼ぶ)
+function sendLine_(job) {
+  if (!job || !job.messages || !job.messages.length || !lineToken_()) return;
+  UrlFetchApp.fetchAll(job.messages.map(function (m) { return lineFetch_("push", { to: m.to, messages: [{ type: "text", text: m.text.slice(0, 4900) }] }); }))
+    .forEach(function (res) { if (res.getResponseCode() >= 300) console.warn("line " + res.getResponseCode() + " " + res.getContentText().slice(0, 200)); });
+}
+// LINE からの Webhook(?line=合言葉 のときだけ受け付ける。GAS ではヘッダーの署名を読めないため、URL の合言葉で確かめる)
+function handleLineWebhook_(e) {
+  var hook = PropertiesService.getScriptProperties().getProperty("BTEX5_LINE_HOOK");
+  if (!hook || e.parameter.line !== hook) return json_({ success: false });
+  var body = {};
+  try { body = JSON.parse((e.postData && e.postData.contents) || "{}"); } catch (err) { body = {}; }
+  var lock = LockService.getScriptLock();
+  var result = { replies: [] };
+  if (lock.tryLock(20000)) {
+    try { result = SERVER_.runJob("lineWebhook", body.events || [])[0] || result; } catch (err) { console.error(err); } finally { lock.releaseLock(); }
+  }
+  if (result.replies.length && lineToken_()) {
+    UrlFetchApp.fetchAll(result.replies.map(function (r) { return lineFetch_("reply", { replyToken: r.replyToken, messages: [{ type: "text", text: r.text }] }); }));
+  }
+  return json_({ success: true });
+}
+
 var SERVER_ = BtexServerCore.createServer({
   passcodes: passcodes_(),
+  line: lineConfig_(),
   load: loadDb_,
   save: saveDb_,
   randomBytes: randomBytes_,
@@ -376,6 +428,7 @@ function json_(obj) {
 // ---------- Web アプリの入口 ----------
 // サイトからは text/plain で JSON を POST する(プリフライトを避けるため §5)
 function doPost(e) {
+  if (e && e.parameter && e.parameter.line) return handleLineWebhook_(e);
   var body = null;
   try {
     body = JSON.parse((e && e.postData && e.postData.contents) || "null");
@@ -388,18 +441,20 @@ function doPost(e) {
   } catch (err) {
     return json_({ success: false, error: { code: "SERVER_ERROR", message: BtexServerCore.ERRORS.SERVER_ERROR } });
   }
-  var result, pushJob = null, changed = false;
+  var result, pushJob = null, lineJob = null, changed = false;
   try {
     result = SERVER_.handle(body);
     changed = result.success && body && BtexServerCore.MUTATING_ACTIONS.indexOf(body.action) !== -1;
     if (result.success && body && BtexServerCore.NOTIFY_ACTIONS.indexOf(body.action) !== -1) {
       // 新しいお知らせが届く人の端末を選んでおく(送るのはロックを外してから)
       try { pushJob = SERVER_.runJob("takePushOutbox")[0]; } catch (err) { console.error(err); }
+      try { lineJob = SERVER_.runJob("takeLineOutbox")[0]; } catch (err) { console.error(err); }
     }
   } finally {
     lock.releaseLock();
   }
   try { sendPushes_(pushJob); } catch (err) { console.error(err); }
+  try { sendLine_(lineJob); } catch (err) { console.error(err); }
   // 運営者向けの一覧シートは、ロックを外してから、多くても1分に1回だけ作り直す
   // (定例会の受付などで一度に多くの人が押しても、待たせない。残りは1時間ごとの処理で作り直す)
   if (changed) {
@@ -427,15 +482,17 @@ function syncMeetAttendanceJob() {
   } catch (err) { console.error(err); }
   var lock = LockService.getScriptLock();
   lock.waitLock(30000);
-  var r, pushJob = null;
+  var r, pushJob = null, lineJob = null;
   try {
     r = SERVER_.runJob("syncMeet");
     if (r[0] && r[0].synced) refreshSheets_();
     try { pushJob = SERVER_.runJob("takePushOutbox")[0]; } catch (err) { console.error(err); }
+    try { lineJob = SERVER_.runJob("takeLineOutbox")[0]; } catch (err) { console.error(err); }
   } finally {
     lock.releaseLock();
   }
   try { sendPushes_(pushJob); } catch (err) { console.error(err); }
+  try { sendLine_(lineJob); } catch (err) { console.error(err); }
   return r;
 }
 // ---------- 毎日のバックアップ(午前3時ごろ) ----------

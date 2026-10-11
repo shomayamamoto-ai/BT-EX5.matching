@@ -230,8 +230,63 @@
       };
       draw(st.on);
       body.append(msg, row,
-        h("p", { class: "app-field-hint" }, "スマホ・パソコンなど、端末ごとにオンにします。ログアウトすると、その端末の通知は止まります。"));
-    }, { noFocus: true, onClose: () => { if (location.hash === "#me/notify") history.replaceState(null, "", "#me"); } });
+        h("p", { class: "app-field-hint" }, "スマホ・パソコンなど、端末ごとにオンにします。ログアウトすると、その端末の通知は止まります。"),
+        lineBlock());
+    }, { noFocus: true, onClose: () => { if (lineTimer) clearInterval(lineTimer); if (location.hash === "#me/notify") history.replaceState(null, "", "#me"); } });
+  }
+
+  // ---------- LINE で受け取る(運営が LINE 公式アカウントを用意したとき) ----------
+  let lineTimer = null;
+  function lineBlock() {
+    const box = h("section", { class: "line-box", "aria-label": "LINE で受け取る" }, h("p", { class: "app-loading" }, "読み込み中…"));
+    const head = h("div", { class: "line-head" }, h("span", { class: "line-logo", "aria-hidden": "true" }, "LINE"), h("b", null, "LINE でも受け取る"));
+    async function draw() {
+      const d = await App.api("getMySettings", {}, { quiet: true });
+      const ln = (d && d.line) || { available: false };
+      if (!ln.available) {
+        App.fill(box, head, h("p", { class: "line-note" }, "運営が LINE 公式アカウントを用意すると、ここから LINE につなげます。つなぐと、紹介・1on1・運営連絡などのお知らせが LINE のトークにも届きます(上で選んだ種類だけ)。"));
+        return;
+      }
+      if (ln.linked) {
+        const on = h("input", { type: "checkbox", checked: ln.on });
+        on.addEventListener("change", async () => {
+          const r = await App.api("lineSetting", { on: on.checked });
+          if (r) App.toast(on.checked ? "LINE でのお知らせを再開しました" : "LINE でのお知らせを止めました");
+        });
+        App.fill(box, head,
+          h("p", { class: "line-state is-on" }, "✓ LINE とつながっています"),
+          h("label", { class: "notify-kind" }, on, h("span", null, h("b", null, "LINE にお知らせを送る"), h("small", null, "上で選んだ種類のお知らせを、LINE のトークにも送ります"))),
+          h("div", { class: "app-btn-row" }, App.btn("LINE とのつながりを外す", async () => {
+            if (!confirm("LINE とのつながりを外しますか?(LINE にお知らせが届かなくなります)")) return;
+            if (await App.api("lineSetting", { unlink: true })) { App.toast("LINE とのつながりを外しました"); draw(); }
+          }, "ghost small")));
+        return;
+      }
+      App.fill(box, head,
+        h("p", { class: "line-note" }, "紹介・1on1・運営連絡などのお知らせを、LINE のトークでも受け取れます。"),
+        App.btn("LINE とつなぐ", async (e) => {
+          e.currentTarget.disabled = true;
+          const r = await App.api("lineLinkCode", { appUrl: App.siteUrl("") });
+          if (!r) { e.currentTarget.disabled = false; return; }
+          App.fill(box, head,
+            h("ol", { class: "line-steps" },
+              h("li", null, "BT-EX5 の公式アカウントを友だち追加する", r.addUrl ? h("a", { class: "app-btn small line-add", href: r.addUrl, target: "_blank", rel: "noopener" }, "友だち追加") : null),
+              h("li", null, "トークに、下の6けたのコードを送る")),
+            h("p", { class: "line-code", "aria-label": `コード ${r.code.split("").join(" ")}` }, r.code),
+            h("div", { class: "app-btn-row" }, App.btn("コードをコピー", () => App.copyText(r.code), "ghost small")),
+            h("p", { class: "app-field-hint" }, `コードは${r.minutes}分有効です。送るとこの画面が「つながっています」に変わります。`));
+          // つながったかを数秒ごとに確かめる
+          clearInterval(lineTimer);
+          let n = 0;
+          lineTimer = setInterval(async () => {
+            if (++n > 120 || !box.isConnected) { clearInterval(lineTimer); return; }
+            const s = await App.api("getMySettings", {}, { quiet: true });
+            if (s && s.line && s.line.linked) { clearInterval(lineTimer); App.toast("LINE とつながりました"); draw(); }
+          }, 5000);
+        }, "primary"));
+    }
+    draw();
+    return box;
   }
 
   // ---------- 自分の記録を書き出す(Excel で開ける CSV) ----------
@@ -340,16 +395,49 @@
     tab: "",
     async render(el, parts) {
       if (!App.isAdmin()) { el.append(App.empty("管理者のみ使えます。")); return; }
-      const tab = ["dashboard", "accounts", "feedback"].includes(parts[0]) ? parts[0] : "dashboard";
+      const tab = ["dashboard", "accounts", "billing", "connect", "feedback"].includes(parts[0]) ? parts[0] : "dashboard";
       el.append(h("a", { class: "app-back", href: "#me" }, "← マイページ"));
-      el.append(App.segmented([{ id: "dashboard", label: "ダッシュボード" }, { id: "accounts", label: "会員アカウント" }, { id: "feedback", label: "バグ・要望" }], tab, (id) => App.go(`admin/${id}`)));
+      el.append(App.segmented([{ id: "dashboard", label: "ダッシュボード" }, { id: "accounts", label: "会員アカウント" }, { id: "billing", label: "会費" }, { id: "connect", label: "LINE 連携" }, { id: "feedback", label: "バグ・要望" }], tab, (id) => App.go(`admin/${id}`)));
       const body = h("div");
       el.append(body);
       if (tab === "dashboard") await App.renderDashboard(body, parts[1]);
       else if (tab === "accounts") await renderAccounts(body);
+      else if (tab === "billing" && App.renderBillingAdmin) await App.renderBillingAdmin(body);
+      else if (tab === "connect") await renderLineAdmin(body);
       else await renderFeedback(body);
     },
   };
+
+  // ---------- LINE 連携(管理者) ----------
+  async function renderLineAdmin(body) {
+    const d = await App.api("adminLineStatus");
+    if (!d) return;
+    if (!d.available) {
+      body.append(App.section("LINE 公式アカウントでの通知",
+        h("p", { class: "app-lead" }, "LINE 公式アカウントを用意すると、会員が自分の LINE とつなぎ、紹介・1on1・運営連絡などのお知らせを LINE のトークでも受け取れるようになります(スマホの通知と同じ内容・同じ種類の設定)。"),
+        h("ol", { class: "line-steps" },
+          h("li", null, "LINE 公式アカウントを作る(無料プランは月200通まで。26名に週1〜2回なら収まります)"),
+          h("li", null, "LINE Developers で Messaging API を有効にし、チャネルアクセストークン(長期)を発行する"),
+          h("li", null, "Apps Script エディタで setupLine を開き、トークンと友だち追加の URL を書いて1回実行する(gas/README.md の「LINE で通知を送る」)"),
+          h("li", null, "実行ログに出た Webhook URL を LINE Developers に入れて「Webhookの利用」をオンにし、新しいバージョンでデプロイする")),
+        h("p", { class: "app-field-hint" }, "設定が終わると、この画面に「つないだ人数」と「今月送った数」が出ます。")));
+      return;
+    }
+    const limit = h("input", { type: "number", min: "0", max: "100000", value: String(d.monthlyLimit), inputmode: "numeric" });
+    body.append(App.section("LINE 公式アカウントでの通知",
+      h("div", { class: "dash-kpis" },
+        h("div", null, h("small", null, "つないだ会員"), h("b", null, `${d.linked}`), h("small", null, `/ ${d.members}名`)),
+        h("div", null, h("small", null, "今月送った数"), h("b", null, `${d.sentThisMonth}`), h("small", null, `/ 上限 ${d.monthlyLimit}通`))),
+      d.linkedNames.length ? h("p", { class: "app-field-hint" }, `つないだ人:${d.linkedNames.join("、")}`) : null,
+      d.addUrl ? h("p", { class: "app-field-hint" }, "友だち追加の URL:", h("a", { href: d.addUrl, target: "_blank", rel: "noopener" }, d.addUrl)) : null,
+      h("form", { class: "app-form", onsubmit: async (e) => {
+        e.preventDefault();
+        const r = await App.api("adminLineStatus", { monthlyLimit: Number(limit.value) });
+        if (r) App.toast("月の上限を保存しました");
+      } }, App.field("月に送る上限(通)", limit, "上限をこえると、その月は LINE で送りません(スマホの通知・ベルには出ます)。無料プランは200通"),
+        h("button", { type: "submit", class: "app-btn" }, "保存")),
+      h("p", { class: "app-field-hint" }, "会員には「マイページ → 通知を受け取る → LINE とつなぐ」から案内してください。")));
+  }
 
   function inviteMessage(inv) {
     const url = App.siteUrl(`../login/?invite=${encodeURIComponent(inv.code)}`);

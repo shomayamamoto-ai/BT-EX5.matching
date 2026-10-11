@@ -1149,6 +1149,8 @@ var BtexServerCore = (function () {
       meet: env.meet || null,
       // プッシュ通知の鍵(共有サーバーで動くときだけ。なければ null)
       push: env.push || null,
+      // LINE 公式アカウント(共有サーバーで、運営が設定したときだけ。{ addUrl } など。なければ null)
+      line: env.line || null,
     };
     var MODULE_INSTANCES = MODULES.map(function (m) {
       var inst = m.create(ctx) || {};

@@ -1281,3 +1281,13 @@ html.round-open, html.round-open body { overflow: hidden; }
 /* 掲示板の長い投稿 */
 .app-rich.is-clamped { display: -webkit-box; -webkit-line-clamp: 6; -webkit-box-orient: vertical; overflow: hidden; }
 .post-more { margin-top: 4px; padding: 4px 0; border: none; background: none; color: var(--accent-dark); font-size: 13px; font-weight: 800; cursor: pointer; }
+
+/* ---------- LINE で受け取る ---------- */
+.line-box { margin-top: 18px; padding: 16px; border-radius: 16px; background: #fffdf8; border: 1px solid var(--line); }
+.line-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.line-logo { padding: 3px 8px; border-radius: 8px; background: #06c755; color: #fff; font-size: 12px; font-weight: 900; letter-spacing: 0.04em; }
+.line-note { font-size: 13.5px; color: var(--text-sub); margin: 0 0 10px; }
+.line-state.is-on { color: #2f6a50; font-weight: 800; margin: 0 0 8px; }
+.line-steps { margin: 4px 0 10px; padding-left: 1.3em; font-size: 14px; display: grid; gap: 8px; }
+.line-steps .line-add { margin-left: 8px; background: #06c755 !important; color: #fff !important; border-color: #06c755 !important; }
+.line-code { margin: 6px 0; text-align: center; font-family: "Cormorant Garamond", "Inter", serif; font-size: 44px; font-weight: 700; letter-spacing: 0.3em; color: var(--text); }

@@ -79,3 +79,19 @@ node tools/build-gas.mjs
 ```
 
 `Code.gs` は `referral/data.js`・`auth/server-core.js`・`auth/server-community.js`・`gas/main.js` をつないだものなので、直接は編集しません。
+
+## LINE で通知を送る(任意・LINE 公式アカウント)
+
+会員が自分の LINE とつなぐと、紹介・1on1・運営連絡などのお知らせ(スマホの通知と同じ内容・同じ種類の設定)が LINE のトークにも届きます。
+
+1. [LINE 公式アカウント](https://www.lycbiz.com/jp/service/line-official-account/) を作る(無料プランは月200通まで)
+2. [LINE Developers](https://developers.line.biz/) で、その公式アカウントの Messaging API を有効にし、「Messaging API設定」→「チャネルアクセストークン(長期)」を発行する
+3. Apps Script エディタで `setupLine` を開き、`TOKEN` にトークン、`ADD_URL` に友だち追加の URL(公式アカウントの管理画面 →「友だちを増やす」にある `https://lin.ee/…`)を書いて「実行」
+4. 実行ログに出た **Webhook URL**(`…/exec?line=…`)を LINE Developers の「Webhook URL」に入れ、「Webhookの利用」をオンにする(「応答メッセージ」はオフがおすすめ)
+5. `TOKEN` と `ADD_URL` の行を空に戻して保存し、「デプロイ → デプロイを管理 → 編集 → 新バージョン」
+6. 会員は「マイページ → 通知を受け取る → LINE とつなぐ」で出る6けたのコードを、公式アカウントのトークに送ると、つながります
+
+- 管理者メニュー →「LINE 連携」で、つないだ人数・今月送った数・月の上限(はじめは200通)を見られます。上限をこえた月は LINE では送りません(スマホの通知・ベルには出ます)
+- 1人に届くのは、お知らせがあったときに1通(まとめて「ほか◯件」)。いつ送るかは、スマホの通知と同じです
+- GAS ではヘッダーの署名を読めないため、Webhook は URL の合言葉(`?line=…`)で確かめます。合言葉は `setupLine` を実行するたびに変わります
+

@@ -1342,7 +1342,7 @@
       function getMySettings(body) {
         var w = who(body);
         if (w.error) return w.error;
-        return c.ok({ calendarEmail: w.user.calendarEmail || "", calendar: !!c.calendar, meetName: w.user.meetName || "", name: w.me.name, goals: w.user.goals || null, pitchScript: w.user.pitchScript || "", notifyOff: w.user.notifyOff || [] });
+        return c.ok({ calendarEmail: w.user.calendarEmail || "", calendar: !!c.calendar, meetName: w.user.meetName || "", name: w.me.name, goals: w.user.goals || null, pitchScript: w.user.pitchScript || "", notifyOff: w.user.notifyOff || [], line: lineState(w.user) });
       }
       function updateMySettings(body) {
         var w = who(body);
@@ -2220,6 +2220,107 @@
         });
       }
 
+      // ============================================
+      // LINE で受け取る(LINE 公式アカウント + Messaging API)
+      // 運営が LINE 公式アカウントを用意して共有サーバーに設定すると使える(c.line)。
+      // つなぎ方: 会員がアプリで6けたのコードを出す → 公式アカウントを友だち追加して、そのコードを送る →
+      // 共有サーバーが受け取った(Webhook)LINE のユーザー ID を、その会員にひもづける。
+      // 送る内容はスマホの通知と同じ(通知の種類で切ったものは送らない)。月の上限(無料プランは200通)をこえたら止める
+      // ============================================
+      var LINE_CODE_MINUTES = 30;
+      function lineState(u) {
+        return { available: !!c.line, linked: !!(u && u.lineUserId), on: !!(u && u.lineUserId && u.lineOn !== false), addUrl: (c.line && c.line.addUrl) || "" };
+      }
+      function lineLinkCode(body) {
+        var w = who(body);
+        if (w.error) return w.error;
+        if (!c.line) return c.fail("INVALID_REQUEST", "LINE での通知は、まだ準備中です(運営が LINE 公式アカウントを用意すると使えます)。");
+        var code = String(100000 + (parseInt(c.randomHex(4), 16) % 900000));
+        w.user.lineCode = { hash: c.sha256Hex("line:" + code), exp: c.nowMs() + LINE_CODE_MINUTES * 60 * 1000 };
+        var site = String(body.appUrl || "").match(/^https:\/\/[^\s"'<>#?]+\/app\//);
+        if (site) w.db.lineAppUrl = site[0];
+        c.saveDb(w.db);
+        return c.ok({ code: code, minutes: LINE_CODE_MINUTES, addUrl: c.line.addUrl || "" });
+      }
+      function lineSetting(body) {
+        var w = who(body);
+        if (w.error) return w.error;
+        if (body.unlink === true) { delete w.user.lineUserId; delete w.user.lineOn; delete w.user.lineCode; }
+        else if (typeof body.on === "boolean") w.user.lineOn = body.on;
+        c.saveDb(w.db);
+        return c.ok({ line: lineState(w.user) });
+      }
+      // LINE から届いたできごと(Webhook)。返すのは「返信する文」の一覧(送るのは GAS 側)
+      function jobLineWebhook(events) {
+        var db = c.ensureDb();
+        var replies = [];
+        var changed = false;
+        (Array.isArray(events) ? events : []).forEach(function (ev) {
+          var uid = ev && ev.source && ev.source.userId;
+          if (!uid || !ev.replyToken) return;
+          if (ev.type === "follow") {
+            replies.push({ replyToken: ev.replyToken, text: "BT-EX5 の公式アカウントです。\n通知を受け取るには、会員アプリの「マイページ → 通知を受け取る → LINE とつなぐ」に出る6けたのコードを、このトークに送ってください。" });
+            return;
+          }
+          if (ev.type !== "message" || !ev.message || ev.message.type !== "text") return;
+          var m = /(\d{6})/.exec(String(ev.message.text || "").replace(/[０-９]/g, function (d) { return String.fromCharCode(d.charCodeAt(0) - 0xfee0); }));
+          if (!m) {
+            var known = c.find(db.users, function (u) { return u.lineUserId === uid; });
+            replies.push({ replyToken: ev.replyToken, text: known ? "このアカウントには、BT-EX5 からのお知らせが届きます。ご返信はアプリからお願いします。" : "会員アプリに出る6けたのコードを送ってください。" });
+            return;
+          }
+          var hash = c.sha256Hex("line:" + m[1]);
+          var user = c.find(db.users, function (u) { return u.lineCode && u.lineCode.hash === hash && u.lineCode.exp > c.nowMs(); });
+          if (!user) { replies.push({ replyToken: ev.replyToken, text: "コードが正しくないか、期限(30分)が切れています。アプリでもう一度コードを出してください。" }); return; }
+          // 同じ LINE がほかの会員にひもづいていたら外す(1つの LINE は1人だけ)
+          db.users.forEach(function (u) { if (u !== user && u.lineUserId === uid) { delete u.lineUserId; } });
+          user.lineUserId = uid; user.lineOn = true; delete user.lineCode;
+          user.lineNotified = latestActivityAt(db, user.memberId); // つないだ時点より前のお知らせは送らない
+          changed = true;
+          replies.push({ replyToken: ev.replyToken, text: (nameOf(db, user.memberId) || "") + "さん、つながりました。これから BT-EX5 のお知らせ(紹介・1on1・運営連絡など)を LINE でもお届けします。止めるときはアプリの「通知を受け取る」から。" });
+        });
+        if (changed) c.saveDb(db);
+        return { replies: replies };
+      }
+      // 書き込みのあとに呼ぶ: LINE で送るお知らせ(1人1通にまとめる)
+      function jobTakeLineOutbox() {
+        if (!c.line) return { messages: [] };
+        var db = c.ensureDb();
+        var month = today().slice(0, 7);
+        db.lineSent = db.lineSent && db.lineSent.month === month ? db.lineSent : { month: month, count: 0 };
+        var limit = Number((db.settings && db.settings.lineMonthlyLimit) || c.line.monthlyLimit || 200);
+        var out = [];
+        db.users.forEach(function (u) {
+          if (!u.lineUserId || u.lineOn === false || !member(db, u.memberId)) return;
+          var fresh = pushItems(db, u.memberId).filter(function (x) { return x.at > (u.lineNotified || 0); });
+          if (!fresh.length) return;
+          if (db.lineSent.count >= limit) return;
+          u.lineNotified = fresh.reduce(function (mx, x) { return Math.max(mx, x.at); }, 0);
+          var t = pushText(fresh[0]);
+          var url = (db.lineAppUrl || "") ? db.lineAppUrl + "#" + (fresh[0].link || "feed") : "";
+          var text = t.title + "\n" + String(t.body || "").slice(0, 200) + (fresh.length > 1 ? "\n(ほか " + (fresh.length - 1) + " 件)" : "") + (url ? "\n" + url : "");
+          out.push({ to: u.lineUserId, text: text });
+          db.lineSent.count += 1;
+        });
+        if (out.length) c.saveDb(db);
+        return { messages: out };
+      }
+      // 管理者: LINE の状態(つないだ人数・今月送った数)と、月の上限
+      function adminLineStatus(body) {
+        var w = admin(body);
+        if (w.error) return w.error;
+        if (typeof body.monthlyLimit === "number" && body.monthlyLimit >= 0 && body.monthlyLimit <= 100000) { w.db.settings.lineMonthlyLimit = Math.round(body.monthlyLimit); c.saveDb(w.db); }
+        var month = today().slice(0, 7);
+        var sent = w.db.lineSent && w.db.lineSent.month === month ? w.db.lineSent.count : 0;
+        var linked = w.db.users.filter(function (u) { return u.lineUserId && member(w.db, u.memberId); });
+        return c.ok({
+          available: !!c.line, addUrl: (c.line && c.line.addUrl) || "",
+          linked: linked.length, members: (w.db.referralMembers || []).length,
+          linkedNames: linked.map(function (u) { return nameOf(w.db, u.memberId); }),
+          sentThisMonth: sent, monthlyLimit: Number(w.db.settings.lineMonthlyLimit || (c.line && c.line.monthlyLimit) || 200),
+        });
+      }
+
       // 書き込みのあとに呼ぶ: 新しいお知らせがある端末を選び、送り先として返す(中身は返さない)
       function jobTakePushOutbox() {
         var db = c.ensureDb();
@@ -2251,7 +2352,7 @@
 
       return {
         migrate: migrate,
-        jobs: { syncMeet: jobSyncMeet, takePushOutbox: jobTakePushOutbox, dropPushSubs: jobDropPushSubs },
+        jobs: { syncMeet: jobSyncMeet, takePushOutbox: jobTakePushOutbox, dropPushSubs: jobDropPushSubs, lineWebhook: jobLineWebhook, takeLineOutbox: jobTakeLineOutbox },
         actions: {
           getHome: getHome, getActivity: getActivity, adminDashboard: adminDashboard, adminExport: adminExport,
           listEvents: listEvents, getEvent: getEvent, rsvpEvent: rsvpEvent, checkIn: checkIn,
@@ -2262,7 +2363,7 @@
           visitorInfo: visitorInfo, visitorApply: visitorApply,
           listMyReferrals: listMyReferrals, setReferralMeeting: setReferralMeeting, reportThanks: reportThanks, deleteThanks: deleteThanks, getRankings: getRankings, getTeamRanking: getTeamRanking, getStats: getStats, logSearch: logSearch, adminSetTeamGoals: adminSetTeamGoals,
           list1on1: list1on1, save1on1: save1on1, delete1on1: delete1on1, confirm1on1: confirm1on1,
-          getMySettings: getMySettings, updateMySettings: updateMySettings,
+          getMySettings: getMySettings, updateMySettings: updateMySettings, lineLinkCode: lineLinkCode, lineSetting: lineSetting, adminLineStatus: adminLineStatus,
           listAnnouncements: listAnnouncements, markAnnouncementsRead: markAnnouncementsRead,
           adminSaveAnnouncement: adminSaveAnnouncement, adminDeleteAnnouncement: adminDeleteAnnouncement, adminRemindAnnouncement: adminRemindAnnouncement,
           listTasks: listTasks, saveTask: saveTask, toggleTask: toggleTask, deleteTask: deleteTask,
