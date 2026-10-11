@@ -9,7 +9,7 @@
   App.views.home = {
     title: "ホーム",
     autoRefresh: true,
-    async render(el) {
+    async render(el, parts) {
       const d = await App.api("getHome");
       if (!d) return;
       App.setBadges(d.badges);
@@ -152,6 +152,18 @@
             group(d.today, "今日"), group(tmr, "明日"));
           sched.hidden = false;
         }).catch(() => {});
+      }
+
+      // ---------- タイマー(プレゼンの練習・ポモドーロ。練習のシートと同じタイマー) ----------
+      if (App.timerWidget) {
+        const timerSec = h("section", { class: "app-section home-sec home-timer", id: "home-timer" },
+          h("div", { class: "home-sec-head" },
+            h("h2", { class: "app-h2" }, "タイマー"),
+            h("a", { class: "home-sec-link", href: "#me/pitch" }, "プレゼンの原稿を書く")),
+          App.timerWidget({ compact: true }));
+        main.append(timerSec);
+        // #home/timer(ホーム画面のアイコンの長押しなど)で開いたときは、タイマーまで動かす
+        if (parts && parts[0] === "timer") setTimeout(() => { if (timerSec.isConnected) timerSec.scrollIntoView({ behavior: "smooth", block: "start" }); }, 80);
       }
 
       // ---------- 次の定例会 ----------

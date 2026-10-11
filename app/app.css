@@ -1042,6 +1042,15 @@ body.tabs-right .app-to-top { right: calc(var(--dock-w) + 22px); }
 .pitch-len small { font-size: 9.5px; font-weight: 700; color: var(--text-sub); letter-spacing: -0.02em; }
 .pitch-len.is-on { background: var(--grad); color: #f6e7c4; border-color: rgba(201, 164, 92, 0.7); }
 .pitch-len.is-on small { color: #d9c08e; }
+.pitch-len { position: relative; }
+.pitch-len-n { position: absolute; top: -7px; right: -5px; min-width: 22px; padding: 1px 5px; border-radius: 999px; background: #a3342a; color: #fff; font-size: 11px; font-weight: 900; line-height: 1.5; }
+.pitch-len-n:empty { display: none; }
+.pitch-sum { margin: -2px 2px 10px; font-size: 12px; font-weight: 700; color: var(--text-sub); }
+.pitch-clock.is-hour { font-size: 27px; }
+.pitch-timer-wrap.is-compact .pitch-sound { margin-top: 10px; }
+.home-timer .pitch-timer { padding: 14px; }
+.timer-pill { position: fixed; top: calc(env(safe-area-inset-top, 0px) + 64px); right: 12px; z-index: 60; padding: 7px 13px; border-radius: 999px; background: #17120e; color: #f6e7c4; border: 1px solid rgba(201, 164, 92, 0.6); font-size: 14px; font-weight: 800; font-variant-numeric: tabular-nums; text-decoration: none; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25); }
+.timer-pill.is-last { background: #a3342a; color: #fff; }
 @media (max-width: 420px) { .pitch-lens { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 .pitch-clock.is-long { font-size: 36px; }
 .pitch-sound { display: flex; align-items: center; gap: 8px; margin: 12px 2px 0; font-size: 13.5px; font-weight: 700; color: var(--text); cursor: pointer; }

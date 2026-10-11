@@ -12,7 +12,8 @@
     { "name": "紹介先を探す", "url": "./referral/" },
     { "name": "紹介を記録", "url": "./app/#log/ref?new" },
     { "name": "予定・出席コード", "url": "./app/#events" },
-    { "name": "掲示板", "url": "./app/#board" }
+    { "name": "掲示板", "url": "./app/#board" },
+    { "name": "タイマー", "url": "./app/#home/timer" }
   ],
   "icons": [
     { "src": "assets/icon-192.png", "sizes": "192x192", "type": "image/png" },
