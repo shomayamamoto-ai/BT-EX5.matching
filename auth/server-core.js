@@ -281,11 +281,11 @@ var BtexServerCore = (function () {
             if (r.force || !current.editedAt || isBlankField(k, current[k])) next[k] = clone(seedMember[k]);
           });
           // addLinks: ["line"] など。編集済みのメンバーにも、初期名簿のその種類のリンクのうち
-          // まだないもの(同じ URL がないもの)だけを足す(本人が消したほかのリンクは戻さない)
+          // まだないもの(同じ URL がないもの)だけを足す(本人が消したほかのリンクは戻さない)。linksFirst なら先頭に足す
           if (Array.isArray(r.addLinks)) {
             var have = (next.links || []).map(function (l) { return l.url; });
-            var add = (seedMember.links || []).filter(function (l) { return r.addLinks.indexOf(l.type) !== -1 && have.indexOf(l.url) === -1; });
-            next.links = (next.links || []).concat(clone(add)).slice(0, LINKS_MAX);
+            var add = clone((seedMember.links || []).filter(function (l) { return r.addLinks.indexOf(l.type) !== -1 && have.indexOf(l.url) === -1; }));
+            next.links = (r.linksFirst ? add.concat(next.links || []) : (next.links || []).concat(add)).slice(0, LINKS_MAX);
           }
           if (r.addTopics && Array.isArray(next.topics)) {
             next.topics = next.topics.concat((seedMember.topics || []).filter(function (t) {

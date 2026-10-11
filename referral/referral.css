@@ -963,7 +963,8 @@ a:hover > .brand-mark { transform: rotate(-10deg) scale(1.06); }
   text-decoration: none;
 }
 .md-material + .md-material { margin-top: 8px; }
-.md-material img { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; object-fit: cover; background: #f6efe9; }
+/* 画像の縦横はそのまま(16:9 の表紙も、A4横のシートも切らずに出す) */
+.md-material img { display: block; width: 100%; height: auto; background: #f6efe9; }
 .md-material-bar { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 14px; font-weight: 700; font-size: 14.5px; }
 .md-material-open { flex-shrink: 0; color: var(--accent-dark); font-size: 13.5px; }
 .md-material:hover { border-color: var(--accent); }
