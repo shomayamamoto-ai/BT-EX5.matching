@@ -38,6 +38,8 @@ const App = (function () {
   function append(el, children) {
     children.flat(Infinity).forEach((c) => {
       if (c === undefined || c === null || c === false) return;
+      // 入っていない値をつないだ「null」「nullnull」などの文字は出さない
+      if (typeof c === "string" && /^(?:null|undefined)+$/.test(c.trim())) return;
       el.append(c instanceof Node ? c : document.createTextNode(String(c)));
     });
     return el;

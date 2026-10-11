@@ -14,7 +14,8 @@
   let me = null;
 
   function escapeHtml(s) {
-    return String(s).replace(/[&<>"']/g, (c) => ({
+    // 入っていない値(null など)は「null」と出さず空にする
+    return String(s === undefined || s === null ? "" : s).replace(/[&<>"']/g, (c) => ({
       "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
     }[c]));
   }

@@ -7,7 +7,7 @@
 const LinksEditor = (function () {
   "use strict";
 
-  const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const esc = (s) => String(s === undefined || s === null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const MAX = 12;
   // すぐ足せる SNS・連絡先
   const QUICK = ["line", "instagram", "x", "facebook", "tiktok", "youtube", "threads", "linkedin", "note"];
