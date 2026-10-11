@@ -152,10 +152,34 @@
     el.append(list, none);
     draw();
     if (params.has("new")) postForm(d.cats, filter);
+    // LINE などから開いたとき(#board?post=…): その投稿まで動かして、少し光らせる
+    const target = params.get("post");
+    if (target) {
+      setTimeout(() => {
+        const card = document.getElementById(`post-${target}`);
+        if (!card) return;
+        card.scrollIntoView({ block: "center", behavior: "smooth" });
+        card.classList.add("is-focus");
+        setTimeout(() => card.classList.remove("is-focus"), 2400);
+      }, 80);
+    }
+  }
+
+  // 掲示板の投稿を LINE に貼る文
+  function postLineText(p) {
+    return [
+      `【BT-EX5 掲示板・${p.cat}】`,
+      `${p.byName}さんの投稿`,
+      "",
+      String(p.body || "").replace(/(?:null|undefined){2,}/g, "").trim(),
+      "",
+      "▼ アプリで見る・コメントする",
+      App.siteUrl(`#board?post=${p.id}`),
+    ].join("\n");
   }
 
   function postCard(p) {
-    const card = h("article", { class: `post${p.isNew ? " is-new" : ""}` });
+    const card = h("article", { class: `post${p.isNew ? " is-new" : ""}`, id: `post-${p.id}` });
     function draw() {
       const comment = h("input", { type: "text", maxlength: "1000", placeholder: "コメントする", "aria-label": "コメント" });
       App.fill(card, 
@@ -169,6 +193,7 @@
             const d = await App.api("likePost", { id: p.id });
             if (d) { Object.assign(p, d.item); draw(); }
           } }, p.liked ? "♥" : "♡", ` ${p.likes || ""}`),
+          h("button", { type: "button", class: "post-link", onclick: () => App.copyText(postLineText(p), "コピーしました。LINE のトークに貼り付けてください") }, "LINE 用にコピー"),
           p.canEdit ? h("button", { type: "button", class: "post-link", onclick: () => editForm(p, (item) => { Object.assign(p, item); draw(); }) }, "編集") : null,
           p.canDelete ? h("button", { type: "button", class: "post-link danger", onclick: async () => {
             if (!confirm("この投稿を削除しますか?")) return;

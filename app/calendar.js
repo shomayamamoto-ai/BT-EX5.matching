@@ -72,7 +72,7 @@
     const title = h("h2", { class: "cal-title", "aria-live": "polite" });
     const grid = h("div", { class: "cal-grid", role: "grid" });
     const dayBox = h("section", { class: "cal-day", "aria-live": "polite" });
-    const legend = h("p", { class: "cal-legend" }, Object.keys(KINDS).map((k) => h("span", { class: KINDS[k].cls }, KINDS[k].label)));
+    const legend = h("p", { class: "cal-legend" }, Object.keys(KINDS).map((k) => h("span", { class: KINDS[k].cls }, KINDS[k].label)), h("small", { class: "cal-swipe-hint" }, "左右にはらうと月が変わります"));
 
     function shift(n) {
       const [y, m] = state.ym.split("-").map(Number);
@@ -135,6 +135,16 @@
     }
 
     const main = h("div", { class: "cal-main" }, head, grid, legend);
+    // 指で左右にはらうと、次の月・前の月へ
+    let touch = null;
+    grid.addEventListener("touchstart", (e) => { const t = e.touches[0]; touch = { x: t.clientX, y: t.clientY }; }, { passive: true });
+    grid.addEventListener("touchend", (e) => {
+      if (!touch) return;
+      const t = e.changedTouches[0];
+      const dx = t.clientX - touch.x, dy = t.clientY - touch.y;
+      touch = null;
+      if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) shift(dx < 0 ? 1 : -1);
+    }, { passive: true });
     drawMonth();
     drawDay();
     collect(events).then((all) => {

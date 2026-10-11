@@ -267,7 +267,7 @@
           ev.past || ev.attended || ev.deadlinePassed ? null : h("div", { class: "ev-rsvp", role: "group", "aria-label": "出欠" },
             rsvpBtn("yes", "出席する"), rsvpBtn("no", "欠席する")),
           !ev.past && !ev.myRsvp && !ev.deadlinePassed ? h("p", { class: "ev-must" }, "出席・欠席のどちらかを必ずご登録ください") : null,
-          ev.meetUrl && !ev.past ? h("a", { class: "app-btn small ev-meet", href: ev.meetUrl, target: "_blank", rel: "noopener" }, "Google Meet に参加") : null,
+          ev.meetUrl && !ev.past ? meetButton(ev) : null,
           h("div", { class: "ev-links" },
             h("a", { class: "app-more ev-more", href: `#events/detail/${ev.id}` }, "詳細・出欠の一覧 →"),
             ev.past ? null : App.calendarButtons({ uid: ev.id, title: ev.title, date: ev.date, start: ev.start, end: ev.end, place: ev.online ? ev.meetUrl || "オンライン(Google Meet)" : ev.place, body: [ev.meetUrl ? `参加リンク:${ev.meetUrl}` : "", ev.agenda, ev.body].filter(Boolean).join("\n\n") })),
@@ -288,6 +288,19 @@
     card.redraw = draw;
     draw();
     return card;
+  }
+
+  // Google Meet の参加ボタン。開始1時間前から終わるまでは大きく出し、開始までの残り時間を添える
+  function meetButton(ev) {
+    const start = ev.start ? Date.parse(`${ev.date}T${ev.start}:00+09:00`) : NaN;
+    const end = ev.end ? Date.parse(`${ev.date}T${ev.end}:00+09:00`) : start + 2 * 3600 * 1000;
+    const now = Date.now();
+    const live = isFinite(start) && now >= start - 60 * 60 * 1000 && now <= end;
+    if (!live) return h("a", { class: "app-btn small ev-meet", href: ev.meetUrl, target: "_blank", rel: "noopener" }, "Google Meet に参加");
+    const mins = Math.ceil((start - now) / 60000);
+    return h("div", { class: "ev-live" },
+      h("p", null, mins > 0 ? `開始まで あと${mins}分` : "ただいま開催中です"),
+      h("a", { class: "app-btn primary wide ev-meet", href: ev.meetUrl, target: "_blank", rel: "noopener" }, "いま Google Meet に参加する"));
   }
 
   App.eventCard = eventCard;

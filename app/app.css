@@ -840,11 +840,12 @@ html.big-text body { zoom: 1.15; }
 
 /* 時計のカード: 黒×金 */
 .cal-clock-card {
+  flex-direction: column; text-align: center; padding: 26px 16px 22px !important; gap: 14px !important;
   display: flex; align-items: center; gap: 18px; padding: 18px 18px 18px 14px; border-radius: 22px; color: #f5e9d6;
   background: radial-gradient(130% 120% at 0% 0%, #3d2a1c 0%, #1c1310 55%, #0f0a08 100%);
   box-shadow: 0 14px 34px rgba(30, 18, 10, 0.28), inset 0 1px 0 rgba(255, 230, 180, 0.08);
 }
-.cal-now { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.cal-now { display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 0; }
 .cal-now-date { font-size: 12.5px; font-weight: 700; color: #d9c4b0; letter-spacing: 0.04em; }
 .cal-now-time {
   font-family: "Inter", sans-serif; font-size: 38px; font-weight: 800; line-height: 1.1; letter-spacing: 0.02em;
@@ -853,7 +854,8 @@ html.big-text body { zoom: 1.15; }
 .cal-now-next { margin-top: 4px; font-size: 12px; font-weight: 800; color: #f3d38c; }
 
 /* 立体的な時計 */
-.lux-clock { --size: 128px; position: relative; flex-shrink: 0; width: var(--size); height: var(--size); }
+/* 時計は大きく: スマホは画面幅の約4分の3(最大300px) */
+.lux-clock { --size: min(74vw, 300px); position: relative; flex-shrink: 0; width: var(--size); height: var(--size); margin: 6px 0; }
 .lux-lug { position: absolute; left: 50%; width: 46%; height: 16%; transform: translateX(-50%); border-radius: 6px;
   background: linear-gradient(90deg, #7a5320, #e9c77b 30%, #fff1c2 50%, #c99a52 70%, #6e4a1a); box-shadow: 0 2px 6px rgba(0, 0, 0, 0.45); }
 .lux-lug.is-top { top: -9%; }
@@ -940,24 +942,42 @@ html.big-text body { zoom: 1.15; }
   .cal-labels { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
   .cal-labels > span { display: block; padding: 1px 5px; border-radius: 5px; background: color-mix(in srgb, var(--kind) 13%, #fff); color: var(--kind); font-size: 10.5px; font-weight: 800; line-height: 1.45; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .cal-labels small { font-size: 10px; color: var(--text-light); text-align: center; }
-  .lux-clock { --size: 150px; }
 }
 /* パソコン: 左に時計と選んだ日、右に月のカレンダー */
 @media (min-width: 900px) {
-  .cal-panel { grid-template-columns: minmax(280px, 340px) minmax(0, 1fr); grid-template-areas: "clock main" "day main"; grid-template-rows: auto 1fr; align-items: start; gap: 18px; }
+  .cal-panel { grid-template-columns: minmax(340px, 400px) minmax(0, 1fr); grid-template-areas: "clock main" "day main"; grid-template-rows: auto 1fr; align-items: start; gap: 18px; }
   .cal-clock-card { flex-direction: column; align-items: center; text-align: center; padding: 26px 18px 22px; gap: 18px; }
   .cal-now { align-items: center; }
-  .lux-clock { --size: 200px; }
+  .lux-clock { --size: 290px; }
   .cal-main { padding: 18px; }
   .cal-cell { min-height: 92px; }
 }
-@media (max-width: 360px) {
-  .lux-clock { --size: 104px; }
-  .cal-now-time { font-size: 30px; }
-}
+
 
 /* PCのメニュー: すりガラスをやめて不透明に(Chrome で動かしたあとに残像が出るのを防ぐ) */
 @media (min-width: 900px) {
   .app-tabs { background: #fff; backdrop-filter: none; -webkit-backdrop-filter: none; }
 }
 body.tabs-left .app-tabs, body.tabs-right .app-tabs, body.tabs-free .app-tabs, body.tabs-top .app-tabs { background: #fff; backdrop-filter: none; -webkit-backdrop-filter: none; isolation: isolate; }
+
+/* ---------- 使いやすさ ---------- */
+/* 上へ戻るボタン(下のメニューの上) */
+.app-to-top {
+  position: fixed; right: 14px; bottom: calc(var(--tabs-h) + 16px + env(safe-area-inset-bottom)); z-index: 44;
+  width: 44px; height: 44px; border-radius: 50%; border: 1px solid rgba(201, 164, 92, 0.55);
+  background: var(--grad); color: #ead39f; font-size: 18px; font-weight: 800; cursor: pointer;
+  box-shadow: 0 8px 20px rgba(18, 14, 11, 0.28);
+}
+body.tabs-top .app-to-top, body.tabs-left .app-to-top, body.tabs-right .app-to-top, body.tabs-free .app-to-top { bottom: calc(18px + env(safe-area-inset-bottom)); }
+body.tabs-right .app-to-top { right: calc(var(--dock-w) + 22px); }
+@media (min-width: 900px) { .app-to-top { bottom: 96px; right: 24px; } }
+/* 定例会が近いとき: 大きな参加ボタン */
+.ev-live { margin-top: 10px; padding: 10px 12px 12px; border-radius: 12px; background: #f4ecdd; border: 1px solid #e0d2b8; }
+.ev-live p { margin-bottom: 6px; font-size: 13px; font-weight: 800; color: #7d5a22; text-align: center; }
+/* 掲示板: LINE などから開いた投稿を少し光らせる */
+.post.is-focus { box-shadow: 0 0 0 3px rgba(201, 164, 92, 0.55), var(--shadow); transition: box-shadow 0.3s; }
+/* カレンダー: はらう案内(スマホだけ) */
+.cal-swipe-hint { flex-basis: 100%; text-align: center; font-size: 10.5px; font-weight: 600; color: var(--text-light); }
+@media (min-width: 700px) { .cal-swipe-hint { display: none; } }
+/* 時計: 上下の金具の分だけすき間を空ける */
+.lux-clock { margin: calc(var(--size) * 0.1) 0; }

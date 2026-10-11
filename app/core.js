@@ -538,6 +538,15 @@ const App = (function () {
     if (typeof ProfileTransfer !== "undefined") ProfileTransfer.offerUpload(data, memberById(data.memberId));
     document.getElementById("appMe").setAttribute("aria-label", `${data.displayName}さんのマイページ`);
     renderTabs();
+    // 長い画面で、下までいったら「上へ」ボタンを出す
+    const toTop = h("button", { type: "button", class: "app-to-top", "aria-label": "いちばん上へ", hidden: true, onclick: () => window.scrollTo({ top: 0, behavior: "smooth" }) }, "↑");
+    document.body.append(toTop);
+    let topTick = false;
+    window.addEventListener("scroll", () => {
+      if (topTick) return;
+      topTick = true;
+      requestAnimationFrame(() => { toTop.hidden = window.scrollY < 900; topTick = false; });
+    }, { passive: true });
     window.addEventListener("hashchange", route);
     // 通知から開いたとき: ホーム画面のアイコンの数字を消し、通知の画面へ移る
     if (typeof BtexPush !== "undefined") {
