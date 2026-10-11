@@ -38,7 +38,7 @@
       "reportThanks", "deleteThanks", "save1on1", "delete1on1", "confirm1on1",
     ],
     // 書き込みのあとに、通知(プッシュ)を送るか確かめる操作(mutating に加えて)
-    notifying: ["createPost", "commentPost", "adminSaveAnnouncement", "setReferralMeeting", "adminSaveMinutes", "saveTask"],
+    notifying: ["createPost", "commentPost", "adminSaveAnnouncement", "adminRemindAnnouncement", "setReferralMeeting", "adminSaveMinutes", "saveTask"],
     create: function (c) {
       function dateKey(ms) {
         var d = new Date(ms + JST);
@@ -1398,6 +1398,24 @@
         if (changed) c.saveDb(w.db);
         return c.ok({});
       }
+      // まだ読んでいない人に、もう一度お知らせする(ベルとスマホ。通知の種類「運営連絡」を切っている人には送らない)。
+      // 同じ運営連絡では6時間に1回まで
+      function adminRemindAnnouncement(body) {
+        var w = admin(body);
+        if (w.error) return w.error;
+        var a = c.find(w.db.announcements, function (x) { return x.id === c.cleanStr(body.id, 40); });
+        if (!a) return c.fail("NOT_FOUND");
+        a.reminders = a.reminders || [];
+        var last = a.reminders[a.reminders.length - 1];
+        if (last && c.nowMs() - last.at < 6 * 60 * 60 * 1000) return c.fail("RATE_LIMITED", "この運営連絡は、さきほどお知らせしたばかりです。6時間あけてからにしてください。");
+        var to = (w.db.referralMembers || []).filter(function (m) { return (a.readBy || []).indexOf(m.id) === -1 && m.id !== w.id; }).map(function (m) { return m.id; });
+        if (!to.length) return c.fail("INVALID_REQUEST", "全員が読んでいます。");
+        a.reminders.push({ at: c.nowMs(), to: to });
+        if (a.reminders.length > 10) a.reminders = a.reminders.slice(-10);
+        c.saveDb(w.db);
+        return c.ok({ count: to.length });
+      }
+
       function adminSaveAnnouncement(body) {
         var w = admin(body);
         if (w.error) return w.error;
@@ -1854,6 +1872,10 @@
         });
         db.announcements.forEach(function (a) {
           items.push({ type: "ann", at: a.at, text: a.title, link: "news?open=" + a.id });
+          // 運営からの「まだ読んでいない方へ」(まだ読んでいなければ)
+          (a.reminders || []).forEach(function (r) {
+            if (r.to.indexOf(me) !== -1 && (a.readBy || []).indexOf(me) === -1) items.push({ type: "annRemind", at: r.at, text: a.title, link: "news?open=" + a.id });
+          });
         });
         db.events.forEach(function (e) {
           if (e.createdAt && e.date >= today()) items.push({ type: "event", at: e.createdAt, text: e.title, date: e.date, link: "events" });
@@ -2076,7 +2098,7 @@
         one: ["oneNew", "oneSoon", "oneAsk"],
         board: ["post", "comment", "reply"],
         mention: ["mention"],
-        news: ["ann", "rsvpSoon", "event"],
+        news: ["ann", "annRemind", "rsvpSoon", "event"],
         task: ["taskNew", "taskDue", "taskSoon"],
         visitor: ["visitor"],
       };
@@ -2172,6 +2194,7 @@
           case "oneAsk": return { title: "☕ " + n + "との1on1 は実施しましたか?", body: "「実施した」を押すと 1on1 の回数に数えます" };
           case "visitor": return { title: "🙋 ビジターの申込がありました", body: x.text + " さん" };
           case "ann": return { title: "📣 運営からのお知らせ", body: x.text };
+          case "annRemind": return { title: "📣 まだ読んでいない運営連絡があります", body: x.text };
           case "event": return { title: "📅 定例会の予定が出ました", body: (x.date || "") + " " + x.text };
           default: return { title: "BT-EX5", body: "新しいお知らせがあります" };
         }
@@ -2241,7 +2264,7 @@
           list1on1: list1on1, save1on1: save1on1, delete1on1: delete1on1, confirm1on1: confirm1on1,
           getMySettings: getMySettings, updateMySettings: updateMySettings,
           listAnnouncements: listAnnouncements, markAnnouncementsRead: markAnnouncementsRead,
-          adminSaveAnnouncement: adminSaveAnnouncement, adminDeleteAnnouncement: adminDeleteAnnouncement,
+          adminSaveAnnouncement: adminSaveAnnouncement, adminDeleteAnnouncement: adminDeleteAnnouncement, adminRemindAnnouncement: adminRemindAnnouncement,
           listTasks: listTasks, saveTask: saveTask, toggleTask: toggleTask, deleteTask: deleteTask,
           listBoard: listBoard, createPost: createPost, editPost: editPost, editComment: editComment, deletePost: deletePost, commentPost: commentPost,
           deleteComment: deleteComment, likePost: likePost,

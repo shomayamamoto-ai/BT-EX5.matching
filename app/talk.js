@@ -63,6 +63,11 @@
             `まだ見ていない方:${a.unreadNames.map((n) => `${n}さん`).join("、")}`,
             App.siteUrl(`#news?open=${a.id}`),
           ].join("\n"), "コピーしました。LINE グループなどに貼り付けてください"), "small") : null,
+          a.unreadNames && a.unreadNames.length ? App.btn(`未読の ${a.unreadNames.length} 名にもう一度通知する`, async () => {
+            if (!confirm(`まだ読んでいない ${a.unreadNames.length} 名に、ベルとスマホでもう一度お知らせしますか?`)) return;
+            const r = await App.api("adminRemindAnnouncement", { id: a.id });
+            if (r) App.toast(`${r.count} 名にもう一度お知らせしました`);
+          }, "ghost small") : null,
           App.btn("編集", () => annForm(a, d.cats), "ghost small"),
           App.btn("削除", async () => {
             if (!confirm("この運営連絡を削除しますか?")) return;

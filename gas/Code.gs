@@ -1111,6 +1111,33 @@ const REF_SEED_ANNOUNCEMENTS = [
       "■ 1on1 のおすすめ",
       "・ホームに、まだ 1on1 をしていないメンバーを週ごとに3人おすすめします。「1on1 を予定」を押すと、相手が入った状態で予定を作れます。",
     ].join("\n"),
+  },  {
+    seedId: "2026-10-12-features",
+    at: Date.UTC(2026, 9, 11, 23, 30), // 2026/10/12 8:30(日本時間)
+    title: "【新機能】BT-EX5 シグナル・デジタル会員証・使い方ガイド",
+    body: [
+      "より安心して、より便利にお使いいただけるよう、全体を見直しました。",
+      "",
+      "■ BT-EX5 シグナル(ホーム)",
+      "・直近6か月のあなたの活動(出席・1on1・紹介・紹介からの売上・ビジター招待)を100点で表示します。70点から緑・50点から黄・30点から赤。",
+      "・「あと1件で +6点」のように、次にやるとよいことも出ます。あなたにだけ表示され、ほかのメンバーには見えません。",
+      "",
+      "■ デジタル会員証",
+      "・マイページ →「デジタル会員証・QR コード」。交流会で QR を読み取ってもらうと、早見表であなたの詳細が開きます。",
+      "",
+      "■ はじめての方へ・使い方ガイド",
+      "・ホームに、使いこなすための7つのステップを出しました(終わると消えます)。",
+      "・マイページ →「使い方・よくある質問」に、できること・だれに何が見えるか・困ったときをまとめました。",
+      "",
+      "■ 見やすさ・使いやすさ",
+      "・入力のまちがいは、その欄のすぐ下に出るようにしました。",
+      "・ランキングで同じ点の方は「同率◯位」と出ます。",
+      "・文字を少し大きく、補足の文字を濃くして読みやすくしました。マイページのメニューを4つのまとまりに分けました。",
+      "",
+      "■ 安心して使うために",
+      "・ご自分のパスワードを決めた方には、共通パスコードでは入れなくなりました(なりすまし防止)。まだの方は、マイページ →「パスワードを決める」からどうぞ。",
+      "・電波が弱いだけのときはログアウトせず、「もう一度読み込む」が出るようにしました。",
+    ].join("\n"),
   },
 ];
 
@@ -2384,7 +2411,7 @@ var BtexServerCore = (function () {
       "reportThanks", "deleteThanks", "save1on1", "delete1on1", "confirm1on1",
     ],
     // 書き込みのあとに、通知(プッシュ)を送るか確かめる操作(mutating に加えて)
-    notifying: ["createPost", "commentPost", "adminSaveAnnouncement", "setReferralMeeting", "adminSaveMinutes", "saveTask"],
+    notifying: ["createPost", "commentPost", "adminSaveAnnouncement", "adminRemindAnnouncement", "setReferralMeeting", "adminSaveMinutes", "saveTask"],
     create: function (c) {
       function dateKey(ms) {
         var d = new Date(ms + JST);
@@ -3744,6 +3771,24 @@ var BtexServerCore = (function () {
         if (changed) c.saveDb(w.db);
         return c.ok({});
       }
+      // まだ読んでいない人に、もう一度お知らせする(ベルとスマホ。通知の種類「運営連絡」を切っている人には送らない)。
+      // 同じ運営連絡では6時間に1回まで
+      function adminRemindAnnouncement(body) {
+        var w = admin(body);
+        if (w.error) return w.error;
+        var a = c.find(w.db.announcements, function (x) { return x.id === c.cleanStr(body.id, 40); });
+        if (!a) return c.fail("NOT_FOUND");
+        a.reminders = a.reminders || [];
+        var last = a.reminders[a.reminders.length - 1];
+        if (last && c.nowMs() - last.at < 6 * 60 * 60 * 1000) return c.fail("RATE_LIMITED", "この運営連絡は、さきほどお知らせしたばかりです。6時間あけてからにしてください。");
+        var to = (w.db.referralMembers || []).filter(function (m) { return (a.readBy || []).indexOf(m.id) === -1 && m.id !== w.id; }).map(function (m) { return m.id; });
+        if (!to.length) return c.fail("INVALID_REQUEST", "全員が読んでいます。");
+        a.reminders.push({ at: c.nowMs(), to: to });
+        if (a.reminders.length > 10) a.reminders = a.reminders.slice(-10);
+        c.saveDb(w.db);
+        return c.ok({ count: to.length });
+      }
+
       function adminSaveAnnouncement(body) {
         var w = admin(body);
         if (w.error) return w.error;
@@ -4200,6 +4245,10 @@ var BtexServerCore = (function () {
         });
         db.announcements.forEach(function (a) {
           items.push({ type: "ann", at: a.at, text: a.title, link: "news?open=" + a.id });
+          // 運営からの「まだ読んでいない方へ」(まだ読んでいなければ)
+          (a.reminders || []).forEach(function (r) {
+            if (r.to.indexOf(me) !== -1 && (a.readBy || []).indexOf(me) === -1) items.push({ type: "annRemind", at: r.at, text: a.title, link: "news?open=" + a.id });
+          });
         });
         db.events.forEach(function (e) {
           if (e.createdAt && e.date >= today()) items.push({ type: "event", at: e.createdAt, text: e.title, date: e.date, link: "events" });
@@ -4422,7 +4471,7 @@ var BtexServerCore = (function () {
         one: ["oneNew", "oneSoon", "oneAsk"],
         board: ["post", "comment", "reply"],
         mention: ["mention"],
-        news: ["ann", "rsvpSoon", "event"],
+        news: ["ann", "annRemind", "rsvpSoon", "event"],
         task: ["taskNew", "taskDue", "taskSoon"],
         visitor: ["visitor"],
       };
@@ -4518,6 +4567,7 @@ var BtexServerCore = (function () {
           case "oneAsk": return { title: "☕ " + n + "との1on1 は実施しましたか?", body: "「実施した」を押すと 1on1 の回数に数えます" };
           case "visitor": return { title: "🙋 ビジターの申込がありました", body: x.text + " さん" };
           case "ann": return { title: "📣 運営からのお知らせ", body: x.text };
+          case "annRemind": return { title: "📣 まだ読んでいない運営連絡があります", body: x.text };
           case "event": return { title: "📅 定例会の予定が出ました", body: (x.date || "") + " " + x.text };
           default: return { title: "BT-EX5", body: "新しいお知らせがあります" };
         }
@@ -4587,7 +4637,7 @@ var BtexServerCore = (function () {
           list1on1: list1on1, save1on1: save1on1, delete1on1: delete1on1, confirm1on1: confirm1on1,
           getMySettings: getMySettings, updateMySettings: updateMySettings,
           listAnnouncements: listAnnouncements, markAnnouncementsRead: markAnnouncementsRead,
-          adminSaveAnnouncement: adminSaveAnnouncement, adminDeleteAnnouncement: adminDeleteAnnouncement,
+          adminSaveAnnouncement: adminSaveAnnouncement, adminDeleteAnnouncement: adminDeleteAnnouncement, adminRemindAnnouncement: adminRemindAnnouncement,
           listTasks: listTasks, saveTask: saveTask, toggleTask: toggleTask, deleteTask: deleteTask,
           listBoard: listBoard, createPost: createPost, editPost: editPost, editComment: editComment, deletePost: deletePost, commentPost: commentPost,
           deleteComment: deleteComment, likePost: likePost,
