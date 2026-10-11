@@ -33,6 +33,7 @@
     nav.replaceChildren(...TABS.map((t) => {
       const a = document.createElement("a");
       a.className = `app-tab${t.id === currentTab ? " is-on" : ""}`;
+      a.draggable = false;
       a.href = t.href;
       if (t.id === currentTab) a.setAttribute("aria-current", "page");
       const svg = document.createElementNS(NS, "svg");

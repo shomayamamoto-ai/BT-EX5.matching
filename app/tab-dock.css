@@ -95,3 +95,5 @@ body.tabs-free .app-toast { bottom: 24px; }
 @media (max-width: 899px) {
   body.tabs-free-v .app-tab span { font-size: 10px; }
 }
+/* リンク(タブ)をつかんだときに、ブラウザがリンクのドラッグを始めないように */
+.app-tabs a, .app-tabs svg { -webkit-user-drag: none; user-drag: none; }

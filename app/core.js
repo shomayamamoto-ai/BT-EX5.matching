@@ -466,7 +466,7 @@ const App = (function () {
         : t.id === "board" ? badges.board || 0
         : t.id === "log" ? badges.inbox || 0
         : t.id === "events" ? badges.rsvp || 0 : 0;
-      return h("a", { class: "app-tab", href: t.href || `#${t.id}`, dataset: { tab: t.id } },
+      return h("a", { class: "app-tab", href: t.href || `#${t.id}`, draggable: "false", dataset: { tab: t.id } },
         icon(t.icon),
         h("span", null, t.label),
         count ? h("span", { class: "app-badge", "aria-label": `${count}件` }, count > 99 ? "99+" : String(count)) : null);

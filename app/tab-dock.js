@@ -1,6 +1,7 @@
 // ============================================
 // app/tab-dock.js — 下のメニュー(タブ)を、つかんで好きな場所へ動かせるようにする
-// ・画面の端の近く(約50px)で離すと、その辺(上・下・左・右)にくっつく(左右は縦に並ぶ)
+// ・メニューが画面の端に近づく(約50px)か端からはみ出して離すと、その辺(上・下・左・右)にくっつく(左右は縦に並ぶ)。
+//   辺の中の位置は離したところのまま(左右は高さ、パソコンの上下は横の位置)
 // ・それ以外の場所で離すと、そこに浮かせて置く(画面の左右寄りに置いたときは縦、ほかは横に並ぶ)
 // ・端のつまみ(⋮⋮)を押すと、下→右→上→左の順にくっつく(キーボードでも)
 // 置いた場所はこの端末に保存し、ほかのページでも同じ場所に出す(画面の大きさが変わっても画面の中に収める)
@@ -15,18 +16,42 @@ const TabDock = (function () {
   const SNAP = 52;       // 端からこの距離(px)以内で離すと、その辺にくっつく
   const SIDE_ZONE = 0.2; // 画面の左右それぞれ2割の中に置くと縦並び
 
-  // 保存の形: "bottom" などの辺、または { side: "free", fx, fy, v }(fx・fy は画面に対する左上の位置の割合)
+  // 保存の形: "bottom" などの辺、{ side: "left", along }(辺の中の位置。画面に対するメニューの中心の割合)、
+  // または { side: "free", fx, fy, v }(fx・fy は画面に対する左上の位置の割合)
   function load() {
     try {
       const raw = localStorage.getItem(KEY);
       if (SIDES.includes(raw)) return { side: raw };
       const st = JSON.parse(raw || "null");
       if (st && st.side === "free" && isFinite(st.fx) && isFinite(st.fy)) return { side: "free", fx: st.fx, fy: st.fy, v: !!st.v };
+      if (st && SIDES.includes(st.side)) return isFinite(st.along) ? { side: st.side, along: st.along } : { side: st.side };
     } catch { /* 読めなければ下 */ }
     return { side: "bottom" };
   }
   function store(st) {
-    try { localStorage.setItem(KEY, st.side === "free" ? JSON.stringify(st) : st.side); } catch { /* noop */ }
+    const plain = st.side !== "free" && !isFinite(st.along);
+    try { localStorage.setItem(KEY, plain ? st.side : JSON.stringify(st)); } catch { /* noop */ }
+  }
+
+  // 辺にくっつけたメニューを、辺の中の離した位置に置く(画面の中に収める)
+  function placeAlong(st) {
+    const nav = navEl();
+    if (!nav) return;
+    nav.style.left = ""; nav.style.top = ""; nav.style.transform = "";
+    if (!isFinite(st.along)) return;
+    const w = window.innerWidth, h = window.innerHeight;
+    const r = nav.getBoundingClientRect();
+    if (st.side === "left" || st.side === "right") {
+      const minTop = 68; // 上の見出し(ロゴ・ベル)にかぶらないように
+      const top = Math.min(Math.max(minTop, st.along * h - r.height / 2), Math.max(minTop, h - r.height - 8));
+      nav.style.transform = "none";
+      nav.style.top = `${Math.round(top)}px`;
+    } else if (r.width < w - 24) {
+      // 上下は、画面より幅が狭いとき(パソコン)だけ横の位置を変える
+      const left = Math.min(Math.max(8, st.along * w - r.width / 2), Math.max(8, w - r.width - 8));
+      nav.style.transform = "none";
+      nav.style.left = `${Math.round(left)}px`;
+    }
   }
   function saved() { return load().side; }
 
@@ -51,7 +76,8 @@ const TabDock = (function () {
     document.body.classList.toggle("tabs-free", free);
     document.body.classList.toggle("tabs-free-v", free && st.v);
     const nav = navEl();
-    if (nav && !free) { nav.style.left = ""; nav.style.top = ""; }
+    if (nav && !free) placeAlong(st);
+    if (nav && free) nav.style.transform = "";
     if (free) placeFree(st);
     store(st);
     const grip = document.querySelector(".tab-grip");
@@ -100,7 +126,7 @@ const TabDock = (function () {
       e.preventDefault();
       nav.style.translate = `${dx}px ${dy}px`;
       // 離したときにくっつく辺を先に見せる(端の近くのときだけ)
-      const edge = nearEdge(e.clientX, e.clientY);
+      const edge = nearEdge(e.clientX, e.clientY, nav.getBoundingClientRect(), start.box);
       if (edge) document.body.dataset.dockPreview = edge;
       else delete document.body.dataset.dockPreview;
     };
@@ -110,13 +136,17 @@ const TabDock = (function () {
       window.removeEventListener("pointerup", end);
       window.removeEventListener("pointercancel", end);
       if (dragged) {
+        const box = nav.getBoundingClientRect();
         nav.classList.remove("is-dragging");
         document.body.classList.remove("dock-dragging");
         nav.style.translate = "";
         delete document.body.dataset.dockPreview;
-        const edge = nearEdge(e.clientX, e.clientY);
+        const edge = nearEdge(e.clientX, e.clientY, box, start.box);
         if (edge) {
-          apply(edge);
+          // 辺の中の位置は、離したときのメニューの中心
+          const w = window.innerWidth, h = window.innerHeight;
+          const along = edge === "left" || edge === "right" ? (box.top + box.height / 2) / h : (box.left + box.width / 2) / w;
+          apply({ side: edge, along: Math.min(1, Math.max(0, along)) });
         } else {
           // 離した場所(指の位置)がメニューの真ん中になるように置く
           const w = window.innerWidth, h = window.innerHeight;
@@ -125,7 +155,12 @@ const TabDock = (function () {
           document.body.classList.toggle("tabs-free-v", v);
           SIDES.forEach((s) => document.body.classList.remove(`tabs-${s}`));
           const r = nav.getBoundingClientRect();
-          apply({ side: "free", v, fx: (e.clientX - r.width / 2) / w, fy: (e.clientY - r.height / 2) / h });
+          const left = e.clientX - r.width / 2, top = e.clientY - r.height / 2;
+          // 置いた結果が端から約50px以内なら、その辺にくっつける(スマホの横いっぱいのメニューを左右へ寄せたときなど)
+          const gaps = { left, right: w - (left + r.width), top, bottom: h - (top + r.height) };
+          const snapTo = (v ? ["left", "right"] : ["top", "bottom"]).filter((k) => gaps[k] <= SNAP).sort((a, b) => gaps[a] - gaps[b])[0];
+          if (snapTo) apply({ side: snapTo, along: v ? Math.min(1, Math.max(0, e.clientY / h)) : Math.min(1, Math.max(0, e.clientX / w)) });
+          else apply({ side: "free", v, fx: left / w, fy: top / h });
         }
         // ドラッグのあとのクリック(リンクへの移動)はしない
         setTimeout(() => { dragged = false; }, 50);
@@ -134,25 +169,40 @@ const TabDock = (function () {
     };
     nav.addEventListener("pointerdown", (e) => {
       if (e.button !== 0) return;
-      start = { x: e.clientX, y: e.clientY, id: e.pointerId };
+      start = { x: e.clientX, y: e.clientY, id: e.pointerId, box: nav.getBoundingClientRect() };
       dragged = false;
       window.addEventListener("pointermove", move, { passive: false });
       window.addEventListener("pointerup", end);
       window.addEventListener("pointercancel", end);
     });
     nav.addEventListener("click", (e) => { if (dragged) { e.preventDefault(); e.stopPropagation(); } }, true);
+    // パソコンのブラウザは、リンク(タブ)をつかむと「リンクのドラッグ」を始めて、メニューの移動が止まる。
+    // メニューの中ではそれをさせない
+    nav.addEventListener("dragstart", (e) => e.preventDefault());
   }
 
-  // 端の近くなら、その辺
-  function nearEdge(x, y) {
+  // メニュー(または指)が端の近く・端の外なら、その辺。いちばん近い(はみ出している)辺を選ぶ。
+  // つかんだときにすでに触れていた辺(例: スマホの下のメニューは左右いっぱい)は、指がその辺の近くに行ったときだけ
+  function edgeGaps(box) {
     const w = window.innerWidth, h = window.innerHeight;
-    const d = { top: y, bottom: h - y, left: x, right: w - x };
+    return { top: box.top, bottom: h - box.bottom, left: box.left, right: w - box.right };
+  }
+  function nearEdge(x, y, box, startBox) {
+    const w = window.innerWidth, h = window.innerHeight;
+    const byPointer = { top: y, bottom: h - y, left: x, right: w - x };
+    const d = {};
+    const g = box ? edgeGaps(box) : null, g0 = startBox ? edgeGaps(startBox) : null;
+    Object.keys(byPointer).forEach((k) => {
+      if (!g) d[k] = byPointer[k];
+      else if (g0 && g0[k] <= SNAP) d[k] = byPointer[k];
+      else d[k] = Math.min(g[k], byPointer[k]);
+    });
     const side = Object.keys(d).sort((a, b) => d[a] - d[b])[0];
     return d[side] <= SNAP ? side : "";
   }
 
   // 画面の大きさが変わったら、浮かせたメニューを画面の中に収め直す
-  window.addEventListener("resize", () => { const st = load(); if (st.side === "free") placeFree(st); });
+  window.addEventListener("resize", () => { const st = load(); if (st.side === "free") placeFree(st); else placeAlong(st); });
 
   // 本文が描かれる前に位置を反映(ちらつきを防ぐ)
   if (document.body) apply(load());
