@@ -15,8 +15,8 @@
 }
 .prof-progress-head { display: flex; justify-content: space-between; align-items: baseline; font-weight: 800; }
 .prof-progress-head strong { font-size: 26px; color: var(--accent); }
-.prof-progress-bar { height: 8px; border-radius: 999px; background: #f6e7dc; overflow: hidden; margin: 8px 0 12px; }
-.prof-progress-bar span { display: block; height: 100%; width: 0; background: linear-gradient(100deg, #f4694b, #f9a03f); transition: width 0.3s ease; }
+.prof-progress-bar { height: 8px; border-radius: 999px; background: #eee5d6; overflow: hidden; margin: 8px 0 12px; }
+.prof-progress-bar span { display: block; height: 100%; width: 0; background: linear-gradient(100deg, #a8813e, #c9a45c); transition: width 0.3s ease; }
 .prof-todo { list-style: none; display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; }
 .prof-todo li {
   font-size: 13px;

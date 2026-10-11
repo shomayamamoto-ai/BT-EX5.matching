@@ -1,0 +1,191 @@
+/* ============================================
+   assets/lux.css — サイト全体の仕上げ(黒×金の上質な見た目)
+   どのページでも、ほかのスタイルのあとに読み込む。
+   ・地はアイボリー、見出しは明朝、数字はセリフ体
+   ・上の見出しと下のメニューは墨色に金の細い線
+   ・おもなボタンは墨色に金の縁、角は少しだけ丸く
+   ============================================ */
+@import url("https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500;600;700;800&family=Cormorant+Garamond:wght@500;600;700&display=swap");
+
+:root {
+  --grad: linear-gradient(135deg, #2f261e 0%, #1a1410 60%, #120e0b 100%);
+  --lux-ink: #15110d;
+  --lux-ink-2: #241c16;
+  --lux-gold: #c9a45c;
+  --lux-gold-hi: #ead39f;
+  --lux-gold-line: rgba(201, 164, 92, 0.42);
+  --lux-gold-grad: linear-gradient(135deg, #f1dfb1 0%, #c9a45c 45%, #9c7433 100%);
+  --lux-serif: "Shippori Mincho", "Noto Serif JP", "Hiragino Mincho ProN", "Yu Mincho", serif;
+  --lux-num: "Cormorant Garamond", "Shippori Mincho", serif;
+  --shadow: 0 1px 2px rgba(30, 22, 12, 0.04), 0 12px 32px rgba(30, 22, 12, 0.07);
+  --radius: 14px;
+  /* 注意・お知らせの色も落ち着いた色に */
+  --warn: #8f5a1c;
+  --warn-bg: #f5ecdc;
+  --info: #34506f;
+  --info-bg: #e9eef4;
+  --good: #2f6a50;
+}
+
+/* ---------- 地と文字 ---------- */
+body {
+  background-color: #f6f2ea;
+  background-image:
+    radial-gradient(1200px 600px at 100% -10%, rgba(201, 164, 92, 0.10), rgba(201, 164, 92, 0) 60%),
+    radial-gradient(900px 500px at -10% 110%, rgba(36, 28, 22, 0.05), rgba(36, 28, 22, 0) 60%);
+  background-attachment: fixed;
+  letter-spacing: 0.02em;
+  font-feature-settings: "palt" 1;
+}
+::selection { background: rgba(201, 164, 92, 0.32); }
+
+/* 見出しは明朝 */
+h1, h2, h3,
+.app-h1, .app-h2, .app-title, .home-hello h1, .cal-title, .cal-day h3,
+.ref-title, .cs-title, .md-name, .auth-card h1, .terms h2, .evd-block h2, .checkin-box h2,
+.home-spot-head b, .home-rank-main b, .ev-main h3, .diag-title, .ref-section-title {
+  font-family: var(--lux-serif);
+  letter-spacing: 0.05em;
+}
+.app-h2 { font-weight: 700; font-size: 16px; }
+/* 区切りの見出しに金の短い線 */
+.app-section > .app-h2::before, .home-sec-head .app-h2::before {
+  content: ""; display: inline-block; width: 14px; height: 1px; margin-right: 2px;
+  background: var(--lux-gold); vertical-align: middle;
+}
+
+/* 大きな数字はセリフ体 */
+.home-rank-no b, .home-me-stat b, .cal-now-time, .home-stat b, .rk-me b, .stat-big, .dash-kpis b {
+  font-family: var(--lux-num);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+.home-me-stat b { font-size: 26px; }
+.home-rank-no b { font-size: 40px; }
+.cal-now-time { font-size: 46px; }
+
+/* ---------- 上の見出し(会員アプリ) ---------- */
+.app-top {
+  background: linear-gradient(180deg, #1c1612 0%, #120e0b 100%);
+  border-bottom: 1px solid var(--lux-gold-line);
+  box-shadow: 0 6px 20px rgba(18, 14, 11, 0.18);
+  backdrop-filter: none; -webkit-backdrop-filter: none;
+}
+.app-top .brand-name { color: #f4ecdd; }
+.app-top .brand-mark { box-shadow: 0 0 0 1px var(--lux-gold-line), 0 4px 12px rgba(0, 0, 0, 0.4); }
+.app-title { color: #f1e2bf; font-weight: 700; letter-spacing: 0.12em; }
+.app-bell { color: #d9c9ac; }
+.app-me .app-avatar { box-shadow: 0 0 0 2px #120e0b, 0 0 0 3.5px var(--lux-gold); }
+.app-top .op-movie-btn { color: var(--lux-gold-hi); border-color: var(--lux-gold-line); background: transparent; }
+.app-top .op-movie-btn:hover { background: rgba(201, 164, 92, 0.12); }
+
+/* 早見表・プロフィールなどの上の見出し */
+.ref-header {
+  background: linear-gradient(180deg, #1c1612 0%, #120e0b 100%) !important;
+  border-bottom: 1px solid var(--lux-gold-line) !important;
+  box-shadow: 0 6px 20px rgba(18, 14, 11, 0.18);
+  backdrop-filter: none; -webkit-backdrop-filter: none;
+}
+.ref-header .brand-name { color: #f4ecdd; }
+.ref-header .brand-sub { color: #b9a688; }
+.ref-header-link { color: #d9c9ac !important; }
+.ref-header-link:hover { color: var(--lux-gold-hi) !important; }
+.ref-header-cta { background: transparent !important; color: var(--lux-gold-hi) !important; border: 1px solid var(--lux-gold-line) !important; box-shadow: none !important; }
+.ref-header .op-movie-btn { color: var(--lux-gold-hi); border-color: var(--lux-gold-line); }
+
+/* ---------- 下のメニュー ---------- */
+.app-tabs,
+body.tabs-left .app-tabs, body.tabs-right .app-tabs, body.tabs-free .app-tabs, body.tabs-top .app-tabs {
+  background: linear-gradient(180deg, #1d1713 0%, #120e0b 100%) !important;
+  border-color: var(--lux-gold-line) !important;
+  backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
+  box-shadow: 0 -6px 24px rgba(18, 14, 11, 0.16);
+}
+.app-tab { color: #9b8d7c; font-weight: 700; letter-spacing: 0.04em; }
+.app-tab.is-on { color: var(--lux-gold-hi); }
+.app-tab.is-on::after {
+  content: ""; position: absolute; left: 50%; bottom: 7px; width: 18px; height: 2px; margin-left: -9px; border-radius: 2px;
+  background: var(--lux-gold-grad);
+}
+body.tabs-left .app-tab.is-on::after, body.tabs-right .app-tab.is-on::after { bottom: 4px; }
+.app-tab .app-badge, .app-badge { background: #a3261d; box-shadow: 0 0 0 2px #15110d; }
+.tab-grip { color: #8a7b68; }
+.tab-grip:hover { background: rgba(201, 164, 92, 0.12); color: var(--lux-gold-hi); }
+@media (min-width: 900px) {
+  .app-tabs { box-shadow: 0 14px 36px rgba(18, 14, 11, 0.28), inset 0 1px 0 rgba(234, 211, 159, 0.08); }
+}
+
+/* ---------- ボタン ---------- */
+.app-btn, .ref-btn, .auth-submit, .auth-secondary, .cs-go, .diag-btn, .prof-save, .adm-btn {
+  border-radius: 10px;
+  letter-spacing: 0.06em;
+}
+.app-btn.primary, .auth-submit, .home-ask button {
+  background: var(--grad) !important;
+  color: #f4e6c4 !important;
+  border: 1px solid rgba(201, 164, 92, 0.55) !important;
+  box-shadow: 0 6px 18px rgba(18, 14, 11, 0.22), inset 0 1px 0 rgba(234, 211, 159, 0.15) !important;
+}
+.app-btn.primary:hover, .auth-submit:hover, .home-ask button:hover { filter: brightness(1.12); }
+.app-btn { border-color: var(--lux-gold); color: #7d5a22; }
+.app-btn.ghost { border-color: #d6c6aa; color: #5d5246; background: #fffdf8; }
+.home-ask button { border-radius: 999px; }
+/* 選んでいる絞り込み・切り替えは墨色に金の文字 */
+.app-pill.is-on, .ref-chip.is-on, .ref-filter.is-on, .board-cat.is-on { background: var(--grad); border-color: rgba(201, 164, 92, 0.6); color: var(--lux-gold-hi); }
+
+/* ---------- カード・一覧 ---------- */
+.app-list, .app-cards > *, .ev-card, .cal-main, .cal-day, .home-alert, .home-nudge, .task-row, .ref-card, .md-sec, .auth-card,
+.board-list > li, .ann-list > li, .checkin-box {
+  border-color: #e6dccb;
+}
+.ev-card, .cal-main, .cal-day, .auth-card, .ref-card { box-shadow: var(--shadow); }
+.ev-date {
+  background: var(--grad); color: var(--lux-gold-hi);
+  border: 1px solid rgba(201, 164, 92, 0.45);
+  font-family: var(--lux-serif);
+}
+
+/* ホーム */
+.home-me {
+  background: radial-gradient(120% 140% at 100% 0%, #3b2d20 0%, #1d1611 52%, #120e0b 100%);
+  border: 1px solid var(--lux-gold-line);
+  box-shadow: 0 16px 40px rgba(18, 14, 11, 0.26), inset 0 1px 0 rgba(234, 211, 159, 0.1);
+}
+.home-rank-no > span, .home-rank-main em, .home-me-foot b { color: var(--lux-gold-hi); }
+.home-ask { border-color: #d6c6aa; background: #fffdf8; }
+.home-ask:focus-within { border-color: var(--lux-gold); box-shadow: 0 0 0 4px rgba(201, 164, 92, 0.16); }
+.home-ask svg, .home-action-icon svg { fill: #9c7433; }
+.home-action-icon {
+  background: linear-gradient(160deg, #fffdf8, #f3ecdf);
+  border: 1px solid #e0d2b8;
+  box-shadow: 0 6px 14px rgba(30, 22, 12, 0.07), inset 0 1px 0 #fff;
+}
+.home-spot { background: linear-gradient(160deg, #fffdf8 0%, #f5eee2 100%); border-color: #e0d2b8; }
+.home-spot-label, .cal-day-today, .terms-ai-badge { background: var(--grad); color: var(--lux-gold-hi); border: 1px solid rgba(201, 164, 92, 0.45); }
+.home-alert { border-left-color: var(--lux-gold); }
+.home-alert.is-warn { border-left-color: #b07a2e; }
+.home-alert.is-info { border-left-color: #34506f; }
+.home-sum .is-todo { color: #7d5a22; background: #f5ecdb; border-color: rgba(156, 116, 51, 0.35); }
+.home-sum span { background: #fffdf8; }
+
+/* 予定のカレンダー */
+.cal-cell.is-today .cal-num { background: var(--grad); color: var(--lux-gold-hi) !important; box-shadow: 0 0 0 1px rgba(201, 164, 92, 0.6), 0 4px 10px rgba(18, 14, 11, 0.25); }
+.cal-cell.is-sel { border-color: var(--lux-gold); background: #f7f1e5; }
+.cal-today { background: #fffdf8; color: #7d5a22; border-color: #d6c6aa; }
+.cal-clock-card { border: 1px solid var(--lux-gold-line); }
+.is-event { --kind: #9c7433; }
+
+/* 早見表 */
+.ref-tag { border-radius: 6px; }
+
+/* ログインなどのカード */
+.auth-main { background-image: none !important; }
+.auth-card { border-radius: 18px; border: 1px solid #e0d2b8; box-shadow: 0 24px 60px rgba(30, 22, 12, 0.10); }
+.auth-card h1 { font-weight: 700; letter-spacing: 0.1em; }
+.auth-logo { filter: none !important; }
+
+/* フッター */
+.app-footer, .auth-footer, .ref-footer { letter-spacing: 0.04em; }
+
+/* フォーカスの線も金 */
+:focus-visible { outline-color: var(--lux-gold); }

@@ -59,8 +59,8 @@ html.op-intro-open, html.op-intro-open body { overflow: hidden; }
   cursor: pointer;
 }
 .op-movie-btn svg { width: 12px; height: 12px; fill: currentColor; flex-shrink: 0; }
-.op-movie-btn:hover { background: rgba(244, 105, 75, 0.08); }
-.op-movie-btn:focus-visible { outline: 2px solid var(--accent, #f4694b); outline-offset: 2px; }
+.op-movie-btn:hover { background: rgba(168, 129, 62, 0.08); }
+.op-movie-btn:focus-visible { outline: 2px solid var(--accent, #a8813e); outline-offset: 2px; }
 /* 狭い画面では ▶ だけにする */
 @media (max-width: 720px) {
   .op-movie-btn { padding: 0; width: 30px; height: 30px; justify-content: center; }

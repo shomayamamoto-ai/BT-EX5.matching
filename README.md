@@ -181,6 +181,8 @@ node tools/build-gas.mjs      # 共有サーバー用の gas/Code.gs を作り�
 
 ## 技術構成
 
+- **見た目の仕上げ** — `assets/lux.css` をどのページでも最後に読み込み、黒×金の上質なデザインにそろえています(地はアイボリー、見出しは明朝体 Shippori Mincho、大きな数字は Cormorant Garamond、上の見出しと下のメニューは墨色に金の細い線、おもなボタンは墨色に金の縁)。色を変えるときは、まずこのファイルの `:root` を直します
+
 ビルド不要の静的サイトです(HTML / CSS / Vanilla JavaScript)。
 
 ```
