@@ -97,3 +97,16 @@ body.tabs-free .app-toast { bottom: 24px; }
 }
 /* リンク(タブ)をつかんだときに、ブラウザがリンクのドラッグを始めないように */
 .app-tabs a, .app-tabs svg { -webkit-user-drag: none; user-drag: none; }
+
+/* パソコン: メニューを左右に置いても、本文が片側へずれないよう、両側に同じだけ余白をとる
+   (とても広い画面では、もともと左右に余白があるので、ふつうの幅のまま) */
+@media (min-width: 900px) and (max-width: 1399px) {
+  body.tabs-left .app-main, body.tabs-right .app-main,
+  body.tabs-left .app-footer, body.tabs-right .app-footer { padding-left: calc(var(--dock-w) + 22px); padding-right: calc(var(--dock-w) + 22px); }
+  body.tabs-left.has-app-tabs, body.tabs-right.has-app-tabs { padding-left: calc(var(--dock-w) + 12px); padding-right: calc(var(--dock-w) + 12px); }
+}
+@media (min-width: 1400px) {
+  body.tabs-left .app-main, body.tabs-right .app-main { padding-left: 32px; padding-right: 32px; }
+  body.tabs-left .app-footer, body.tabs-right .app-footer { padding-left: 16px; padding-right: 16px; }
+  body.tabs-left.has-app-tabs, body.tabs-right.has-app-tabs { padding-left: 0; padding-right: 0; }
+}

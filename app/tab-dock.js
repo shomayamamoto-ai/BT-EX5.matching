@@ -38,7 +38,8 @@ const TabDock = (function () {
     const nav = navEl();
     if (!nav) return;
     nav.style.left = ""; nav.style.top = ""; nav.style.transform = "";
-    if (!isFinite(st.along)) return;
+    // 真ん中の近く(±12%)に置いたときは、ちょうど真ん中にそろえる
+    if (!isFinite(st.along) || Math.abs(st.along - 0.5) < 0.12) return;
     const w = window.innerWidth, h = window.innerHeight;
     const r = nav.getBoundingClientRect();
     if (st.side === "left" || st.side === "right") {
