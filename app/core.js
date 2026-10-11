@@ -184,7 +184,14 @@ const App = (function () {
   function calStamp(date, time) {
     return `${date.replace(/-/g, "")}T${(time || "00:00").replace(":", "").padStart(4, "0")}00`;
   }
+  // 終日(時刻なし)の予定は、その日1日として入れる(やることの期限など)
+  function nextDay(date) {
+    const d = new Date(`${date}T12:00:00`);
+    d.setDate(d.getDate() + 1);
+    return `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}`;
+  }
   function calRange(item) {
+    if (item.allDay) return [item.date.replace(/-/g, ""), nextDay(item.date)];
     const start = item.start || "10:00";
     let end = item.end;
     if (!end) {
@@ -214,7 +221,7 @@ const App = (function () {
     const text = [
       "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//BT-EX5//JA", "CALSCALE:GREGORIAN", "BEGIN:VEVENT",
       `UID:${item.uid || `${a}-${Math.random().toString(36).slice(2)}`}@bt-ex5`, `DTSTAMP:${now}`,
-      `DTSTART;TZID=Asia/Tokyo:${a}`, `DTEND;TZID=Asia/Tokyo:${b}`,
+      item.allDay ? `DTSTART;VALUE=DATE:${a}` : `DTSTART;TZID=Asia/Tokyo:${a}`, item.allDay ? `DTEND;VALUE=DATE:${b}` : `DTEND;TZID=Asia/Tokyo:${b}`,
       `SUMMARY:${esc(item.title)}`, item.place ? `LOCATION:${esc(item.place)}` : "", item.body ? `DESCRIPTION:${esc(item.body)}` : "",
       "BEGIN:VALARM", "TRIGGER:-PT1H", "ACTION:DISPLAY", `DESCRIPTION:${esc(item.title)}`, "END:VALARM",
       "END:VEVENT", "END:VCALENDAR",

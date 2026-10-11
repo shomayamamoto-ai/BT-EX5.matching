@@ -33,11 +33,14 @@
         h("span", null, h("b", null, t.title),
           h("small", null, [
             dueLabel(t.due),
+            t.time ? ` ${t.time}` : null,
             o.showEvent && t.eventTitle ? ` ${t.eventTitle}` : null,
             t.by && !t.canEdit ? ` ・ ${t.byName}さんから` : null,
             many ? ` ・ 済 ${t.doneCount}/${t.assignees.length}` : null,
           ]),
           t.note ? h("small", { class: "task-note" }, t.note) : null,
+          t.private ? h("small", { class: "task-private" }, "🔒 自分だけ") : null,
+          t.due && t.mine && !t.myDone ? App.calendarButtons(calItem(t)) : null,
           o.showPeople && many ? h("small", { class: "task-people" }, t.assignees.map((a) => `${a.done ? "✓" : "・"}${a.name}`).join(" ")) : null)),
       o.canManage || t.canEdit ? h("button", { type: "button", class: "app-icon-btn", "aria-label": "やることを消す", onclick: async (e) => {
         if (!confirm(`「${t.title}」を消しますか?`)) return;
@@ -46,7 +49,25 @@
     return li;
   };
 
-  // やることを追加する。admin なら担当者をだれでも選べる(選ばなければ自分)。opt.due で期限を先に入れておける(カレンダーから)
+  // カレンダーに入れる形(時刻があればその時刻から1時間、なければ期限の日の終日)
+  function calItem(t) {
+    return { uid: `task-${t.id}`, title: `やること:${t.title}`, date: t.due, start: t.time || "", allDay: !t.time, body: [t.note, "BT-EX5 のやること"].filter(Boolean).join("\n\n") };
+  }
+
+  // 保存のあと: Google カレンダー(と iPhone・Outlook)に入れるか聞く
+  function offerCalendar(t) {
+    App.openSheet("カレンダーにも入れますか?", (body, close) => {
+      body.append(
+        h("p", { class: "app-lead" }, `「${t.title}」を ${App.fmtDate(t.due)}${t.time ? ` ${t.time}` : "(終日)"} の予定として入れます。${t.private ? "あなたのカレンダーに入るだけで、ほかの人には見えません。" : ""}`),
+        h("div", { class: "app-btn-row" },
+          h("a", { class: "app-btn primary", href: App.googleCalUrl(calItem(t)), target: "_blank", rel: "noopener", onclick: () => setTimeout(close, 300) }, "Google カレンダーに入れる"),
+          App.btn("iPhone・Outlook(.ics)", () => { App.icsFile(calItem(t)); close(); }, "ghost")),
+        App.btn("入れない", close, "ghost wide"));
+    }, { noFocus: true });
+  }
+
+  // やることを追加する。admin なら担当者をだれでも選べる(選ばなければ自分)。opt.due で期限を先に入れておける(カレンダーから)。
+  // 定例会のやること以外は、はじめから「自分だけが見られる」。保存したら、カレンダーに入れるか聞く
   App.taskForm = function (opt, onSaved) {
     const o = opt || {};
     App.openSheet(o.eventTitle ? `やることを追加(${o.eventTitle})` : "やることを追加", (body, close) => {
@@ -57,22 +78,34 @@
           const d = new Date(`${App.todayKey()}T12:00:00`); d.setDate(d.getDate() + n);
           due.value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
         } }, label)));
+      const time = h("input", { type: "time", step: "300", "aria-label": "時刻(任意)" });
       const note = h("textarea", { rows: "2", maxlength: "500", placeholder: "メモ(任意)" });
+      // 定例会のやること以外は、はじめから「自分だけ」(ほかの人・運営には見えない)
+      const priv = o.eventId ? null : h("input", { type: "checkbox", checked: o.private !== false });
       const picker = App.isAdmin() ? App.memberPicker({ multiple: true, value: [], label: "担当" }) : null;
       const all = App.isAdmin() ? h("input", { type: "checkbox" }) : null;
+      const pickerBox = picker ? App.field("担当(選ばなければ自分)", h("div", null, h("label", { class: "app-check" }, all, " 全員"), picker)) : null;
+      const syncPicker = () => { if (pickerBox) pickerBox.hidden = !!(priv && priv.checked); };
+      if (priv) priv.addEventListener("change", syncPicker);
+      syncPicker();
       body.append(h("form", { class: "app-form", onsubmit: async (e) => {
         e.preventDefault();
         if (!title.value.trim()) { App.toast("やることを入れてください"); return; }
-        const assignees = all && all.checked ? App.members.map((m) => m.id) : picker ? picker.getValue() : [];
-        const d = await App.api("saveTask", { item: { title: title.value.trim(), due: due.value, note: note.value, assignees, eventId: o.eventId || "" } });
+        const isPrivate = !!(priv && priv.checked);
+        const assignees = isPrivate ? [] : all && all.checked ? App.members.map((m) => m.id) : picker ? picker.getValue() : [];
+        const d = await App.api("saveTask", { item: { title: title.value.trim(), due: due.value, time: due.value ? time.value : "", note: note.value, assignees, eventId: o.eventId || "", private: isPrivate } });
         if (!d) return;
         close();
         App.toast(d.item.assignees.length > 1 ? `${d.item.assignees.length}名に届けました` : d.item.mine ? "追加しました" : `${d.item.assignees[0].name}さんに届けました`);
         if (onSaved) onSaved(d.item);
+        // 期限があれば、自分のカレンダーにも入れられる
+        if (d.item.due && d.item.mine) offerCalendar(d.item);
       } },
       App.field("やること", title),
       App.field("期限(任意)", h("div", null, due, quick)),
-      picker ? App.field("担当(選ばなければ自分)", h("div", null, h("label", { class: "app-check" }, all, " 全員"), picker)) : null,
+      App.field("時刻(任意)", time, "入れると、カレンダーにその時刻の予定として入ります(入れなければ終日)"),
+      priv ? h("label", { class: "app-check task-private-check" }, priv, " 自分だけが見られる(ほかのメンバー・運営には見えません)") : null,
+      pickerBox,
       App.field("メモ", note),
       h("button", { type: "submit", class: "app-btn primary wide" }, "追加する")));
     }, { noFocus: true });

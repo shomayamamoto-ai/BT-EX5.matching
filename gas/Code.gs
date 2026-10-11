@@ -923,7 +923,7 @@ const REF_SEED_ANNOUNCEMENTS = [
   {
     seedId: "2026-10-11-changelog",
     at: Date.UTC(2026, 9, 11, 7, 30), // 2026/10/11 16:30(日本時間)
-    title: "【システム改善】10月11日(日) ホーム・予定・利用規約・デザインを新しくしました",
+    title: "【システム改善】10月11日(日) ホーム・予定・利用規約を新しくしました",
     body: [
       "10月11日(日)に改善した内容です。",
       "",
@@ -939,17 +939,14 @@ const REF_SEED_ANNOUNCEMENTS = [
       "",
       "■ 予定にカレンダーと時計",
       "・定例会・1on1・紹介の顔合わせ・やることの期限を、月のカレンダーで見られるようにしました。日を押すと、その日の予定が出ます。",
-      "・立体的な時計を付けました(日本時間)。スマホでも見やすい大きさです。カレンダーは指で左右にはらうと月が変わります。",
+      "・立体的な時計を付けました(日本時間)。",
       "",
       "■ 1on1・紹介",
       "・1on1 の日付に「昨日」「一昨日」を付けました。Meet を作ったあと、Google カレンダーへの追加と、相手に送る文のコピーができます。",
       "・紹介にも、顔合わせの予定・カレンダー追加・送る文のコピーを付けました。",
       "・予定のリマインド、予定の重なりの確認、紹介の絞り込み、自分の記録の書き出し(CSV)を入れました。",
-      "・「人手が足りない」などの相談では、採用だけでなく「システム開発で人手を補う」方法と紹介先も出すようにしました。",
       "",
       "■ 定例会・掲示板・やること",
-      "・定例会の1時間前からは「開始まで あと◯分」と、大きな「いま Google Meet に参加する」ボタンが出ます。",
-      "・運営連絡と掲示板の投稿を、LINE にそのまま貼れる文でコピーできるようにしました。",
       "・定例会の議事録・決定事項を残せるようにしました。",
       "・掲示板の投稿とコメントを、あとから直せるようにしました。",
       "・担当と期限つきの「やること」を作りました。運営は進み具合を確認できます。",
@@ -960,10 +957,39 @@ const REF_SEED_ANNOUNCEMENTS = [
       "・パソコンで見出しや本文が真ん中からずれていたのを直し、広い画面では2列で表示するようにしました。",
       "・メニューを好きな場所や画面の端に置けるようにし、動かしたあとに残像が出ることがあったのを直しました。",
       "・メンバーのプロフィールを、本人のホームページや資料の内容で充実させました。資料の画像は切れずに出ます。",
-      "・入っていない項目が「null」などの文字で出ることがあったので、出ないように直しました。",
+    ].join("\n"),
+  },
+
+  {
+    seedId: "2026-10-11-changelog-2",
+    at: Date.UTC(2026, 9, 11, 11, 0), // 2026/10/11 20:00(日本時間。まだその時刻でなければ、入れた時刻)
+    title: "【システム改善】10月11日(日) 夜の更新:やること・紹介診断・デザインなど",
+    body: [
+      "10月11日(日)の夜に、さらに改善した内容です。",
       "",
-      "■ デザインを上質に",
+      "■ やること(自分だけ・Google カレンダー)",
+      "・カレンダーやホームから自分で入れる「やること」は、はじめから「自分だけが見られる」ようにしました。ほかのメンバーや運営には見えません。",
+      "・時刻も入れられるようにしました。保存したあとに、Google カレンダー(iPhone・Outlook も)へそのまま入れられます。やることの一覧からも、あとでカレンダーに入れられます。",
+      "",
+      "■ 紹介診断・相談アシスタント",
+      "・紹介診断の質問を6つから3つにしました(困りごと → 方法 → 相手はどんな方か)。業種・エリア・会い方の質問をなくし、約15秒で結果が出ます。",
+      "・「人手が足りない」「スタッフが足りない」などの相談では、採用だけでなく「システム開発で人手を補う」方法と、その紹介先も出すようにしました。",
+      "",
+      "■ 定例会・予定",
+      "・定例会の1時間前からは「開始まで あと◯分」と、大きな「いま Google Meet に参加する」ボタンが出ます。",
+      "・予定の時計を大きくしました(スマホでは画面幅の約4分の3)。カレンダーは、指で左右にはらうと月が変わります。",
+      "・スマホで定例会の日付が枠からはみ出していたので、「月・日・曜日・あと◯日」の縦並びにしました。",
+      "",
+      "■ LINE で共有",
+      "・運営連絡と掲示板の投稿を、LINE にそのまま貼れる文でコピーできるようにしました(「LINE に貼る文をコピー」「LINE 用にコピー」)。貼ったリンクを開くと、その投稿が開きます。",
+      "",
+      "■ 見た目と使いやすさ",
       "・ロゴに合わせて、サイト全体を黒×金の落ち着いたデザインにしました。地はアイボリー、見出しは明朝体、上の見出しと下のメニューは墨色に金の線です。",
+      "・長い画面では、右下に「↑」(いちばん上へ)ボタンが出ます。",
+      "",
+      "■ 直したところ",
+      "・運営連絡の各投稿の下に「nullnull」という文字が出ていたのを直しました。入っていない部分が、そのまま文字として出ていたのが原因です。",
+      "・ほかの画面で、入っていない項目が「null」と出ることがあったのも直しました。",
     ].join("\n"),
   },
 ];
@@ -3592,7 +3618,7 @@ var BtexServerCore = (function () {
       function taskView(db, t, me) {
         var done = t.done || {};
         return {
-          id: t.id, title: t.title, note: t.note || "", due: t.due || "", eventId: t.eventId || "",
+          id: t.id, title: t.title, note: t.note || "", due: t.due || "", time: t.time || "", private: !!t.private, eventId: t.eventId || "",
           eventTitle: (function () { var e = t.eventId && c.find(db.events, function (x) { return x.id === t.eventId; }); return e ? e.date.slice(5).replace("-", "/") + " " + e.title : ""; })(),
           by: t.by, byName: nameOf(db, t.by), at: t.at,
           assignees: t.assignees.map(function (id) { return { id: id, name: nameOf(db, id), done: !!done[id] }; }),
@@ -3605,6 +3631,7 @@ var BtexServerCore = (function () {
         if (w.error) return w.error;
         var db = w.db;
         var list = db.tasks.filter(function (t) {
+          if (t.private && t.by !== w.id) return false;
           if (body.eventId) return t.eventId === body.eventId;
           return t.assignees.indexOf(w.id) !== -1 || t.by === w.id;
         });
@@ -3622,7 +3649,8 @@ var BtexServerCore = (function () {
         if (!w.isAdmin) assignees = assignees.filter(function (id) { return id === w.id; });
         if (!assignees.length) assignees = [w.id];
         var t = input.id ? c.find(db.tasks, function (x) { return x.id === input.id; }) : null;
-        if (input.id && (!t || (t.by !== w.id && !w.isAdmin))) return c.fail("NOT_FOUND");
+        // 自分だけのやることは、書いた本人しか直せない(管理者も)
+        if (input.id && (!t || (t.by !== w.id && (!w.isAdmin || t.private)))) return c.fail("NOT_FOUND");
         if (!t) {
           t = { id: newId("t_"), by: w.id, at: c.nowMs(), done: {} };
           db.tasks.push(t);
@@ -3631,9 +3659,12 @@ var BtexServerCore = (function () {
         t.title = title;
         t.note = cleanText(input.note, 500);
         t.due = cleanDate(input.due);
-        t.assignees = assignees;
+        t.time = t.due ? cleanTime(input.time) : "";
         var ev = input.eventId && c.find(db.events, function (x) { return x.id === input.eventId; });
         t.eventId = ev ? ev.id : (t.eventId || "");
+        // 自分だけのやること: 担当は自分だけ、定例会にもつなげない(ほかの人・運営には見えない)
+        t.private = input.private === true && !t.eventId;
+        t.assignees = t.private ? [w.id] : assignees;
         c.saveDb(db);
         return c.ok({ item: taskView(db, t, w.id) });
       }
@@ -3651,7 +3682,7 @@ var BtexServerCore = (function () {
         var w = who(body);
         if (w.error) return w.error;
         var t = c.find(w.db.tasks, function (x) { return x.id === body.id; });
-        if (!t || (t.by !== w.id && !w.isAdmin)) return c.fail("NOT_FOUND");
+        if (!t || (t.by !== w.id && (!w.isAdmin || t.private))) return c.fail("NOT_FOUND");
         w.db.tasks = w.db.tasks.filter(function (x) { return x.id !== t.id; });
         c.saveDb(w.db);
         return c.ok({});
@@ -3855,7 +3886,7 @@ var BtexServerCore = (function () {
         });
         var sc = searchCounts(db, month + "-01", month + "-31");
         // やることの進み具合(終わっていないもの)
-        var openTasks = db.tasks.filter(function (t) { return t.assignees.some(function (id) { return !(t.done || {})[id]; }); });
+        var openTasks = db.tasks.filter(function (t) { return !t.private && t.assignees.some(function (id) { return !(t.done || {})[id]; }); });
         members.forEach(function (row) {
           var mine = openTasks.filter(function (t) { return t.assignees.indexOf(row.id) !== -1 && !(t.done || {})[row.id]; });
           row.openTasks = mine.length;

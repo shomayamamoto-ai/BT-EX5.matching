@@ -981,3 +981,8 @@ body.tabs-right .app-to-top { right: calc(var(--dock-w) + 22px); }
 @media (min-width: 700px) { .cal-swipe-hint { display: none; } }
 /* 時計: 上下の金具の分だけすき間を空ける */
 .lux-clock { margin: calc(var(--size) * 0.1) 0; }
+
+/* やること: 自分だけ・カレンダー */
+.task-private { display: inline-block; margin-top: 2px; font-size: 11px; font-weight: 700; color: var(--text-sub); }
+.task-row .cal-add { margin-top: 2px; }
+.task-private-check { margin: 2px 0 6px; font-size: 13px; }

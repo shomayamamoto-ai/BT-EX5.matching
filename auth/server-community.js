@@ -1416,7 +1416,7 @@
       function taskView(db, t, me) {
         var done = t.done || {};
         return {
-          id: t.id, title: t.title, note: t.note || "", due: t.due || "", eventId: t.eventId || "",
+          id: t.id, title: t.title, note: t.note || "", due: t.due || "", time: t.time || "", private: !!t.private, eventId: t.eventId || "",
           eventTitle: (function () { var e = t.eventId && c.find(db.events, function (x) { return x.id === t.eventId; }); return e ? e.date.slice(5).replace("-", "/") + " " + e.title : ""; })(),
           by: t.by, byName: nameOf(db, t.by), at: t.at,
           assignees: t.assignees.map(function (id) { return { id: id, name: nameOf(db, id), done: !!done[id] }; }),
@@ -1429,6 +1429,7 @@
         if (w.error) return w.error;
         var db = w.db;
         var list = db.tasks.filter(function (t) {
+          if (t.private && t.by !== w.id) return false;
           if (body.eventId) return t.eventId === body.eventId;
           return t.assignees.indexOf(w.id) !== -1 || t.by === w.id;
         });
@@ -1446,7 +1447,8 @@
         if (!w.isAdmin) assignees = assignees.filter(function (id) { return id === w.id; });
         if (!assignees.length) assignees = [w.id];
         var t = input.id ? c.find(db.tasks, function (x) { return x.id === input.id; }) : null;
-        if (input.id && (!t || (t.by !== w.id && !w.isAdmin))) return c.fail("NOT_FOUND");
+        // 自分だけのやることは、書いた本人しか直せない(管理者も)
+        if (input.id && (!t || (t.by !== w.id && (!w.isAdmin || t.private)))) return c.fail("NOT_FOUND");
         if (!t) {
           t = { id: newId("t_"), by: w.id, at: c.nowMs(), done: {} };
           db.tasks.push(t);
@@ -1455,9 +1457,12 @@
         t.title = title;
         t.note = cleanText(input.note, 500);
         t.due = cleanDate(input.due);
-        t.assignees = assignees;
+        t.time = t.due ? cleanTime(input.time) : "";
         var ev = input.eventId && c.find(db.events, function (x) { return x.id === input.eventId; });
         t.eventId = ev ? ev.id : (t.eventId || "");
+        // 自分だけのやること: 担当は自分だけ、定例会にもつなげない(ほかの人・運営には見えない)
+        t.private = input.private === true && !t.eventId;
+        t.assignees = t.private ? [w.id] : assignees;
         c.saveDb(db);
         return c.ok({ item: taskView(db, t, w.id) });
       }
@@ -1475,7 +1480,7 @@
         var w = who(body);
         if (w.error) return w.error;
         var t = c.find(w.db.tasks, function (x) { return x.id === body.id; });
-        if (!t || (t.by !== w.id && !w.isAdmin)) return c.fail("NOT_FOUND");
+        if (!t || (t.by !== w.id && (!w.isAdmin || t.private))) return c.fail("NOT_FOUND");
         w.db.tasks = w.db.tasks.filter(function (x) { return x.id !== t.id; });
         c.saveDb(w.db);
         return c.ok({});
@@ -1679,7 +1684,7 @@
         });
         var sc = searchCounts(db, month + "-01", month + "-31");
         // やることの進み具合(終わっていないもの)
-        var openTasks = db.tasks.filter(function (t) { return t.assignees.some(function (id) { return !(t.done || {})[id]; }); });
+        var openTasks = db.tasks.filter(function (t) { return !t.private && t.assignees.some(function (id) { return !(t.done || {})[id]; }); });
         members.forEach(function (row) {
           var mine = openTasks.filter(function (t) { return t.assignees.indexOf(row.id) !== -1 && !(t.done || {})[row.id]; });
           row.openTasks = mine.length;
