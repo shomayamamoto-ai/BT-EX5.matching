@@ -38,17 +38,19 @@ const REF_CATEGORY_GROUPS = [
 ];
 
 // 業種と話題の対応。業種で絞り込むと、その業種の人に加えて、この話題を扱う人も出る
-// (例: 本業がシステム開発でも、Web制作を扱う人は「Web制作」に出る)
+// (例: 本業がシステム開発でも、Web制作を扱う人は「Web制作」に出る)。
+// その業種の仕事を「自分で作れる」話題だけを入れる(公式LINEの運用・AIシステムの導入・
+// パーソナルブランディング・SEO だけの人が、システム開発・デザイン・Web制作に出ないように)
 const REF_CATEGORY_TOPICS = {
   "AI研修・AI活用": ["ai", "aitraining"],
-  "システム開発": ["efficiency", "line"],
-  "Web制作": ["web", "seo"],
+  "システム開発": [],
+  "Web制作": ["web"],
   "SNS運用・集客": ["sns", "line"],
   "動画編集・映像制作": ["video", "prvideo"],
   "企業PR動画制作": ["prvideo"],
   "作詞作曲・音楽制作": ["music"],
   "声・司会・キャスティング": ["voice", "mc", "recording", "casting"],
-  "デザイン・ブランディング": ["design", "branding", "photo"],
+  "デザイン・ブランディング": ["design", "photo"],
   "EC・ネットショップ": ["ec"],
 };
 
@@ -102,7 +104,7 @@ const TOPIC_GROUPS = [
 // ジャンル(話題)。1人に当てはまるものをいくつでも付けられ、カードにはタグ(tag)として並ぶ。
 // 紹介診断の「どんな話が出ましたか?」と「話題で探す」でも使う
 const TOPICS = [
-  { id: "efficiency", group: "it", label: "システム開発・業務効率化", tag: "システム開発" },
+  { id: "efficiency", group: "it", label: "システム開発・業務効率化", tag: "業務効率化" },
   { id: "line", group: "it", label: "公式LINE・LINE Bot構築", tag: "公式LINE構築" },
   { id: "web", group: "it", label: "ホームページ・LP制作", tag: "HP・LP制作" },
   { id: "seo", group: "it", label: "SEO・MEO・AIO対策", tag: "SEO・MEO・AIO" },
