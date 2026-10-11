@@ -35,12 +35,18 @@ const App = (function () {
     el.replaceChildren();
     return append(el, children);
   }
+  const NULLISH = /(?:null|undefined){2,}/g;
   function append(el, children) {
     children.flat(Infinity).forEach((c) => {
       if (c === undefined || c === null || c === false) return;
-      // 入っていない値をつないだ「null」「nullnull」などの文字は出さない
-      if (typeof c === "string" && /^(?:null|undefined)+$/.test(c.trim())) return;
-      el.append(c instanceof Node ? c : document.createTextNode(String(c)));
+      // 入っていない値をつないだ「null」「nullnull」などの文字は出さない(文の中にあっても消す)
+      if (!(c instanceof Node)) {
+        const t = String(c).replace(NULLISH, "");
+        if (!t || /^(?:null|undefined)$/.test(t.trim())) return;
+        el.append(document.createTextNode(t));
+        return;
+      }
+      el.append(c);
     });
     return el;
   }
@@ -109,7 +115,7 @@ const App = (function () {
   // 本文の改行を保ち、URL だけリンクにする
   function richText(text) {
     const out = h("p", { class: "app-rich" });
-    String(text || "").split(/(https:\/\/[^\s<>"']+)/g).forEach((part, i) => {
+    String(text || "").replace(NULLISH, "").split(/(https:\/\/[^\s<>"']+)/g).forEach((part, i) => {
       if (i % 2) out.append(h("a", { href: part, target: "_blank", rel: "noopener" }, part));
       else out.append(document.createTextNode(part));
     });

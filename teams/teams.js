@@ -7,7 +7,7 @@
   "use strict";
 
   const $ = (sel) => document.querySelector(sel);
-  const esc = (s) => String(s === undefined || s === null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const esc = (s) => String(s === undefined || s === null ? "" : s).replace(/(?:null|undefined){2,}/g, "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
   let members = [];
   const byId = (id) => members.find((m) => m.id === id);

@@ -51,6 +51,10 @@
           h("b", null, a.title),
           h("small", null, `${App.fmtTime(a.at)} ・ ${a.byName}${a.readCount !== undefined ? ` ・ 既読 ${a.readCount}/${a.memberCount}` : ""}`)),
         App.richText(a.body),
+        // LINE のトークにそのまま貼れる文(件名・本文・アプリのリンク)
+        h("div", { class: "app-btn-row ann-share" },
+          App.btn("LINE に貼る文をコピー", () => App.copyText(lineText(a), "コピーしました。LINE のトークに貼り付けてください"), "small"),
+          App.btn("LINE などで送る", () => App.shareText(lineText(a), a.title), "ghost small")),
         a.unreadNames && a.unreadNames.length ? h("p", { class: "app-field-hint ann-unread" }, `未読:${a.unreadNames.join("、")}`) : null,
         App.isAdmin() ? h("div", { class: "app-btn-row" },
           a.unreadNames && a.unreadNames.length ? App.btn(`未読の ${a.unreadNames.length} 名への声かけ文をコピー`, () => App.copyText([
@@ -74,6 +78,20 @@
       if (a.id === openId && !a.read) setTimeout(() => det.dispatchEvent(new Event("toggle")), 0);
       return h("li", null, det);
     })));
+  }
+
+  // LINE に貼る文。LINE は太字などが使えないので、記号で見出しを分ける
+  function lineText(a) {
+    const body = String(a.body || "").replace(/(?:null|undefined){2,}/g, "").replace(/\n{3,}/g, "\n\n").trim();
+    return [
+      "【BT-EX5 運営連絡】",
+      a.title,
+      "",
+      body,
+      "",
+      "▼ アプリで見る",
+      App.siteUrl(`#news?open=${a.id}`),
+    ].join("\n");
   }
 
   function annForm(a, cats) {

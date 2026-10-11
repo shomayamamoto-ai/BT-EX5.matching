@@ -109,6 +109,33 @@
             changed = true;
           });
         }
+        // 入っていない値がつながって保存された「null」「nullnull」などの文字を、一度だけ消す
+        // (ログイン・通知の登録・鍵などは触らない)
+        if (!Array.isArray(db.cleanups)) { db.cleanups = []; changed = true; }
+        if (db.cleanups.indexOf("nullish-1") === -1) {
+          db.cleanups.push("nullish-1");
+          changed = true;
+          var SKIP = { users: 1, sessions: 1, pushSubs: 1, passcodeGuard: 1, vapid: 1, seen: 1, searchLog: 1, cleanups: 1 };
+          var scrub = function (v) {
+            if (typeof v === "string") {
+              if (/^\s*(?:null|undefined)+\s*$/.test(v)) return "";
+              return v.indexOf("nullnull") !== -1 || v.indexOf("undefinedundefined") !== -1 ? v.replace(/(?:null|undefined){2,}/g, "") : v;
+            }
+            if (Array.isArray(v)) {
+              // 一覧の中で「nullnull」だけだったもの(キーワードなど)は、空のまま残さず取り除く
+              return v.map(function (x) { return [x, scrub(x)]; })
+                .filter(function (p) { return !(typeof p[0] === "string" && p[0] !== "" && p[1] === ""); })
+                .map(function (p) { return p[1]; });
+            }
+            if (v && typeof v === "object") { Object.keys(v).forEach(function (k) { v[k] = scrub(v[k]); }); return v; }
+            return v;
+          };
+          Object.keys(db).forEach(function (k) { if (!SKIP[k]) db[k] = scrub(db[k]); });
+          // 中身が空になった投稿・やることは消す
+          db.posts = db.posts.filter(function (p) { return String(p.body || "").trim(); });
+          db.tasks = db.tasks.filter(function (t) { return String(t.title || "").trim(); });
+          db.announcements = db.announcements.filter(function (a) { return String(a.title || "").trim(); });
+        }
         // これまでの改善点の運営連絡(REF_SEED_ANNOUNCEMENTS)を一度だけ入れる(投稿日は改善した日)
         if (typeof REF_SEED_ANNOUNCEMENTS !== "undefined") {
           if (!Array.isArray(db.announcementSeeds)) { db.announcementSeeds = []; changed = true; }
