@@ -1,7 +1,7 @@
 // ============================================
 // 紹介先早見表 - ロジック
 // ・業種/エリア/キーワードでの絞り込み
-// ・紹介診断:困りごと → 方法 → 相手の情報(6つの質問)の回答からメンバーごとの一致度(0〜100%)を計算
+// ・紹介診断:困りごと → 方法 → 相手の種類(3つの質問)の回答からメンバーごとの一致度(0〜100%)を計算
 // ・紹介文のコピー
 // ============================================
 
@@ -23,7 +23,7 @@
   const filter = { category: "all", area: "all", search: "", topic: "all", offer: false, fav: false };
   // need: 困りごと(REF_NEEDS の id) / methods: 選んだ方法の番号 / anyTopic: 「まだ分からない」
   // topics・topicGroups は選んだ方法から作る(「その他」のときはジャンルを直接選ぶ)
-  const answers = { need: null, methods: new Set(), anyTopic: false, topics: new Set(), topicGroups: [], keyword: "", who: null, industry: null, area: null, meeting: null };
+  const answers = { need: null, methods: new Set(), anyTopic: false, topics: new Set(), topicGroups: [], keyword: "", who: null, industry: "unknown", area: "any", meeting: "any" };
   let step = 0;
   let scores = null;       // { [memberId]: { score, reasons, topicHits, keywordHits } }
   let sortByScore = false;
@@ -609,11 +609,10 @@
   const STEPS = [
     { key: "need", q: "紹介したい相手は、何に困っていますか?", hint: "いちばん近いものを1つ選んで「次へ」を押してください(「何をしたいか」で選んでもOKです)", options: REF_NEEDS },
     { key: "topics", q: "どんな方法がよさそうですか?", hint: "当てはまるものをすべて選んで「次へ」を押してください。分からなければ「まだ分からない」でOKです", options: TOPICS, multi: true },
-    { key: "who", q: "相手はどんな方ですか?", hint: "1つ選んで「次へ」を押してください。わからなければ「わからない」でOKです", options: [...PROSPECTS, UNKNOWN] },
-    { key: "industry", q: "相手の業種は?", hint: "近いものを1つ選んで「次へ」を押してください", options: [...INDUSTRIES, UNKNOWN] },
-    { key: "area", q: "相手はどこにいますか?", hint: "主な活動エリアを選んで「次へ」を押してください", options: AREAS },
-    { key: "meeting", q: "会うならどの形がよさそうですか?", hint: "相手の希望に近いものを選んで「結果を見る」を押してください", options: MEETINGS },
+    { key: "who", q: "相手はどんな方ですか?", hint: "1つ選んで「結果を見る」を押してください。わからなければ「わからない」でOKです", options: [...PROSPECTS, UNKNOWN] },
   ];
+  // 業種・エリア・会い方の質問はなくした(運営の依頼)。点数では「わからない・どこでも」として扱う
+  const SKIPPED = { industry: "unknown", area: "any", meeting: "any" };
 
   const needOf = () => REF_NEEDS.find((n) => n.id === answers.need) || null;
   const byGenreList = () => { const n = needOf(); return !n || !n.methods; };
@@ -715,7 +714,8 @@
     answers.topicGroups = [];
     answers.consult = null;
     answers.keyword = "";
-    answers.who = answers.industry = answers.area = answers.meeting = null;
+    answers.who = null;
+    Object.assign(answers, SKIPPED);
     $("#diagKeyword").value = "";
     $("#diagIntro").hidden = true;
     $("#diagResults").hidden = true;
@@ -746,8 +746,8 @@
         : [...answers.topics].map((t) => labelOf(TOPICS, t))),
       answers.who === "unknown" ? null : labelOf(PROSPECTS, answers.who),
       answers.industry === "unknown" ? null : labelOf(INDUSTRIES, answers.industry),
-      labelOf(AREAS, answers.area),
-      labelOf(MEETINGS, answers.meeting),
+      answers.area === "any" ? null : labelOf(AREAS, answers.area),
+      answers.meeting === "any" ? null : labelOf(MEETINGS, answers.meeting),
       answers.keyword ? `「${answers.keyword}」` : null,
     ].filter(Boolean);
     $("#diagSummary").innerHTML = summary.map((s) => `<span>${escapeHtml(s)}</span>`).join("");
@@ -935,6 +935,7 @@
       if (!saved || (!saved.need && !saved.consult)) return false;
       Object.assign(answers, saved, { methods: new Set(saved.methods || []), topics: new Set(saved.topics || []) });
       if (answers.consult) return true; // 相談アシスタントの結果
+      Object.assign(answers, SKIPPED); // なくした質問(業種・エリア・会い方)の前の答えは使わない
       if (!REF_NEEDS.some((n) => n.id === answers.need)) return false;
       syncTopics();
       return true;
