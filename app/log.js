@@ -81,7 +81,7 @@
         given.length
           ? h("ul", { class: "app-cards" }, given.map((r) => h("li", null, givenCard(r))))
           : filtered ? App.empty("条件に合う紹介はありません。")
-          : App.empty("紹介したら記録しておくと、相手の対応状況とお礼(マイル)がここに届きます。")));
+          : App.empty("紹介したら記録しておくと、相手の対応状況とお礼(マイル)がここに届きます。", h("a", { class: "app-btn primary small", href: "#log/ref?new" }, "＋ 紹介を記録する"))));
     };
     q.addEventListener("input", draw);
     if (d.given.length) el.append(refSummary(d.given));
@@ -419,7 +419,7 @@
             if (!confirm("このありがとうを取り消しますか?")) return;
             if (await App.api("deleteThanks", { id: t.id })) { e.target.closest("li").remove(); App.toast("取り消しました"); }
           } }, "×")))))
-      : App.empty(inbound ? "まだありません。" : "まだ送っていません。");
+      : App.empty(inbound ? "まだありません。紹介が成約すると、お礼がここに届きます。" : "まだ送っていません。紹介で仕事が決まったら、お礼を送りましょう。", inbound ? null : h("a", { class: "app-btn primary small", href: "#log/miles?new" }, "＋ ありがとうを送る"));
     el.append(App.section("受け取ったありがとう", list(d.thanksIn, true)));
     el.append(App.section("送ったありがとう", list(d.thanksOut, false)));
     if (params.has("new")) thanksForm({ to: params.get("to") });
@@ -497,7 +497,7 @@
           : App.calendarButtons({ uid: o.id, title: `1on1:${o.withName}さん`, date: o.date, start: o.time, end: o.end, endDate: o.endDate, place: o.mode === "meet" ? o.meetUrl || "Google Meet" : o.place }),
         App.btn("相手に送る文をコピー", () => App.copyText(oneInviteText({ ...o, endNext: !!(o.endDate && o.endDate !== o.date) }), "コピーしました。LINE などに貼り付けて送ってください"), "ghost small")));
       return li;
-    })) : App.empty("予定はありません。")));
+    })) : App.empty("予定はありません。", h("a", { class: "app-btn primary small", href: "#log/1on1?new" }, "＋ 1on1 を予定する"))));
     el.append(recommendSection(d.items));
     el.append(App.section(`これまで(${done.length})`, done.length ? h("ul", { class: "app-list" }, done.map(row)) : App.empty("まだ記録がありません。")));
     if (params.has("new")) oneForm(null, params.get("with"));

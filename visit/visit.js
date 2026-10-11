@@ -64,7 +64,22 @@
   $("visit-form").addEventListener("submit", async (ev) => {
     ev.preventDefault();
     const name = $("v-name").value.trim();
-    if (!name) { $("visit-message").textContent = "お名前を入力してください。"; $("v-name").focus(); return; }
+    if (!name) {
+      // お名前の欄のすぐ下に出して、欄へ動かす
+      const field = $("v-name").closest(".auth-field");
+      if (!field.querySelector(".visit-field-error")) {
+        const msg = document.createElement("p");
+        msg.className = "visit-field-error"; msg.id = "v-name-error"; msg.setAttribute("role", "alert");
+        msg.textContent = "お名前を入力してください。";
+        field.appendChild(msg);
+        $("v-name").setAttribute("aria-describedby", "v-name-error");
+        $("v-name").addEventListener("input", () => { msg.remove(); field.classList.remove("is-invalid"); }, { once: true });
+      }
+      field.classList.add("is-invalid");
+      field.scrollIntoView({ behavior: "smooth", block: "center" });
+      $("v-name").focus({ preventScroll: true });
+      return;
+    }
     $("visit-submit").disabled = true;
     const res = await post("visitorApply", {
       name, company: $("v-company").value.trim(), business: $("v-business").value.trim(),

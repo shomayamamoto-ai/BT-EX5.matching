@@ -257,7 +257,7 @@
         drawHistory(r ? r.visitors : []);
       }
       function drawHistory(list) {
-        if (!list.length) { App.fill(history, App.empty("まだ招待していません。")); return; }
+        if (!list.length) { App.fill(history, App.empty("まだ招待していません。上の「招待URLを発行」から、LINE などで送れます。")); return; }
         App.fill(history, h("ul", { class: "app-cards" }, list.map((v) => h("li", null, historyCard(v)))));
       }
       function historyCard(v) {

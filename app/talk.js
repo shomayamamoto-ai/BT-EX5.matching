@@ -133,7 +133,7 @@
         onclick: () => App.go(`board${c.id ? `?cat=${encodeURIComponent(c.id)}` : ""}`),
       }, c.label))));
     const items = d.items.filter((p) => !filter || p.cat === filter);
-    if (!items.length) { el.append(App.empty("まだ投稿がありません。紹介のお願いやイベントの告知、成約のお礼などを気軽にどうぞ。")); }
+    if (!items.length) { el.append(App.empty("まだ投稿がありません。紹介のお願いやイベントの告知、成約のお礼などを気軽にどうぞ。", h("a", { class: "app-btn primary small", href: "#board?new" }, "＋ 投稿する"))); }
     // 掲示板の中を探す(本文・名前・コメント)
     const q = h("input", { type: "search", class: "board-search", placeholder: "掲示板を検索(例:税理士・イベント)", "aria-label": "掲示板を検索" });
     const list = h("ul", { class: "board-list" });

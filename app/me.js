@@ -59,7 +59,7 @@
           ? h("ul", { class: "app-list me-favs" }, favs.map((m) => h("li", null,
             h("a", { class: "app-row", href: App.profileHref(m.id, "me") },
               App.avatar(m.name), h("span", { class: "app-row-main" }, h("b", null, m.name), h("small", null, m.company || m.category || ""))))))
-          : App.empty("早見表のカード右上の☆を押すと、ここに並びます。")));
+          : App.empty("早見表のカード右上の☆を押すと、ここに並びます。", h("a", { class: "app-btn ghost small", href: "../referral/" }, "早見表を開く"))));
 
       el.append(h("div", { class: "app-cta-row" }, App.btn("ログアウト", async () => {
         const token = AuthSession.getToken();
