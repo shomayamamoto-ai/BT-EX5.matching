@@ -12,7 +12,8 @@ const version = `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}${
 
 function htmlFiles(dir) {
   return readdirSync(dir).flatMap((name) => {
-    if (name.startsWith(".") || name === "node_modules" || name === "gas" || name === "docs" || name === "tools") return [];
+    // opening/src はムービーを作るための作業用ページ(サイトでは配らない)
+    if (name.startsWith(".") || name === "node_modules" || name === "gas" || name === "docs" || name === "tools" || (name === "src" && dir.endsWith("opening"))) return [];
     const p = join(dir, name);
     if (statSync(p).isDirectory()) return htmlFiles(p);
     return name.endsWith(".html") ? [p] : [];

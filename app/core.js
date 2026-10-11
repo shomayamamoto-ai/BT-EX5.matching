@@ -376,9 +376,17 @@ const App = (function () {
   const memberById = (id) => members.find((m) => m.id === id);
 
   // メンバーを選ぶ(名前・会社・事業で絞り込み)。multiple なら複数選べる
+  // 最近えらんだ相手(この端末・ログインした人ごと。新しい順に8人まで)
+  function recentKey() { return `btex5-recent-members-${(session && session.memberId) || "guest"}`; }
+  function recentIds() { try { return JSON.parse(localStorage.getItem(recentKey()) || "[]"); } catch { return []; } }
+  function rememberRecent(id) {
+    try { localStorage.setItem(recentKey(), JSON.stringify([id, ...recentIds().filter((x) => x !== id)].slice(0, 8))); } catch { /* noop */ }
+  }
+
   function memberPicker(opt) {
     const picked = new Set(opt.value ? [].concat(opt.value) : []);
     const wrap = h("div", { class: "app-picker" });
+    const recent = h("div", { class: "app-picker-recent" });
     const input = h("input", { type: "search", placeholder: "名前・会社名・仕事で探す", "aria-label": opt.label || "メンバーを探す", autocomplete: "off" });
     const chosen = h("div", { class: "app-picker-chosen" });
     const list = h("ul", { class: "app-picker-list", role: "listbox" });
@@ -392,23 +400,37 @@ const App = (function () {
       chosen.hidden = picked.size === 0;
       input.hidden = !opt.multiple && picked.size > 0;
       list.hidden = !opt.multiple && picked.size > 0;
+      renderRecent();
+    }
+    // 最近の相手を1タップで選べるように(探す前に出す)
+    function choose(m) {
+      if (!opt.multiple) picked.clear();
+      picked.add(m.id);
+      rememberRecent(m.id);
+      input.value = "";
+      renderChosen();
+      renderList();
+      if (opt.onchange) opt.onchange([...picked]);
+    }
+    function renderRecent() {
+      const ids = recentIds().filter((id) => !picked.has(id) && pool.some((m) => m.id === id) && !(session && id === session.memberId)).slice(0, 6);
+      const show = ids.length && !input.value.trim() && (opt.multiple || picked.size === 0);
+      recent.hidden = !show;
+      if (!show) return;
+      recent.replaceChildren(h("small", null, "最近の相手"), ...ids.map((id) => {
+        const m = memberById(id);
+        return h("button", { type: "button", class: "app-recent-chip", onclick: () => choose(m) }, avatar(m.name, "sm"), m.name);
+      }));
     }
     function renderList() {
       const q = input.value.trim().toLowerCase();
       const hits = pool.filter((m) => !picked.has(m.id) && (!q || [m.name, m.company, m.business, m.team].join(" ").toLowerCase().includes(q)));
       list.replaceChildren(...hits.map((m) => h("li", null,
-        h("button", { type: "button", role: "option", onclick: () => {
-          if (!opt.multiple) picked.clear();
-          picked.add(m.id);
-          input.value = "";
-          renderChosen();
-          renderList();
-          if (opt.onchange) opt.onchange([...picked]);
-        } }, avatar(m.name, "sm"), h("span", null, h("b", null, m.name), h("small", null, m.company || m.category || ""))))));
+        h("button", { type: "button", role: "option", onclick: () => choose(m) }, avatar(m.name, "sm"), h("span", null, h("b", null, m.name), h("small", null, m.company || m.category || ""))))));
       if (!hits.length) list.append(h("li", { class: "app-picker-none" }, "見つかりません"));
     }
-    input.addEventListener("input", renderList);
-    wrap.append(chosen, input, list);
+    input.addEventListener("input", () => { renderList(); renderRecent(); });
+    wrap.append(chosen, recent, input, list);
     renderChosen();
     renderList();
     wrap.getValue = () => (opt.multiple ? [...picked] : [...picked][0] || "");

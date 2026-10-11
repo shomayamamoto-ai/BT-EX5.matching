@@ -986,3 +986,27 @@ body.tabs-right .app-to-top { right: calc(var(--dock-w) + 22px); }
 .task-private { display: inline-block; margin-top: 2px; font-size: 11px; font-weight: 700; color: var(--text-sub); }
 .task-row .cal-add { margin-top: 2px; }
 .task-private-check { margin: 2px 0 6px; font-size: 13px; }
+
+/* ホーム: 今日・明日の予定 */
+.home-sched-day + .home-sched-day { margin-top: 12px; }
+.home-sched-label { display: flex; align-items: baseline; gap: 8px; margin-bottom: 6px; font-size: 13px; font-weight: 800; color: var(--text); }
+.home-sched-label small { font-size: 11.5px; font-weight: 700; color: var(--text-light); }
+/* 相手を選ぶ: 最近の相手 */
+.app-picker-recent { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 8px; }
+.app-picker-recent > small { flex-basis: 100%; font-size: 11.5px; font-weight: 800; color: var(--text-sub); }
+.app-recent-chip { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 3px 12px 3px 4px; border-radius: 999px; border: 1px solid var(--line-strong); background: #fffdf8; font-size: 13px; font-weight: 700; color: var(--text); cursor: pointer; }
+.app-recent-chip:hover { border-color: var(--accent); }
+/* アプリ内を探す */
+.app-search-btn { display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 50%; border: none; background: none; color: var(--text-sub); cursor: pointer; flex-shrink: 0; }
+.app-search-btn svg { width: 22px; height: 22px; fill: currentColor; }
+.srch-input { width: 100%; height: 46px; padding: 0 14px; border-radius: 12px; border: 1.5px solid var(--line-strong); background: #fffdf8; font-size: 16px; }
+.srch-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 4px rgba(168, 129, 62, 0.15); }
+.srch-results { margin-top: 12px; display: grid; gap: 14px; }
+.srch-hint { font-size: 13px; color: var(--text-sub); }
+.srch-sec h3 { font-size: 13px; font-weight: 800; color: var(--text-sub); margin-bottom: 6px; }
+.srch-ico { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; background: #f4ecdd; flex-shrink: 0; font-size: 16px; }
+.srch-snip { white-space: normal !important; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.srch-snip mark { background: rgba(201, 164, 92, 0.32); color: inherit; border-radius: 3px; padding: 0 1px; }
+@media (max-width: 380px) { .app-top .op-movie-btn span { display: none; } }
+.srch-results > *, .srch-sec, .srch-sec .app-list { min-width: 0; max-width: 100%; }
+.srch-sec .app-row-main b { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }

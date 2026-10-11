@@ -283,6 +283,8 @@
   }
 
   App.calendarPanel = calendarPanel;
+  App.collectSchedule = collect; // ホームの「今日・明日の予定」でも使う
+  App.SCHEDULE_KINDS = KINDS;
   App.luxClock = luxClock;
   App.clockCard = clockCard;
 })();

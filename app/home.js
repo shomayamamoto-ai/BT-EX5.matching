@@ -125,6 +125,34 @@
         tasks.length ? taskList : null,
         count ? null : h("p", { class: "home-allclear" }, "いまやることはありません。定例会で決まったことや自分の予定は「＋ 追加」から入れておけます。")));
 
+      // ---------- 今日・明日の予定(1on1・顔合わせ・やること。定例会は下のカードで) ----------
+      const sched = h("section", { class: "app-section home-sec home-sched", hidden: true });
+      main.append(sched);
+      if (App.collectSchedule) {
+        const tmr = (() => { const x = new Date(`${d.today}T12:00:00`); x.setDate(x.getDate() + 1); return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, "0")}-${String(x.getDate()).padStart(2, "0")}`; })();
+        App.collectSchedule([]).then((items) => {
+          const soon = items.filter((x) => x.kind !== "event" && (x.date === d.today || x.date === tmr));
+          if (!soon.length) return;
+          const group = (date, label) => {
+            const list = soon.filter((x) => x.date === date);
+            if (!list.length) return null;
+            return h("div", { class: "home-sched-day" },
+              h("p", { class: "home-sched-label" }, label, h("small", null, App.fmtDate(date))),
+              h("ul", { class: "cal-day-list" }, list.map((x) => h("li", { class: App.SCHEDULE_KINDS[x.kind].cls },
+                h("a", { href: x.href },
+                  h("span", { class: "cal-day-time" }, x.time || (x.kind === "task" ? "期限" : "終日")),
+                  h("span", { class: "cal-day-main" }, h("small", null, App.SCHEDULE_KINDS[x.kind].label), h("b", null, x.title), x.sub ? h("span", null, x.sub) : null)),
+                x.meetUrl && date === d.today ? h("a", { class: "cal-day-meet", href: x.meetUrl, target: "_blank", rel: "noopener" }, "Meet に参加") : null))));
+          };
+          App.fill(sched,
+            h("div", { class: "home-sec-head" },
+              h("h2", { class: "app-h2" }, "今日・明日の予定"),
+              h("a", { class: "home-sec-link", href: "#events" }, "カレンダーを見る")),
+            group(d.today, "今日"), group(tmr, "明日"));
+          sched.hidden = false;
+        }).catch(() => {});
+      }
+
       // ---------- 次の定例会 ----------
       const next = d.events[0];
       const days = next ? App.daysUntil(next.date, d.today) : -1;

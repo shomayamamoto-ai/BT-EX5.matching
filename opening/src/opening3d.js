@@ -217,7 +217,7 @@ const finish = new ShaderPass({
       vec2 off = d * uAberr * (0.5 + r);
       vec3 col = vec3(texture2D(tDiffuse, vUv + off).r, texture2D(tDiffuse, vUv).g, texture2D(tDiffuse, vUv - off).b);
       col *= smoothstep(0.95, 0.25, r * 1.08);           // 周辺減光
-      col += (hash(vUv * 1000.0) - 0.5) * 0.035;          // フィルムの粒
+      col += (hash(vUv * 1000.0) - 0.5) * 0.012;          // フィルムの粒(動画が重くならないよう、うっすら)
       gl_FragColor = vec4(col * uFade, 1.0);
     }`,
 });
@@ -364,7 +364,7 @@ function render(t) {
   // 仕上げ
   bloom.strength = 0.6 + 0.8 * (hit >= 0 ? Math.exp(-hit * 4) : 0) + splitFlash * 0.5;
   renderer.toneMappingExposure = 1.05 + (hit >= 0 ? Math.exp(-hit * 7) * 0.25 : 0);
-  finish.uniforms.uTime.value = Math.floor(t * 30) / 30;
+  finish.uniforms.uTime.value = Math.floor(t * 10) / 10; // 粒は 1/10 秒ごとに変わる
   finish.uniforms.uFade.value = Math.min(easeOut(prog(t, 0, 0.6)), 1 - easeIn(prog(t, 12.3, 13.0)));
   finish.uniforms.uAberr.value = 0.0012 + (hit >= 0 ? Math.exp(-hit * 5) * 0.006 : 0);
 

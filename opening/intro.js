@@ -11,8 +11,8 @@
 
   // H.264 が再生できないブラウザ(Chromium など)には WebM を使う
   const SOURCES = [
-    ["../assets/opening/bt-ex5-opening-720p.mp4", "video/mp4"],
-    ["../assets/opening/bt-ex5-opening-720p.webm", "video/webm"],
+    ["../assets/opening/bt-ex5-opening-720p.mp4?v=3d1", "video/mp4"],
+    ["../assets/opening/bt-ex5-opening-720p.webm?v=3d1", "video/webm"],
   ];
   const script = document.currentScript;
   let box = null;
@@ -25,7 +25,7 @@
     box.setAttribute("role", "dialog");
     box.setAttribute("aria-label", "BT-EX5 オープニングムービー(画面を押すとスキップ)");
     box.innerHTML = `
-      <video class="op-intro-video" poster="../assets/opening/poster.jpg" playsinline preload="auto">
+      <video class="op-intro-video" poster="../assets/opening/poster.jpg?v=3d1" playsinline preload="auto">
         ${SOURCES.map(([src, type]) => `<source src="${src}" type="${type}">`).join("")}
       </video>
       <button type="button" class="op-intro-btn primary op-intro-skip" data-op="skip">スキップ</button>

@@ -1802,6 +1802,11 @@
           if (tk.due) {
             var remind = Date.parse(tk.due + "T09:00:00+09:00") - DAY;
             if (c.nowMs() >= remind && tk.due >= today()) items.push({ type: "taskDue", at: remind, text: tk.title, date: tk.due, link: "home" });
+            // 時刻つきのやることは、その時刻の少し前(1on1 と同じく3時間前から)にもお知らせ
+            if (tk.time) {
+              var s0 = startMs(tk.due, tk.time);
+              if (s0 !== null && c.nowMs() >= s0 - SOON && c.nowMs() < s0) items.push({ type: "taskSoon", at: s0 - SOON, text: tk.title, date: tk.due, time: tk.time, link: "home" });
+            }
           }
         });
         db.announcements.forEach(function (a) {
@@ -2053,6 +2058,7 @@
           case "refMeetSoon": return { title: "🤝 " + (x.time || "") + " から紹介の顔合わせです", body: x.text + " × " + n + (x.meetUrl ? "(Google Meet:" + x.meetUrl + ")" : "") };
           case "taskNew": return { title: "✅ " + n + "から やること", body: x.text + (x.date ? "(期限 " + x.date.slice(5).replace("-", "/") + ")" : "") };
           case "taskDue": return { title: "⏰ やることの期限が近づいています", body: x.text + "(期限 " + x.date.slice(5).replace("-", "/") + ")" };
+          case "taskSoon": return { title: "⏰ " + (x.time || "") + " から:" + x.text, body: "やることの時刻が近づいています" };
           case "oneAsk": return { title: "☕ " + n + "との1on1 は実施しましたか?", body: "「実施した」を押すと 1on1 の回数に数えます" };
           case "visitor": return { title: "🙋 ビジターの申込がありました", body: x.text + " さん" };
           case "ann": return { title: "📣 運営からのお知らせ", body: x.text };

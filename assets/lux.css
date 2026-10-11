@@ -74,7 +74,7 @@ h1, h2, h3,
 .app-top .brand-name { color: #f4ecdd; }
 .app-top .brand-mark { box-shadow: 0 0 0 1px var(--lux-gold-line), 0 4px 12px rgba(0, 0, 0, 0.4); }
 .app-title { color: #f1e2bf; font-weight: 700; letter-spacing: 0.12em; }
-.app-bell { color: #d9c9ac; }
+.app-bell, .app-search-btn { color: #d9c9ac; }
 .app-me .app-avatar { box-shadow: 0 0 0 2px #120e0b, 0 0 0 3.5px var(--lux-gold); }
 .app-top .op-movie-btn { color: var(--lux-gold-hi); border-color: var(--lux-gold-line); background: transparent; }
 .app-top .op-movie-btn:hover { background: rgba(201, 164, 92, 0.12); }

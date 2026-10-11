@@ -992,6 +992,30 @@ const REF_SEED_ANNOUNCEMENTS = [
       "・ほかの画面で、入っていない項目が「null」と出ることがあったのも直しました。",
     ].join("\n"),
   },
+
+  {
+    seedId: "2026-10-11-features",
+    at: Date.UTC(2026, 9, 11, 12, 0), // 2026/10/11 21:00(日本時間。まだその時刻でなければ、入れた時刻)
+    title: "【新機能】アプリ内検索・今日明日の予定・最近の相手・3Dオープニング",
+    body: [
+      "もっと便利に使えるよう、新しい機能を入れました。",
+      "",
+      "■ アプリ内をまとめて探す",
+      "・上の 🔍 を押すと、メンバー(名前・会社・仕事・求める紹介)、掲示板、運営連絡、定例会をまとめて探せます。パソコンでは「/」キーでも開きます。",
+      "",
+      "■ 今日・明日の予定をホームに",
+      "・1on1、紹介の顔合わせ、やることを、今日と明日に分けて時刻順に表示します。今日の Google Meet はそこから参加できます。",
+      "",
+      "■ 最近の相手を1タップで",
+      "・紹介や1on1、ありがとうを記録するとき、最近えらんだ相手が上に出るので、探さずに1タップで選べます。",
+      "",
+      "■ やることの直前にお知らせ",
+      "・時刻を入れたやることは、その時刻の少し前(約3時間前から)にベルとスマホの通知でお知らせします。",
+      "",
+      "■ オープニングムービーを3Dに",
+      "・金の光が5つに分かれて宙に五角形をつくり、金の糸で結ばれて、立体の金のロゴになるムービーに作り直しました。右上の ▶ からいつでも見られます。",
+    ].join("\n"),
+  },
 ];
 
 const PROFILE_ITEMS = [
@@ -4004,6 +4028,11 @@ var BtexServerCore = (function () {
           if (tk.due) {
             var remind = Date.parse(tk.due + "T09:00:00+09:00") - DAY;
             if (c.nowMs() >= remind && tk.due >= today()) items.push({ type: "taskDue", at: remind, text: tk.title, date: tk.due, link: "home" });
+            // 時刻つきのやることは、その時刻の少し前(1on1 と同じく3時間前から)にもお知らせ
+            if (tk.time) {
+              var s0 = startMs(tk.due, tk.time);
+              if (s0 !== null && c.nowMs() >= s0 - SOON && c.nowMs() < s0) items.push({ type: "taskSoon", at: s0 - SOON, text: tk.title, date: tk.due, time: tk.time, link: "home" });
+            }
           }
         });
         db.announcements.forEach(function (a) {
@@ -4255,6 +4284,7 @@ var BtexServerCore = (function () {
           case "refMeetSoon": return { title: "🤝 " + (x.time || "") + " から紹介の顔合わせです", body: x.text + " × " + n + (x.meetUrl ? "(Google Meet:" + x.meetUrl + ")" : "") };
           case "taskNew": return { title: "✅ " + n + "から やること", body: x.text + (x.date ? "(期限 " + x.date.slice(5).replace("-", "/") + ")" : "") };
           case "taskDue": return { title: "⏰ やることの期限が近づいています", body: x.text + "(期限 " + x.date.slice(5).replace("-", "/") + ")" };
+          case "taskSoon": return { title: "⏰ " + (x.time || "") + " から:" + x.text, body: "やることの時刻が近づいています" };
           case "oneAsk": return { title: "☕ " + n + "との1on1 は実施しましたか?", body: "「実施した」を押すと 1on1 の回数に数えます" };
           case "visitor": return { title: "🙋 ビジターの申込がありました", body: x.text + " さん" };
           case "ann": return { title: "📣 運営からのお知らせ", body: x.text };
