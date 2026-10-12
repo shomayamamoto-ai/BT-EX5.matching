@@ -56,7 +56,7 @@
       });
     });
     ((tasks && tasks.items) || []).filter((t) => t.due && t.mine && !t.myDone).forEach((t) => items.push({
-      kind: "task", date: t.due, time: t.time || "", title: t.title, sub: t.private ? "🔒 自分だけのやること" : t.eventTitle ? `定例会:${t.eventTitle}` : "やること", href: "#home",
+      kind: "task", date: t.due, time: t.time || "", title: t.title, sub: t.private ? "自分だけのやること" : t.eventTitle ? `定例会:${t.eventTitle}` : "やること", href: "#home",
     }));
     items.sort((a, b) => (a.date + (a.time || "99")).localeCompare(b.date + (b.time || "99")));
     return items;

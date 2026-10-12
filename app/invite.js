@@ -151,7 +151,7 @@
       let seen = false;
       try { seen = localStorage.getItem("btex5-invite-rules-seen") === "1"; } catch { /* noop */ }
       const rules = h("details", { class: "inv-rules", open: !seen },
-        h("summary", null, "⚠️ 招待の前に、必ずクリエアドバンスへ共有・確認を"),
+        h("summary", null, App.glyph("warn"), " 招待の前に、必ずクリエアドバンスへ共有・確認を"),
         h("p", null, h("b", null, "ビジター参加は、系列チームのクリエアドバンスが把握・承認した方のみが対象です。"), "お申し込みの前に、必ず共有・確認をお願いします。"),
         h("h3", null, "お声がけの前に確認すること"),
         h("ul", null,

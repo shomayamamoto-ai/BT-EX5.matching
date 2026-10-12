@@ -47,6 +47,91 @@
     }, { noFocus: true, onClose: () => { if (/^#me\/(card|qr)$/.test(location.hash)) history.replaceState(null, "", "#me"); } });
   };
 
+  // ---------- かんたんプロフィール(#me/quick) ----------
+  // 紹介に効くのに空いている人が多い3項目(活動範囲・求める紹介・ジャンル)だけを、1枚で入れる。
+  // ほかの項目は今の値のまま(サーバーは送った項目だけを書きかえる)
+  App.QUICK_PROFILE_LABELS = ["活動範囲", "求める紹介", "できること(ジャンル)"];
+  App.quickProfileSheet = function () {
+    const s = App.session;
+    const me = App.memberById(s.memberId);
+    const back = () => { if (location.hash === "#me/quick") history.replaceState(null, "", "#me"); };
+    if (!me) { App.toast("プロフィールを読み込めませんでした", "error"); back(); return; }
+    const areas = new Set(me.faceAreas || []);
+    const topics = (me.topics || []).slice();
+    let online = me.online && me.online !== "unknown" ? me.online : "";
+    let saved = false;
+    let wantsBox = null;
+    const snap = () => JSON.stringify([[...areas].sort(), online, wantsBox ? wantsBox.value.trim() : (me.wants || "").trim(), topics]);
+    const first = snap();
+    App.openSheet("かんたんプロフィール", (body, close) => {
+      const steps = h("p", { class: "qp-progress", "aria-live": "polite" });
+      const pill = (label, on, onclick) => h("button", { type: "button", class: `app-pill${on ? " is-on" : ""}`, "aria-pressed": on ? "true" : "false", onclick }, label);
+
+      // 1. 活動範囲
+      const areaRow = h("div", { class: "app-chips" });
+      const drawAreas = () => areaRow.replaceChildren(
+        ...[["niigata", "新潟で対面できる"], ["tokyo", "東京・関東で対面できる"]].map(([id, label]) =>
+          pill(label, areas.has(id), () => { if (areas.has(id)) areas.delete(id); else areas.add(id); drawAreas(); count(); })));
+      drawAreas();
+      const onlineSel = App.toggle([{ id: "all", label: "全国対応" }, { id: "partial", label: "打合せのみ" }, { id: "none", label: "対面のみ" }], online, (v) => { online = v; count(); });
+
+      // 2. 求める紹介
+      const wants = h("textarea", { rows: "3", maxlength: "400", placeholder: "例: ホームページを作ったきり更新できていない会社の社長さん。「問い合わせが来ない」と話している方" });
+      wants.value = me.wants || "";
+      wants.addEventListener("input", count);
+      wantsBox = wants;
+
+      // 3. ジャンル(グループごと。選んであるグループは開いておく)
+      const topicCount = h("span", { class: "app-field-hint" });
+      const groups = h("div", { class: "qp-groups" }, TOPIC_GROUPS.map((g) => {
+        const list = TOPICS.filter((t) => t.group === g.id);
+        if (!list.length) return null;
+        const row = h("div", { class: "app-chips" });
+        const draw = () => row.replaceChildren(...list.map((t) => pill(t.label, topics.includes(t.id), () => {
+          const i = topics.indexOf(t.id);
+          if (i >= 0) topics.splice(i, 1); else topics.push(t.id);
+          draw(); count();
+        })));
+        draw();
+        return h("details", { class: "qp-group", open: list.some((t) => topics.includes(t.id)) || null }, h("summary", null, g.label), row);
+      }));
+
+      const filled = () => [areas.size > 0 || !!online, wants.value.trim().length > 0, topics.length > 0];
+      function count() {
+        const n = filled().filter(Boolean).length;
+        steps.textContent = n === 3 ? "3つとも入りました。保存すると、紹介診断・早見表に反映されます" : `3つの質問のうち ${n} つ入っています(約1分)`;
+        topicCount.textContent = topics.length ? `${topics.length}個えらんでいます。主な仕事を先に選ぶと、カードの先頭に出ます` : "あてはまるものをいくつでも";
+      }
+      count();
+
+      const saveBtn = App.btn("保存する", async () => {
+        saveBtn.disabled = true;
+        const res = await App.api("updateMyProfile", { profile: { faceAreas: [...areas], online: online || "unknown", wants: wants.value.trim(), topics } });
+        saveBtn.disabled = false;
+        if (!res) return;
+        const i = App.members.findIndex((m) => m.id === s.memberId);
+        if (i >= 0 && res.member) App.members[i] = res.member;
+        saved = true;
+        App.toast("プロフィールを保存しました");
+        close();
+        if (App.current && App.current.view === "home") App.route();
+      }, "primary wide");
+
+      body.append(
+        h("p", { class: "app-lead" }, "紹介する側がいちばん知りたい3つです。ほかの項目(事業内容・紹介特典など)は、あとでプロフィールの画面から入れられます。"),
+        steps,
+        App.field("1. どこで会えますか?", h("div", null, areaRow, h("div", { class: "qp-online" }, h("span", { class: "app-field-hint" }, "遠方の方には"), onlineSel)), "紹介する人が「会える距離か」を判断するのに使います"),
+        App.field("2. どんな人を紹介してほしいですか?", wants, "悩み・業種・状況で書くと、紹介する側が思い出しやすくなります"),
+        App.field("3. どんな仕事ができますか?(ジャンル)", h("div", null, topicCount, groups)),
+        saveBtn,
+        h("p", { class: "qp-more" }, h("a", { href: "../profile/" }, "すべての項目を入れる(プロフィールの画面) ›")));
+    }, {
+      noFocus: true,
+      confirmClose: () => !saved && snap() !== first,
+      onClose: back,
+    });
+  };
+
   // ---------- はじめての方へ(ホーム) ----------
   // d: getHome の結果。終わったかどうかは、わかるものは自動で、わからないもの(ホーム画面)は押して印をつける
   App.welcomeCard = function (d) {
@@ -57,7 +142,9 @@
     const s = d.stats || {};
     const steps = [
       { id: "password", label: "あなた専用のパスワードを決める", href: "#me/password", auto: !!(d.me && d.me.hasPassword) },
-      { id: "profile", label: "プロフィールを入れる(紹介されやすくなります)", href: "../profile/", auto: !(d.missing || []).length },
+      // 紹介に効く3項目が空いていれば、まず「かんたんプロフィール」(その場で開く)
+      Object.assign({ id: "profile", label: "プロフィールを入れる(紹介されやすくなります)", href: "../profile/", auto: !(d.missing || []).length },
+        (d.missing || []).some((x) => App.QUICK_PROFILE_LABELS.includes(x)) ? { label: "プロフィールの3つの質問に答える(約1分)", href: "#me/quick", open: () => App.quickProfileSheet() } : {}),
       { id: "notify", label: "スマホに通知を受け取る", href: "#me/notify", auto: false },
       { id: "home", label: "スマホのホーム画面に追加する", href: "#me/install", auto: standalone() },
       { id: "pitch", label: "30秒プレゼンの原稿を書いておく", href: "#me/pitch", auto: false },
@@ -85,7 +172,7 @@
             h("button", { type: "button", class: "home-welcome-check", role: "checkbox", "aria-checked": done ? "true" : "false", "aria-label": `${x.label}(${done ? "済み" : "まだ"})`,
               onclick: () => { marks[x.id] = done ? 0 : 1; save(); draw(); } }, done ? "✓" : ""),
             // 文: 押すと、その画面へ
-            h("a", { href: x.href }, h("span", null, x.label), done ? h("small", null, "済み") : h("small", { class: "is-go" }, "開く ›")));
+            h("a", { href: x.href, onclick: x.open ? (e) => { e.preventDefault(); x.open(); } : null }, h("span", null, x.label), done ? h("small", null, "済み") : h("small", { class: "is-go" }, "開く ›")));
         })),
         all ? h("div", { class: "app-btn-row" }, App.btn("このお知らせを閉じる", close, "primary small")) : null);
     }
@@ -128,7 +215,7 @@
     ]],
   ];
   App.views.help = {
-    title: "使い方・よくある質問",
+    title: "使い方",
     tab: "",
     async render(el) {
       el.append(h("h1", { class: "app-h1" }, "使い方・よくある質問"),

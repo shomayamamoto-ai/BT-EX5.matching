@@ -112,7 +112,7 @@
       card("入会者数", String(m.joined), "人", `招待したビジターのうち入会 / 入会率 ${m.visitors ? `${Math.round((m.joined / m.visitors) * 100)}%` : "—"}`)));
     // 検索での表示(この期間に「探す」の結果に出た回数)
     el.append(h("div", { class: "st-search" },
-      h("span", null, "🔎 この期間、あなたがメンバーの検索結果に出た回数"),
+      h("span", null, App.glyph("search"), " この期間、あなたがメンバーの検索結果に出た回数"),
       h("b", null, `${m.searchShown || 0}回`, h("small", null, `(うち1位 ${m.searchTop || 0}回 / みんなの検索 ${m.searchTotal || 0}回)`)),
       (m.searchShown || 0) === 0 ? h("a", { href: "../profile/" }, "扱うジャンル・事業内容を入れると、検索に出やすくなります →") : null));
     el.append(h("p", { class: "st-note" },

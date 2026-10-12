@@ -39,7 +39,7 @@
             many ? ` ・ 済 ${t.doneCount}/${t.assignees.length}` : null,
           ]),
           t.note ? h("small", { class: "task-note" }, t.note) : null,
-          t.private ? h("small", { class: "task-private" }, "🔒 自分だけ") : null,
+          t.private ? h("small", { class: "task-private" }, App.glyph("lock"), " 自分だけ") : null,
           t.due && t.mine && !t.myDone ? App.calendarButtons(calItem(t)) : null,
           o.showPeople && many ? h("small", { class: "task-people" }, t.assignees.map((a) => `${a.done ? "✓" : "・"}${a.name}`).join(" ")) : null)),
       o.canManage || t.canEdit ? h("button", { type: "button", class: "app-icon-btn", "aria-label": "やることを消す", onclick: async (e) => {

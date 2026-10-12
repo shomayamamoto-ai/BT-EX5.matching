@@ -429,7 +429,7 @@
     // 「役職」「役割」などの区分の言葉は出さず、マーク(色・形)と肩書きだけを出す
     return `<span class="ref-role ref-role-${r.kind}${compact ? " compact" : ""}" title="${escapeHtml(r.role)}">`
       + `<svg viewBox="0 0 16 16" aria-hidden="true">${ROLE_ICONS[r.kind] || ROLE_ICONS.role}</svg>`
-      + `<span class="ref-role-text">${escapeHtml(r.role)}</span></span>`;
+      + `<span class="ref-role-text">${escapeHtml(r.role).replace(/ ?\/ ?/g, " /<wbr>")}</span></span>`;
   }
 
   // 一覧の並び順は日替わり(だれもが上に表示される日があるように)。同じ日は同じ順
@@ -766,9 +766,8 @@
     ].filter(Boolean);
     $("#diagSummary").innerHTML = summary.map((s) => `<span>${escapeHtml(s)}</span>`).join("");
 
-    // 自分は候補に出さない(自分あての紹介はできないため)
-    const others = members.filter((m) => m.id !== myMemberId);
-    const ranked = RefScoring.rankMembers(others, answers);
+    // 自分も候補に出す(自分の仕事に合う相談だとわかるように。「あなた」の印を付け、紹介の記録は出さない)
+    const ranked = RefScoring.rankMembers(members, answers);
     lastRanked = ranked;
     if (!fromRestore) logSearch(answers.consult ? "consult" : "diag", ranked.map((x) => x.m.id));
     renderTeam();
@@ -781,7 +780,7 @@
           .map(({ m, sc }, i) => `
         <li class="rank-item">
           <span class="rank-no">${i + 1}</span>
-          <span class="rank-name">${escapeHtml(m.name)}</span>
+          <span class="rank-name">${escapeHtml(m.name)}${m.id === myMemberId ? ' <span class="ref-tag me">あなた</span>' : ""}</span>
           <span class="rank-score"><strong>${sc.score}%</strong><small>一致度</small></span>
           <span class="rank-company">${roleMark(m.id, true)}${escapeHtml(m.company)}・${escapeHtml(m.category)}</span>
           <span class="rank-bar"><span style="width:${sc.score}%"></span></span>
@@ -808,7 +807,7 @@
   let lastTeam = [];
   function renderTeam() {
     const box = $("#diagTeam");
-    lastTeam = answers.consult ? RefConsult.team(members.filter((m) => m.id !== myMemberId), answers.consult, answers) : [];
+    lastTeam = answers.consult ? RefConsult.team(members, answers.consult, answers) : [];
     box.hidden = lastTeam.length < 2;
     if (box.hidden) { box.innerHTML = ""; return; }
     box.innerHTML = `

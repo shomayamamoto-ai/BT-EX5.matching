@@ -330,6 +330,13 @@ button { font-family: inherit; }
   border-radius: 6px;
 }
 .rank-actions { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+@media (max-width: 600px) {
+  /* スマホ: ボタンを2列にそろえる(3つのときは最後を横いっぱいに) */
+  .rank-actions { display: grid; grid-template-columns: 1fr 1fr; }
+  .rank-actions > .ref-btn { width: 100%; justify-content: center; text-align: center; }
+  .rank-actions > :last-child:nth-child(odd) { grid-column: 1 / -1; }
+}
+.rank-company .ref-role { width: fit-content; }
 .diag-empty { color: #f0dccf; font-size: 14px; margin-bottom: 14px; }
 .diag-result-actions { display: flex; flex-wrap: wrap; gap: 10px; }
 
@@ -1085,7 +1092,9 @@ a.site-maker:hover span { text-decoration: underline; color: var(--accent-dark);
   max-width: 100%;
 }
 .ref-role svg { width: 13px; height: 13px; flex-shrink: 0; fill: currentColor; }
-.ref-role-text { overflow-wrap: anywhere; }
+/* 言葉の途中(「プ/ライムリンカー」など)では折り返さず、「/」の後で折り返す。2行になったら角を少し丸く */
+.ref-role-text { word-break: keep-all; overflow-wrap: anywhere; }
+.ref-role:has(.ref-role-text wbr) { border-radius: 10px; }
 .ref-role-kind { font-size: 12px; font-weight: 700; padding-right: 5px; margin-right: 1px; border-right: 1px solid currentColor; opacity: 0.85; }
 /* 代表: 金 */
 .ref-role-leader { background: linear-gradient(135deg, #fff1c9, #ffd877); color: #7a4b00; box-shadow: inset 0 0 0 1px rgba(196, 135, 0, 0.45); }

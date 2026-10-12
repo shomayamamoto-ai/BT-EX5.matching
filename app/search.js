@@ -62,11 +62,11 @@
         const mem = App.members.filter((m) => match([m.name, m.company, m.category, m.business, m.wants, (m.triggers || []).join(" "), m.team].join(" "))).slice(0, 10)
           .map((m) => row(App.profileHref(m.id, "home"), App.avatar(m.name), m.name, snippet([m.company, m.business, m.wants, (m.triggers || []).join(" ")].filter(Boolean).join(" ・ "), words)));
         const posts = data ? data.posts.filter((p) => match([p.body, p.byName, p.cat, ...(p.comments || []).map((c) => c.body)].join(" "))).slice(0, 8)
-          .map((p) => row(`#board?post=${p.id}`, h("span", { class: "srch-ico" }, "📝"), `${p.byName}さん ・ ${p.cat}`, snippet(p.body, words))) : [];
+          .map((p) => row(`#board?post=${p.id}`, h("span", { class: "srch-ico" }, App.glyph("post")), `${p.byName}さん ・ ${p.cat}`, snippet(p.body, words))) : [];
         const anns = data ? data.anns.filter((a) => match([a.title, a.body].join(" "))).slice(0, 8)
-          .map((a) => row(`#news?open=${a.id}`, h("span", { class: "srch-ico" }, "📣"), a.title, snippet(a.body, words))) : [];
+          .map((a) => row(`#news?open=${a.id}`, h("span", { class: "srch-ico" }, App.glyph("ann")), a.title, snippet(a.body, words))) : [];
         const evs = data ? data.events.filter((e) => match([e.title, e.place, e.body, e.agenda, e.date].join(" "))).slice(0, 6)
-          .map((e) => row(`#events/detail/${e.id}`, h("span", { class: "srch-ico" }, "📅"), `${App.fmtDate(e.date)} ${e.title}`, snippet([e.place, e.body, e.agenda].filter(Boolean).join(" ・ ") || e.title, words))) : [];
+          .map((e) => row(`#events/detail/${e.id}`, h("span", { class: "srch-ico" }, App.glyph("calendar")), `${App.fmtDate(e.date)} ${e.title}`, snippet([e.place, e.body, e.agenda].filter(Boolean).join(" ・ ") || e.title, words))) : [];
         const all = [section("メンバー", mem), section("掲示板", posts), section("運営連絡", anns), section("定例会", evs)].filter(Boolean);
         App.fill(results, all.length ? all : h("p", { class: "srch-hint" }, data ? "見つかりませんでした。言葉を短くするか、別の言い方で探してください。" : "読み込み中…"));
       }

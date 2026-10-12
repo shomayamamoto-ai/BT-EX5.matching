@@ -245,7 +245,7 @@ const App = (function () {
   }
   function calendarButtons(item) {
     return h("details", { class: "cal-add" },
-      h("summary", null, "カレンダーに追加"),
+      h("summary", null, glyph("calendar"), "カレンダーに追加"),
       h("div", { class: "cal-add-menu" },
         h("a", { href: googleCalUrl(item), target: "_blank", rel: "noopener", class: "app-btn ghost small" }, "Google カレンダー"),
         h("button", { type: "button", class: "app-btn ghost small", onclick: () => icsFile(item) }, "iPhone・Outlook(.ics)")));
@@ -574,6 +574,10 @@ const App = (function () {
     visitor: "M15 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Zm-9-2V7H4v3H1v2h3v3h2v-3h3v-2Zm9 4c-2.7 0-8 1.3-8 4v2h16v-2c0-2.7-5.3-4-8-4Z",
     ann: "M3 10v4a1 1 0 0 0 1 1h2l5 4V5L6 9H4a1 1 0 0 0-1 1Zm13.5 2A4.5 4.5 0 0 0 14 8v8a4.5 4.5 0 0 0 2.5-4ZM14 3.2v2.1a7 7 0 0 1 0 13.4v2.1a9 9 0 0 0 0-17.6Z",
     dot: "M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8Z",
+    lock: "M12 2a5 5 0 0 0-5 5v3H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2h-1V7a5 5 0 0 0-5-5Zm-3 8V7a3 3 0 0 1 6 0v3Z",
+    search: "M10 3a7 7 0 0 1 5.6 11.2l5.1 5.1-1.4 1.4-5.1-5.1A7 7 0 1 1 10 3Zm0 2a5 5 0 1 0 0 10 5 5 0 0 0 0-10Z",
+    warn: "M12 2 1 21h22zm-1 7h2v6h-2zm0 8h2v2h-2z",
+    crown: "M3 7l4.5 4L12 4l4.5 7L21 7l-2 12H5z",
   };
   function glyph(name) { return icon(GLYPHS[name] || GLYPHS.dot); }
 

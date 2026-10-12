@@ -265,12 +265,14 @@
         // サーバーの missing は PROFILE_ITEMS の7項目 + できること(ジャンル)。早見表・プロフィールと同じ数え方
         const total = typeof PROFILE_SCORE_ITEMS !== "undefined" ? PROFILE_SCORE_ITEMS.length : d.missing.length + 1;
         const pct = Math.max(0, Math.round(((total - d.missing.length) / total) * 100));
-        tips.append(h("a", { class: "home-nudge", href: "../profile/" },
+        // 紹介に効く3項目(活動範囲・求める紹介・ジャンル)が空いていれば、その場で「かんたんプロフィール」を開く
+        const quick = d.missing.some((x) => App.QUICK_PROFILE_LABELS && App.QUICK_PROFILE_LABELS.includes(x));
+        tips.append(h("a", { class: "home-nudge", href: quick ? "#me/quick" : "../profile/", onclick: quick ? (e) => { e.preventDefault(); App.quickProfileSheet(); } : null },
           h("span", { class: "home-nudge-icon", "aria-hidden": "true" }, App.glyph("post")),
           h("span", { class: "home-nudge-main" },
             h("b", null, `紹介されやすくするために(プロフィール ${pct}%)`),
             h("span", { class: "home-goal-bar is-profile", "aria-hidden": "true" }, h("i", { style: `width:${pct}%` })),
-            h("span", null, `まだ入っていない項目:${d.missing.slice(0, 4).join("・")}${d.missing.length > 4 ? " ほか" : ""}`)),
+            h("span", null, quick ? "3つの質問に答えるだけ(約1分)。紹介診断で候補に出やすくなります" : `まだ入っていない項目:${d.missing.slice(0, 4).join("・")}${d.missing.length > 4 ? " ほか" : ""}`)),
           h("span", { class: "home-go", "aria-hidden": "true" }, "›")));
       }
       // 通知(共有サーバーで、まだこの端末でオンにしていないとき)

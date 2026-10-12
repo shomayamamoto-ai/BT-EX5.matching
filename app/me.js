@@ -28,6 +28,7 @@
       el.append(h("nav", { class: "me-groups", "aria-label": "マイページのメニュー" },
         group("プロフィール",
           menu("../profile/", "プロフィール・1on1シートを編集", "紹介されるための情報。入れるほど紹介が届きます"),
+          menu("#me/quick", "かんたんプロフィール(3つの質問)", "活動範囲・求める紹介・ジャンルだけを1分で"),
           menu(me ? App.profileHref(me.id, "me") : "../referral/", "ほかのメンバーからの見え方", "早見表のあなたのカード"),
           menu("#me/card", "デジタル会員証・QR コード", "交流会でメンバーに QR を読み取ってもらうと、あなたの詳細が開きます"),
           menu("#me/billing", "会費・領収書", "会費のプランと明細。領収書・明細書を PDF で保存")),
@@ -70,7 +71,7 @@
         AuthSession.clearToken();
         location.replace("../login/");
       }, "ghost wide")));
-      el.append(h("p", { class: "me-expire" }, `ログインの有効期限:${new Date(s.expiresAt).toLocaleString("ja-JP")}`));
+      el.append(h("p", { class: "me-expire" }, `このログインは ${new Date(s.expiresAt).toLocaleString("ja-JP", { month: "numeric", day: "numeric", weekday: "short", hour: "numeric", minute: "2-digit" })} まで有効です(そのあとは、もう一度ログイン)`));
 
       if (parts[0] === "password") passwordForm();
       if (parts[0] === "feedback") feedbackSheet();
@@ -84,6 +85,7 @@
         App.goalsSheet(st && st.goals, () => App.go("home"));
       }
       if (parts[0] === "card" || parts[0] === "qr") App.memberCardSheet();
+      if (parts[0] === "quick") App.quickProfileSheet();
       if (parts[0] === "billing" && App.billingSheet) App.billingSheet();
     },
   };
@@ -393,7 +395,7 @@
   };
 
   App.views.admin = {
-    title: "管理者メニュー",
+    title: "運営",
     tab: "",
     async render(el, parts) {
       if (!App.isAdmin()) { el.append(App.empty("管理者のみ使えます。")); return; }
@@ -499,7 +501,7 @@
         const st = ACCOUNT_STATUS[a.status];
         return h("li", null, h("div", { class: "app-row" },
           App.avatar(a.name),
-          h("span", { class: "app-row-main" }, h("b", null, a.name, a.admin ? " 👑" : ""),
+          h("span", { class: "app-row-main" }, h("b", null, a.name, a.admin ? h("span", { class: "acc-admin", title: "管理者" }, " ", App.glyph("crown"), " 管理者") : ""),
             h("small", null, a.status === "active" ? `最終ログイン ${a.lastLoginAt ? App.fmtTime(a.lastLoginAt) : "—"}` : a.status === "invited" ? `${new Date(a.inviteExpiresAt).toLocaleDateString("ja-JP")}まで有効` : a.team || "")),
           a.locked ? App.chip("ロック中", "warn") : App.chip(st.label, st.tone),
           h("details", { class: "acc-more" }, h("summary", { "aria-label": `${a.name}さんの操作` }, "…"),
