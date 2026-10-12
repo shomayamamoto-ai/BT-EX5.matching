@@ -527,23 +527,44 @@
       }))));
   }
 
+  // 送られた画面の場所(#events など)を、画面の名前に
+  const PAGE_NAMES = { home: "ホーム", log: "記録", events: "予定", board: "掲示板", news: "運営連絡", me: "マイページ", feed: "お知らせ", invite: "ビジター招待", admin: "運営", help: "使い方", referral: "紹介先早見表", profile: "プロフィール", teams: "全体分析" };
+  function pageName(p) {
+    const m = String(p || "").match(/#?([a-z]+)/i);
+    return (m && PAGE_NAMES[m[1]]) || p;
+  }
   async function renderFeedback(el) {
     const d = await App.api("adminListFeedback");
     if (!d) return;
     if (!d.items.length) { el.append(App.empty("まだ届いていません。")); return; }
-    el.append(h("ul", { class: "app-cards" }, d.items.map((f) => {
+    // 状況で絞る(はじめは まだのもの = 受付・対応中)
+    let show = "open";
+    const count = (k) => d.items.filter((f) => (k === "open" ? f.status !== "done" : k === "all" ? true : f.status === k)).length;
+    const chips = h("div", { class: "app-chips fb-filter" });
+    const list = h("ul", { class: "app-cards" });
+    function draw() {
+      App.fill(chips, [["open", "まだ"], ["new", "受付"], ["doing", "対応中"], ["done", "対応済み"], ["all", "すべて"]].map(([k, label]) =>
+        h("button", { type: "button", class: `app-pill${show === k ? " is-on" : ""}`, "aria-pressed": show === k ? "true" : "false", onclick: () => { show = k; draw(); } }, `${label} ${count(k)}`)));
+      const items = d.items.filter((f) => (show === "open" ? f.status !== "done" : show === "all" ? true : f.status === show));
+      App.fill(list, items.length ? items.map(card) : [App.empty("この状況のものはありません。")]);
+    }
+    function card(f) {
       const status = h("select", { "aria-label": "状況" }, Object.keys(FB_STATUS).map((k) => h("option", { value: k }, FB_STATUS[k].label)));
       status.value = f.status;
-      const reply = h("textarea", { rows: "2", maxlength: "1000", placeholder: "返信(送った本人に表示されます)" });
+      const reply = h("textarea", { rows: "3", maxlength: "1000", placeholder: "返信(送った本人のマイページに表示されます)" });
       reply.value = f.reply;
       return h("li", null, h("article", { class: "ref-card" },
-        h("div", { class: "ref-card-head" }, App.avatar(f.byName), h("div", null, h("b", null, f.byName), h("small", null, `${FB_KINDS[f.kind]} ・ ${App.fmtTime(f.at)}`)), App.chip(FB_STATUS[f.status].label, FB_STATUS[f.status].tone)),
+        h("div", { class: "ref-card-head" }, App.avatar(f.byName), h("div", null, h("b", null, f.byName), h("small", null, [FB_KINDS[f.kind], App.fmtTime(f.at), f.page ? `「${pageName(f.page)}」の画面から` : ""].filter(Boolean).join(" ・ "))), App.chip(FB_STATUS[f.status].label, FB_STATUS[f.status].tone)),
         h("p", { class: "fb-body" }, f.body),
-        f.page ? h("p", { class: "app-field-hint" }, f.page) : null,
-        h("div", { class: "app-form" }, status, reply,
-          App.btn("保存", async () => {
-            if (await App.api("adminUpdateFeedback", { id: f.id, status: status.value, reply: reply.value })) { App.toast("保存しました"); App.route(); }
-          }, "small"))));
-    })));
+        f.reply ? h("p", { class: "fb-reply" }, h("b", null, "返信:"), f.reply) : null,
+        h("details", { class: "app-more-box" },
+          h("summary", null, f.reply ? "返信・状況を直す" : "返信する・状況を変える"),
+          h("div", { class: "app-form" }, App.field("状況", status), App.field("返信", reply),
+            App.btn("保存", async () => {
+              if (await App.api("adminUpdateFeedback", { id: f.id, status: status.value, reply: reply.value })) { App.toast("保存しました"); App.route(); }
+            }, "primary small")))));
+    }
+    el.append(chips, list);
+    draw();
   }
 })();

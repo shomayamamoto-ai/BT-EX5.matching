@@ -1421,3 +1421,15 @@ button.home-welcome-check:active { transform: scale(0.94); }
 /* 紹介カードの長いメモは4行まで(押すと全部) */
 .ref-card-body dd { display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; cursor: pointer; }
 .ref-card-body dd.is-open { display: block; }
+/* 運営連絡: 運営だけの操作は1つにまとめる */
+.ann-admin { margin-top: 10px; padding: 0 12px; border: 1px dashed var(--line-strong); border-radius: 12px; background: #fffdf8; }
+.ann-admin > summary { display: flex; align-items: center; gap: 6px; min-height: 44px; font-size: 13px; font-weight: 800; color: var(--accent-dark); cursor: pointer; list-style: none; }
+.ann-admin > summary::-webkit-details-marker { display: none; }
+.ann-admin > summary svg { width: 14px; height: 14px; fill: currentColor; }
+.ann-admin[open] { padding-bottom: 10px; }
+.ann-unread-chip { margin-left: auto; padding: 2px 9px; border-radius: 999px; background: #fbecea; color: #a3342a; font-size: 12px; font-weight: 800; }
+.ann-unread-chip.is-done { background: var(--good-bg); color: var(--good); }
+.fb-filter { margin: 4px 0 12px; }
+.fb-reply { margin-top: 8px; padding: 8px 10px; border-radius: 10px; background: var(--good-bg); font-size: 13px; }
+.ann .ann-admin > summary { flex-direction: row; align-items: center; padding: 0; gap: 6px; }
+.ann .ann-admin > summary b { font-size: inherit; }

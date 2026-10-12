@@ -250,7 +250,7 @@
               <p class="ref-company">${escapeHtml(m.company)}</p>
             </div>
             <div class="ref-card-side">
-              ${sc ? `<div class="ref-match"><strong>${sc.score}%</strong><small>一致度</small></div>` : ""}
+              ${sc ? `<div class="ref-match" title="一致度 ${sc.score}%"><strong>${sc.score}%</strong><small>${bandOf(sc.score)}</small></div>` : ""}
               <button type="button" class="ref-fav" data-fav="${m.id}" aria-pressed="${favs.has(m.id)}" aria-label="${escapeHtml(m.name)}さんをお気に入りに${favs.has(m.id) ? "登録済み" : "追加"}" title="お気に入り">${favs.has(m.id) ? "★" : "☆"}</button>
             </div>
           </div>
@@ -359,10 +359,9 @@
         <a class="md-app-btn" href="../app/#log/1on1?new&amp;with=${encodeURIComponent(m.id)}">1on1を記録</a>
       </nav>` : ""}
       <div class="md-actions">
-        <button type="button" class="ref-btn" data-copy="${m.id}">紹介文をコピー</button>
+        <button type="button" class="ref-btn is-main" data-copy="${m.id}">紹介文をコピー</button>
         <button type="button" class="ref-btn ghost" data-ask="${m.id}">打診文をコピー</button>
         <button type="button" class="ref-btn ghost" data-share-member="${escapeHtml(m.id)}">この人を共有</button>
-        <button type="button" class="ref-btn ghost" data-close-detail>閉じる</button>
       </div>`;
   }
 
@@ -427,6 +426,8 @@
     role: '<path d="m8 1.4 1.9 4.1 4.5.5-3.4 3 1 4.4L8 11.2l-4 2.2 1-4.4-3.4-3 4.5-.5z"/>',
   };
   // 入っていない項目: 自分のカードには「まだ入力されていません」(入れるきっかけに)、ほかの人のカードは「—」だけ
+  // 一致度の%は細かく見えすぎるため、言葉の目安もそえる(85%〜 とても合う / 70%〜 合う / それより下 参考)
+  function bandOf(score) { return score >= 85 ? "とても合う" : score >= 70 ? "合う" : "参考に"; }
   function blank(m) { return m.id === myMemberId ? "まだ入力されていません" : "—"; }
 
   function roleMark(id, compact) {
@@ -787,19 +788,26 @@
         <li class="rank-item">
           <span class="rank-no">${i + 1}</span>
           <span class="rank-name">${escapeHtml(m.name)}${m.id === myMemberId ? ' <span class="ref-tag me">あなた</span>' : ""}</span>
-          <span class="rank-score"><strong>${sc.score}%</strong><small>一致度</small></span>
+          <span class="rank-score" title="一致度 ${sc.score}%"><strong>${sc.score}%</strong><small>${bandOf(sc.score)}</small></span>
           <span class="rank-company">${roleMark(m.id, true)}${escapeHtml(m.company)}・${escapeHtml(m.category)}</span>
           <span class="rank-bar"><span style="width:${sc.score}%"></span></span>
           <span class="rank-reasons">${sc.reasons.slice(0, 4).map((r) => `<span>${escapeHtml(r)}</span>`).join("")}</span>
           <span class="rank-actions">
-            <button type="button" class="ref-btn" data-copy="${m.id}">紹介文をコピー</button>
+            <button type="button" class="ref-btn is-main" data-copy="${m.id}">紹介文をコピー</button>
             <button type="button" class="ref-btn ghost" data-ask="${m.id}">打診文をコピー</button>
             ${m.id !== myMemberId ? `<a class="ref-btn ghost" href="${escapeHtml(recordHref(m.id))}">紹介を記録</a>` : ""}
-            <button type="button" class="ref-btn ghost" data-goto="${m.id}">カードを見る</button>
+            <button type="button" class="ref-btn ghost" data-goto="${m.id}">詳細・資料を見る</button>
           </span>
         </li>`)
           .join("")
       : '<p class="diag-empty">一致度の高いメンバーが見つかりませんでした。方法を「まだ分からない」にするか、会い方を「どちらでもよい」にして再診断してみてください。</p>';
+
+    // 見つからなかったときは「一致度順に表示」を出さない。相談から来たときは「紹介診断で探す」と書く
+    $("#diagSortList").hidden = !ranked.length;
+    $("#diagRetry").textContent = answers.consult ? "質問に答えて探す(紹介診断)" : "もう一度診断する";
+    if (!ranked.length && answers.consult) {
+      $("#diagRanking").innerHTML = '<p class="diag-empty">この相談に合うメンバーが見つかりませんでした。別の言い方(たとえば「ホームページ」「採用」「税金」など)で探すか、質問に答えて探してみてください。BT-EX5 にいない仕事なら、知り合いの方をビジターとして招待すると喜ばれます。</p>';
+    }
 
     $("#diagWizard").hidden = true;
     $("#diagResults").hidden = false;

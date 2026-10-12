@@ -56,23 +56,26 @@
         h("div", { class: "app-btn-row ann-share" },
           App.btn("LINE に貼る文をコピー", () => App.copyText(lineText(a), "コピーしました。LINE のトークに貼り付けてください"), "small"),
           App.btn("LINE などで送る", () => App.shareText(lineText(a), a.title), "ghost small")),
-        a.unreadNames && a.unreadNames.length ? h("p", { class: "app-field-hint ann-unread" }, `未読:${a.unreadNames.join("、")}`) : null,
-        App.isAdmin() ? h("div", { class: "app-btn-row" },
-          a.unreadNames && a.unreadNames.length ? App.btn(`未読の ${a.unreadNames.length} 名への声かけ文をコピー`, () => App.copyText([
-            `【運営連絡を見てください】${a.title}`,
-            `まだ見ていない方:${a.unreadNames.map((n) => `${n}さん`).join("、")}`,
-            App.siteUrl(`#news?open=${a.id}`),
-          ].join("\n"), "コピーしました。LINE グループなどに貼り付けてください"), "small") : null,
-          a.unreadNames && a.unreadNames.length ? App.btn(`未読の ${a.unreadNames.length} 名にもう一度通知する`, async () => {
-            if (!(await App.confirm(`まだ読んでいない ${a.unreadNames.length} 名に、ベルとスマホでもう一度お知らせしますか?`, { ok: "もう一度知らせる" }))) return;
-            const r = await App.api("adminRemindAnnouncement", { id: a.id });
-            if (r) App.toast(`${r.count} 名にもう一度お知らせしました`);
-          }, "ghost small") : null,
-          App.btn("編集", () => annForm(a, d.cats), "ghost small"),
-          App.btn("削除", async () => {
-            if (!(await App.confirm("この運営連絡を削除しますか?", { ok: "削除する", danger: true }))) return;
-            if (await App.api("adminDeleteAnnouncement", { id: a.id })) App.route();
-          }, "ghost small danger")) : null]);
+        // 運営だけ: 未読の人(押すと名前)と、管理の操作(声かけ・もう一度通知・編集・削除)をひとまとめに
+        App.isAdmin() ? h("details", { class: "ann-admin" },
+          h("summary", null, App.glyph("crown"), " 運営の操作", a.unreadNames && a.unreadNames.length ? h("span", { class: "ann-unread-chip" }, `未読 ${a.unreadNames.length}名`) : h("span", { class: "ann-unread-chip is-done" }, "全員既読")),
+          a.unreadNames && a.unreadNames.length ? h("p", { class: "app-field-hint ann-unread" }, `まだ読んでいない方:${a.unreadNames.join("、")}`) : null,
+          h("div", { class: "app-btn-row" },
+            a.unreadNames && a.unreadNames.length ? App.btn("未読の人への声かけ文をコピー", () => App.copyText([
+              `【運営連絡を見てください】${a.title}`,
+              `まだ見ていない方:${a.unreadNames.map((n) => `${n}さん`).join("、")}`,
+              App.siteUrl(`#news?open=${a.id}`),
+            ].join("\n"), "コピーしました。LINE グループなどに貼り付けてください"), "ghost small") : null,
+            a.unreadNames && a.unreadNames.length ? App.btn("未読の人にもう一度通知", async () => {
+              if (!(await App.confirm(`まだ読んでいない ${a.unreadNames.length} 名に、ベルとスマホでもう一度お知らせしますか?`, { ok: "もう一度知らせる" }))) return;
+              const r = await App.api("adminRemindAnnouncement", { id: a.id });
+              if (r) App.toast(`${r.count} 名にもう一度お知らせしました`);
+            }, "ghost small") : null,
+            App.btn("編集", () => annForm(a, d.cats), "ghost small"),
+            App.btn("削除", async () => {
+              if (!(await App.confirm("この運営連絡を削除しますか?", { ok: "削除する", danger: true }))) return;
+              if (await App.api("adminDeleteAnnouncement", { id: a.id })) App.route();
+            }, "ghost small danger"))) : null]);
       det.addEventListener("toggle", async () => {
         if (!det.open || a.read) return;
         a.read = true;
@@ -110,6 +113,13 @@
       const pinned = h("input", { type: "checkbox", checked: a ? a.pinned : false });
       body.append(h("form", { class: "app-form", onsubmit: async (e) => {
         e.preventDefault();
+        if (!title.value.trim()) { App.fieldError(title, "件名を入れてください。"); return; }
+        if (!text.value.trim()) { App.fieldError(text, "本文を入れてください。"); return; }
+        // 新しく出すときは、全員に届く前に見た目を確かめる
+        if (!a) {
+          const head = text.value.trim().slice(0, 140);
+          if (!(await App.confirm(`件名:${title.value.trim()}(${cat.value})\n\n${head}${text.value.trim().length > 140 ? "…" : ""}\n\n会員全員のベルとスマホ(通知をオンにしている人)に届きます。`, { title: "この内容で届けますか?", ok: "全員に届ける" }))) return;
+        }
         const d = await App.api("adminSaveAnnouncement", { item: { id: a ? a.id : "", title: title.value.trim(), cat: cat.value, body: text.value, pinned: pinned.checked } });
         if (!d) return;
         close();

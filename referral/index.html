@@ -6,7 +6,7 @@
   <meta name="referrer" content="no-referrer">
   <title>紹介先早見表 | BT-EX5</title>
   <style>html.guard-pending body { visibility: hidden; } html.guard-pending::after { content: "読み込み中…"; position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; font: 700 15px sans-serif; color: #8f8173; background: #f6f2ea; }</style>
-  <link rel="icon" type="image/svg+xml" href="../assets/bt-ex5-mark.svg?v=202610121703">
+  <link rel="icon" type="image/svg+xml" href="../assets/bt-ex5-mark.svg?v=202610122346">
   <link rel="manifest" href="../manifest.webmanifest">
   <link rel="apple-touch-icon" href="../assets/icon-180.png">
   <meta name="theme-color" content="#1a0f0c">
@@ -14,11 +14,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" onload="this.onload=null;this.rel='stylesheet'">
   <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Noto+Sans+JP:wght@400;500;700;900&display=swap"></noscript>
-  <link rel="stylesheet" href="referral.css?v=202610121703">
-  <link rel="stylesheet" href="../opening/intro.css?v=202610121703">
-  <link rel="stylesheet" href="../app/nav.css?v=202610121703">
-  <link rel="stylesheet" href="../app/tab-dock.css?v=202610121703">
-  <link rel="stylesheet" href="../assets/lux.css?v=202610121703">
+  <link rel="stylesheet" href="referral.css?v=202610122346">
+  <link rel="stylesheet" href="../opening/intro.css?v=202610122346">
+  <link rel="stylesheet" href="../app/nav.css?v=202610122346">
+  <link rel="stylesheet" href="../app/tab-dock.css?v=202610122346">
+  <link rel="stylesheet" href="../assets/lux.css?v=202610122346">
 </head>
 <body>
 
@@ -64,19 +64,12 @@
         <button type="button" class="cs-go" id="csGo">紹介先を探す</button>
       </div>
       <p class="cs-note" id="csNote" aria-live="polite"></p>
+      <!-- 紹介診断への入口(なにを入れればよいかわからないとき) -->
+      <button type="button" class="diag-cta is-compact" data-open-diag>
+        <span class="diag-cta-text"><span class="diag-cta-title">言葉が浮かばないときは、質問に答えて探す</span><span class="diag-cta-sub">紹介診断(3問・約15秒)</span></span>
+        <span class="diag-cta-arrow" aria-hidden="true">›</span>
+      </button>
     </section>
-
-    <!-- 紹介診断への入口 -->
-    <button type="button" class="diag-cta" data-open-diag>
-      <span class="diag-cta-icon" aria-hidden="true">
-        <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m20 20-4.6-4.6"/><path d="M10.5 7.5v6M7.5 10.5h6"/></svg>
-      </span>
-      <span class="diag-cta-text">
-        <span class="diag-cta-title">誰に紹介すればいい?</span>
-        <span class="diag-cta-sub">相手の「困りごと」を選ぶと、解決できる方法と紹介先の候補・一致度がわかります(3問・約15秒)</span>
-      </span>
-      <span class="diag-cta-go" aria-hidden="true">紹介診断をはじめる<span class="diag-cta-arrow">→</span></span>
-    </button>
 
     <!-- 自分の情報の記入のお願い -->
     <a href="../profile/" class="prof-nudge" id="profileNudge" hidden>
@@ -84,7 +77,7 @@
         <strong>あなたの情報に未入力の項目があります</strong>
         <span id="profileNudgeItems"></span>
       </span>
-      <span class="prof-nudge-go">自分の情報を入力する →</span>
+      <span class="prof-nudge-go">プロフィールを入れる →</span>
     </a>
 
     <!-- あなたと紹介し合えそうな人 -->
@@ -110,7 +103,7 @@
         <p class="ref-filter-label">業種</p>
         <div class="ref-chips" id="categoryChips"></div>
 
-        <p class="ref-filter-label">対応エリア</p>
+        <p class="ref-filter-label">活動範囲</p>
         <div class="ref-chips" id="areaChips"></div>
 
         <div id="offerFilter" hidden>
@@ -149,7 +142,7 @@
     <nav class="ref-footer-nav"><a href="../terms/">利用規約</a></nav>
     <p>© 2026 BT-EX5</p>
     <p class="site-credit">Created by <a href="https://lumenium.net/?utm_source=bt-ex5&amp;utm_medium=referral&amp;utm_campaign=credit" target="_blank" rel="noopener">Shoma Yamamoto</a></p>
-    <a class="site-maker" href="https://lumenium.net/?utm_source=bt-ex5&amp;utm_medium=referral&amp;utm_campaign=footer_logo" target="_blank" rel="noopener"><img src="../assets/lumenium-logo.svg?v=202610121703" alt="Lumenium" width="115" height="24"><span>Webサイト・システム制作のご相談はこちら</span></a>
+    <a class="site-maker" href="https://lumenium.net/?utm_source=bt-ex5&amp;utm_medium=referral&amp;utm_campaign=footer_logo" target="_blank" rel="noopener"><img src="../assets/lumenium-logo.svg?v=202610122346" alt="Lumenium" width="115" height="24"><span>Webサイト・システム制作のご相談はこちら</span></a>
   </footer>
 
   <!-- 紹介診断(ポップアップ) -->
@@ -158,7 +151,7 @@
       <button type="button" class="diag-close" id="diagClose" aria-label="閉じる">×</button>
         <section class="diag" id="diagnosis" aria-labelledby="diagTitle">
           <div class="diag-intro" id="diagIntro" hidden>
-            <p class="diag-eyebrow">MATCH CHECK</p>
+            <p class="diag-eyebrow">紹介診断</p>
             <h2 class="diag-title" id="diagTitle">誰に紹介すればいい?</h2>
             <p class="diag-lead">相手の困りごと → 方法 → 相手の情報の順に答えるだけで、メンバーごとの一致度(マッチ率)を計算します。</p>
             <button type="button" class="diag-start" id="diagStart">紹介診断をはじめる</button>
@@ -181,7 +174,7 @@
           </div>
 
           <div class="diag-results" id="diagResults" hidden>
-            <p class="diag-eyebrow">RESULT</p>
+            <p class="diag-eyebrow">診断の結果</p>
             <h2 class="diag-title">紹介先の候補</h2>
             <div class="diag-summary" id="diagSummary"></div>
             <section class="diag-team" id="diagTeam" hidden></section>
@@ -206,18 +199,18 @@
 
   <div class="ref-toast" id="refToast" role="status" hidden></div>
 
-  <script src="../auth/server-core.js?v=202610121703"></script>
-  <script src="../auth/server-community.js?v=202610121703"></script>
-  <script src="../auth/mock-server.js?v=202610121703"></script>
-  <script src="../auth/api.js?v=202610121703"></script>
-  <script src="../auth/session.js?v=202610121703"></script>
-  <script src="data.js?v=202610121703"></script>
-  <script src="partners.js?v=202610121703"></script>
-  <script src="consult.js?v=202610121703"></script>
-  <script src="scoring.js?v=202610121703"></script>
-  <script src="referral.js?v=202610121703"></script>
-  <script src="../opening/intro.js?v=202610121703"></script>
-  <script src="../app/tab-dock.js?v=202610121703"></script>
-  <script src="../app/nav.js?v=202610121703" data-tab="search"></script>
+  <script src="../auth/server-core.js?v=202610122346"></script>
+  <script src="../auth/server-community.js?v=202610122346"></script>
+  <script src="../auth/mock-server.js?v=202610122346"></script>
+  <script src="../auth/api.js?v=202610122346"></script>
+  <script src="../auth/session.js?v=202610122346"></script>
+  <script src="data.js?v=202610122346"></script>
+  <script src="partners.js?v=202610122346"></script>
+  <script src="consult.js?v=202610122346"></script>
+  <script src="scoring.js?v=202610122346"></script>
+  <script src="referral.js?v=202610122346"></script>
+  <script src="../opening/intro.js?v=202610122346"></script>
+  <script src="../app/tab-dock.js?v=202610122346"></script>
+  <script src="../app/nav.js?v=202610122346" data-tab="search"></script>
 </body>
 </html>

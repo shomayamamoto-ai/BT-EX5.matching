@@ -334,7 +334,7 @@ button { font-family: inherit; }
   /* スマホ: ボタンを2列にそろえる(3つのときは最後を横いっぱいに) */
   .rank-actions { display: grid; grid-template-columns: 1fr 1fr; }
   .rank-actions > .ref-btn { width: 100%; justify-content: center; text-align: center; }
-  .rank-actions > :last-child:nth-child(odd) { grid-column: 1 / -1; }
+  .rank-actions > :last-child:nth-child(even) { grid-column: 1 / -1; }
 }
 .rank-company .ref-role { width: fit-content; }
 .diag-empty { color: #f0dccf; font-size: 14px; margin-bottom: 14px; }
@@ -1054,7 +1054,7 @@ a.site-maker { display: inline-flex; flex-direction: column; align-items: center
 a.site-maker:hover span { text-decoration: underline; color: var(--accent-dark); }
 /* 狭い画面: リンクが4つ(管理者)のときと、とても狭い画面では、ロゴの文字を省いてリンクを収める */
 @media (max-width: 420px) {
-  .ref-header-inner:has(#adminLink:not([hidden])) .brand-word { display: none; }
+  /* (スマホではリンクを隠すので、ロゴの文字は消さない) */
 }
 @media (max-width: 340px) {
   .ref-header-inner .brand-word { display: none; }
@@ -1393,3 +1393,34 @@ a.ref-btn { display: inline-flex; align-items: center; justify-content: center; 
   .ref-card .ref-col-range.is-empty { display: none; }
   .ref-card .ref-customers, .ref-card .ref-note { display: none; }
 }
+
+/* ---------- 第7弾 ---------- */
+/* 紹介診断への入口は、相談の箱の中の控えめな1行に(入口を1つにまとめる) */
+.cs-box .diag-cta.is-compact {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%;
+  margin: 12px 0 0; padding: 10px 2px 0; min-height: 44px;
+  background: none !important; border: none; border-top: 1px solid rgba(217, 183, 122, 0.22); border-radius: 0; box-shadow: none;
+  color: #ead39f; text-align: left; cursor: pointer;
+}
+.cs-box .diag-cta.is-compact::before { display: none; }
+.cs-box .diag-cta.is-compact .diag-cta-text { display: grid; gap: 2px; }
+.cs-box .diag-cta.is-compact .diag-cta-title { font-size: 14px; font-weight: 800; color: #f3e6cb; }
+.cs-box .diag-cta.is-compact .diag-cta-sub { font-size: 12px; color: #cdb894; }
+.cs-box .diag-cta.is-compact .diag-cta-arrow { font-size: 22px; color: #ead39f; }
+/* 結果の候補: いちばん使う「紹介文をコピー」を主に(ほかは控えめ) */
+.rank-actions .ref-btn.is-main { background: var(--grad); color: #f4e6c4; border-color: rgba(201, 164, 92, 0.55); }
+@media (max-width: 600px) { .rank-actions > .ref-btn.is-main { grid-column: 1 / -1; } }
+.rank-actions a.ref-btn { text-decoration: none; }
+/* 詳細の下のボタン: 主「紹介文をコピー」+ 控えめな2つ(閉じるは右上の×) */
+.md-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; justify-content: stretch; }
+.md-actions > .ref-btn { width: 100%; }
+.md-actions > .ref-btn.is-main { grid-column: 1 / -1; background: var(--grad); color: #f4e6c4; border-color: rgba(201, 164, 92, 0.55); }
+@media (min-width: 700px) { .md-actions { grid-template-columns: 2fr 1fr 1fr; } .md-actions > .ref-btn.is-main { grid-column: auto; } }
+/* カードの小さな印は3段階に: 役職(金・青) / 情報(業種・拠点・チーム・資料の有無 = 同じ控えめな形) / ジャンル(#) */
+.ref-card .ref-tag, .ref-card .ref-tag.team, .ref-card .ref-tag.base-tokyo, .ref-card .ref-tag.base-niigata {
+  background: #faf6ee; color: #5d5246; border: 1px solid #e6dccb; font-weight: 700;
+}
+.ref-card .ref-tag.me { background: var(--grad); color: #f3e3bf; border-color: transparent; }
+.ref-card .ref-tag.memo { background: #fff8e6; color: #7d5a22; border-color: #f2d58f; }
+.ref-link-badge, .ref-link-badge.contact, .ref-link-badge.web { background: none; color: #7d5a22; padding: 1px 2px; }
+.ref-link-badge + .ref-link-badge::before { content: "・"; color: #b9a688; margin-right: 2px; }
