@@ -228,11 +228,14 @@
     const triggers = m.triggers
       .map((t) => ({ t, hit: hitWords.some((w) => t.includes(w)) }))
       .sort((a, b) => b.hit - a.hit);
+    // スマホの一覧は短く(話題3つ・ジャンル4つまで。残りは詳細で)
+    const narrow = window.matchMedia("(max-width: 700px)").matches;
+    const tMax = narrow ? Math.min(3, TRIGGER_MAX) : TRIGGER_MAX;
     const triggerHtml = triggers
-      .slice(0, TRIGGER_MAX)
+      .slice(0, tMax)
       .map(({ t, hit }) => `<span class="ref-trigger${hit ? " hit" : ""}">「${escapeHtml(t)}」</span>`)
-      .join("") + (triggers.length > TRIGGER_MAX
-      ? `<button type="button" class="ref-trigger-more" data-detail="${m.id}">ほか${triggers.length - TRIGGER_MAX}件</button>` : "");
+      .join("") + (triggers.length > tMax
+      ? `<button type="button" class="ref-trigger-more" data-detail="${m.id}">ほか${triggers.length - tMax}件</button>` : "");
     const onlineClass = m.online === "all" ? "online-all" : m.online === "none" || m.online === "unknown" ? "online-none" : "";
     // 長い説明は数行で切り、続きは詳細で読む(キーワード検索中は切らない)
     const clamp = filter.search ? "" : " is-clamped";
@@ -255,10 +258,10 @@
             ${m.id === myMemberId ? '<span class="ref-tag me">あなた</span>' : ""}
             <span class="ref-tag">${escapeHtml(m.category)}</span>
             ${m.base && m.base !== "未設定" ? `<span class="ref-tag ${m.base === "新潟" ? "base-niigata" : "base-tokyo"}">${escapeHtml(m.base)}拠点</span>` : ""}
-            ${m.team ? `<span class="ref-tag team">${escapeHtml(m.team)}</span>` : ""}
+            ${m.team ? `<span class="ref-tag team" title="チーム">チーム ${escapeHtml(m.team)}</span>` : ""}
             ${memos[m.id] ? `<button type="button" class="ref-tag memo" data-detail="${m.id}" title="${escapeHtml(memos[m.id])}">メモあり</button>` : ""}
           </div>
-          ${genreTags(m, sc, 8)}
+          ${genreTags(m, sc, narrow ? 4 : 8)}
           ${linkBadges(m)}
         </div>
         <div class="ref-col ref-col-business">
@@ -273,7 +276,7 @@
           <p class="ref-wants${m.wants ? clamp : " ref-muted"}">${m.wants ? escapeHtml(m.wants) : blank(m)}</p>
           <div class="ref-triggers">${triggerHtml}</div>
         </div>
-        <div class="ref-col ref-col-range">
+        <div class="ref-col ref-col-range${!m.face && (!m.online || m.online === "unknown") && m.id !== myMemberId ? " is-empty" : ""}">
           <p class="ref-label">活動範囲</p>
           ${!m.face && (!m.online || m.online === "unknown")
             ? `<p class="ref-range-none ref-muted">${m.id === myMemberId ? "未入力" : "—"}</p>`

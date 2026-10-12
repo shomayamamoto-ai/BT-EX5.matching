@@ -610,11 +610,12 @@ var BtexServerCore = (function () {
       return issueSession(db, user, { remember: body.remember === true, userAgent: body.userAgent, via: "account" });
     }
 
-    // ログイン画面の「お名前」の選択肢(名簿の名前だけ。名簿は早見表と同じもの)
+    // ログイン画面の設定。会員の名前の一覧は、ログインする前の人には出さない(名簿を外に見せないため)。
+    // お名前は入力してもらい、accountLogin で名簿と照らし合わせる
     function loginMembers() {
       var db = ensureDb();
       return ok({
-        members: (db.referralMembers || []).map(function (m) { return { id: m.id, name: m.name }; }),
+        members: [],
         memberPasscode: db.settings.memberPasscode !== false,
       });
     }
@@ -625,6 +626,12 @@ var BtexServerCore = (function () {
       var db = ensureDb();
       var password = String(body.password || "");
       var memberId = cleanStr(body.memberId, 40);
+      // 入力されたお名前(空白・全角半角のちがいは見ない)が名簿の1人に決まれば、その人としてログインする
+      if (!memberId && body.name) {
+        var nk = normalizeName(cleanStr(body.name, 60));
+        var hits = (db.referralMembers || []).filter(function (m) { return nk && normalizeName(m.name) === nk; });
+        if (hits.length === 1) memberId = hits[0].id;
+      }
       if (memberId) {
         var mem = find(db.referralMembers || [], function (m) { return m.id === memberId; });
         if (!mem || !password) return fail("ACCOUNT_FAILED");

@@ -26,6 +26,10 @@
   function saveLastMember(id) {
     try { localStorage.setItem(LAST_MEMBER_KEY, id); } catch { /* noop */ }
   }
+  // /login/ で前回入れたお名前(この端末だけに覚える)
+  const LAST_NAME_KEY = "btex5-last-login-name";
+  function readLastName() { try { return localStorage.getItem(LAST_NAME_KEY) || ""; } catch { return ""; } }
+  function saveLastName(name) { try { localStorage.setItem(LAST_NAME_KEY, name); } catch { /* noop */ } }
 
   function finishLogin(data) {
     // Session fixation 対策(§7): 以前のトークンは破棄して新しいもので置き換える
@@ -79,7 +83,7 @@
     let acceptedInvite = "";
 
     const LEADS = {
-      account: "お名前を選んで、パスワードを入れてください。",
+      account: "お名前とパスワードを入れてください。",
       invite: "運営者から届いた招待コードを入力してください。",
       setpw: "あなた専用のパスワードを決めてください。",
     };
@@ -98,7 +102,8 @@
     // お名前の一覧(名簿から)。前回選んだ人を最初から選んでおく
     AuthApi.loginMembers().then((res) => {
       if (!res.success) { AuthUI.showError(messageArea, res.error.userMessage); return; }
-      fillMembers(memberSelect, res.data.members, readLastMember());
+      // 名前の一覧は出さない(入力してもらう)。前回のお名前はこの端末から入れておく
+      if (!memberSelect.value) memberSelect.value = readLastName();
       $("passcode-hint").hidden = !res.data.memberPasscode;
       if (memberSelect.value && !accountForm.hidden && document.activeElement === document.body) passwordInput.focus();
     });
@@ -107,11 +112,11 @@
       e.preventDefault();
       if (isBusy) return;
       AuthUI.clearMessage(messageArea);
-      const memberId = memberSelect.value;
+      const memberId = memberSelect.value.trim();
       const password = passwordInput.value;
       if (!memberId) {
         AuthUI.setInvalid(memberSelect, true);
-        AuthUI.showError(messageArea, M.memberRequired);
+        AuthUI.showError(messageArea, "お名前を入れてください。");
         memberSelect.focus();
         return;
       }
@@ -124,7 +129,7 @@
       if (!AuthSession.storageAvailable()) { AuthUI.showError(messageArea, M.storageUnavailable); return; }
       isBusy = true;
       AuthUI.setBusy(accountSubmit, true, "ログインしています…", "ログイン");
-      const result = await AuthApi.accountLogin(memberId, password, $("account-remember").checked === true, true);
+      const result = await AuthApi.accountLogin(memberId, password, $("account-remember").checked === true, false);
       isBusy = false;
       AuthUI.setBusy(accountSubmit, false, "ログインしています…", "ログイン");
       if (!result.success) {
@@ -132,10 +137,10 @@
         if (result.error.code === "ACCOUNT_FAILED") { AuthUI.setInvalid(passwordInput, true); passwordInput.select(); passwordInput.focus(); }
         return;
       }
-      saveLastMember(memberId);
+      saveLastName(memberId);
       finishLogin(result.data);
     });
-    memberSelect.addEventListener("change", () => { AuthUI.setInvalid(memberSelect, false); if (memberSelect.value) passwordInput.focus(); });
+    memberSelect.addEventListener("input", () => AuthUI.setInvalid(memberSelect, false));
     passwordInput.addEventListener("input", () => AuthUI.setInvalid(passwordInput, false));
 
     // ---------- 招待コード ----------
@@ -186,6 +191,7 @@
       }
       acceptedInvite = "";
       if (result.data.memberId) saveLastMember(result.data.memberId);
+      if (result.data.displayName) saveLastName(result.data.displayName);
       finishLogin(result.data);
     });
 

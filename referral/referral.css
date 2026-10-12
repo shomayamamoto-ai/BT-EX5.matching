@@ -1388,3 +1388,8 @@ a.ref-btn { display: inline-flex; align-items: center; justify-content: center; 
 /* 紹介診断: 選択肢はどの段階でも横いっぱい、下の「戻る・次へ」は透けない */
 .diag-needs, .diag-methods { width: 100%; }
 .diag-dialog #diagWizard .diag-nav { background: #2a1712; }
+/* スマホの一覧: 入っていない活動範囲の欄は出さない。主なお客様・特典・補足は詳細で */
+@media (max-width: 700px) {
+  .ref-card .ref-col-range.is-empty { display: none; }
+  .ref-card .ref-customers, .ref-card .ref-note { display: none; }
+}
