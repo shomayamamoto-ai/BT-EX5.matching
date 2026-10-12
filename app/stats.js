@@ -8,11 +8,11 @@
   "use strict";
   const { h } = App;
 
-  // 並びは順位の優先順(ありがとうマイル > リファーラル > 1on1 > ビジター招待 > 出席)。
+  // 並びは順位の優先順(ありがとうマイル > 紹介 > 1on1 > ビジター招待 > 出席)。
   // 最初の項目(ありがとうマイル)が既定の並べ替え。同じ値のときは、この順で次の項目を比べる
   const COLS = [
     { id: "miles", label: "ありがとうマイル", fmt: man },
-    { id: "referrals", label: "リファーラル", fmt: (n) => String(n) },
+    { id: "referrals", label: "紹介", fmt: (n) => String(n) },
     { id: "oneOnOnes", label: "1on1", fmt: (n) => String(n) },
     { id: "visitors", label: "ビジター", fmt: (n) => String(n) },
     { id: "attended", label: "出席", fmt: (n) => String(n) },
@@ -103,8 +103,8 @@
       h("span", null, label), h("b", null, value, unit ? h("small", null, unit) : null), sub ? h("small", { class: "st-card-sub" }, sub) : null);
     el.append(h("div", { class: "st-cards" },
       card("出席", String(m.attended)),
-      card("出したリファーラル", String(m.referrals)),
-      card("受けたリファーラル", String(m.received)),
+      card("出した紹介", String(m.referrals)),
+      card("受けた紹介", String(m.received)),
       card("1on1", String(m.oneOnOnes)),
       card("ありがとうマイル(受け取った)", App.yen(m.milesGiven), "", "自分の紹介・協力で相手が成約した分"),
       card("ありがとうマイル(贈った)", App.yen(m.milesReceived), "", "メンバーの紹介・協力で自分が成約できた分"),
@@ -153,10 +153,10 @@
     el.append(h("section", { class: "st-table-card" },
       h("div", { class: "st-table-head" },
         h("div", null, h("h2", null, `メンバー別の数字(${per.title})`),
-          h("small", null, "順位は ありがとうマイル > リファーラル > 1on1 > ビジター招待 > 出席 の順に比べます。項目ごとに 1位・2位・3位・4位 を色分けしています。見出しを押すと、その項目を先に比べて並べ替えます。")),
+          h("small", null, "順位は ありがとうマイル > 紹介 > 1on1 > ビジター招待 > 出席 の順に比べます。項目ごとに 1位・2位・3位・4位 を色分けしています。見出しを押すと、その項目を先に比べて並べ替えます。")),
         h("b", null, per.mode === "month" ? ymLabel(per.ym) : `${d.from.replace(/-/g, "/")}〜${d.to.replace(/-/g, "/")}`)),
       h("div", { class: "st-totals" },
-        [["ありがとうマイル(全体)", man(t.miles)], ["リファーラル(全体)", String(t.referrals)], ["1on1(全体)", String(t.oneOnOnes)], ["ビジター(全体)", String(t.visitors)], ["出席(のべ)", String(t.attended)]]
+        [["マイル(全体)", man(t.miles)], ["紹介(全体)", String(t.referrals)], ["1on1(全体)", String(t.oneOnOnes)], ["ビジター(全体)", String(t.visitors)], ["出席(のべ)", String(t.attended)]]
           .map(([k, v]) => h("div", null, h("small", null, k), h("b", null, v)))),
       h("div", { class: "st-scroll" },
         h("table", { class: "st-table" },

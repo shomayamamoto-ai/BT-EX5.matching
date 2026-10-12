@@ -307,9 +307,35 @@
       r.meeting && r.meeting.time ? App.btn("Google カレンダーに追加", () => window.open(App.googleCalUrl(refCalItem(r)), "_blank", "noopener"), "ghost small") : null,
       r.meeting && r.meeting.time ? App.btn("iPhone・Outlook に追加", () => App.icsFile(refCalItem(r)), "ghost small") : null,
       r.mine ? App.btn(`${r.toName}さんへの文をコピー`, () => App.copyText(refTextToMember(r), copied), "ghost small") : null,
-      r.mine ? App.btn(`${r.prospect || "お客様"}への文をコピー`, () => App.copyText(refTextToProspect(r), copied), "primary small") : null,
-      !r.mine ? App.btn(`${r.prospect || "お客様"}への文をコピー`, () => App.copyText(refTextFromReceiver(r), copied), "primary small") : null);
+      r.mine ? App.btn(`${r.prospect || "お客様"}への文をコピー`, () => App.copyText(refTextToProspect(r), copied), "ghost small") : null,
+      !r.mine ? App.btn(`${r.prospect || "お客様"}への文をコピー`, () => App.copyText(refTextFromReceiver(r), copied), "ghost small") : null);
   }
+  // 紹介を記録したあと: 届いたことを伝え、相手ごとに「送る・コピー」をまとめて出す
+  function refDoneSheet(r) {
+    const copied = "コピーしました。LINE などに貼り付けて送ってください";
+    const prospect = r.prospect || "お客様";
+    const sendRow = (who, note, text) => h("div", { class: "ref-done-send" },
+      h("div", { class: "ref-done-who" }, h("b", null, who), h("small", null, note)),
+      h("div", { class: "ref-done-btns" },
+        App.btn("LINE などで送る", () => App.shareText(text), "primary small"),
+        App.btn("コピー", () => App.copyText(text, copied), "ghost small")));
+    App.openSheet("紹介を記録しました", (b, close) => {
+      App.append(b, [
+        h("p", { class: "done-check", "aria-hidden": "true" }, "✓"),
+        h("p", { class: "app-lead ref-done-lead" }, `${r.toName}さんのホームに届きました。LINE などでもひと言送っておくと、つながりが早くなります。`),
+        r.meeting ? h("dl", { class: "ref-card-body" }, meetingSummary(r.meeting)) : null,
+        h("div", { class: "ref-done-list" },
+          sendRow(`${r.toName}さんへ`, "紹介先のメンバー", refTextToMember(r)),
+          sendRow(`${prospect}へ`, "紹介した方", refTextToProspect(r))),
+        r.meeting && r.meeting.time ? h("div", { class: "app-btn-row" },
+          App.btn("Google カレンダーに追加", () => window.open(App.googleCalUrl(refCalItem(r)), "_blank", "noopener"), "ghost small"),
+          App.btn("iPhone・Outlook に追加", () => App.icsFile(refCalItem(r)), "ghost small")) : null,
+        !r.meeting ? App.btn("顔合わせの日時を決める", () => { close(); meetingSheet(r, () => App.route()); }, "ghost wide") : null,
+        App.btn("閉じる", close, "ghost wide"),
+      ]);
+    }, { noFocus: true });
+  }
+
   // 顔合わせの予定を決める・直す
   function meetingSheet(r, onSaved) {
     App.openSheet("紹介の顔合わせの予定", (body, close) => {
@@ -380,11 +406,7 @@
         }
         close();
         await App.go("log/ref");
-        App.openSheet("紹介を記録しました", (b) => {
-          b.append(h("p", { class: "app-lead" }, `${toName}さんのホームに届きました。LINE などでも、${toName}さんと${r.prospect}に、ひと言送っておくと確実です。`),
-            r.meeting ? h("dl", { class: "ref-card-body" }, meetingSummary(r.meeting)) : null,
-            refShareButtons(r));
-        }, { noFocus: true });
+        refDoneSheet(r);
       } },
       App.field("紹介先のメンバー", picker),
       App.field("紹介した方", prospect, "会社名・お名前"),
@@ -842,6 +864,15 @@
     const top = rows.length ? rows[0][metric.id] : 0;
     // 選んだ指標での順位(同じ値は同じ順位)
     let prev = null, rank = 0;
+    // まだ記録がない方(0)はまとめて1行に(長い0の列で、動いている人が埋もれないように。自分は残す)
+    const zero = rows.filter((r) => !r[metric.id] && !r.isMe);
+    if (zero.length >= 4) {
+      const shown = rows.filter((r) => r[metric.id] || r.isMe);
+      return h("div", null, shown.length ? rankList(shown, metric, nameOf, detailOf) : null,
+        h("details", { class: "rk-zero" },
+          h("summary", null, `この項目でまだ記録がない方(${zero.length}名)`),
+          h("p", null, zero.map((r) => nameOf(r)).join("、"))));
+    }
     return h("ol", { class: "rank-list rk-members" }, rows.map((r, i) => {
       if (prev === null || r[metric.id] !== prev) rank = i + 1;
       prev = r[metric.id];

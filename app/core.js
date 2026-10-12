@@ -11,6 +11,18 @@ const App = (function () {
   // 文字を大きく(マイページで切り替え。この端末に保存)
   try { if (localStorage.getItem("btex5-big-text") === "1") document.documentElement.classList.add("big-text"); } catch { /* noop */ }
 
+  // 画面の部品は「条件に合わなければ null」を渡して組み立てるため、ブラウザの append などが
+  // null・undefined・false を「null」の文字として出してしまわないようにする(全画面の安全網)
+  [Element.prototype, DocumentFragment.prototype].forEach((proto) => {
+    ["append", "prepend", "replaceChildren", "after", "before"].forEach((name) => {
+      const orig = proto[name];
+      if (typeof orig !== "function" || orig.__btexSafe) return;
+      const safe = function (...nodes) { return orig.apply(this, nodes.filter((n) => n !== null && n !== undefined && n !== false)); };
+      safe.__btexSafe = true;
+      proto[name] = safe;
+    });
+  });
+
   // ---------- DOM を組み立てる ----------
   // h("div", { class: "x", onclick: fn }, "文字", 子要素...)
   function h(tag, attrs, ...children) {
