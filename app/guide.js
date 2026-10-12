@@ -52,38 +52,49 @@
   App.welcomeCard = function (d) {
     const key = `btex5-welcome-${(App.session && App.session.memberId) || "guest"}`;
     if (local.get(`${key}-closed`) === "1") return null;
+    // marks[id]: 1 = 自分で「済み」にした / 0 = 自分で「まだ」に戻した(自動で済みと判断したものも、押して外せる)
     const marks = (() => { try { return JSON.parse(local.get(key) || "{}"); } catch { return {}; } })();
     const s = d.stats || {};
     const steps = [
-      { id: "password", label: "あなた専用のパスワードを決める", href: "#me/password", done: !!(d.me && d.me.hasPassword) },
-      { id: "profile", label: "プロフィールを入れる(紹介されやすくなります)", href: "../profile/", done: !(d.missing || []).length },
-      { id: "notify", label: "スマホに通知を受け取る", href: "#me/notify", done: !!marks.notify },
-      { id: "home", label: "スマホのホーム画面に追加する", href: "#me/install", done: standalone() || !!marks.home, manual: true },
-      { id: "pitch", label: "30秒プレゼンの原稿を書いておく", href: "#me/pitch", done: !!marks.pitch },
-      { id: "one", label: "はじめての 1on1 を予定する", href: "#log/1on1?new", done: (s.oneOnOnes || 0) > 0 || !!marks.one },
-      { id: "ref", label: "はじめての紹介を記録する", href: "#log/ref?new", done: (s.givenAll || 0) > 0 },
+      { id: "password", label: "あなた専用のパスワードを決める", href: "#me/password", auto: !!(d.me && d.me.hasPassword) },
+      { id: "profile", label: "プロフィールを入れる(紹介されやすくなります)", href: "../profile/", auto: !(d.missing || []).length },
+      { id: "notify", label: "スマホに通知を受け取る", href: "#me/notify", auto: false },
+      { id: "home", label: "スマホのホーム画面に追加する", href: "#me/install", auto: standalone() },
+      { id: "pitch", label: "30秒プレゼンの原稿を書いておく", href: "#me/pitch", auto: false },
+      { id: "one", label: "はじめての 1on1 を予定する", href: "#log/1on1?new", auto: (s.oneOnOnes || 0) > 0 },
+      { id: "ref", label: "はじめての紹介を記録する", href: "#log/ref?new", auto: (s.givenAll || 0) > 0 },
     ];
-    if (steps.every((x) => x.done)) { local.set(`${key}-closed`, "1"); return null; }
+    const isDone = (x) => marks[x.id] === 1 || (marks[x.id] !== 0 && x.auto);
+    if (steps.every(isDone)) { local.set(`${key}-closed`, "1"); return null; }
+    const save = () => local.set(key, JSON.stringify(marks));
+    const close = () => { local.set(`${key}-closed`, "1"); box.remove(); App.toast("「マイページ → 使い方」からいつでも見られます"); };
     const box = h("section", { class: "app-section home-sec home-welcome", "data-home": "welcome" });
     function draw() {
-      const n = steps.filter((x) => x.done).length;
-      if (n === steps.length) { box.remove(); local.set(`${key}-closed`, "1"); return; }
+      const n = steps.filter(isDone).length;
+      const all = n === steps.length;
       App.fill(box,
         h("div", { class: "home-sec-head" },
           h("h2", { class: "app-h2" }, "はじめての方へ"),
-          h("button", { type: "button", class: "home-sec-link", onclick: () => { local.set(`${key}-closed`, "1"); box.remove(); App.toast("「マイページ → 使い方」からいつでも見られます"); } }, "閉じる")),
-        h("p", { class: "home-welcome-lead" }, `BT-EX5 を使いこなす7つのステップ。いま ${n} / ${steps.length}`),
+          h("button", { type: "button", class: "home-sec-link", onclick: close }, "閉じる")),
+        h("p", { class: "home-welcome-lead" }, all ? "7つすべて終わりました。おつかれさまでした。" : `BT-EX5 を使いこなす7つのステップ。いま ${n} / ${steps.length}(左の丸を押すと、済み・まだを切りかえられます)`),
         h("span", { class: "home-goal-bar home-welcome-bar", "aria-hidden": "true" }, h("i", { style: `width:${Math.round((n / steps.length) * 100)}%` })),
-        h("ol", { class: "home-welcome-list" }, steps.map((x) => h("li", { class: x.done ? "is-done" : "" },
-          h("a", { href: x.href }, h("span", { class: "home-welcome-check", "aria-hidden": "true" }, x.done ? "✓" : ""), h("span", null, x.label), x.done ? h("small", null, "済み") : null),
-          x.manual && !x.done ? h("button", { type: "button", class: "home-welcome-mark", onclick: () => { marks[x.id] = 1; local.set(key, JSON.stringify(marks)); x.done = true; draw(); } }, "済みにする") : null))));
+        h("ol", { class: "home-welcome-list" }, steps.map((x) => {
+          const done = isDone(x);
+          return h("li", { class: done ? "is-done" : "" },
+            // 丸: 押すと「済み」と「まだ」を切りかえる(まちがえて押したときも戻せる)
+            h("button", { type: "button", class: "home-welcome-check", role: "checkbox", "aria-checked": done ? "true" : "false", "aria-label": `${x.label}(${done ? "済み" : "まだ"})`,
+              onclick: () => { marks[x.id] = done ? 0 : 1; save(); draw(); } }, done ? "✓" : ""),
+            // 文: 押すと、その画面へ
+            h("a", { href: x.href }, h("span", null, x.label), done ? h("small", null, "済み") : h("small", { class: "is-go" }, "開く ›")));
+        })),
+        all ? h("div", { class: "app-btn-row" }, App.btn("このお知らせを閉じる", close, "primary small")) : null);
     }
     draw();
     // 自動でわかるもの(通知・30秒プレゼン)はあとから確かめる
     if (typeof BtexPush !== "undefined" && typeof AuthApi !== "undefined" && AuthApi.isShared && AuthApi.isShared()) {
-      BtexPush.status().then((st) => { if (st.on) { steps[2].done = true; marks.notify = 1; local.set(key, JSON.stringify(marks)); draw(); } }).catch(() => {});
-    } else steps[2].done = true; // 通知を使えない場所(デモ)では数えない
-    App.api("getMySettings", {}, { quiet: true }).then((st) => { if (st && st.pitchScript) { steps[4].done = true; draw(); } }).catch(() => {});
+      BtexPush.status().then((st) => { if (st.on) { steps[2].auto = true; draw(); } }).catch(() => {});
+    }
+    App.api("getMySettings", {}, { quiet: true }).then((st) => { if (st && st.pitchScript) { steps[4].auto = true; draw(); } }).catch(() => {});
     return box;
   };
 
