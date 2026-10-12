@@ -55,10 +55,14 @@ function loadDb_() {
 
 // 読んだときと中身が同じなら書かない(見るだけの操作で、シートへの書きこみを待たせない)
 var LAST_TEXT_ = null;
+// ロックなしで読んでいるとき(NO_LOCK_)は書かずに目印だけ立て、ロックを取ってやり直す
+var NO_LOCK_ = false;
+var NEEDS_LOCK_ = false;
 function saveDb_(db) {
-  var sh = dataSheet_();
   var text = JSON.stringify(db);
   if (text === LAST_TEXT_) return;
+  if (NO_LOCK_) { NEEDS_LOCK_ = true; return; }
+  var sh = dataSheet_();
   LAST_TEXT_ = text;
   var rows = [];
   for (var i = 0; i < text.length; i += CHUNK_SIZE) rows.push(["j" + text.slice(i, i + CHUNK_SIZE)]);
@@ -429,6 +433,9 @@ function refreshSheets_() {
   );
 }
 
+// ロックなしで先に読んでよい操作(書きこみが要るときは saveDb_ が目印を立て、ロックを取ってやり直す)
+var READ_ACTION_RE_ = /^(get|list|verify|search)[A-Z]/;
+
 function json_(obj) {
   return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
 }
@@ -442,6 +449,18 @@ function doPost(e) {
     body = JSON.parse((e && e.postData && e.postData.contents) || "null");
   } catch (err) {
     body = null;
+  }
+  // 見るだけの操作(get・list・verify・search)は、まずロックを待たずに読む(書き込みの順番待ちで見る人を待たせない)。
+  // 読んだあとに書きこみが必要になったとき・書きこみの途中で読めなかったときは、ロックを取ってやり直す
+  if (body && typeof body.action === "string" && READ_ACTION_RE_.test(body.action)) {
+    NO_LOCK_ = true; NEEDS_LOCK_ = false;
+    var quick = null;
+    try { quick = SERVER_.handle(body); } catch (err) { quick = null; }
+    NO_LOCK_ = false;
+    var retry = NEEDS_LOCK_ || !quick || (!quick.success && quick.error && quick.error.code === "SERVER_ERROR");
+    NEEDS_LOCK_ = false;
+    if (!retry) return json_(quick);
+    LAST_TEXT_ = null;
   }
   var lock = LockService.getScriptLock();
   try {
