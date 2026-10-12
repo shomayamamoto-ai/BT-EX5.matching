@@ -1181,13 +1181,13 @@ const REF_SEED_ANNOUNCEMENTS = [
   },
   {
     seedId: "2026-10-12-features-3",
+    rev: 2, // 2: ログインのお名前は一覧から選ぶ形に戻した
     at: Date.UTC(2026, 9, 12, 12, 30), // 2026/10/12 21:30(日本時間)
-    title: "【更新】使いやすさの総点検(確認の画面・削除は赤・ログイン・早見表の見やすさ など)",
+    title: "【更新】使いやすさの総点検(確認の画面・削除は赤・早見表の見やすさ など)",
     body: [
       "10月12日の夜に、会員の画面・早見表やプロフィール・運営の画面を1つずつ点検し、見つかったところをまとめて直しました。",
       "",
       "■ 安心して使うために",
-      "・ログインの画面では、お名前を選ぶのではなく入力するようにしました(ログインしていない人に会員の名前の一覧が見えないように)。名簿と同じお名前で入れてください(空白はあってもなくても大丈夫です)。前回入れたお名前は、その端末で自動で入ります。",
       "・削除などの取り消せない操作は、どの画面でも赤いボタンにし、確かめる画面を出すようにしました。",
       "・掲示板のコメントは、消す前に確かめるようにしました。直すときは下から出る画面で直せます。",
       "",
@@ -1861,12 +1861,11 @@ var BtexServerCore = (function () {
       return issueSession(db, user, { remember: body.remember === true, userAgent: body.userAgent, via: "account" });
     }
 
-    // ログイン画面の設定。会員の名前の一覧は、ログインする前の人には出さない(名簿を外に見せないため)。
-    // お名前は入力してもらい、accountLogin で名簿と照らし合わせる
+    // ログイン画面の「お名前」の選択肢(名簿の名前だけ。名簿は早見表と同じもの)
     function loginMembers() {
       var db = ensureDb();
       return ok({
-        members: [],
+        members: (db.referralMembers || []).map(function (m) { return { id: m.id, name: m.name }; }),
         memberPasscode: db.settings.memberPasscode !== false,
       });
     }

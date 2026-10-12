@@ -610,12 +610,11 @@ var BtexServerCore = (function () {
       return issueSession(db, user, { remember: body.remember === true, userAgent: body.userAgent, via: "account" });
     }
 
-    // ログイン画面の設定。会員の名前の一覧は、ログインする前の人には出さない(名簿を外に見せないため)。
-    // お名前は入力してもらい、accountLogin で名簿と照らし合わせる
+    // ログイン画面の「お名前」の選択肢(名簿の名前だけ。名簿は早見表と同じもの)
     function loginMembers() {
       var db = ensureDb();
       return ok({
-        members: [],
+        members: (db.referralMembers || []).map(function (m) { return { id: m.id, name: m.name }; }),
         memberPasscode: db.settings.memberPasscode !== false,
       });
     }
