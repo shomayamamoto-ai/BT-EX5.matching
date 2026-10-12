@@ -112,7 +112,7 @@
           // スマホは色の点、パソコンは予定の名前
           list.length ? h("span", { class: "cal-dots", "aria-hidden": "true" }, kinds.slice(0, 4).map((x) => h("i", { class: KINDS[x].cls }))) : null,
           list.length ? h("span", { class: "cal-labels", "aria-hidden": "true" },
-            list.slice(0, 2).map((x) => h("span", { class: KINDS[x.kind].cls }, `${x.time ? `${x.time} ` : ""}${x.kind === "one" ? x.title.replace("さんと 1on1", "") : x.title}`)),
+            list.slice(0, 2).map((x) => h("span", { class: KINDS[x.kind].cls }, `${x.time ? `${x.time} ` : ""}${x.kind === "one" ? x.title.replace("さんと 1on1", "") : x.kind === "event" ? "定例会" : x.title}`)),
             list.length > 2 ? h("small", null, `ほか${list.length - 2}件`) : null) : null));
       }
       App.fill(grid, cells);

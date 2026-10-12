@@ -36,3 +36,18 @@ body.has-app-tabs .ref-toast { bottom: calc(var(--app-tabs-h) + 18px + env(safe-
 }
 @media print { .app-tabs { display: none; } }
 html.big-text body { zoom: 1.15; }
+
+/* 早見表・プロフィールなどの上の帯: アプリと同じお知らせのベルとマイページの丸 */
+.nav-bell, .nav-me { position: relative; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; width: 36px; height: 36px; border-radius: 50%; text-decoration: none; }
+.nav-bell { color: #e8dcc6; }
+.nav-bell svg { width: 22px; height: 22px; fill: currentColor; }
+.nav-bell .app-badge { position: absolute; top: -3px; right: -6px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: #b8432f; color: #fff; font-size: 11px; font-weight: 800; line-height: 18px; text-align: center; font-family: "Inter", sans-serif; }
+.nav-bell .app-badge[hidden] { display: none; }
+.nav-me { background: linear-gradient(145deg, #2f261e, #15110d); color: #ead39f; border: 1.5px solid #c9a45c; font-weight: 800; font-size: 14px; }
+.nav-bell::after, .nav-me::after { content: ""; position: absolute; inset: -5px; border-radius: 50%; }
+/* スマホの上の帯: ロゴ・いまのページの主な操作・ベル・名前の丸だけにする
+   (全体分析・名簿の管理・ムービーはマイページからも開ける) */
+@media (max-width: 560px) {
+  .ref-header-nav .ref-header-link, .ref-header-nav .op-movie-btn { display: none; }
+  .ref-header-nav { gap: 10px; }
+}

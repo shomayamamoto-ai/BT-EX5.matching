@@ -280,7 +280,7 @@
               App.btn("招待URL をコピー", () => App.copyText(url), "ghost small"),
               App.btn("リマインド文をコピー", () => App.copyText(TEMPLATES.find((t) => t.id === "remind").text({ name: v.name, ev: d.events.find((e) => e.id === v.eventId) })), "ghost small"),
               v.status !== "declined" ? App.btn("キャンセルにする", async () => {
-                if (!confirm(`${v.name || "この方"}の招待をキャンセルにしますか?`)) return;
+                if (!(await App.confirm(`${v.name || "この方"}の招待をキャンセルにしますか?`, { ok: "キャンセルにする", danger: true }))) return;
                 if (await App.api("updateVisitor", { id: v.id, status: "declined" })) { App.toast("キャンセルにしました"); loadHistory(); }
               }, "ghost small danger") : App.btn("キャンセルを取り消す", async () => {
                 if (await App.api("updateVisitor", { id: v.id, status: v.appliedAt ? "applied" : "invited" })) loadHistory();

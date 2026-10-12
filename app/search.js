@@ -11,19 +11,35 @@
   // 見つかった言葉のまわりだけを切り出し、言葉に印をつける
   function snippet(text, words, len = 60) {
     const src = String(text || "").replace(/\s+/g, " ").trim();
-    const low = norm(src);
-    const at = words.map((w) => low.indexOf(w)).filter((i) => i >= 0).sort((a, b) => a - b)[0];
-    const start = at === undefined ? 0 : Math.max(0, at - 18);
-    const part = (start ? "…" : "") + src.slice(start, start + len) + (src.length > start + len ? "…" : "");
-    const out = h("span", { class: "srch-snip" });
-    let rest = part;
-    while (rest) {
-      const lr = norm(rest);
-      const hit = words.map((w) => ({ w, i: lr.indexOf(w) })).filter((x) => x.i >= 0).sort((a, b) => a.i - b.i)[0];
-      if (!hit) { out.append(rest); break; }
-      out.append(rest.slice(0, hit.i), h("mark", null, rest.slice(hit.i, hit.i + hit.w.length)));
-      rest = rest.slice(hit.i + hit.w.length);
+    // 1文字ずつ正規化し、正規化したあとの位置 → 元の文字の位置 の対応を作る
+    // (全角・半角や「…」のように、正規化で長さが変わる文字があっても、印の位置がずれないように)
+    let low = "";
+    const at = [];
+    for (let i = 0; i < src.length; i++) {
+      const n = norm(src[i]);
+      for (let k = 0; k < n.length; k++) at.push(i);
+      low += n;
     }
+    at.push(src.length);
+    const hits = [];
+    words.filter(Boolean).forEach((w) => {
+      let i = low.indexOf(w);
+      while (i >= 0) { hits.push([at[i], at[i + w.length]]); i = low.indexOf(w, i + w.length); }
+    });
+    hits.sort((a, b) => a[0] - b[0]);
+    const first = hits.length ? hits[0][0] : 0;
+    const from = first ? Math.max(0, first - 18) : 0;
+    const to = Math.min(src.length, from + len);
+    const out = h("span", { class: "srch-snip" });
+    if (from) out.append("…");
+    let pos = from;
+    hits.forEach(([a, b]) => {
+      if (a < pos || a >= to) return;
+      out.append(src.slice(pos, a), h("mark", null, src.slice(a, Math.min(b, to))));
+      pos = Math.min(b, to);
+    });
+    out.append(src.slice(pos, to));
+    if (to < src.length) out.append("…");
     return out;
   }
 

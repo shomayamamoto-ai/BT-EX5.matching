@@ -20,7 +20,7 @@
       const summary = h("p", { class: "home-sum" });
       el.append(h("div", { class: "home-hello" },
         h("p", { class: "home-date" }, App.fmtDateLong(d.today)),
-        h("h1", null, `${d.me.name}さん、${hello}`),
+        h("h1", null, `${d.me.name}さん、`, h("span", { class: "nowrap" }, hello)),
         summary));
 
       // ---------- 今月のあなた(順位・数字を1枚に) ----------
@@ -411,7 +411,7 @@
         h("span", { class: "home-goal-bar", "aria-hidden": "true" }, h("i", { style: `width:${Math.round((it.points / it.max) * 100)}%` })),
         h("span", { class: "home-signal-val" }, fmtV(it), h("small", null, ` ${it.points}/${it.max}`))))),
       tips.length && goal ? h("div", { class: "home-signal-tips" },
-        h("p", null, `${label === "これから" ? "赤" : label === "赤" ? "黄" : "緑"}まであと ${goal - sg.total}点。おすすめ:`),
+        h("p", null, `あと ${goal - sg.total}点で次の段階(${label === "これから" ? "赤" : label === "赤" ? "黄" : "緑"})へ。おすすめ:`),
         h("ul", null, tips.map((it) => h("li", null, `${it.tip}(${tipText(it)} +${it.next.pt}点)`)))) : null,
       h("button", { type: "button", class: "home-signal-more", onclick: (e) => { how.hidden = !how.hidden; e.currentTarget.textContent = how.hidden ? "点数のつけ方" : "閉じる"; } }, "点数のつけ方"),
       how);
@@ -477,7 +477,7 @@
     const form = h("form", { class: "checkin-form", onsubmit: async (e) => {
       e.preventDefault();
       const code = input.value.replace(/\D/g, "");
-      if (code.length !== 4) { App.toast("4桁の数字を入れてください"); return; }
+      if (code.length !== 4) { App.toast("4桁の数字を入れてください", "error"); return; }
       const d = await App.api("checkIn", { code, eventId: eventId || "" });
       if (!d) { input.select(); return; }
       App.toast(`${d.event.title} に出席しました`);

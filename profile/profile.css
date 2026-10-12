@@ -90,3 +90,8 @@ fieldset > .prof-hint { margin: -4px 0 8px; }
 .prof-main textarea { field-sizing: content; min-height: 4.6em; max-height: 60vh; }
 .prof-count { display: block; margin-top: 4px; font-size: 12px; color: #5c5045; font-weight: 600; }
 .prof-count.is-over { color: #a3342a; font-weight: 800; }
+.prof-actions { flex-wrap: wrap; }
+.prof-error { flex: 1 1 100%; margin: 0 0 4px; color: #a3342a; font-size: 13px; }
+.prof-error:empty { display: none; }
+/* 「運営に送る」などの文中のリンクも、ほかの画面と同じ色に */
+.prof-send-note a { color: var(--accent-dark, #7d5a22); font-weight: 700; }

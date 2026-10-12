@@ -853,7 +853,7 @@ var BtexServerCore = (function () {
         selfIntro: cleanStr(String(m.selfIntro || "").replace(/\r\n?/g, "\n"), 3000),
         note: cleanStr(m.note, 300),
         wants: cleanStr(m.wants, 400),
-        triggers: cleanList(m.triggers, null, 12).map(function (t) { return t.slice(0, 40); }),
+        triggers: cleanList(m.triggers, null, 24).map(function (t) { return t.slice(0, 40); }),
         face: cleanStr(m.face, 60),
         faceAreas: cleanList(m.faceAreas, ["niigata", "tokyo"], 2),
         online: ["all", "partial", "none", "unknown"].indexOf(online) !== -1 ? online : "unknown",

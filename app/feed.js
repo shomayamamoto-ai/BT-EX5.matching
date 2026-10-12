@@ -27,7 +27,7 @@
       case "oneAsk": return { icon: "one", title: `${x.whoName}さんとの 1on1 は実施しましたか?`, sub: "押して「実施した」を選ぶと回数に数えます" };
       case "oneNew": return { icon: "one", title: `${x.whoName}さんが 1on1 を記録しました`, sub: App.fmtDate(x.date) };
       case "visitor": return { icon: "visitor", title: `${x.text || "ビジター"}さんが定例会に申し込みました`, sub: "あなたの招待から" };
-      case "ann": return { icon: "ann", title: "運営連絡", sub: x.text };
+      case "ann": return { icon: "ann", title: x.text || "運営連絡", sub: "運営連絡" };
       case "annRemind": return { icon: "ann", title: "まだ読んでいない運営連絡があります", sub: x.text };
       case "post": return { icon: "post", title: `${x.whoName}さんが掲示板に投稿しました`, sub: x.text };
       case "event": return { icon: "calendar", title: `定例会が追加されました(${App.fmtDate(x.date)})`, sub: x.text };

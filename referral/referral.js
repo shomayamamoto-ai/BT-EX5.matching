@@ -263,22 +263,22 @@
         </div>
         <div class="ref-col ref-col-business">
           <p class="ref-label">事業内容</p>
-          <p class="ref-business${m.business ? clamp : " ref-muted"}">${m.business ? escapeHtml(m.business) : "まだ入力されていません"}</p>
+          <p class="ref-business${m.business ? clamp : " ref-muted"}">${m.business ? escapeHtml(m.business) : blank(m)}</p>
           ${m.customers ? `<p class="ref-customers${clamp}"><span>主なお客様</span>${escapeHtml(m.customers)}</p>` : ""}
           ${m.offer ? `<p class="ref-offer"><span>紹介特典</span>${escapeHtml(m.offer)}</p>` : ""}
           ${m.note ? `<p class="ref-note">${escapeHtml(m.note)}</p>` : ""}
         </div>
         <div class="ref-col ref-col-wants">
           <p class="ref-label">求める紹介</p>
-          <p class="ref-wants${m.wants ? clamp : " ref-muted"}">${m.wants ? escapeHtml(m.wants) : "まだ入力されていません"}</p>
+          <p class="ref-wants${m.wants ? clamp : " ref-muted"}">${m.wants ? escapeHtml(m.wants) : blank(m)}</p>
           <div class="ref-triggers">${triggerHtml}</div>
         </div>
         <div class="ref-col ref-col-range">
           <p class="ref-label">活動範囲</p>
           ${!m.face && (!m.online || m.online === "unknown")
-            ? '<p class="ref-range-none ref-muted">未入力</p>'
+            ? `<p class="ref-range-none ref-muted">${m.id === myMemberId ? "未入力" : "—"}</p>`
             : `<dl class="ref-range">
-            <dt>対面</dt><dd class="${m.face ? "" : "ref-muted"}">${m.face ? escapeHtml(m.face) : "未入力"}</dd>
+            <dt>対面</dt><dd class="${m.face ? "" : "ref-muted"}">${m.face ? escapeHtml(m.face) : m.id === myMemberId ? "未入力" : "—"}</dd>
             <dt>オンライン</dt><dd class="${onlineClass}">${escapeHtml(ONLINE_LABELS[m.online])}</dd>
           </dl>`}
           <div class="ref-actions">
@@ -335,7 +335,7 @@
         </a>`).join("")) : ""}
       ${webs.length ? section("ホームページ・リンク", `<div class="md-links">${webs.map(linkButton).join("")}</div>`) : ""}
       ${contacts.length ? section("連絡先・SNS", `<div class="md-links">${contacts.map(linkButton).join("")}</div>`) : ""}
-      ${!links.length ? `<p class="md-nolinks">資料・リンクはまだ登録されていません。</p>` : ""}
+      ${!links.length && m.id === myMemberId ? `<p class="md-nolinks">資料・リンクはまだ登録されていません(プロフィールで追加できます)。</p>` : ""}
       ${m.offer ? `<section class="md-sec md-offer"><h3>BT-EX5 メンバーからの紹介特典</h3><p>${escapeHtml(m.offer)}</p></section>` : ""}
       ${section("事業内容", text(m.business))}
       ${m.selfIntro ? `<details class="md-sec md-intro"><summary>自己紹介(紹介文に入る文章)</summary><p class="md-intro-text">${escapeHtml(m.selfIntro)}</p></details>` : ""}
@@ -423,6 +423,9 @@
     post: '<path d="M8 1.2 14 3.6v4.1c0 3.5-2.6 6.1-6 7.1-3.4-1-6-3.6-6-7.1V3.6z"/>',
     role: '<path d="m8 1.4 1.9 4.1 4.5.5-3.4 3 1 4.4L8 11.2l-4 2.2 1-4.4-3.4-3 4.5-.5z"/>',
   };
+  // 入っていない項目: 自分のカードには「まだ入力されていません」(入れるきっかけに)、ほかの人のカードは「—」だけ
+  function blank(m) { return m.id === myMemberId ? "まだ入力されていません" : "—"; }
+
   function roleMark(id, compact) {
     const r = refRoleOf(id);
     if (!r) return "";
@@ -539,7 +542,7 @@
     $("#sortedBanner").hidden = !diagSorted && !topicScores;
     $("#sortedText").textContent = diagSorted
       ? "診断結果の一致度順に表示しています"
-      : topicScores ? `「${labelOf(TOPICS, filter.topic)}」の一致度順に表示しています(代表・役職・役割の基礎ポイントを含む)` : "";
+      : topicScores ? `「${labelOf(TOPICS, filter.topic)}」に強い順に表示しています` : "";
     $("#orderNote").hidden = diagSorted || !!topicScores;
   }
 

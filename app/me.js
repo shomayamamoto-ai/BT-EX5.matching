@@ -36,7 +36,7 @@
           menu("#me/goals", "今月の目標", "紹介・成約・1on1・ビジターの数を決めて、ホームで進み具合を見る"),
           menu("#me/pitch", "プレゼンの練習・タイマー", "30秒プレゼンの原稿と、30秒〜25分(ポモドーロ)のタイマー。0秒で音が鳴ります"),
           menu("#invite", "ビジター招待", "招待URL の発行・そのまま使える文・招待履歴"),
-          menu("#me/export", "自分の記録を書き出す(Excel)", "紹介・ありがとうマイル・1on1 の記録を CSV で保存"),
+          menu("#me/export", "自分の記録を書き出す(CSV・Excel で開けます)", "紹介・ありがとうマイル・1on1 の記録を CSV で保存"),
           menu("../teams/", "全体分析", "仕事が回る業種・紹介の流れ")),
         group("通知・設定",
           menu("#me/password", s.hasPassword ? "パスワードを変える" : "パスワードを決める", s.hasPassword ? "" : "共通パスコードの代わりに、あなた専用のパスワードで入れます", !s.hasPassword),
@@ -261,7 +261,7 @@
           h("p", { class: "line-state is-on" }, "✓ LINE とつながっています"),
           h("label", { class: "notify-kind" }, on, h("span", null, h("b", null, "LINE にお知らせを送る"), h("small", null, "上で選んだ種類のお知らせを、LINE のトークにも送ります"))),
           h("div", { class: "app-btn-row" }, App.btn("LINE とのつながりを外す", async () => {
-            if (!confirm("LINE とのつながりを外しますか?(LINE にお知らせが届かなくなります)")) return;
+            if (!(await App.confirm("LINE とのつながりを外しますか?(LINE にお知らせが届かなくなります)", { ok: "外す", danger: true }))) return;
             if (await App.api("lineSetting", { unlink: true })) { App.toast("LINE とのつながりを外しました"); draw(); }
           }, "ghost small")));
         return;
@@ -346,7 +346,7 @@
       const text = h("textarea", { rows: "5", maxlength: "2000", placeholder: "例:スマホで〇〇の画面のボタンが押しにくい / 〇〇ができると便利" });
       body.append(h("form", { class: "app-form", onsubmit: async (e) => {
         e.preventDefault();
-        if (!text.value.trim()) { App.toast("内容を入れてください"); return; }
+        if (!text.value.trim()) { App.fieldError(text, "内容を入れてください。"); return; }
         const d = await App.api("sendFeedback", { kind, body: text.value, page: navigator.userAgent.slice(0, 120) });
         if (!d) return;
         close();
@@ -419,19 +419,20 @@
     if (!d.available) {
       body.append(App.section("LINE 公式アカウントでの通知",
         h("p", { class: "app-lead" }, "LINE 公式アカウントを用意すると、会員が自分の LINE とつなぎ、紹介・1on1・運営連絡などのお知らせを LINE のトークでも受け取れるようになります(スマホの通知と同じ内容・同じ種類の設定)。"),
-        h("ol", { class: "line-steps" },
+        h("p", { class: "line-state" }, "いまは未設定です。LINE 公式アカウントを作ったら、設定はシステムの開発者に依頼してください(10分ほどで終わります)。"),
+        h("details", { class: "app-more-box" }, h("summary", null, "設定の手順(開発者向け)"), h("ol", { class: "line-steps" },
           h("li", null, "LINE 公式アカウントを作る(無料プランは月200通まで。26名に週1〜2回なら収まります)"),
           h("li", null, "LINE Developers で Messaging API を有効にし、チャネルアクセストークン(長期)を発行する"),
           h("li", null, "Apps Script エディタで setupLine を開き、トークンと友だち追加の URL を書いて1回実行する(gas/README.md の「LINE で通知を送る」)"),
-          h("li", null, "実行ログに出た Webhook URL を LINE Developers に入れて「Webhookの利用」をオンにし、新しいバージョンでデプロイする")),
+          h("li", null, "実行ログに出た Webhook URL を LINE Developers に入れて「Webhookの利用」をオンにし、新しいバージョンでデプロイする"))),
         h("p", { class: "app-field-hint" }, "設定が終わると、この画面に「つないだ人数」と「今月送った数」が出ます。")));
       return;
     }
     const limit = h("input", { type: "number", min: "0", max: "100000", value: String(d.monthlyLimit), inputmode: "numeric" });
     body.append(App.section("LINE 公式アカウントでの通知",
       h("div", { class: "dash-kpis" },
-        h("div", null, h("small", null, "つないだ会員"), h("b", null, `${d.linked}`), h("small", null, `/ ${d.members}名`)),
-        h("div", null, h("small", null, "今月送った数"), h("b", null, `${d.sentThisMonth}`), h("small", null, `/ 上限 ${d.monthlyLimit}通`))),
+        App.kpi("つないだ会員", `${d.linked}`, `${d.members}名のうち`),
+        App.kpi("今月送った数", `${d.sentThisMonth}`, `上限 ${d.monthlyLimit}通`)),
       d.linkedNames.length ? h("p", { class: "app-field-hint" }, `つないだ人:${d.linkedNames.join("、")}`) : null,
       d.addUrl ? h("p", { class: "app-field-hint" }, "友だち追加の URL:", h("a", { href: d.addUrl, target: "_blank", rel: "noopener" }, d.addUrl)) : null,
       h("form", { class: "app-form", onsubmit: async (e) => {
@@ -480,7 +481,7 @@
 
     // 共通パスコードの受付
     const pass = h("input", { type: "checkbox", checked: d.settings.memberPasscode, onchange: async () => {
-      if (!pass.checked && counts.active < d.accounts.length && !confirm(`まだパスワードを決めていない会員が ${d.accounts.length - counts.active} 名います。止めると、その人たちはログインできなくなります。止めますか?`)) { pass.checked = true; return; }
+      if (!pass.checked && counts.active < d.accounts.length && !(await App.confirm(`まだパスワードを決めていない会員が ${d.accounts.length - counts.active} 名います。止めると、その人たちはログインできなくなります。止めますか?`, { ok: "止める", danger: true }))) { pass.checked = true; return; }
       const r = await App.api("adminSetSettings", { memberPasscode: pass.checked });
       if (r) App.toast(pass.checked ? "共通パスコードでのログインを受け付けます" : "共通パスコードでのログインを止めました");
       else pass.checked = !pass.checked;
@@ -493,17 +494,21 @@
     el.append(App.section(`会員アカウント(利用中 ${counts.active} / ${d.accounts.length}名)`,
       h("p", { class: "app-field-hint" }, `招待中 ${counts.invited} ・ 期限切れ ${counts.expired} ・ 未招待 ${counts.none}`),
       notActive.length ? h("div", { class: "app-cta-row" }, App.btn(`まだの ${notActive.length} 名に招待コードをまとめて発行`, async () => {
-        if (!confirm(`${notActive.length} 名分の招待コードを発行します。招待中の人のコードは新しいものに変わります。`)) return;
+        if (!(await App.confirm(`${notActive.length} 名分の招待コードを発行します。招待中の人のコードは新しいものに変わります。`, { ok: "発行する" }))) return;
         const r = await App.api("adminIssueInvite", { memberIds: notActive.map((a) => a.memberId) });
         if (r) { await App.route(); showInvites(r.invites); }
       }, "primary wide")) : null,
       h("ul", { class: "app-list acc-list" }, d.accounts.map((a) => {
         const st = ACCOUNT_STATUS[a.status];
-        return h("li", null, h("div", { class: "app-row" },
+        // いまログインしている自分(管理者パスコードで入っているときは、アカウントがなくても「ログイン中」)
+        const self = a.memberId === App.session.memberId;
+        const viaPass = self && a.status !== "active";
+        const isAdmin = a.admin || (self && App.isAdmin());
+        return h("li", { class: self ? "is-me" : "" }, h("div", { class: "app-row" },
           App.avatar(a.name),
-          h("span", { class: "app-row-main" }, h("b", null, a.name, a.admin ? h("span", { class: "acc-admin", title: "管理者" }, " ", App.glyph("crown"), " 管理者") : ""),
-            h("small", null, a.status === "active" ? `最終ログイン ${a.lastLoginAt ? App.fmtTime(a.lastLoginAt) : "—"}` : a.status === "invited" ? `${new Date(a.inviteExpiresAt).toLocaleDateString("ja-JP")}まで有効` : a.team || "")),
-          a.locked ? App.chip("ロック中", "warn") : App.chip(st.label, st.tone),
+          h("span", { class: "app-row-main" }, h("b", null, a.name, self ? "(あなた)" : "", isAdmin ? h("span", { class: "acc-admin", title: "管理者" }, " ", App.glyph("crown"), " 管理者") : ""),
+            h("small", null, viaPass ? "管理者パスコードでログイン中(ご自分のパスワードは マイページ →「パスワードを決める」)" : a.status === "active" ? `最終ログイン ${a.lastLoginAt ? App.fmtTime(a.lastLoginAt) : "—"}` : a.status === "invited" ? `${new Date(a.inviteExpiresAt).toLocaleDateString("ja-JP")}まで有効` : a.team || "")),
+          a.locked ? App.chip("ロック中", "warn") : viaPass ? App.chip("ログイン中", "good") : App.chip(st.label, st.tone),
           h("details", { class: "acc-more" }, h("summary", { "aria-label": `${a.name}さんの操作` }, "…"),
             h("div", { class: "acc-menu" },
               App.btn(a.status === "active" ? "パスワード再設定のコードを発行" : "招待コードを発行", async () => {
@@ -512,11 +517,11 @@
               }, "small"),
               a.locked ? App.btn("ロックを解除", async () => { if (await App.api("adminResetAccount", { memberId: a.memberId })) { App.toast("解除しました"); App.route(); } }, "ghost small") : null,
               a.status === "active" ? App.btn("すべての端末からログアウトさせる", async () => {
-                if (!confirm(`${a.name}さんをすべての端末からログアウトさせますか?`)) return;
+                if (!(await App.confirm(`${a.name}さんをすべての端末からログアウトさせますか?`, { ok: "ログアウトさせる", danger: true }))) return;
                 if (await App.api("adminResetAccount", { memberId: a.memberId, signOut: true })) App.toast("ログアウトさせました");
               }, "ghost small") : null,
-              App.btn(a.admin ? "管理者から外す" : "管理者にする", async () => {
-                if (!confirm(a.admin ? `${a.name}さんを管理者から外しますか?` : `${a.name}さんを管理者にしますか?名簿の編集・招待・運営連絡ができるようになります。`)) return;
+              self ? null : App.btn(a.admin ? "管理者から外す" : "管理者にする", async () => {
+                if (!(await App.confirm(a.admin ? `${a.name}さんを管理者から外しますか?` : `${a.name}さんを管理者にしますか?名簿の編集・招待・運営連絡ができるようになります。`, { ok: a.admin ? "外す" : "管理者にする", danger: !!a.admin }))) return;
                 if (await App.api("adminSetAdmin", { memberId: a.memberId, admin: !a.admin })) App.route();
               }, "ghost small")))));
       }))));

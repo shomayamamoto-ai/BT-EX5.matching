@@ -48,7 +48,7 @@
         App.clockCard(upcoming[0], d.today), cal.main, cal.day));
       if (!(open || venueSoon)) el.append(checkBox);
 
-      if (App.isAdmin()) el.append(h("div", { class: "app-cta-row" }, App.btn("＋ 定例会を作る(管理者)", () => eventForm(null, d.events[d.events.length - 1]), "ghost wide")));
+      if (App.isAdmin()) el.append(h("div", { class: "app-cta-row" }, App.btn("＋ 定例会を作る", () => eventForm(null, d.events[d.events.length - 1]), "ghost wide")));
 
       el.append(App.section("これからの定例会",
         upcoming.length
@@ -493,20 +493,40 @@
       App.btn("出欠の一覧をコピー", () => App.copyText(listText), "ghost small")));
 
     const late = d.members.filter((m) => m.attendance === "late").length;
+    // 出欠をつける一覧: 開催前はたたんでおき、出席予定の人をまとめて出席にできる
+    const toggles = [];
+    const before = ev.date > App.todayKey();
+    const bulk = App.btn("出席予定の人を、まとめて出席にする", async () => {
+      const targets = toggles.filter(({ m }) => m.rsvp === "yes" && !m.attendance);
+      if (!targets.length) { App.toast("まとめて出席にする人はいません"); return; }
+      if (!(await App.confirm(`出席予定の ${targets.length} 名を「出席」にします。来なかった人は、あとで1人ずつ直せます。`, { ok: "出席にする" }))) return;
+      bulk.disabled = true;
+      let n = 0;
+      for (const { m, t } of targets) {
+        const r = await App.api("adminMarkAttendance", { id, memberId: m.memberId, status: "present" }, { quiet: true });
+        if (r) { m.attendance = "present"; t.setValue("present"); n++; }
+      }
+      bulk.disabled = false;
+      App.toast(`${n} 名を出席にしました`);
+    }, "ghost small");
+    const attBox = (list) => before
+      ? h("details", { class: "app-more-box att-before" }, h("summary", null, `開催前です。当日の出欠をつける(${d.members.length}名)`), list)
+      : h("div", null, h("div", { class: "app-btn-row" }, bulk), list);
     el.append(App.section(`出欠(出席予定 ${yes} ・ 出席 ${att - late} ・ 遅刻早退 ${late} ・ 未回答 ${noAns})`,
       h("p", { class: "app-field-hint" }, ev.online ? "Meet の記録とちがうときや、名前で当てはまらなかった人は、ここで直せます(手で直した人は自動で上書きしません)。" : "コードを入れられなかった人は、ここで出席にできます。"),
-      h("ul", { class: "app-list att-list" }, d.members.map((m) => {
-        const t = App.toggle([{ id: "present", label: "出席" }, { id: "late", label: "遅刻早退" }, { id: "", label: "—" }], m.attendance, async (v) => {
+      attBox(h("ul", { class: "app-list att-list" }, d.members.map((m) => {
+        const t = App.toggle([{ id: "present", label: "出席" }, { id: "late", label: "遅刻早退" }, { id: "", label: "未記録" }], m.attendance, async (v) => {
           const r = await App.api("adminMarkAttendance", { id, memberId: m.memberId, status: v });
           if (!r) t.setValue(m.attendance); else m.attendance = v;
         });
         t.classList.add("att-toggle");
+        toggles.push({ m, t });
         return h("li", null, h("div", { class: "app-row att-row" },
           h("span", { class: "app-row-main" }, h("b", null, m.name),
             h("small", null, [m.team, typeof m.minutes === "number" ? `Meet ${m.minutes}分` : "", m.source === "manual" ? "手で修正" : ""].filter(Boolean).join(" ・ "))),
-          m.rsvp === "yes" ? App.chip("申込", "info") : m.rsvp === "no" ? App.chip("事前欠席", "mute") : App.chip("未回答", "warn"),
+          m.rsvp === "yes" ? App.chip("出席予定", "info") : m.rsvp === "no" ? App.chip("欠席", "mute") : App.chip("未回答", "warn"),
           t));
-      }))));
+      })))));
 
     if (d.visitors.length) {
       el.append(App.section(`ビジター(${d.visitors.length})`, h("ul", { class: "app-cards" }, d.visitors.map((v) => h("li", null, visitorCard(v))))));
@@ -514,7 +534,7 @@
     el.append(h("div", { class: "app-btn-row" },
       App.btn("定例会を編集", () => eventForm(ev), "ghost"),
       App.btn("削除", async () => {
-        if (!confirm(`「${ev.title}」を削除しますか?出欠の記録も消えます。`)) return;
+        if (!(await App.confirm(`「${ev.title}」を削除しますか?出欠の記録も消えます。`, { ok: "削除する", danger: true }))) return;
         if (await App.api("adminDeleteEvent", { id })) { App.toast("削除しました"); App.go("events"); }
       }, "ghost danger")));
   }

@@ -23,6 +23,12 @@ const App = (function () {
     });
   });
 
+  // 4行でたたんだ紹介カードのメモなどは、押すと全部出す
+  document.addEventListener("click", (e) => {
+    const dd = e.target.closest && e.target.closest(".ref-card-body dd");
+    if (dd && !e.target.closest("a, button")) dd.classList.toggle("is-open");
+  });
+
   // ---------- DOM を組み立てる ----------
   // h("div", { class: "x", onclick: fn }, "文字", 子要素...)
   function h(tag, attrs, ...children) {
@@ -336,6 +342,22 @@ const App = (function () {
     if (btn) btn.click();
   });
 
+  // 確かめるシート(ブラウザの灰色の確認ダイアログの代わり)。消すなど戻せない操作は danger で赤いボタン
+  function confirmSheet(message, opt) {
+    const o = Object.assign({ title: "確認", ok: "はい", cancel: "やめる", danger: false }, opt || {});
+    return new Promise((resolve) => {
+      let done = false;
+      const finish = (v) => { if (!done) { done = true; resolve(v); } };
+      openSheet(o.title, (body, close) => {
+        body.append(h("p", { class: "app-lead confirm-text" }, message),
+          h("div", { class: "confirm-row" },
+            btn(o.cancel, close, "ghost"),
+            btn(o.ok, () => { finish(true); close(); }, o.danger ? "danger-fill" : "primary")));
+        setTimeout(() => { const b = body.querySelector(".confirm-row .app-btn"); if (b) b.focus({ preventScroll: true }); }, 50);
+      }, { noFocus: true, onClose: () => finish(false) });
+    });
+  }
+
   // 記録したあとに「LINE などでも知らせる」(サイトの通知に気づかない人もいるため)
   function doneSheet(title, lead, text) {
     openSheet(title, (body, close) => {
@@ -363,7 +385,7 @@ const App = (function () {
   // 入力のまちがいを、その欄のすぐ下に出す(枠を赤く・画面をその欄まで動かす・入力欄へ)。
   // 直すと消える。target は入力欄・メンバー選び(App.memberPicker の結果)・その欄を包む要素のどれでもよい
   function fieldError(target, message) {
-    if (!target) { toast(message); return; }
+    if (!target) { toast(message, "error"); return; }
     const box = (target.closest && target.closest(".app-field")) || target;
     const old = box.querySelector(":scope > .app-field-error");
     if (old) old.remove();
@@ -419,6 +441,10 @@ const App = (function () {
       }, o.label, o.badge ? h("span", { class: "app-badge" }, String(o.badge)) : null));
     });
     return el;
+  }
+  // 数字のカード(ラベル・大きな数字・補足)。管理画面の集計などで使う
+  function kpi(label, value, note) {
+    return h("div", { class: "home-stat" }, h("span", null, label), h("b", null, value), note ? h("small", null, note) : null);
   }
   function empty(text, action) {
     return h("div", { class: "app-empty" }, h("p", null, text), action || null);
@@ -641,6 +667,7 @@ const App = (function () {
       if (pending && location.hash.length <= 1) history.replaceState(null, "", pending);
     } catch { /* noop */ }
     session = data;
+    try { sessionStorage.setItem("btex5-my-name", data.displayName || ""); } catch { /* noop */ }
     const res = await AuthApi.listReferralMembers(AuthSession.getToken());
     members = res.success ? res.data.members : [];
     document.getElementById("appMe").replaceChildren(avatar(data.displayName));
@@ -748,7 +775,7 @@ const App = (function () {
   // Google Meet の会議の作り方(トグルで開く)
   function meetHowTo() {
     return h("details", { class: "meet-howto" },
-      h("summary", null, "Meet の作り方(タップで開く)"),
+      h("summary", null, "Meet の作り方"),
       h("ol", null,
         h("li", null, "上の「Meet を作る」を押す(Google Meet が新しいタブで開きます)"),
         h("li", null, "Google アカウントでログインしていなければ、ログインする"),
@@ -760,8 +787,8 @@ const App = (function () {
 
   return {
     profileHref, meetHowTo, downloadCsv,
-    h, append, fill, fmtStamp, fmtDate, fmtDateLong, fmtTime, yen, daysUntil, todayKey, chip, avatar, richText, toast, copyText, shareText,
-    icon, glyph, qrImage, draft, clearDraft, fieldError, calendarButtons, googleCalUrl, icsFile, api, openSheet, doneSheet, field, btn, toggle, timeSelect, segmented, empty, section, memberPicker,
+    h, append, fill, confirm: confirmSheet, fmtStamp, fmtDate, fmtDateLong, fmtTime, yen, daysUntil, todayKey, chip, avatar, richText, toast, copyText, shareText,
+    icon, glyph, qrImage, draft, clearDraft, fieldError, calendarButtons, googleCalUrl, icsFile, api, openSheet, doneSheet, field, btn, toggle, timeSelect, segmented, kpi, empty, section, memberPicker,
     AREA_LABELS, REF_STATUS, VISITOR_STATUS,
     views, go, route, setBadges, start,
     get members() { return members; },

@@ -24,6 +24,15 @@
     { kind: "oneOnOnes", label: "1on1" },
   ];
 
+  // 長い表は、はじめの5行だけ出して「すべて見る」で開く(スマホで画面が長くなりすぎないように)
+  function foldTable(table, keep = 5) {
+    const rows = [...table.tBodies[0].rows];
+    const wrap = h("div", { class: "dash-table-wrap" }, table);
+    if (rows.length <= keep + 2) return wrap;
+    rows.slice(keep).forEach((r) => { r.hidden = true; });
+    const more = App.btn(`すべて見る(${rows.length}名)`, () => { rows.forEach((r) => { r.hidden = false; }); more.remove(); }, "ghost small wide");
+    return h("div", null, wrap, more);
+  }
   function monthLabel(m) { return `${Number(m.slice(0, 4))}年${Number(m.slice(5, 7))}月`; }
   function shiftMonth(m, n) {
     const d = new Date(Number(m.slice(0, 4)), Number(m.slice(5, 7)) - 1 + n, 1);
@@ -57,7 +66,9 @@
           h("a", { class: "app-row", href: `#events/manage/${e.id}` },
             h("span", { class: "app-row-main" }, h("b", null, `${App.fmtDate(e.date)} ${e.title}`),
               h("small", null, `出席予定 ${e.yes} ・ 欠席 ${e.no} ・ 出席 ${e.attended} ・ ビジター ${e.visitors}`)),
-            h("span", { class: "dash-rate" }, d.members.length ? `${Math.round((e.attended / d.members.length) * 100)}%` : "")))))
+            e.date > App.todayKey()
+              ? h("span", { class: "dash-rate is-before" }, "開催前")
+              : h("span", { class: "dash-rate" }, d.members.length ? `${Math.round((e.attended / d.members.length) * 100)}%` : "")))))
         : App.empty("この月の定例会はありません。")));
 
     // 声かけが必要なメンバー: 30日以上ログインしていない・出席率が50%未満・この月の動きがない
@@ -94,7 +105,7 @@
     // メンバーごとの数字(この月)
     const sorted = d.members.slice().sort((a, b) => (b.monthGiven + b.monthOnes) - (a.monthGiven + a.monthOnes));
     el.append(App.section("メンバーごとの数字",
-      h("div", { class: "dash-table-wrap" }, h("table", { class: "dash-table" },
+      foldTable(h("table", { class: "dash-table" },
         h("thead", null, h("tr", null, ["名前", "紹介した", "された", "マイル", "1on1", "出席率"].map((t) => h("th", { scope: "col" }, t)))),
         h("tbody", null, sorted.map((m) => h("tr", null,
           h("th", { scope: "row" }, m.name),
@@ -136,7 +147,7 @@
     ].join("\n");
     el.append(App.section(`検索での表示(この月 ・ 検索 ${s.total} 回)`,
       h("p", { class: "app-field-hint" }, "メンバーが「探す」で紹介診断・相談アシスタント・ジャンルで探したとき、結果に出た回数です。合う人が多いときは、3位から下を一致度の近い人の中から日替わりで出し、同じ人ばかりが出ないようにしています。"),
-      h("div", { class: "dash-table-wrap" }, h("table", { class: "dash-table" },
+      foldTable(h("table", { class: "dash-table" },
         h("thead", null, h("tr", null, ["名前", "結果に出た", "1位", "ジャンル数"].map((t) => h("th", { scope: "col" }, t)))),
         h("tbody", null, bySearch.map((m) => h("tr", { class: !m.topicCount ? "is-warn" : "" },
           h("th", { scope: "row" }, m.name),
@@ -151,10 +162,10 @@
           ? h("ul", { class: "app-list" }, s.misses.map((x) => h("li", null, h("div", { class: "app-row" },
             h("span", { class: "app-row-main" }, h("b", null, x.text), h("small", null, `${App.fmtTime(x.at)} ・ ${x.byName}`))))))
           : App.empty("ありません。"),
-        h("p", { class: "app-field-hint" }, "相談アシスタントが困りごとを読み取れなかった文です。よく出る言い方は、言葉の辞書(referral/data.js の CONSULT_PHRASES)に足すと次から読み取れます。"))));
+        h("p", { class: "app-field-hint" }, "相談アシスタントが困りごとを読み取れなかった文です。よく出る言い方は開発者に伝えると、次から読み取れるようにできます。"))));
 
     // メンバーから届いたプロフィール(お試し版でそれぞれの端末に入力したもの)を取り込む
-    const paste = h("textarea", { rows: "4", placeholder: "メンバーから届いた「【BT-EX5 プロフィールの送付】」の文を、そのまま貼り付けてください(何人分でも)" });
+    const paste = h("textarea", { rows: "4", "aria-label": "届いたプロフィールの文", placeholder: "メンバーから届いた「【BT-EX5 プロフィールの送付】」の文を、そのまま貼り付けてください(何人分でも)" });
     el.append(App.section("プロフィールを取り込む",
       h("p", { class: "app-field-hint" }, "お試し版では、メンバーが自分の端末で入力したプロフィールはその端末にしか保存されていません。本人がプロフィール画面の「運営に送る」で送った文を、ここに貼り付けると取り込めます。"),
       h("div", { class: "app-form" }, paste, App.btn("取り込む", async () => {

@@ -59,6 +59,45 @@
     if (typeof TabDock !== "undefined") TabDock.attach(nav);
   }
 
+  // 早見表・プロフィールなどの上の帯にも、アプリと同じ「お知らせ(ベル)」と「マイページ(名前の丸)」を出す。
+  // ロゴはどのページでもアプリのホームへ
+  function header(badges, name) {
+    const nav = document.querySelector(".ref-header .ref-header-nav");
+    if (!nav) return;
+    const logo = document.querySelector(".ref-header .ref-logo");
+    if (logo) { logo.href = `${base.pathname}#home`; logo.setAttribute("aria-label", "ホーム"); }
+    nav.querySelectorAll('a.ref-header-link[href="../app/"]').forEach((a) => a.remove());
+    let bell = nav.querySelector(".nav-bell");
+    if (!bell) {
+      bell = document.createElement("a");
+      bell.className = "nav-bell";
+      bell.href = `${base.pathname}#feed`;
+      bell.setAttribute("aria-label", "お知らせ");
+      const svg = document.createElementNS(NS, "svg");
+      svg.setAttribute("viewBox", "0 0 24 24");
+      svg.setAttribute("aria-hidden", "true");
+      const p = document.createElementNS(NS, "path");
+      p.setAttribute("d", "M12 22a2.5 2.5 0 0 0 2.45-2h-4.9A2.5 2.5 0 0 0 12 22Zm7-6V11a7 7 0 0 0-5.5-6.84V3.5a1.5 1.5 0 0 0-3 0v.66A7 7 0 0 0 5 11v5l-2 2v1h18v-1z");
+      svg.append(p);
+      bell.append(svg);
+      nav.append(bell);
+    }
+    let count = bell.querySelector(".app-badge");
+    const n = badges.feed || 0;
+    if (n && !count) { count = document.createElement("span"); count.className = "app-badge"; bell.append(count); }
+    if (count) { count.hidden = !n; count.textContent = n > 99 ? "99+" : String(n); }
+    if (!name) return;
+    let me = nav.querySelector(".nav-me");
+    if (!me) {
+      me = document.createElement("a");
+      me.className = "nav-me";
+      me.href = `${base.pathname}#me`;
+      nav.append(me);
+    }
+    me.setAttribute("aria-label", `${name}さんのマイページ`);
+    me.textContent = String(name).replace(/\s/g, "").slice(0, 1);
+  }
+
   function cached() {
     try {
       const c = JSON.parse(sessionStorage.getItem("btex5-badges") || "null");
@@ -66,14 +105,20 @@
     } catch { return null; }
   }
 
+  function myName() { try { return sessionStorage.getItem("btex5-my-name") || ""; } catch { return ""; } }
   function start() {
     const c = cached();
     render(c || {});
-    if (c || typeof AuthApi === "undefined" || typeof AuthSession === "undefined" || !AuthSession.getToken()) return;
+    header(c || {}, myName());
+    if ((c && myName()) || typeof AuthApi === "undefined" || typeof AuthSession === "undefined" || !AuthSession.getToken()) return;
     AuthApi.call("getHome", {}).then((res) => {
       if (!res.success) return;
-      try { sessionStorage.setItem("btex5-badges", JSON.stringify({ at: Date.now(), badges: res.data.badges })); } catch { /* noop */ }
+      try {
+        sessionStorage.setItem("btex5-badges", JSON.stringify({ at: Date.now(), badges: res.data.badges }));
+        if (res.data.me && res.data.me.name) sessionStorage.setItem("btex5-my-name", res.data.me.name);
+      } catch { /* noop */ }
       render(res.data.badges);
+      header(res.data.badges, res.data.me && res.data.me.name);
     });
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start);

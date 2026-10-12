@@ -43,22 +43,29 @@
   }
 
   // ---------- 一覧 ----------
+  const stageOf = (m) => { const r = fillRate(m); return r >= 100 ? "done" : r >= 75 ? "near" : "pending"; };
+  const STAGE_TAG = {
+    done: '<span class="ref-tag done">記入済み</span>',
+    near: '<span class="ref-tag near">あと少し</span>',
+    pending: '<span class="ref-tag pending">入力待ち</span>',
+  };
   function render() {
-    const done = members.filter(isProfileComplete).length;
+    // 記入の段階: 100% = 記入済み / 75% 以上 = あと少し / それより下 = 入力待ち
+    const n = (st) => members.filter((m) => stageOf(m) === st).length;
     $("#stats").innerHTML =
       `<span><strong>${members.length}</strong>名</span>` +
-      `<span>記入済み <strong>${done}</strong>名</span>` +
-      `<span>準備中 <strong>${members.length - done}</strong>名</span>`;
+      `<span>記入済み <strong>${n("done")}</strong>名</span>` +
+      `<span>あと少し <strong>${n("near")}</strong>名</span>` +
+      `<span>入力待ち <strong>${n("pending")}</strong>名</span>`;
 
     $("#statusChips").innerHTML = [
-      ["all", "すべて"], ["pending", "準備中"], ["done", "記入済み"],
+      ["all", "すべて"], ["pending", "入力待ち"], ["near", "あと少し"], ["done", "記入済み"],
     ].map(([v, l]) => `<button type="button" class="ref-chip" data-status="${v}" aria-pressed="${status === v}">${l}</button>`).join("");
 
     // 名前・肩書き・チーム・業種・ジャンル・事業内容で探す
     const q = search.trim().toLowerCase();
     const list = members.filter((m) => {
-      if (status === "pending" && isProfileComplete(m)) return false;
-      if (status === "done" && !isProfileComplete(m)) return false;
+      if (status !== "all" && stageOf(m) !== status) return false;
       if (!q) return true;
       return [m.name, m.company, m.team, m.category, m.business, ...(m.topics || []).map(tagOf)].join(" ").toLowerCase().includes(q);
     });
@@ -76,13 +83,13 @@
             <div class="adm-row-tags">
               <span class="ref-tag">${escapeHtml(m.category)}</span>
               ${m.team ? `<span class="ref-tag team">${escapeHtml(m.team)}</span>` : ""}
-              ${isProfileComplete(m) ? '<span class="ref-tag done">記入済み</span>' : '<span class="ref-tag pending">準備中</span>'}
+              ${STAGE_TAG[stageOf(m)]}
             </div>
             ${(m.topics || []).length ? `<div class="adm-row-genres">${m.topics.slice(0, 8).map((t) => `<span>#${escapeHtml(tagOf(t))}</span>`).join("")}${m.topics.length > 8 ? `<span>+${m.topics.length - 8}</span>` : ""}</div>` : '<div class="adm-row-missing">ジャンル未設定</div>'}
             ${missingProfileItems(m).length ? `<div class="adm-row-missing">足りない情報:${missingProfileItems(m).map((it) => escapeHtml(it.label)).join("・")}</div>` : ""}
           </div>
           <div class="adm-row-actions">
-            ${missingProfileItems(m).length ? `<button type="button" class="ref-btn line" data-ask="${escapeHtml(m.id)}">お願い文をコピー</button>` : ""}
+            ${missingProfileItems(m).length ? `<button type="button" class="ref-btn ghost" data-ask="${escapeHtml(m.id)}">お願い文をコピー</button>` : ""}
             <a class="ref-btn ghost" href="../referral/#member=${encodeURIComponent(m.id)}" target="_blank" rel="noopener">早見表で見る</a>
             <button type="button" class="ref-btn" data-edit="${escapeHtml(m.id)}">編集</button>
             <button type="button" class="ref-btn ghost danger" data-delete="${escapeHtml(m.id)}">削除</button>
@@ -220,13 +227,15 @@
     e.preventDefault();
     const member = readForm();
     if (LinksEditor.read($("#fLinks")).error) {
-      $("#editorError").textContent = "エラー:資料・リンクのURLを確認してください。";
+      $("#editorError").textContent = "資料・リンクの URL を確かめてください(https:// から)。";
+      $("#fLinks").scrollIntoView({ block: "center", behavior: "smooth" });
       return;
     }
     if (!member.name) {
       form.elements.name.setAttribute("aria-invalid", "true");
-      $("#editorError").textContent = "エラー:氏名を入力してください。";
-      form.elements.name.focus();
+      $("#editorError").textContent = "氏名を入れてください(いちばん上の欄)。";
+      form.elements.name.scrollIntoView({ block: "center", behavior: "smooth" });
+      form.elements.name.focus({ preventScroll: true });
       return;
     }
     const res = await AuthApi.adminSaveReferralMember(AuthSession.getToken(), member);

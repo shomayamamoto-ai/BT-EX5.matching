@@ -120,10 +120,11 @@
       body.append(
         h("p", { class: "app-lead" }, "紹介する側がいちばん知りたい3つです。ほかの項目(事業内容・紹介特典など)は、あとでプロフィールの画面から入れられます。"),
         steps,
+        h("div", { class: "app-form" },
         App.field("1. どこで会えますか?", h("div", null, areaRow, h("div", { class: "qp-online" }, h("span", { class: "app-field-hint" }, "遠方の方には"), onlineSel)), "紹介する人が「会える距離か」を判断するのに使います"),
         App.field("2. どんな人を紹介してほしいですか?", wants, "悩み・業種・状況で書くと、紹介する側が思い出しやすくなります"),
         App.field("3. どんな仕事ができますか?(ジャンル)", h("div", null, topicCount, groups)),
-        saveBtn,
+        saveBtn),
         h("p", { class: "qp-more" }, h("a", { href: "../profile/" }, "すべての項目を入れる(プロフィールの画面) ›")));
     }, {
       noFocus: true,
@@ -145,8 +146,8 @@
       // 紹介に効く3項目が空いていれば、まず「かんたんプロフィール」(その場で開く)
       Object.assign({ id: "profile", label: "プロフィールを入れる(紹介されやすくなります)", href: "../profile/", auto: !(d.missing || []).length },
         (d.missing || []).some((x) => App.QUICK_PROFILE_LABELS.includes(x)) ? { label: "プロフィールの3つの質問に答える(約1分)", href: "#me/quick", open: () => App.quickProfileSheet() } : {}),
-      { id: "notify", label: "スマホに通知を受け取る", href: "#me/notify", auto: false },
-      { id: "home", label: "スマホのホーム画面に追加する", href: "#me/install", auto: standalone() },
+      { id: "notify", label: window.matchMedia("(pointer: coarse)").matches ? "スマホに通知を受け取る" : "通知を受け取る", href: "#me/notify", auto: false },
+      { id: "home", label: window.matchMedia("(pointer: coarse)").matches ? "スマホのホーム画面に追加する" : "スマホのホーム画面にも追加する(スマホで開いたとき)", href: "#me/install", auto: standalone() },
       { id: "pitch", label: "30秒プレゼンの原稿を書いておく", href: "#me/pitch", auto: false },
       { id: "one", label: "はじめての 1on1 を予定する", href: "#log/1on1?new", auto: (s.oneOnOnes || 0) > 0 },
       { id: "ref", label: "はじめての紹介を記録する", href: "#log/ref?new", auto: (s.givenAll || 0) > 0 },

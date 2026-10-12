@@ -210,8 +210,8 @@
       const saved = h("small", { class: "pitch-saved" });
       body.append(
         h("p", { class: "app-lead" }, "定例会の「30秒プレゼンテーション」の原稿を書いて、時間を計って練習できます。原稿はあなただけが見られます。タイマーは 1分・5分・25分(ポモドーロ)なども選べ、続けて押すと足せます。ホームにも同じタイマーがあります。"),
-        h("div", { class: "app-btn-row pitch-tools" }, App.btn("プロフィールからひな形を入れる", () => {
-          if (text.value.trim() && !confirm("いまの原稿を、ひな形で置きかえますか?")) return;
+        h("div", { class: "app-btn-row pitch-tools" }, App.btn("プロフィールからひな形を入れる", async () => {
+          if (text.value.trim() && !(await App.confirm("いまの原稿を、ひな形で置きかえますか?", { ok: "置きかえる" }))) return;
           text.value = template(); update(); save();
         }, "ghost small"), saved),
         text, meter,
@@ -238,7 +238,7 @@
       }
       text.addEventListener("input", () => { update(); saved.textContent = ""; clearTimeout(saveTimer); saveTimer = setTimeout(save, 900); });
       sayBtn.addEventListener("click", () => {
-        if (!text.value.trim()) { App.toast("原稿を入れてください"); return; }
+        if (!text.value.trim()) { App.fieldError(text, "原稿を入れてください。"); return; }
         speechSynthesis.cancel();
         const u = new SpeechSynthesisUtterance(text.value);
         u.lang = "ja-JP"; u.rate = 1.05;

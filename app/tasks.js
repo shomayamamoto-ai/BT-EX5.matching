@@ -43,7 +43,7 @@
           t.due && t.mine && !t.myDone ? App.calendarButtons(calItem(t)) : null,
           o.showPeople && many ? h("small", { class: "task-people" }, t.assignees.map((a) => `${a.done ? "✓" : "・"}${a.name}`).join(" ")) : null)),
       o.canManage || t.canEdit ? h("button", { type: "button", class: "app-icon-btn", "aria-label": "やることを消す", onclick: async (e) => {
-        if (!confirm(`「${t.title}」を消しますか?`)) return;
+        if (!(await App.confirm(`「${t.title}」を消しますか?`, { ok: "消す", danger: true }))) return;
         if (await App.api("deleteTask", { id: t.id })) { e.target.closest("li").remove(); App.toast("消しました"); }
       } }, "×") : null);
     return li;

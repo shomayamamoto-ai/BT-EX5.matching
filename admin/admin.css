@@ -183,3 +183,11 @@
   border-radius: 0 0 var(--radius) var(--radius);
 }
 .adm-dialog { overflow: clip; }
+.adm-row-tags .ref-tag.near { background: #f8f1df; color: #7d5a22; border-color: transparent; font-weight: 700; }
+/* 保存できなかった理由は、下に固定した保存ボタンのすぐ上に出す(長いフォームでも見える) */
+.adm-form-actions { flex-wrap: wrap; align-items: center; }
+.adm-form-actions .adm-error { flex: 1 1 100%; margin: 0; min-height: 0; color: #a3342a; }
+.adm-form-actions .adm-error:empty { display: none; }
+.adm-dev { flex-basis: 100%; font-size: 13px; }
+.adm-dev > summary { display: inline-flex; align-items: center; min-height: 40px; font-weight: 700; color: var(--text-sub); cursor: pointer; }
+.adm-dev-body { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }

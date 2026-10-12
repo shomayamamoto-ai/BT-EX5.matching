@@ -158,6 +158,7 @@
       h("div", { class: "st-totals" },
         [["マイル(全体)", man(t.miles)], ["紹介(全体)", String(t.referrals)], ["1on1(全体)", String(t.oneOnOnes)], ["ビジター(全体)", String(t.visitors)], ["出席(のべ)", String(t.attended)]]
           .map(([k, v]) => h("div", null, h("small", null, k), h("b", null, v)))),
+      h("p", { class: "st-scroll-hint" }, "表は横にすべらせると、ほかの数字が見られます →"),
       h("div", { class: "st-scroll" },
         h("table", { class: "st-table" },
           h("thead", null, h("tr", null, h("th", { scope: "col" }, "順位"), h("th", { scope: "col" }, "メンバー"), COLS.map(th))),

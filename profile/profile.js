@@ -105,13 +105,13 @@
       .map((c, i) => `<li class="${c.ok(p) ? "is-done" : ""}">${c.ok(p) ? escapeHtml(c.label) : `<button type="button" data-jump="${i}">${escapeHtml(c.label)}</button>`}</li>`)
       .join("");
     $("#topicCount").textContent = `(${p.topics.length}個選択中)`;
-    // 「こんな話が出たら」は 12個・1つ40文字まで(それより多い・長いものは保存されない)
+    // 「こんな話が出たら」は 24個・1つ40文字まで(こえているときは保存の前に知らせる)
     const trig = form.querySelector('textarea[name="triggers"]');
     const lines = trig.value.split("\n").map((x) => x.trim()).filter(Boolean);
     const long = lines.filter((x) => x.length > 40).length;
     const cnt = $("#trigCount");
-    cnt.textContent = `いま ${lines.length}個 / 12個まで・1つ40文字まで${lines.length > 12 ? "(13個目からは保存されません)" : ""}${long ? `(40文字をこえるものが ${long}個あります)` : ""}`;
-    cnt.classList.toggle("is-over", lines.length > 12 || long > 0);
+    cnt.textContent = `いま ${lines.length}個 / 24個まで・1つ40文字まで${lines.length > 24 ? "(24個までにしてください)" : ""}${long ? `(40文字をこえるものが ${long}個あります)` : ""}`;
+    cnt.classList.toggle("is-over", lines.length > 24 || long > 0);
     renderDirty();
   }
 
@@ -138,18 +138,34 @@
   form.addEventListener("input", renderProgress);
   form.addEventListener("change", renderProgress);
 
+  // 保存できない理由は、下の保存ボタンのそばに出し、直す欄まで動かす(長いフォームの下に出しても気づけないため)
+  function stop(message, field) {
+    $("#profileError").textContent = message;
+    toast(message);
+    if (field) {
+      field.scrollIntoView({ behavior: "smooth", block: "center" });
+      const f = field.matches("input, textarea, select") ? field : field.querySelector("input, textarea, select");
+      if (f) setTimeout(() => f.focus({ preventScroll: true }), 350);
+    }
+  }
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     $("#profileError").textContent = "";
     if (LinksEditor.read($("#fLinks")).error) {
-      $("#profileError").textContent = "資料・リンクのURLを確認してください(https:// から始まるURL)。";
+      stop("資料・リンクの URL を確かめてください(https:// から始まる URL)。", $("#fLinks"));
+      return;
+    }
+    const trig = form.querySelector('textarea[name="triggers"]');
+    const tl = trig.value.split("\n").map((x) => x.trim()).filter(Boolean);
+    if (tl.length > 24 || tl.some((x) => x.length > 40)) {
+      stop("「こんな話が出たら」は 24個まで・1つ40文字までにしてください(このまま保存すると、こえた分が消えます)。", trig);
       return;
     }
     $("#profileSave").disabled = true;
     const res = await AuthApi.updateMyProfile(AuthSession.getToken(), readForm());
     $("#profileSave").disabled = false;
     if (!res.success) {
-      $("#profileError").textContent = res.error.userMessage;
+      stop(res.error.userMessage);
       return;
     }
     me = res.data.member;

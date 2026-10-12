@@ -95,7 +95,7 @@
         list, addSel, total,
         h("label", { class: "pitch-sound" }, autoBox, h("span", null, "0秒になったら、3秒あけて自動で次の人へ")),
         h("button", { type: "button", class: "app-btn primary wide round-go", onclick: () => {
-          if (!order.length) { App.toast("出る人を入れてください"); return; }
+          if (!order.length) { App.toast("出る人を入れてください", "error"); return; }
           close();
           App.roundRun(order.slice(), per, auto, ev ? ev.title : "");
         } }, "全画面ではじめる"),

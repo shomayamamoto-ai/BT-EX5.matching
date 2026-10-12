@@ -148,9 +148,10 @@
       return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}`;
     };
     const nav = h("div", { class: "bill-nav" },
-      App.btn("← 前", () => { el.replaceChildren(); App.renderBillingAdmin(el, shift(d.period, -1)); }, "ghost small"),
+      App.btn("‹", () => { el.replaceChildren(); App.renderBillingAdmin(el, shift(d.period, -1)); }, "ghost small"),
       h("b", null, d.periodLabel),
-      App.btn("次 →", () => { el.replaceChildren(); App.renderBillingAdmin(el, shift(d.period, 1)); }, "ghost small"));
+      App.btn("›", () => { el.replaceChildren(); App.renderBillingAdmin(el, shift(d.period, 1)); }, "ghost small"));
+    nav.firstChild.setAttribute("aria-label", "前の期間"); nav.lastChild.setAttribute("aria-label", "次の期間");
     const list = h("ul", { class: "app-list" }, d.rows.map((x) => {
       const sel = h("select", { "aria-label": `${x.name}さんの状態` }, Object.entries(STATUS).filter(([k]) => x.amount > 0 ? k !== "free" : true).map(([k, v]) => h("option", { value: k }, v.label)));
       sel.value = x.status;
@@ -178,8 +179,8 @@
         : `${d.plan.name}:${CYCLE[d.plan.cycle]} ¥${Number(d.plan.amount).toLocaleString("ja-JP")}(税込)`), settings),
       App.section(`${d.periodLabel}の状態`, nav,
         h("div", { class: "dash-kpis" },
-          h("div", null, h("small", null, "支払い済み"), h("b", null, App.yen(d.totals.paid))),
-          h("div", null, h("small", null, "未払い"), h("b", null, App.yen(d.totals.unpaid)), h("small", null, `${d.totals.unpaidCount}名`))),
+          App.kpi("支払い済み", App.yen(d.totals.paid)),
+          App.kpi("未払い", App.yen(d.totals.unpaid), `${d.totals.unpaidCount}名`)),
         list,
         h("div", { class: "app-btn-row" }, App.btn("この期間を CSV で書き出す", () => App.downloadCsv(`BT-EX5-会費-${d.period}`, [
           ["名前", "会社", "期間", "金額", "うち消費税", "状態", "支払い日", "方法", "領収書番号"],

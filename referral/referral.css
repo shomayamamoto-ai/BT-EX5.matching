@@ -419,6 +419,9 @@ button { font-family: inherit; }
   padding: 3px 12px;
   font-size: 12.5px;
   cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  min-height: 32px;
 }
 
 /* ---------- メンバーカード ---------- */
@@ -615,7 +618,7 @@ button { font-family: inherit; }
   .ref-list-head,
   .ref-card {
     display: grid;
-    grid-template-columns: 1.05fr 1.15fr 1.4fr 0.9fr;
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 1.15fr) minmax(0, 1.4fr) minmax(0, 0.9fr);
     column-gap: 36px;
   }
   .ref-list-head {
@@ -625,7 +628,7 @@ button { font-family: inherit; }
     color: var(--text-sub);
   }
   .ref-card { padding: 28px 30px; align-items: start; }
-  .ref-card.is-real { border-width: 1.5px; border-left-width: 6px; }
+  .ref-card.is-real { border-width: 1.5px; border-left-width: 6px; padding-left: 25px; }
 
   /* 見出し行があるので各列の見出しは隠す */
   .ref-col .ref-label { display: none; }
@@ -1378,3 +1381,10 @@ a.ref-btn { display: inline-flex; align-items: center; justify-content: center; 
 .md-actions { position: sticky; bottom: 0; z-index: 2; margin: 16px -4px 0; padding: 10px 4px calc(10px + env(safe-area-inset-bottom, 0px)); background: linear-gradient(180deg, rgba(255, 253, 248, 0), #fffdf8 30%); }
 /* ↑ボタンが「条件をすべてクリア」に重ならないように */
 .ref-count-row { padding-right: 56px; }
+
+/* ---------- 第5弾の仕上げ ---------- */
+/* お知らせの帯: 文の長さに合わせ、下のボタンを押すじゃまをしない */
+.ref-toast { width: max-content; max-width: min(560px, calc(100% - 32px)); border-radius: 18px; pointer-events: none; bottom: calc(22px + env(safe-area-inset-bottom, 0px)); }
+/* 紹介診断: 選択肢はどの段階でも横いっぱい、下の「戻る・次へ」は透けない */
+.diag-needs, .diag-methods { width: 100%; }
+.diag-dialog #diagWizard .diag-nav { background: #2a1712; }

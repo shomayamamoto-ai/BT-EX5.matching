@@ -217,3 +217,25 @@ p, li, h1, h2, h3, small, b, summary, .app-row-main, .app-lead { text-wrap: pret
 .app-seg .is-on, .app-seg button.is-on, .app-seg [aria-pressed="true"] { background: var(--grad) !important; color: var(--lux-gold-hi) !important; border-color: transparent !important; }
 /* 入力中の欄が、下に固定した保存ボタンやメニュー・上の見出しに隠れないように */
 input, textarea, select { scroll-margin-top: 84px; scroll-margin-bottom: 160px; }
+
+/* ---------- 有料版の仕上げ(第5弾) ---------- */
+/* 削除などの取り消せない操作は、どの画面でも赤(編集などと見分けられるように) */
+.app-btn.danger, .app-btn.ghost.danger, .ref-btn.danger, .ref-btn.ghost.danger, .adm-btn.danger { color: #a3342a !important; border-color: #e7b3a8 !important; }
+.app-btn.danger:hover, .ref-btn.danger:hover { background: #fbecea !important; }
+/* 小さいボタン・頭の丸いボタンも、指で押せる範囲は 44px あるように(見た目は変えない) */
+.app-btn.small, .app-bell, .app-search-btn, .app-me, .ref-fav, .acc-more summary { position: relative; }
+.app-btn.small { min-height: 40px; }
+.app-btn.small::after { content: ""; position: absolute; inset: -2px -1px; }
+.app-bell::after, .app-search-btn::after, .app-me::after, .ref-fav::after, .acc-more summary::after { content: ""; position: absolute; inset: -5px; border-radius: 50%; }
+/* 読みにくかった薄い文字を濃く(本文と同じく 4.5:1 以上) */
+.ref-fav { color: #8f7a64; }
+.ref-tag.pending { color: #6e6255; }
+.ref-customers span, .ref-label { color: #7d5a22; }
+.ref-btn.line { color: #04753a; border-color: #2fae64; }
+.inv-rules h3 { color: #7d5a22; }
+.tm-arrow { color: #7d5a22; }
+/* 管理者メニュー(運営)のタブ: スマホでは2段にして、5つとも見えるように */
+@media (max-width: 560px) {
+  .page-admin > .app-seg { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); overflow: visible; }
+  .page-admin > .app-seg button { padding: 6px 4px; font-size: 13px; }
+}

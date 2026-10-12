@@ -74,6 +74,8 @@ const AuthSession = (function () {
     try {
       sessionStorage.removeItem(SESSION_KEY);
       localStorage.removeItem(SESSION_KEY);
+      sessionStorage.removeItem("btex5-my-name");
+      sessionStorage.removeItem("btex5-badges");
     } catch {
       /* noop */
     }

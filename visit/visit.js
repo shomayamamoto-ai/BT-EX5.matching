@@ -32,8 +32,10 @@
     $("visit-title").textContent = e.title;
     $("visit-when").textContent = when(e);
     $("visit-place").textContent = [AREA[e.area], e.place].filter(Boolean).join(" ") || "追ってご案内します";
-    $("visit-fee").textContent = e.fee || "";
-    $("visit-fee").hidden = $("visit-fee-label").hidden = !e.fee;
+    // 参加費が会員向けだけ(「会員 無料」など)のときは、ビジターの方の金額がわからないため、確かめ方を案内する
+    const fee = e.fee && /ビジター|ゲスト|一般|どなた/.test(e.fee) ? e.fee : e.fee ? "招待したメンバーにご確認ください" : "";
+    $("visit-fee").textContent = fee;
+    $("visit-fee").hidden = $("visit-fee-label").hidden = !fee;
     $("visit-body").textContent = e.body || "";
     if (e.url) { $("visit-url").href = e.url; $("visit-url").hidden = false; }
     if (d.name) $("v-name").value = d.name;

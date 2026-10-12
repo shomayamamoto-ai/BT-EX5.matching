@@ -86,7 +86,8 @@
     q.addEventListener("input", draw);
     if (d.given.length) el.append(refSummary(d.given));
     if (all.length > 3) el.append(q, pills);
-    el.append(recvBox, givenBox);
+    // 届いた紹介がまだなく、出した紹介があるときは、出した紹介を先に(記録したものがすぐ見えるように)
+    if (!d.received.length && d.given.length) el.append(givenBox, recvBox); else el.append(recvBox, givenBox);
     draw();
 
     if (params.has("new")) referralForm(params.get("to"), params.get("memo"));
@@ -137,7 +138,7 @@
         h("div", { class: "ref-card-actions" },
           App.btn(r.meeting ? "顔合わせの予定を直す" : "顔合わせの予定を決める", () => meetingSheet(r, draw), "ghost small"),
           App.btn("取り消す", async (e) => {
-            if (!confirm("この紹介の記録を取り消しますか?")) return;
+            if (!(await App.confirm("この紹介の記録を取り消しますか?", { ok: "取り消す", danger: true }))) return;
             const res = await AuthApi.deleteReferral(AuthSession.getToken(), r.id);
             if (!res.success) { App.toast(res.error.userMessage); return; }
             e.target.closest("li").remove();
@@ -182,7 +183,7 @@
   }
   async function confirmNoConflict(date, time, duration, skipId) {
     const list = await scheduleConflicts(date, time, duration, skipId);
-    return !list.length || confirm(`同じ時間に次の予定があります。\n・${list.join("\n・")}\n\nこのまま保存しますか?`);
+    return !list.length || (await App.confirm(`同じ時間に次の予定があります。\n・${list.join("\n・")}\n\nこのまま保存しますか?`, { title: "予定が重なっています", ok: "このまま保存" }));
   }
 
   function meetingEditor(mt) {
@@ -307,8 +308,8 @@
       r.meeting && r.meeting.time ? App.btn("Google カレンダーに追加", () => window.open(App.googleCalUrl(refCalItem(r)), "_blank", "noopener"), "ghost small") : null,
       r.meeting && r.meeting.time ? App.btn("iPhone・Outlook に追加", () => App.icsFile(refCalItem(r)), "ghost small") : null,
       r.mine ? App.btn(`${r.toName}さんへの文をコピー`, () => App.copyText(refTextToMember(r), copied), "ghost small") : null,
-      r.mine ? App.btn(`${r.prospect || "お客様"}への文をコピー`, () => App.copyText(refTextToProspect(r), copied), "ghost small") : null,
-      !r.mine ? App.btn(`${r.prospect || "お客様"}への文をコピー`, () => App.copyText(refTextFromReceiver(r), copied), "ghost small") : null);
+      r.mine ? App.btn("紹介した方への文をコピー", () => App.copyText(refTextToProspect(r), copied), "ghost small") : null,
+      !r.mine ? App.btn("紹介された方への文をコピー", () => App.copyText(refTextFromReceiver(r), copied), "ghost small") : null);
   }
   // 紹介を記録したあと: 届いたことを伝え、相手ごとに「送る・コピー」をまとめて出す
   function refDoneSheet(r) {
@@ -345,7 +346,7 @@
         h("div", { class: "app-btn-row" },
           App.btn("保存する", async () => {
             const mt = ed.get();
-            if (!mt) { App.toast("日付を入れてください"); return; }
+            if (!mt) { App.toast("日付を入れてください", "error"); return; }
             if (!(await confirmNoConflict(mt.date, mt.time, mt.duration, r.id))) return;
             const d = await App.api("setReferralMeeting", { id: r.id, meeting: mt });
             if (!d) return;
@@ -435,10 +436,11 @@
           App.avatar(inbound ? t.fromName : t.toName),
           h("span", { class: "app-row-main" },
             h("b", null, inbound ? `${t.fromName}さんから` : `${t.toName}さんへ`),
-            h("small", null, `${App.fmtTime(t.at)}${t.message ? ` ・ ${t.message}` : ""}`)),
+            h("small", null, App.fmtTime(t.at)),
+            t.message ? h("span", { class: "thanks-msg" }, t.message) : null),
           h("b", { class: "mile-amount" }, App.yen(t.amount)),
           inbound ? null : h("button", { type: "button", class: "app-icon-btn", "aria-label": "取り消す", onclick: async (e) => {
-            if (!confirm("このありがとうを取り消しますか?")) return;
+            if (!(await App.confirm("このありがとうを取り消しますか?", { ok: "取り消す", danger: true }))) return;
             if (await App.api("deleteThanks", { id: t.id })) { e.target.closest("li").remove(); App.toast("取り消しました"); }
           } }, "×")))))
       : App.empty(inbound ? "まだありません。紹介が成約すると、お礼がここに届きます。" : "まだ送っていません。紹介で仕事が決まったら、お礼を送りましょう。", inbound ? null : h("a", { class: "app-btn primary small", href: "#log/miles?new" }, "＋ ありがとうを送る"));
@@ -463,11 +465,14 @@
         e.preventDefault();
         const to = r ? "" : picker.getValue();
         if (!r && !to) { App.fieldError(picker, "お礼を送る相手を選んでください。"); return; }
+        // 数字のない金額(「abc」など)は 0円として送らず、直してもらう
+        if (amount.value.trim() && !/\d/.test(amount.value)) { App.fieldError(amount, "金額は数字で入れてください(わからなければ空欄で送れます)。"); return; }
         const d = await App.api("reportThanks", { referralId: r ? r.id : "", toMemberId: to, amount: amount.value, message: message.value.trim() }, { raw: true, quiet: true });
         if (!d || d.success === false) { err.textContent = d ? d.error.userMessage : "送れませんでした。"; return; }
         App.clearDraft("thanks-msg");
         close();
-        if (opt.onDone) opt.onDone(d.thanks); else await App.route();
+        // 「?new」のまま読み直すと、空のフォームがまた開くため、外してから一覧を出す
+        if (opt.onDone) opt.onDone(d.thanks); else await App.go("log/miles");
         const t = d.thanks;
         App.doneSheet("ありがとうを送りました", `${t.toName}さんに届きました。LINE などでも直接お礼を伝えましょう。`, [
           `${t.toName}さん`,
@@ -694,9 +699,9 @@
         };
       };
       const check = (x, needTime) => {
-        if (!x.withName) { App.toast("相手を選んでください"); return false; }
-        if (!x.date) { App.toast("日付を入れてください"); return false; }
-        if (needTime && !x.time) { App.toast("開始時刻を選んでください"); return false; }
+        if (!x.withName) { App.toast("相手を選んでください", "error"); return false; }
+        if (!x.date) { App.toast("日付を入れてください", "error"); return false; }
+        if (needTime && !x.time) { App.toast("開始時刻を選んでください", "error"); return false; }
         return true;
       };
       const sendBox = h("div", { class: "one-send" },
@@ -767,7 +772,7 @@
       o ? h("div", { class: "app-form-foot" },
         App.btn(`${o.withName}さんのプロフィール`, () => { location.href = App.profileHref(o.with, `log/1on1?open=${encodeURIComponent(o.id)}`); }, "ghost small"),
         App.btn("削除", async () => {
-          if (!confirm("この 1on1 を削除しますか?(Google カレンダーの予定も消えます)")) return;
+          if (!(await App.confirm("この 1on1 を削除しますか?(Google カレンダーの予定も消えます)", { ok: "削除する", danger: true }))) return;
           if (await App.api("delete1on1", { id: o.id })) { close(); App.toast("削除しました"); App.route(); }
         }, "ghost small danger")) : null));
     }, { noFocus: true });
@@ -802,7 +807,7 @@
 
     // ---------- 貢献ポイントのつけ方(開いて確かめる) ----------
     el.append(h("details", { class: "rk-howto" },
-      h("summary", null, "貢献ポイントのつけ方(タップで開く)"),
+      h("summary", null, "貢献ポイントのつけ方"),
       h("table", { class: "rk-pt-table" }, h("tbody", null,
         [["紹介 1件", `+${P.referral}pt`, "紹介を記録したとき"],
           ["成約 1件", `+${P.won}pt`, "紹介した相手が成約にしたとき"],
@@ -845,7 +850,7 @@
       h("div", { class: "rk-goals" },
         bar("紹介", g.referrals, g.target.referrals, (v) => `${v}件`),
         g.target.miles ? bar("貢献金額", g.miles, g.target.miles, App.yen) : null),
-      d.canEditGoals ? App.btn("目標を変える(管理者)", () => goalForm(g.target), "ghost small") : null));
+      d.canEditGoals ? App.btn("目標を変える", () => goalForm(g.target), "ghost small") : null));
 
     // ---------- ランキング(個人) ----------
     el.append(App.section("ランキング",
@@ -853,8 +858,10 @@
       rankList(d.members.slice().sort((a, b) => b[metric.id] - a[metric.id] || b.points - a.points), metric, (r) => r.name, ptBreakdown)));
 
     // ---------- あなたの推移(直近6か月) ----------
-    el.append(App.section("あなたの推移(直近6か月)",
-      h("div", { class: "rk-charts" },
+    const hasHistory = d.history.some((x) => x.referrals || x.miles);
+    el.append(App.section("あなたの推移(直近6か月)", !hasHistory
+      ? App.empty("紹介やありがとうを記録すると、ここに月ごとの推移が出ます。")
+      : h("div", { class: "rk-charts" },
         barChart("紹介の件数", d.history.map((x) => ({ label: ymLabel(x.month), value: x.referrals, text: `${x.referrals}件` }))),
         barChart("貢献金額", d.history.map((x) => ({ label: ymLabel(x.month), value: x.miles, text: App.yen(x.miles) }))))));
   }

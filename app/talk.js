@@ -34,7 +34,7 @@
   async function renderNews(el, params) {
     const d = await App.api("listAnnouncements");
     if (!d) return;
-    if (App.isAdmin()) el.append(h("div", { class: "app-cta-row" }, App.btn("＋ 運営連絡を書く(管理者)", () => annForm(null, d.cats), "ghost wide")));
+    if (App.isAdmin()) el.append(h("div", { class: "app-cta-row" }, App.btn("＋ 運営連絡を書く", () => annForm(null, d.cats), "ghost wide")));
     const unread = d.items.filter((a) => !a.read);
     if (unread.length > 1) {
       el.append(h("div", { class: "app-cta-row" }, App.btn(`未読 ${unread.length} 件をすべて既読にする`, async () => {
@@ -64,13 +64,13 @@
             App.siteUrl(`#news?open=${a.id}`),
           ].join("\n"), "コピーしました。LINE グループなどに貼り付けてください"), "small") : null,
           a.unreadNames && a.unreadNames.length ? App.btn(`未読の ${a.unreadNames.length} 名にもう一度通知する`, async () => {
-            if (!confirm(`まだ読んでいない ${a.unreadNames.length} 名に、ベルとスマホでもう一度お知らせしますか?`)) return;
+            if (!(await App.confirm(`まだ読んでいない ${a.unreadNames.length} 名に、ベルとスマホでもう一度お知らせしますか?`, { ok: "もう一度知らせる" }))) return;
             const r = await App.api("adminRemindAnnouncement", { id: a.id });
             if (r) App.toast(`${r.count} 名にもう一度お知らせしました`);
           }, "ghost small") : null,
           App.btn("編集", () => annForm(a, d.cats), "ghost small"),
           App.btn("削除", async () => {
-            if (!confirm("この運営連絡を削除しますか?")) return;
+            if (!(await App.confirm("この運営連絡を削除しますか?", { ok: "削除する", danger: true }))) return;
             if (await App.api("adminDeleteAnnouncement", { id: a.id })) App.route();
           }, "ghost small danger")) : null]);
       det.addEventListener("toggle", async () => {
@@ -213,30 +213,43 @@
           h("button", { type: "button", class: "post-link", onclick: () => App.copyText(postLineText(p), "コピーしました。LINE のトークに貼り付けてください") }, "LINE 用にコピー"),
           p.canEdit ? h("button", { type: "button", class: "post-link", onclick: () => editForm(p, (item) => { Object.assign(p, item); draw(); }) }, "編集") : null,
           p.canDelete ? h("button", { type: "button", class: "post-link danger", onclick: async () => {
-            if (!confirm("この投稿を削除しますか?")) return;
+            if (!(await App.confirm("この投稿を削除しますか?", { ok: "削除する", danger: true }))) return;
             if (await App.api("deletePost", { id: p.id })) card.closest("li").remove();
           } }, "削除") : null),
         p.comments.length ? h("ul", { class: "post-comments" }, p.comments.map((c) => h("li", null,
-          h("b", null, c.byName), " ", c.body, h("small", null, ` ${App.fmtTime(c.at)}${c.edited ? "(編集済み)" : ""}`),
-          c.canEdit ? h("button", { type: "button", class: "post-link", "aria-label": "コメントを直す", onclick: async () => {
-            const text = prompt("コメントを直す", c.body);
-            if (text === null || !text.trim() || text.trim() === c.body) return;
-            const d = await App.api("editComment", { postId: p.id, id: c.id, body: text.trim() });
-            if (d) { Object.assign(p, d.item); draw(); App.toast("直しました"); }
-          } }, "編集") : null,
-          c.canDelete ? h("button", { type: "button", class: "post-link danger", "aria-label": "コメントを削除", onclick: async () => {
-            const d = await App.api("deleteComment", { postId: p.id, id: c.id });
-            if (d) { Object.assign(p, d.item); draw(); }
-          } }, "×") : null))) : null,
+          h("p", { class: "cmt-body" }, h("b", null, c.byName), " ", c.body),
+          h("div", { class: "cmt-meta" },
+            h("small", null, `${App.fmtTime(c.at)}${c.edited ? "(編集済み)" : ""}`),
+            c.canEdit ? h("button", { type: "button", class: "post-link", "aria-label": "コメントを直す", onclick: () => commentForm(p, c, draw) }, "編集") : null,
+            c.canDelete ? h("button", { type: "button", class: "post-link danger", "aria-label": "コメントを削除", onclick: async () => {
+              if (!(await App.confirm("このコメントを削除しますか?", { ok: "削除する", danger: true }))) return;
+              const d = await App.api("deleteComment", { postId: p.id, id: c.id });
+              if (d) { Object.assign(p, d.item); draw(); App.toast("削除しました"); }
+            } }, "削除") : null)))) : null,
         h("form", { class: "post-comment-form", onsubmit: async (e) => {
           e.preventDefault();
-          if (!comment.value.trim()) return;
+          if (!comment.value.trim()) { App.fieldError(comment, "コメントを入れてください。"); return; }
           const d = await App.api("commentPost", { postId: p.id, body: comment.value.trim() });
           if (d) { Object.assign(p, d.item); draw(); }
         } }, mentionWrap(comment), h("button", { type: "submit", class: "app-btn small" }, "送信")));
     }
     draw();
     return card;
+  }
+
+  // 自分のコメントを直す(ブラウザの入力ダイアログではなく、下から出るシートで)
+  function commentForm(p, c, redraw) {
+    const text = h("textarea", { rows: "4", maxlength: "1000" });
+    text.value = c.body;
+    App.openSheet("コメントを直す", (body, close) => {
+      body.append(h("form", { class: "app-form", onsubmit: async (e) => {
+        e.preventDefault();
+        if (!text.value.trim()) { App.fieldError(text, "コメントを入れてください。"); return; }
+        if (text.value.trim() === c.body) { close(); return; }
+        const d = await App.api("editComment", { postId: p.id, id: c.id, body: text.value.trim() });
+        if (d) { Object.assign(p, d.item); close(); redraw(); App.toast("直しました"); }
+      } }, App.field("コメント", text), h("button", { type: "submit", class: "app-btn primary wide" }, "保存する")));
+    }, { confirmClose: () => text.value.trim() !== c.body });
   }
 
   // 自分の投稿を直す
@@ -251,7 +264,7 @@
       text.value = p.body;
       body.append(h("form", { class: "app-form", onsubmit: async (e) => {
         e.preventDefault();
-        if (!text.value.trim()) { App.toast("本文を入れてください"); return; }
+        if (!text.value.trim()) { App.fieldError(text, "本文を入れてください。"); return; }
         const d = await App.api("editPost", { id: p.id, cat: picked, body: text.value });
         if (!d) return;
         close();

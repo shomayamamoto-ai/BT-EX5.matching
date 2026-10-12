@@ -104,8 +104,12 @@
         var changed = false;
         (w.db.referralMembers || []).forEach(function (m) { if (ensureInvoice(w.db, m.id, period).created) changed = true; });
         if (changed) c.saveDb(w.db);
+        // 並びは名簿の順(ほかの画面と同じ)
+        var order = {};
+        (w.db.referralMembers || []).forEach(function (m, i) { order[m.id] = i; });
+        var orderOf = function (id) { return id in order ? order[id] : 1e6; };
         var rows = b.invoices.filter(function (x) { return x.period === period; }).map(function (x) { return invView(w.db, b, x); })
-          .sort(function (a, z) { return a.name.localeCompare(z.name, "ja"); });
+          .sort(function (a, z) { return orderOf(a.memberId) - orderOf(z.memberId); });
         var sum = function (st) { return rows.filter(function (r) { return r.status === st; }).reduce(function (s, r) { return s + r.amount; }, 0); };
         return c.ok(Object.assign(publicPlan(b), {
           period: period, periodLabel: periodLabel(b, period), rows: rows,
