@@ -10,7 +10,7 @@
 //
 // 認証は2通り。
 //   ・会員ごとのアカウント(本番): 運営者が発行した招待コードで本人がパスワードを決め、
-//     以後は「お名前 + パスワード」で入る。5回まちがえると15分ロック(本人ごと)。
+//     以後は「お名前 + パスワード」で入る。5回まではまちがえても入れ、6回目のまちがいで15分ロック(本人ごと)。
 //   ・共通パスコード(移行期間用): パスコードが正しければ名簿から自分の名前を選ぶ。
 //     会員用パスコードは管理者が設定で止められる。管理者用パスコードは非常用に常に使える。
 // 管理者は、管理者用パスコードで入ったセッションか、管理者に指定された会員のアカウント。
@@ -29,7 +29,7 @@ var BtexServerCore = (function () {
   "use strict";
 
   // 設定値(§8)。この4値は仕様で固定
-  var LOGIN_FAILURE_LIMIT = 5;
+  var LOGIN_FAILURE_LIMIT = 5; // この回数まではまちがえてもロックしない(これをこえたらロック)
   var LOCK_DURATION_MINUTES = 15;
   var SESSION_TTL_HOURS = 12;
   var SESSION_REMEMBER_DAYS = 30;
@@ -236,6 +236,13 @@ var BtexServerCore = (function () {
       }
       if (applySeedRevisions(db)) migrated = true;
       if (remapLegacyCategories(db)) migrated = true;
+      // 2026/10/12: それまでのログインのまちがいとロックを、全員分いちど消す(1回だけ)
+      if (!db.settings.loginFailReset20261012) {
+        db.settings.loginFailReset20261012 = true;
+        db.passcodeGuard = { failures: 0, lockedUntil: 0 };
+        (db.users || []).forEach(function (u) { u.failures = 0; u.lockedUntil = 0; });
+        migrated = true;
+      }
       MODULE_INSTANCES.forEach(function (m) { if (m.migrate && m.migrate(db)) migrated = true; });
 
       if (migrated) saveDb(db);
@@ -458,7 +465,7 @@ var BtexServerCore = (function () {
       var role = matchPasscode(body.passcode);
       if (!role) {
         guard.failures += 1;
-        if (guard.failures >= LOGIN_FAILURE_LIMIT) {
+        if (guard.failures > LOGIN_FAILURE_LIMIT) {
           guard.lockedUntil = nowMs() + LOCK_DURATION_MINUTES * 60 * 1000;
           guard.failures = 0;
           saveDb(db);
@@ -643,7 +650,7 @@ var BtexServerCore = (function () {
           if (role === "member" && db.settings.admins.indexOf(mem.id) !== -1) role = null; // 管理者に指定された人は自分のパスワードで
           if (role !== "member" && role !== "admin") {
             g0.failures = (g0.failures || 0) + 1;
-            if (g0.failures >= LOGIN_FAILURE_LIMIT) {
+            if (g0.failures > LOGIN_FAILURE_LIMIT) {
               g0.lockedUntil = nowMs() + LOCK_DURATION_MINUTES * 60 * 1000;
               g0.failures = 0;
               saveDb(db);
@@ -679,7 +686,7 @@ var BtexServerCore = (function () {
         var locked = false;
         candidates.forEach(function (u) {
           u.failures = (u.failures || 0) + 1;
-          if (u.failures >= LOGIN_FAILURE_LIMIT) { u.lockedUntil = nowMs() + LOCK_DURATION_MINUTES * 60 * 1000; u.failures = 0; locked = true; }
+          if (u.failures > LOGIN_FAILURE_LIMIT) { u.lockedUntil = nowMs() + LOCK_DURATION_MINUTES * 60 * 1000; u.failures = 0; locked = true; }
         });
         saveDb(db);
         return fail(locked ? "LOCKED" : "ACCOUNT_FAILED");
