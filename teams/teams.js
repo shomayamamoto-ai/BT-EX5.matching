@@ -57,23 +57,40 @@
     return ids.map(person).filter(Boolean).join("");
   }
 
-  function fillCounts(text) {
-    const vars = {
-      webCount: members.filter((m) => m.topics.some((t) => t === "web" || t === "sns" || t === "ec")).length,
-      noWantsCount: members.filter((m) => !m.wants).length,
-    };
-    return text.replace(/\{(\w+)\}/g, (_, k) => (k in vars ? vars[k] : ""));
+  // その業種の人がもういるか(業種名の言葉が、会社・業種・事業内容に出てくる人)。いれば「必要」から外す
+  function roleWords(role) {
+    return role.replace(/[((].*$/, "").split("・")
+      .map((w) => w.replace(/(のオーナー.*|の経営者|の事業者|の代理店|の運営者|の法人担当|会社|事務所|教室)$/, "").trim())
+      .filter((w) => w.length >= 2);
   }
+  function holders(role) {
+    const words = roleWords(role);
+    // 事業内容の中の言葉(「銀行融資のサポート」など)では数えない。業種・会社名だけで見る
+    return members.filter((m) => words.some((w) => `${m.category || ""} ${m.company || ""}`.includes(w)));
+  }
+  const openRoles = () => NEEDED_ROLES.filter((r) => !holders(r.role).length);
 
+  // 気づき: 名簿から、いまの状態に合うものだけを出す(業種がそろったら消える)
   function renderHighlights() {
-    $("#tmDate").textContent = `${TEAM_ANALYSIS_DATE}の名簿(${members.length}名)をもとに分析`;
-    $("#tmHighlights").innerHTML = TEAM_HIGHLIGHTS
-      .map((h) => `<article class="tm-point"><h2>${esc(fillCounts(h.title))}</h2><p>${esc(fillCounts(h.body))}</p></article>`)
-      .join("");
+    $("#tmDate").textContent = `いまの名簿(${members.length}名)をもとに分析`;
+    const counts = REF_CATEGORIES.map((c) => ({ c, n: members.filter((m) => refInCategory(m, c)).length }));
+    const empty = counts.filter((x) => x.n === 0).map((x) => x.c);
+    const web = members.filter((m) => m.topics.some((t) => t === "web" || t === "sns" || t === "ec")).length;
+    const noWants = members.filter((m) => !m.wants).length;
+    const firstOpen = openRoles().filter((r) => r.priority === 1).slice(0, 3).map((r) => r.role.replace(/[((].*$/, ""));
+    const points = [
+      empty.length ? { title: `${empty.slice(0, 3).map((c) => `「${c}」`).join("")}の人がいません`, body: `${firstOpen.length ? `特に${firstOpen.join("・")}は、` : "この業種の人は、"}起業したての個人事業主・店舗・家族と、多くのメンバーのお客様が必要とします。1人入るだけで、紹介を受ける側にも出す側にもなれます。` } : null,
+      web >= 3 ? { title: "Web・集客の人が多く重なっている", body: `ホームページ・SNS・LINE・EC を扱う人が${web}名います。紹介先がぶつからないよう、得意分野で呼び分けると、それぞれに仕事が回ります。` } : null,
+      noWants ? { title: `「求める紹介」が未入力の人が${noWants}名`, body: "求める紹介が入っていない人には、紹介し合える相手の候補が出ません。全員がそろうと、下の「今コミュニティ内で回る紹介」がそのまま増えていきます。" } : null,
+    ].filter(Boolean);
+    $("#tmHighlights").innerHTML = points.length
+      ? points.map((h) => `<article class="tm-point"><h2>${esc(h.title)}</h2><p>${esc(h.body)}</p></article>`).join("")
+      : '<article class="tm-point"><h2>よくそろっています</h2><p>主な業種がそろい、全員の「求める紹介」が入っています。</p></article>';
   }
 
   function renderFields() {
-    const counts = REF_CATEGORIES.map((c) => ({ c, n: members.filter((m) => refInCategory(m, c)).length }));
+    // 人数の多い順、0名(空き)は最後に
+    const counts = REF_CATEGORIES.map((c) => ({ c, n: members.filter((m) => refInCategory(m, c)).length })).sort((a, b) => b.n - a.n);
     const max = Math.max(1, ...counts.map((x) => x.n));
     $("#tmFields").innerHTML = counts
       .map(({ c, n }) => `
@@ -122,7 +139,7 @@
   function renderWhole() {
     const customers = commonCustomers();
     const pairs = topPairs(8);
-    const top = NEEDED_ROLES.filter((r) => r.priority === 1).slice(0, 3);
+    const top = openRoles().filter((r) => r.priority === 1).slice(0, 3);
     $("#tmWhole").innerHTML = `
       <header class="tm-team-head">
         <h2 class="tm-team-name">BT-EX5 全体</h2>
@@ -147,15 +164,17 @@
                 ${n.gives.some(byId) ? `<p class="tm-gives"><span>紹介し合える人</span>${people(n.gives)}</p>` : ""}
               </li>`).join("")}
           </ol>
-          <a class="tm-more" href="#tmNeedsTitle">必要な業種をすべて見る(${NEEDED_ROLES.length}業種)↓</a>
+          <a class="tm-more" href="#tmNeedsTitle">必要な業種をすべて見る(${openRoles().length}業種)↓</a>
         </section>
       </div>
       <p class="tm-note">Web・集客の人が多いので、LINE/女性向けブランディング/SEO・MEO/EC/Canva・LP/AIシステムと得意分野を分けて紹介すると、ぶつからずに回ります。</p>`;
   }
 
   function renderNeeds() {
+    const filled = NEEDED_ROLES.filter((r) => holders(r.role).length);
     $("#tmNeeds").innerHTML = [1, 2, 3].map((p) => {
-      const list = NEEDED_ROLES.filter((r) => r.priority === p);
+      const list = openRoles().filter((r) => r.priority === p);
+      if (!list.length) return "";
       return `
         <section class="tm-need-group">
           <h3 class="tm-need-group-title">${esc(NEEDED_PRIORITY_LABELS[p])}<small>${list.length}業種</small></h3>
@@ -169,7 +188,11 @@
               </li>`).join("")}
           </ul>
         </section>`;
-    }).join("");
+    }).join("") + (filled.length ? `
+        <section class="tm-need-group is-filled">
+          <h3 class="tm-need-group-title">そろった業種<small>${filled.length}業種</small></h3>
+          <p class="tm-why">${filled.map((r) => `${esc(r.role.replace(/[((].*$/, ""))}(${holders(r.role).map((m) => esc(m.name)).join("、")})`).join(" ・ ")}</p>
+        </section>` : "");
   }
 
   (async function init() {

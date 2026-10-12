@@ -215,3 +215,5 @@ p, li, h1, h2, h3, small, b, summary, .app-row-main, .app-lead { text-wrap: pret
 .tone-mute { background: #eee8df; color: #5c5045; }
 /* 選んでいる切り替えは、どの画面でも墨色に金 */
 .app-seg .is-on, .app-seg button.is-on, .app-seg [aria-pressed="true"] { background: var(--grad) !important; color: var(--lux-gold-hi) !important; border-color: transparent !important; }
+/* 入力中の欄が、下に固定した保存ボタンやメニュー・上の見出しに隠れないように */
+input, textarea, select { scroll-margin-top: 84px; scroll-margin-bottom: 160px; }

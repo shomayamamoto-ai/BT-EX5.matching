@@ -136,6 +136,16 @@ const TabDock = (function () {
       window.removeEventListener("pointermove", move);
       window.removeEventListener("pointerup", end);
       window.removeEventListener("pointercancel", end);
+      // ブラウザが止めたとき(pointercancel)は、置き場所を変えずに元へ戻す(位置が 0,0 になるため)
+      if (dragged && e.type === "pointercancel") {
+        nav.classList.remove("is-dragging");
+        document.body.classList.remove("dock-dragging");
+        nav.style.translate = "";
+        delete document.body.dataset.dockPreview;
+        setTimeout(() => { dragged = false; }, 50);
+        start = null;
+        return;
+      }
       if (dragged) {
         const box = nav.getBoundingClientRect();
         nav.classList.remove("is-dragging");
@@ -180,6 +190,9 @@ const TabDock = (function () {
     // パソコンのブラウザは、リンク(タブ)をつかむと「リンクのドラッグ」を始めて、メニューの移動が止まる。
     // メニューの中ではそれをさせない
     nav.addEventListener("dragstart", (e) => e.preventDefault());
+    // メニューをつかんでいるあいだは、ページのほかの場所(リンクや選んだ文字)のドラッグも始めない
+    // (始まるとブラウザがメニューの移動を止めてしまう)
+    window.addEventListener("dragstart", (e) => { if (start) e.preventDefault(); }, true);
   }
 
   // メニュー(または指)が端の近く・端の外なら、その辺。いちばん近い(はみ出している)辺を選ぶ。

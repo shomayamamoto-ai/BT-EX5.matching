@@ -22,8 +22,8 @@
   let sortBy = "default"; // default / missing / recent / name
 
   // 記入率(早見表と紹介診断に効く項目のうち、入っている割合)
-  const FILL_ITEMS = [...PROFILE_ITEMS, { label: "できること(ジャンル)", ok: (m) => (m.topics || []).length > 0 }];
-  const fillRate = (m) => Math.round((FILL_ITEMS.filter((it) => it.ok(m)).length / FILL_ITEMS.length) * 100);
+  // 記入率は早見表・プロフィール・ホームと同じ数え方(referral/data.js の profileScore)
+  const fillRate = (m) => profileScore(m).pct;
   const tagOf = (id) => { const t = TOPICS.find((x) => x.id === id); return t ? t.tag || t.label : ""; };
   const fmtDate = (ms) => { if (!ms) return ""; const d = new Date(ms); return `${d.getMonth() + 1}/${d.getDate()}`; };
 
@@ -288,7 +288,25 @@
       toast("名簿の形式ではありません");
       return;
     }
-    if (!confirm(`今の名簿(${members.length}名)を、読み込んだ名簿(${list.length}名)で置き換えます。よろしいですか?`)) return;
+    // 読み込む前に、何が変わるかを見せる(ID で照らし合わせる)。ID のない人は「追加」になる
+    const curIds = new Set(members.map((m) => m.id));
+    const newIds = new Set(list.map((m) => m && m.id).filter(Boolean));
+    const added = list.filter((m) => !m || !m.id || !curIds.has(m.id)).length;
+    const kept = list.filter((m) => m && m.id && curIds.has(m.id)).length;
+    const removed = members.filter((m) => !newIds.has(m.id));
+    const noId = list.filter((m) => !m || !m.id).length;
+    const msg = [
+      `今の名簿(${members.length}名)を、読み込んだ名簿(${list.length}名)で置き換えます。`,
+      `・そのまま/更新:${kept}名`,
+      `・追加:${added}名${noId ? `(うち ID のない ${noId}名は新しい人として入ります)` : ""}`,
+      `・名簿から消える:${removed.length}名${removed.length ? `(${removed.slice(0, 8).map((m) => m.name).join("、")}${removed.length > 8 ? " ほか" : ""})` : ""}`,
+      removed.length ? "消える人のログイン・通知も止まります。" : "",
+      "",
+      "念のため、いまの名簿を JSON で書き出してから読み込みます。よろしいですか?",
+    ].filter((x) => x !== "").join("\n");
+    if (!confirm(msg)) return;
+    // 取り消せるように、置き換える前の名簿を書き出しておく
+    exportJson();
     const res = await AuthApi.adminImportReferralMembers(AuthSession.getToken(), list);
     if (!res.success) {
       toast(res.error.userMessage);
@@ -318,6 +336,10 @@
     if (del) {
       const m = members.find((x) => x.id === del.dataset.delete);
       if (!m || !confirm(`${m.name}さんを名簿から削除します。\nこの方のログイン(アカウント・ログイン中の端末・通知)も止まります。紹介やマイルの記録は残ります。よろしいですか?`)) return;
+      // 取り消しがきかないので、名前を打ってもらって確かめる
+      const typed = prompt(`確認のため、削除する方のお名前「${m.name}」を入力してください。`);
+      if (typed === null) return;
+      if (typed.replace(/\s/g, "") !== m.name.replace(/\s/g, "")) { toast("お名前が一致しないため、削除しませんでした"); return; }
       const res = await AuthApi.adminDeleteReferralMember(AuthSession.getToken(), m.id);
       if (!res.success) { toast(res.error.userMessage); return; }
       await load();

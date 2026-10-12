@@ -262,7 +262,8 @@
       const tips = h("div", { class: "home-tips", "data-home": "tips" });
       side.append(tips);
       if (d.missing.length) {
-        const total = typeof PROFILE_ITEMS !== "undefined" ? PROFILE_ITEMS.length : d.missing.length + 1;
+        // サーバーの missing は PROFILE_ITEMS の7項目 + できること(ジャンル)。早見表・プロフィールと同じ数え方
+        const total = typeof PROFILE_SCORE_ITEMS !== "undefined" ? PROFILE_SCORE_ITEMS.length : d.missing.length + 1;
         const pct = Math.max(0, Math.round(((total - d.missing.length) / total) * 100));
         tips.append(h("a", { class: "home-nudge", href: "../profile/" },
           h("span", { class: "home-nudge-icon", "aria-hidden": "true" }, "✍️"),

@@ -85,3 +85,8 @@ fieldset > .prof-hint { margin: -4px 0 8px; }
 .prof-send-note { margin: 0 0 12px; padding: 8px 12px; border-radius: 10px; background: #fff7e6; border: 1px solid #f9c97a; font-size: 12.5px; }
 .prof-send-note[hidden] { display: none; }
 .prof-send { margin-top: 20px; scroll-margin-top: 80px; }
+
+/* 入力に合わせて伸びる文字欄(対応するブラウザ) */
+.prof-main textarea { field-sizing: content; min-height: 4.6em; max-height: 60vh; }
+.prof-count { display: block; margin-top: 4px; font-size: 12px; color: #5c5045; font-weight: 600; }
+.prof-count.is-over { color: #a3342a; font-weight: 800; }

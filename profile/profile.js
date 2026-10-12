@@ -105,6 +105,13 @@
       .map((c, i) => `<li class="${c.ok(p) ? "is-done" : ""}">${c.ok(p) ? escapeHtml(c.label) : `<button type="button" data-jump="${i}">${escapeHtml(c.label)}</button>`}</li>`)
       .join("");
     $("#topicCount").textContent = `(${p.topics.length}個選択中)`;
+    // 「こんな話が出たら」は 12個・1つ40文字まで(それより多い・長いものは保存されない)
+    const trig = form.querySelector('textarea[name="triggers"]');
+    const lines = trig.value.split("\n").map((x) => x.trim()).filter(Boolean);
+    const long = lines.filter((x) => x.length > 40).length;
+    const cnt = $("#trigCount");
+    cnt.textContent = `いま ${lines.length}個 / 12個まで・1つ40文字まで${lines.length > 12 ? "(13個目からは保存されません)" : ""}${long ? `(40文字をこえるものが ${long}個あります)` : ""}`;
+    cnt.classList.toggle("is-over", lines.length > 12 || long > 0);
     renderDirty();
   }
 

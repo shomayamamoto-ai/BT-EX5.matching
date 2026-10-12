@@ -1147,7 +1147,13 @@ function missingProfileItems(m) {
   return PROFILE_ITEMS.filter((it) => !it.ok(m));
 }
 
-// プロフィールの記入状況(求める紹介・活動範囲が入っていれば「記入済み」)
+// プロフィールの記入の割合(どの画面でも同じ数え方: PROFILE_ITEMS の7項目 + できること(ジャンル)の8項目)
+const PROFILE_SCORE_ITEMS = [...PROFILE_ITEMS, { key: "topics", label: "できること(ジャンル)", ok: (m) => (m.topics || []).length > 0 }];
+function profileScore(m) {
+  const missing = PROFILE_SCORE_ITEMS.filter((it) => !it.ok(Object.assign({ faceAreas: [], triggers: [], topics: [], links: [] }, m)));
+  return { pct: Math.round(((PROFILE_SCORE_ITEMS.length - missing.length) / PROFILE_SCORE_ITEMS.length) * 100), missing };
+}
+// 「記入済み」= すべての項目(100%)
 function isProfileComplete(m) {
-  return Boolean(m.wants) && (m.faceAreas.length > 0 || (m.online && m.online !== "unknown"));
+  return profileScore(m).pct === 100;
 }
