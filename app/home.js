@@ -171,7 +171,7 @@
             h("h2", { class: "app-h2" }, "タイマー"),
             h("a", { class: "home-sec-link", href: "#me/pitch" }, "プレゼンの原稿を書く")),
           App.timerWidget({ compact: true }),
-          App.roundSheet ? h("button", { type: "button", class: "home-timer-round", onclick: () => App.roundSheet() }, "⏱ 定例会の30秒プレゼンを、出席者の順番で進行する →") : null);
+          App.roundSheet ? h("button", { type: "button", class: "home-timer-round", onclick: () => App.roundSheet() }, App.glyph("clock"), "定例会の30秒プレゼンを、出席者の順番で進行する →") : null);
         main.append(timerSec);
         // #home/timer(ホーム画面のアイコンの長押しなど)で開いたときは、タイマーまで動かす
         if (parts && parts[0] === "timer") setTimeout(() => { if (timerSec.isConnected) timerSec.scrollIntoView({ behavior: "smooth", block: "start" }); }, 80);
@@ -235,7 +235,7 @@
             e.currentTarget.textContent = open ? "続きを読む" : "閉じる";
           } }, "続きを読む") : null,
           sp.triggers.length ? h("div", { class: "home-spot-trig", "aria-label": "こんな話が出たら" }, h("small", null, "こんな話が出たら"), sp.triggers.slice(0, 4).map((t) => h("span", null, t))) : null,
-          sp.offer ? h("p", { class: "home-spot-offer" }, `🎁 紹介特典:${sp.offer}`) : null,
+          sp.offer ? h("p", { class: "home-spot-offer" }, `紹介特典:${sp.offer}`) : null,
           h("div", { class: "app-btn-row" },
             h("a", { class: "app-btn primary small", href: `#log/ref?new&to=${encodeURIComponent(sp.id)}` }, "紹介を記録する"),
             h("a", { class: "app-btn ghost small", href: App.profileHref(sp.id, "home") }, "プロフィールを見る"))));
@@ -249,7 +249,7 @@
             h("a", { class: "home-sec-link", href: "#news" }, "すべて見る")),
           h("ul", { class: "app-list" }, d.announcements.slice(0, 3).map((a) => h("li", null,
             h("a", { class: `app-row${a.read ? "" : " is-unread"}`, href: `#news?open=${encodeURIComponent(a.id)}` },
-              h("span", { class: "app-row-main" }, h("b", null, a.pinned ? "📌 " : "", a.title), h("small", null, `${App.fmtTime(a.at)} ・ ${a.cat}`)),
+              h("span", { class: "app-row-main" }, h("b", null, a.pinned ? "【固定】" : "", a.title), h("small", null, `${App.fmtTime(a.at)} ・ ${a.cat}`)),
               a.read ? null : App.chip("未読", "warn")))))));
       }
 
@@ -266,7 +266,7 @@
         const total = typeof PROFILE_SCORE_ITEMS !== "undefined" ? PROFILE_SCORE_ITEMS.length : d.missing.length + 1;
         const pct = Math.max(0, Math.round(((total - d.missing.length) / total) * 100));
         tips.append(h("a", { class: "home-nudge", href: "../profile/" },
-          h("span", { class: "home-nudge-icon", "aria-hidden": "true" }, "✍️"),
+          h("span", { class: "home-nudge-icon", "aria-hidden": "true" }, App.glyph("post")),
           h("span", { class: "home-nudge-main" },
             h("b", null, `紹介されやすくするために(プロフィール ${pct}%)`),
             h("span", { class: "home-goal-bar is-profile", "aria-hidden": "true" }, h("i", { style: `width:${pct}%` })),
@@ -278,7 +278,7 @@
         BtexPush.status().then((st) => {
           if (st.on || st.permission === "denied" || (!st.supported && !st.needsInstall)) return;
           tips.append(h("a", { class: "home-nudge", href: "#me/notify" },
-            h("span", { class: "home-nudge-icon", "aria-hidden": "true" }, "🔔"),
+            h("span", { class: "home-nudge-icon", "aria-hidden": "true" }, App.glyph("ann")),
             h("span", { class: "home-nudge-main" },
               h("b", null, "スマホに通知を受け取る"),
               h("span", null, st.needsInstall ? "iPhone はホーム画面に追加すると、紹介・掲示板・運営連絡の更新が通知で届きます" : "紹介・掲示板・運営連絡が届いたら、すぐにわかります")),
@@ -288,7 +288,7 @@
 
       // ---------- ホームの表示(出すもの・順番。この端末に覚える) ----------
       applyLayout(el);
-      el.append(h("button", { type: "button", class: "home-layout-btn", onclick: () => layoutSheet() }, "⚙ ホームの表示を変える(出すもの・順番)"));
+      el.append(h("button", { type: "button", class: "home-layout-btn", onclick: () => layoutSheet() }, "ホームの表示を変える(出すもの・順番)"));
     },
   };
 

@@ -11,27 +11,27 @@
   function describe(x) {
     const st = App.REF_STATUS[x.status];
     switch (x.type) {
-      case "refIn": return { icon: "🤝", title: `${x.whoName}さんから紹介が届きました`, sub: x.text };
-      case "refStatus": return { icon: x.status === "won" ? "🎉" : "📮", title: `${x.whoName}さんが紹介を「${st ? st.label : x.status}」にしました`, sub: x.text };
-      case "thanks": return { icon: "💐", title: `${x.whoName}さんからありがとうが届きました`, sub: `${App.yen(x.amount)}${x.text ? ` ・ ${x.text}` : ""}` };
-      case "comment": return { icon: "💬", title: `${x.whoName}さんがあなたの投稿にコメントしました`, sub: x.text };
-      case "reply": return { icon: "💬", title: `${x.whoName}さんも同じ投稿にコメントしました`, sub: x.text };
-      case "rsvpSoon": return { icon: "📅", title: `${App.fmtDate(x.date)} の定例会の出欠がまだです`, sub: x.text };
-      case "oneSoon": return { icon: "☕", title: `${x.time} から ${x.whoName}さんと 1on1 です`, sub: x.meetUrl ? "Google Meet で参加できます" : App.fmtDate(x.date) };
-      case "refMeetSoon": return { icon: "🤝", title: `${x.time} から紹介の顔合わせです`, sub: `${x.text} × ${x.whoName}さん` };
-      case "refMeet": return { icon: "🤝", title: `${x.whoName}さんが紹介の顔合わせの予定を入れました`, sub: `${App.fmtDate(x.date)} ${x.text}` };
-      case "taskNew": return { icon: "✅", title: `${x.whoName}さんから やること:${x.text}`, sub: x.date ? `期限 ${App.fmtDate(x.date)}` : "期限なし" };
-      case "taskDue": return { icon: "⏰", title: `やることの期限が近づいています:${x.text}`, sub: `期限 ${App.fmtDate(x.date)}` };
-      case "mention": return { icon: "＠", title: `${x.whoName}さんが掲示板であなたの名前を出しました`, sub: x.text };
-      case "taskSoon": return { icon: "⏰", title: `${x.time} から:${x.text}`, sub: "やることの時刻が近づいています" };
-      case "oneAsk": return { icon: "☕", title: `${x.whoName}さんとの 1on1 は実施しましたか?`, sub: "押して「実施した」を選ぶと回数に数えます" };
-      case "oneNew": return { icon: "👥", title: `${x.whoName}さんが 1on1 を記録しました`, sub: App.fmtDate(x.date) };
-      case "visitor": return { icon: "🙋", title: `${x.text || "ビジター"}さんが定例会に申し込みました`, sub: "あなたの招待から" };
-      case "ann": return { icon: "📣", title: "運営連絡", sub: x.text };
-      case "annRemind": return { icon: "📣", title: "まだ読んでいない運営連絡があります", sub: x.text };
-      case "post": return { icon: "📝", title: `${x.whoName}さんが掲示板に投稿しました`, sub: x.text };
-      case "event": return { icon: "📅", title: `定例会が追加されました(${App.fmtDate(x.date)})`, sub: x.text };
-      default: return { icon: "・", title: x.type, sub: x.text || "" };
+      case "refIn": return { icon: "ref", title: `${x.whoName}さんから紹介が届きました`, sub: x.text };
+      case "refStatus": return { icon: x.status === "won" ? "won" : "ref", title: `${x.whoName}さんが紹介を「${st ? st.label : x.status}」にしました`, sub: x.text };
+      case "thanks": return { icon: "thanks", title: `${x.whoName}さんからありがとうが届きました`, sub: `${App.yen(x.amount)}${x.text ? ` ・ ${x.text}` : ""}` };
+      case "comment": return { icon: "comment", title: `${x.whoName}さんがあなたの投稿にコメントしました`, sub: x.text };
+      case "reply": return { icon: "comment", title: `${x.whoName}さんも同じ投稿にコメントしました`, sub: x.text };
+      case "rsvpSoon": return { icon: "calendar", title: `${App.fmtDate(x.date)} の定例会の出欠がまだです`, sub: x.text };
+      case "oneSoon": return { icon: "one", title: `${x.time} から ${x.whoName}さんと 1on1 です`, sub: x.meetUrl ? "Google Meet で参加できます" : App.fmtDate(x.date) };
+      case "refMeetSoon": return { icon: "ref", title: `${x.time} から紹介の顔合わせです`, sub: `${x.text} × ${x.whoName}さん` };
+      case "refMeet": return { icon: "ref", title: `${x.whoName}さんが紹介の顔合わせの予定を入れました`, sub: `${App.fmtDate(x.date)} ${x.text}` };
+      case "taskNew": return { icon: "task", title: `${x.whoName}さんから やること:${x.text}`, sub: x.date ? `期限 ${App.fmtDate(x.date)}` : "期限なし" };
+      case "taskDue": return { icon: "clock", title: `やることの期限が近づいています:${x.text}`, sub: `期限 ${App.fmtDate(x.date)}` };
+      case "mention": return { icon: "mention", title: `${x.whoName}さんが掲示板であなたの名前を出しました`, sub: x.text };
+      case "taskSoon": return { icon: "clock", title: `${x.time} から:${x.text}`, sub: "やることの時刻が近づいています" };
+      case "oneAsk": return { icon: "one", title: `${x.whoName}さんとの 1on1 は実施しましたか?`, sub: "押して「実施した」を選ぶと回数に数えます" };
+      case "oneNew": return { icon: "one", title: `${x.whoName}さんが 1on1 を記録しました`, sub: App.fmtDate(x.date) };
+      case "visitor": return { icon: "visitor", title: `${x.text || "ビジター"}さんが定例会に申し込みました`, sub: "あなたの招待から" };
+      case "ann": return { icon: "ann", title: "運営連絡", sub: x.text };
+      case "annRemind": return { icon: "ann", title: "まだ読んでいない運営連絡があります", sub: x.text };
+      case "post": return { icon: "post", title: `${x.whoName}さんが掲示板に投稿しました`, sub: x.text };
+      case "event": return { icon: "calendar", title: `定例会が追加されました(${App.fmtDate(x.date)})`, sub: x.text };
+      default: return { icon: "dot", title: x.type, sub: x.text || "" };
     }
   }
 
@@ -47,7 +47,7 @@
       el.append(h("ul", { class: "app-list feed-list" }, d.items.map((x) => {
         const t = describe(x);
         return h("li", null, h("a", { class: `app-row${x.isNew ? " is-unread" : ""}`, href: `#${x.link}` },
-          h("span", { class: "feed-icon", "aria-hidden": "true" }, t.icon),
+          h("span", { class: `feed-icon is-${t.icon}`, "aria-hidden": "true" }, App.glyph(t.icon)),
           h("span", { class: "app-row-main" }, h("b", null, t.title), t.sub ? h("small", null, t.sub) : null),
           h("span", { class: "thread-side" }, h("small", null, App.fmtTime(x.at)), x.isNew ? h("span", { class: "ann-dot" }, "新着") : null)));
       })));

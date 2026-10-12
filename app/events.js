@@ -318,8 +318,8 @@
         : h("p", null, ev.place || "会場は追ってご案内します", ev.place ? h("a", { href: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(ev.place)}`, target: "_blank", rel: "noopener", class: "evd-map" }, " 地図") : null)));
     if (ev.agenda) card.append(h("div", { class: "evd-block" }, h("h2", null, "当日の流れ"), App.richText(ev.agenda),
       /30秒/.test(ev.agenda) && !ev.past ? h("div", { class: "app-btn-row evd-pitch" },
-        h("a", { class: "app-btn ghost small", href: "#me/pitch" }, "🎤 30秒プレゼンを練習する"),
-        App.roundSheet ? h("button", { type: "button", class: "app-btn ghost small", onclick: () => App.roundSheet({ eventId: ev.id }) }, "⏱ 30秒プレゼンを順番に進行する") : null) : null));
+        h("a", { class: "app-btn ghost small", href: "#me/pitch" }, "30秒プレゼンを練習する"),
+        App.roundSheet ? h("button", { type: "button", class: "app-btn ghost small", onclick: () => App.roundSheet({ eventId: ev.id }) }, "30秒プレゼンを順番に進行する") : null) : null));
     if (ev.body) card.append(h("div", { class: "evd-block" }, h("h2", null, "ご案内"), App.richText(ev.body)));
     if (ev.url) card.append(h("a", { class: "app-more", href: ev.url, target: "_blank", rel: "noopener" }, "案内ページを見る →"));
     // 議事録・決定事項(終わったあとに運営が書く)

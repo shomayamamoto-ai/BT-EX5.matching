@@ -803,7 +803,7 @@
         h("div", { class: "rk-me-main" },
           h("p", { class: "rk-me-pt" }, h("b", null, String(me.points)), " pt"),
           h("p", { class: "rk-me-next" }, next),
-          d.streak > 1 ? h("p", { class: "rk-streak" }, `🔥 ${d.streak}か月つづけて紹介しています`) : null),
+          d.streak > 1 ? h("p", { class: "rk-streak" }, `${d.streak}か月つづけて紹介しています`) : null),
         h("div", { class: "rk-me-quick" },
           h("a", { class: "app-btn small", href: "#log/ref?new" }, `紹介を記録 +${P.referral}pt`),
           h("a", { class: "app-btn ghost small", href: "../referral/" }, "紹介先を探す"))));

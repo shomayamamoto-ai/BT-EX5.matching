@@ -559,6 +559,24 @@ const App = (function () {
     nav.querySelectorAll(".app-tab").forEach((t) => t.classList.toggle("is-on", t.dataset.tab === tabId));
     if (typeof TabDock !== "undefined") TabDock.attach(nav);
   }
+  // 絵文字の代わりに使う線のアイコン(タブと同じ形の仲間)。App.glyph("ref") のように名前で呼ぶ
+  const GLYPHS = {
+    ref: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Zm.6 4.6 4.4 4.4-4.4 4.4-1.4-1.4 2-2H7v-2h6.2l-2-2z",
+    won: "M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.8l-5.2 2.8 1-5.8-4.3-4.1 5.9-.9z",
+    thanks: "M12 21s-7.5-4.6-9.3-9.4C1.4 8 3.6 4.5 7 4.5c2 0 3.4 1.1 5 3 1.6-1.9 3-3 5-3 3.4 0 5.6 3.5 4.3 7.1C19.5 16.4 12 21 12 21Z",
+    comment: "M4 3h16a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H8l-4 4V4a1 1 0 0 1 1-1Zm3 4v2h10V7Zm0 4v2h7v-2Z",
+    post: "M3 17.2V21h3.8L17.8 10l-3.8-3.8zM20.7 7a1 1 0 0 0 0-1.4l-2.3-2.3a1 1 0 0 0-1.4 0l-1.8 1.8 3.8 3.8z",
+    calendar: "M7 2v2H5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-2V2h-2v2H9V2zm-2 8h14v9H5z",
+    one: "M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm8 0a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM1 20c0-3.3 3.6-6 8-6s8 2.7 8 6v1H1zm16.5-5.9c2.9.4 5.5 2.4 5.5 4.9v1h-4.2c0-2.3-.5-4.3-1.3-5.9Z",
+    task: "M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z",
+    clock: "M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm1 5v5.4l4 2.4-.8 1.3L11 13V7z",
+    mention: "M12 2a10 10 0 1 0 5 18.7l-1-1.7A8 8 0 1 1 20 12v1.4a1.6 1.6 0 0 1-3.2 0V12a4.8 4.8 0 1 0-1.4 3.4A3.6 3.6 0 0 0 22 13.4V12A10 10 0 0 0 12 2Zm0 13a3 3 0 1 1 0-6 3 3 0 0 1 0 6Z",
+    visitor: "M15 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Zm-9-2V7H4v3H1v2h3v3h2v-3h3v-2Zm9 4c-2.7 0-8 1.3-8 4v2h16v-2c0-2.7-5.3-4-8-4Z",
+    ann: "M3 10v4a1 1 0 0 0 1 1h2l5 4V5L6 9H4a1 1 0 0 0-1 1Zm13.5 2A4.5 4.5 0 0 0 14 8v8a4.5 4.5 0 0 0 2.5-4ZM14 3.2v2.1a7 7 0 0 1 0 13.4v2.1a9 9 0 0 0 0-17.6Z",
+    dot: "M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8Z",
+  };
+  function glyph(name) { return icon(GLYPHS[name] || GLYPHS.dot); }
+
   function icon(d) {
     const NS = "http://www.w3.org/2000/svg";
     const svg = document.createElementNS(NS, "svg");
@@ -727,7 +745,7 @@ const App = (function () {
   return {
     profileHref, meetHowTo, downloadCsv,
     h, append, fill, fmtStamp, fmtDate, fmtDateLong, fmtTime, yen, daysUntil, todayKey, chip, avatar, richText, toast, copyText, shareText,
-    icon, qrImage, draft, clearDraft, fieldError, calendarButtons, googleCalUrl, icsFile, api, openSheet, doneSheet, field, btn, toggle, timeSelect, segmented, empty, section, memberPicker,
+    icon, glyph, qrImage, draft, clearDraft, fieldError, calendarButtons, googleCalUrl, icsFile, api, openSheet, doneSheet, field, btn, toggle, timeSelect, segmented, empty, section, memberPicker,
     AREA_LABELS, REF_STATUS, VISITOR_STATUS,
     views, go, route, setBadges, start,
     get members() { return members; },

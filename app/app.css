@@ -1307,3 +1307,12 @@ html.round-open, html.round-open body { overflow: hidden; }
 .bill-grid { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 10px; }
 @media (max-width: 520px) { .bill-grid { grid-template-columns: 1fr 1fr; } .bill-grid > :first-child { grid-column: 1 / -1; } }
 .bill-nav { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+
+/* お知らせの先頭の印(線のアイコン・墨色に金) */
+.feed-icon { background: linear-gradient(145deg, #2f261e, #15110d) !important; border: 1px solid rgba(201, 164, 92, 0.42); }
+.feed-icon svg { width: 20px; height: 20px; fill: #ead39f; }
+.feed-icon.is-won svg, .feed-icon.is-thanks svg { fill: #f3dfb3; }
+.notify-kind-icon { flex-shrink: 0; width: 30px; height: 30px; border-radius: 50%; display: grid; place-content: center; background: #f4ede1; border: 1px solid var(--line); }
+.notify-kind-icon svg { width: 16px; height: 16px; fill: #7d5a22; }
+.home-nudge-icon svg { width: 20px; height: 20px; fill: #7d5a22; }
+.home-timer-round svg { width: 18px; height: 18px; fill: currentColor; vertical-align: -3px; margin-right: 6px; }

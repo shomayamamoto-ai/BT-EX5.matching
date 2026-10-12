@@ -155,39 +155,39 @@
       const state = h("p", { class: "notify-state" });
       const drawState = (on) => {
         state.className = `notify-state${on ? " is-on" : ""}`;
-        state.textContent = on ? "🔔 この端末で通知を受け取っています" : "🔕 この端末ではまだ受け取っていません";
+        state.textContent = on ? "この端末で通知を受け取っています" : "この端末ではまだ受け取っていません";
       };
       drawState(st.on);
-      // 通知する内容を選ぶ(切ったものはスマホに通知しない。ベル🔔には出る)
+      // 通知する内容を選ぶ(切ったものはスマホに通知しない。ベルには出る)
       const KINDS = [
-        ["ref", "🤝 紹介・ありがとうマイル", "あなたあての紹介、紹介した案件の進み具合、顔合わせの予定"],
-        ["one", "☕ 1on1", "1on1 の予定・もうすぐ・実施の確認"],
-        ["board", "📝 掲示板", "新しい投稿、あなたの投稿へのコメント"],
-        ["mention", "＠ あなたの名前が出たとき", "掲示板で「@あなたの名前」と書かれたとき"],
-        ["news", "📣 運営連絡・📅 定例会", "運営からのお知らせ、定例会の予定・出欠のお願い"],
-        ["task", "✅ やること", "届いたやること、期限・時刻が近いとき"],
-        ["visitor", "🙋 ビジター", "あなたが招待したビジターの申込"],
+        ["ref", "紹介・ありがとうマイル", "あなたあての紹介、紹介した案件の進み具合、顔合わせの予定", "ref"],
+        ["one", "1on1", "1on1 の予定・もうすぐ・実施の確認", "one"],
+        ["board", "掲示板", "新しい投稿、あなたの投稿へのコメント", "post"],
+        ["mention", "あなたの名前が出たとき", "掲示板で「@あなたの名前」と書かれたとき", "mention"],
+        ["news", "運営連絡・定例会", "運営からのお知らせ、定例会の予定・出欠のお願い", "ann"],
+        ["task", "やること", "届いたやること、期限・時刻が近いとき", "task"],
+        ["visitor", "ビジター", "あなたが招待したビジターの申込", "visitor"],
       ];
       const kinds = h("div", { class: "notify-kinds", "aria-label": "通知する内容" });
       let off = [];
-      const drawKinds = () => App.fill(kinds, KINDS.map(([id, label, sub]) => {
+      const drawKinds = () => App.fill(kinds, KINDS.map(([id, label, sub, g]) => {
         const box = h("input", { type: "checkbox", checked: !off.includes(id) });
         box.addEventListener("change", async () => {
           off = box.checked ? off.filter((x) => x !== id) : [...off, id];
           const r = await App.api("updateMySettings", { notifyOff: off }, { quiet: true });
-          App.toast(r ? (box.checked ? `「${label.replace(/^\S+ /, "")}」を通知します` : `「${label.replace(/^\S+ /, "")}」は通知しません(ベルには出ます)`) : "保存できませんでした");
+          App.toast(r ? (box.checked ? `「${label}」を通知します` : `「${label}」は通知しません(ベルには出ます)`) : "保存できませんでした", r ? "" : "error");
         });
-        return h("label", { class: "notify-kind" }, box, h("span", null, h("b", null, label), h("small", null, sub)));
+        return h("label", { class: "notify-kind" }, box, h("span", { class: "notify-kind-icon", "aria-hidden": "true" }, App.glyph(g)), h("span", null, h("b", null, label), h("small", null, sub)));
       }));
       drawKinds();
       App.api("getMySettings", {}, { quiet: true }).then((d) => { if (d && Array.isArray(d.notifyOff)) { off = d.notifyOff; drawKinds(); } });
       body.append(
-        h("p", { class: "app-lead" }, "チェックした内容があると、この端末に通知が届きます。通知を押すと、その画面が開きます(チェックを外しても、アプリ内のベル🔔には出ます)。"),
+        h("p", { class: "app-lead" }, "チェックした内容があると、この端末に通知が届きます。通知を押すと、その画面が開きます(チェックを外しても、アプリ内のベルには出ます)。"),
         kinds,
         state);
 
       if (!st.shared) {
-        body.append(h("p", { class: "one-meet-note" }, "いまはお試し版のため、通知はまだ届きません。共有サーバーに切り替えると、ここから設定できます(アプリ内のベル🔔と、タブの数字ではいまも確認できます)。"));
+        body.append(h("p", { class: "one-meet-note" }, "いまはお試し版のため、通知はまだ届きません。共有サーバーに切り替えると、ここから設定できます(アプリ内のベルと、タブの数字ではいまも確認できます)。"));
       }
       if (st.needsInstall) {
         body.append(h("div", { class: "notify-ios" },
