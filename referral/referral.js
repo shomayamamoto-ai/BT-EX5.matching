@@ -430,7 +430,7 @@
   // 呼び名が付いた名前は2行に(例: 小林 末季 / こばねぇ)
   function nameHtml(name) {
     const p = refNameParts(name);
-    return p.nick ? `${escapeHtml(p.main)}<br><span class="nm-nick">${escapeHtml(p.nick)}</span>` : escapeHtml(name);
+    return p.nick ? `<span class="nm-main">${escapeHtml(p.main)}</span><br><span class="nm-nick">${escapeHtml(p.nick)}</span>` : escapeHtml(name);
   }
     function bandOf(score) { return score >= 85 ? "とても合う" : score >= 70 ? "合う" : "参考に"; }
   function blank(m) { return m.id === myMemberId ? "まだ入力されていません" : "—"; }

@@ -127,7 +127,9 @@
   // 名前(呼び名が付いているときは2行。例: 小林 末季 / こばねぇ)
   function nameEl(name, tag, cls, suffix) {
     const p = typeof refNameParts === "function" ? refNameParts(name) : { main: name, nick: "" };
-    return h(tag, { class: cls }, p.main, p.nick ? h("br") : null, p.nick ? h("span", { class: "nm-nick" }, p.nick) : null, suffix || null);
+    return p.nick
+      ? h(tag, { class: cls }, h("span", { class: "nm-main" }, p.main), h("br"), h("span", { class: "nm-nick" }, p.nick), suffix || null)
+      : h(tag, { class: cls }, p.main, suffix || null);
   }
   function face(url, name, cls) {
     return url

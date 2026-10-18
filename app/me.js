@@ -17,13 +17,6 @@
         h("div", null, h("h1", null, `${s.displayName}さん`), h("p", null, [me && me.company, me && me.team, App.isAdmin() ? "管理者" : ""].filter(Boolean).join(" ・ ")))));
 
       // メニューは4つのまとまりに分ける(パソコンでは2列)
-      const bigText = h("button", { type: "button", class: "me-item", onclick: (e) => {
-        const on = !document.documentElement.classList.contains("big-text");
-        document.documentElement.classList.toggle("big-text", on);
-        try { localStorage.setItem("btex5-big-text", on ? "1" : "0"); } catch { /* noop */ }
-        e.currentTarget.querySelector("b").textContent = on ? "文字を元の大きさに戻す" : "文字を大きくする";
-        App.toast(on ? "文字を大きくしました(この端末のすべての画面)" : "元の大きさに戻しました");
-      } }, h("b", null, document.documentElement.classList.contains("big-text") ? "文字を元の大きさに戻す" : "文字を大きくする"), h("small", null, "小さい文字が読みにくいときに"));
       const group = (title, ...items) => h("section", { class: "me-group" }, h("h2", { class: "me-group-title" }, title), h("div", { class: "me-menu" }, items.filter(Boolean)));
       el.append(h("nav", { class: "me-groups", "aria-label": "マイページのメニュー" },
         group("プロフィール",
@@ -43,8 +36,7 @@
           menu("#me/password", s.hasPassword ? "パスワードを変える" : "パスワードを決める", s.hasPassword ? "" : "共通パスコードの代わりに、あなた専用のパスワードで入れます", !s.hasPassword),
           menu("#me/notify", "通知を受け取る(iPhone・Android)", "紹介・掲示板・運営連絡が届いたら、スマホに通知します"),
           menu("#me/calendar", "Google カレンダー・Meet の設定", "1on1 の招待を受け取るアドレスと、Meet で表示される名前"),
-          menu("#me/install", "スマホのホーム画面に追加", "アプリのようにすぐ開けます"),
-          bigText),
+          menu("#me/install", "スマホのホーム画面に追加", "アプリのようにすぐ開けます")),
         group("サポート",
           menu("#help", "使い方・よくある質問", "できること・だれに何が見えるか・困ったとき"),
           menu("#me/feedback", "バグ・要望を送る", "使いにくいところ・ほしい機能を運営へ"),
