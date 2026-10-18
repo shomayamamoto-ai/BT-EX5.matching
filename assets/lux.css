@@ -313,3 +313,79 @@ html { scrollbar-gutter: stable; }
 @media (max-width: 380px) {
   .app-top .brand-word, .ref-header .brand-word { display: none; }
 }
+
+/* =====================================================================
+   アプリ全体の仕上げ(Apple Human Interface Guidelines・Material Design 3 にならう)
+   - アイコン(assets/icons.js): 24×24・線 1.75・丸い端。うすい塗りの2つ目の層。選んでいるときは塗りを濃く・線を太く
+   - 下のメニュー: 選んでいるタブは、絵のうしろに丸い下地(M3 のアクティブインジケーター)
+   - 押せるもの: 44pt 以上。触れると 8%・押すと 12% の明るさを重ねる(M3 のステートレイヤー)。
+     キーボードで選んだときは金のリング(focus-visible)
+   - 動き: 強調の動き cubic-bezier(.2,0,0,1)。端末の「動きを減らす」では止める
+   ===================================================================== */
+:root { --ease-em: cubic-bezier(0.2, 0, 0, 1); }
+.bi { width: 24px; height: 24px; display: inline-block; flex: none; overflow: visible; vertical-align: middle; }
+.bi .bi-line { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
+.bi .bi-sec { fill: currentColor; opacity: 0.16; stroke: none; transition: opacity 0.2s var(--ease-em); }
+.bi .bi-ring { fill: currentColor; fill-opacity: 0.12; stroke: currentColor; stroke-width: 1.75; }
+
+/* 下のメニュー */
+.app-tab { gap: 3px; transition: color 0.2s var(--ease-em); -webkit-tap-highlight-color: transparent; }
+.app-tab-ind { position: relative; display: grid; place-items: center; width: 56px; height: 30px; border-radius: 15px; transition: background 0.25s var(--ease-em), box-shadow 0.25s var(--ease-em); }
+.app-tab-ind::before { content: ""; position: absolute; inset: 0; border-radius: inherit; background: currentColor; opacity: 0; transition: opacity 0.15s var(--ease-em); }
+.app-tab:hover .app-tab-ind::before { opacity: 0.08; }
+.app-tab:active .app-tab-ind::before { opacity: 0.12; }
+.app-tab .app-tab-ind svg { width: 22px; height: 22px; }
+.app-tab.is-on::after { content: none; }
+.app-tab.is-on .app-tab-ind { background: linear-gradient(180deg, rgba(234, 211, 159, 0.22), rgba(201, 164, 92, 0.14)); box-shadow: inset 0 1px 0 rgba(255, 243, 210, 0.18), 0 0 0 1px rgba(201, 164, 92, 0.32); }
+.app-tab.is-on .bi .bi-sec { opacity: 0.5; }
+.app-tab.is-on .bi .bi-line { stroke-width: 2; }
+.app-tab:focus-visible { outline: none; }
+.app-tab:focus-visible .app-tab-ind { box-shadow: 0 0 0 2px var(--lux-gold-hi, #e2b866); }
+.app-tab .app-badge { top: 2px; left: calc(50% + 10px); }
+body.tabs-left .app-tab-ind, body.tabs-right .app-tab-ind { width: 48px; }
+
+/* ヘッダーの検索・ベル・ムービー(押せる範囲は44pt。触れると明るく) */
+.app-search-btn, .app-bell, .nav-search, .nav-bell { position: relative; width: 40px; height: 40px; border-radius: 50%; transition: color 0.2s var(--ease-em), background 0.2s var(--ease-em); }
+.app-search-btn .bi, .app-bell .bi, .nav-search .bi, .nav-bell .bi { width: 22px; height: 22px; }
+.app-search-btn:hover, .app-bell:hover, .nav-search:hover, .nav-bell:hover { background: rgba(255, 243, 210, 0.08); color: var(--lux-gold-hi, #e2b866); }
+.app-search-btn:active, .app-bell:active, .nav-search:active, .nav-bell:active { background: rgba(255, 243, 210, 0.12); }
+.op-movie-btn .bi { width: 14px; height: 14px; }
+.op-movie-btn .bi .bi-sec { opacity: 0.6; }
+.app-search-btn:focus-visible, .app-bell:focus-visible, .nav-search:focus-visible, .nav-bell:focus-visible, .app-me:focus-visible { outline: 2px solid var(--lux-gold-hi, #e2b866); outline-offset: 2px; }
+
+/* ボタン: 触れる・押すの明るさ、キーボードの金のリング */
+.app-btn { position: relative; transition: transform 0.15s var(--ease-em), box-shadow 0.2s var(--ease-em), background-color 0.2s var(--ease-em), color 0.2s var(--ease-em), border-color 0.2s var(--ease-em); }
+.app-btn::before { content: ""; position: absolute; inset: 0; border-radius: inherit; background: currentColor; opacity: 0; pointer-events: none; transition: opacity 0.15s var(--ease-em); }
+.app-btn:hover:not(:disabled)::before { opacity: 0.06; }
+.app-btn:active:not(:disabled)::before { opacity: 0.1; }
+.app-btn:focus-visible, .app-chip:focus-visible, .pitch-len:focus-visible, .app-pill:focus-visible { outline: 2px solid var(--lux-gold-hi, #e2b866); outline-offset: 2px; }
+.app-btn .bi { width: 18px; height: 18px; }
+
+/* 文の中の小さな印(見出し・まとめ・お知らせなど) */
+summary .bi, .app-h2 .bi, .task-private .bi, .srch-ico .bi, .stats-hint .bi { width: 18px; height: 18px; vertical-align: -3px; }
+.feed-icon .bi, .notify-kind-icon .bi, .home-nudge-icon .bi { width: 22px; height: 22px; }
+.task-private .bi { width: 14px; height: 14px; }
+
+/* はじめての方へ: 済みの丸は線のチェック */
+button.home-welcome-check .bi { width: 22px; height: 22px; color: #fff; }
+button.home-welcome-check .bi .bi-line { stroke-width: 2.25; }
+button.home-welcome-check { transition: background 0.2s var(--ease-em), border-color 0.2s var(--ease-em), transform 0.15s var(--ease-em); }
+button.home-welcome-check:active { transform: scale(0.94); }
+
+@media (prefers-reduced-motion: reduce) {
+  .app-tab, .app-tab-ind, .app-btn, .app-search-btn, .app-bell, .bi .bi-sec, button.home-welcome-check { transition: none; }
+  .app-btn:active, button.home-welcome-check:active { transform: none; }
+}
+/* 一覧の右の矢印も、ほかのアイコンと同じ線の形に(文字の「›」ではなく) */
+.me-item::after, a.home-alert::after {
+  content: ""; width: 18px; height: 18px; font-size: 0;
+  background: currentColor; opacity: 0.55;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M9.75 6.5 15.25 12l-5.5 5.5' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
+          mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M9.75 6.5 15.25 12l-5.5 5.5' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
+  transition: transform 0.2s var(--ease-em), opacity 0.2s var(--ease-em);
+}
+.me-item:hover::after, a.home-alert:hover::after { opacity: 0.9; transform: translate(2px, -50%); }
+.me-item { transition: background 0.15s var(--ease-em); }
+.me-item:hover { background: rgba(201, 164, 92, 0.06); }
+.me-item:active { background: rgba(201, 164, 92, 0.1); }
+.me-item:focus-visible { outline: 2px solid var(--lux-gold-hi, #b8873f); outline-offset: -2px; }

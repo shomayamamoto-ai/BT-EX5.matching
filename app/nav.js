@@ -19,6 +19,9 @@
     { id: "news", label: "アップデート", href: `${base.pathname}#news`, icon: "M3 10v4a1 1 0 0 0 1 1h2l5 4V5L6 9H4a1 1 0 0 0-1 1Zm13.5 2A4.5 4.5 0 0 0 14 8v8a4.5 4.5 0 0 0 2.5-4ZM14 3.2v2.1a7 7 0 0 1 0 13.4v2.1a9 9 0 0 0 0-17.6Z" },
   ];
   const NS = "http://www.w3.org/2000/svg";
+  const TAB_GLYPH = { search: "search", log: "log", events: "calendar", present: "present", board: "board", news: "news" };
+  // 線のアイコン(assets/icons.js)があれば、ヘッダーの検索・ベルもそれにする
+  const lineIcon = (name) => (typeof BtexIcons !== "undefined" && BtexIcons.has(name) ? BtexIcons.svg(name) : null);
 
   function render(badges) {
     let nav = document.getElementById("appTabs");
@@ -41,15 +44,23 @@
       a.draggable = false;
       a.href = t.href;
       if (t.id === currentTab) a.setAttribute("aria-current", "page");
-      const svg = document.createElementNS(NS, "svg");
-      svg.setAttribute("viewBox", "0 0 24 24");
-      svg.setAttribute("aria-hidden", "true");
-      const p = document.createElementNS(NS, "path");
-      p.setAttribute("d", t.icon);
-      svg.append(p);
+      let svg;
+      if (typeof BtexIcons !== "undefined" && BtexIcons.has(TAB_GLYPH[t.id])) svg = BtexIcons.svg(TAB_GLYPH[t.id]);
+      else {
+        svg = document.createElementNS(NS, "svg");
+        svg.setAttribute("viewBox", "0 0 24 24");
+        svg.setAttribute("aria-hidden", "true");
+        const p = document.createElementNS(NS, "path");
+        p.setAttribute("d", t.icon);
+        svg.append(p);
+      }
+      // 絵は丸い下地(選んでいるタブ)の中に
+      const ind = document.createElement("span");
+      ind.className = "app-tab-ind";
+      ind.append(svg);
       const label = document.createElement("span");
       label.textContent = t.label;
-      a.append(svg, label);
+      a.append(ind, label);
       const n = t.id === "news" ? badges.announcements || 0 : t.id === "board" ? badges.board || 0
         : t.id === "log" ? badges.inbox || 0 : t.id === "events" ? badges.rsvp || 0 : 0;
       if (n) {
@@ -70,6 +81,9 @@
     const nav = document.querySelector(".ref-header .ref-header-nav");
     if (!nav) return;
     const logo = document.querySelector(".ref-header .ref-logo");
+    // ムービーのボタンの絵も、ほかと同じ線のアイコンに
+    const mv = document.querySelector(".ref-header .op-movie-btn svg");
+    if (mv && lineIcon("play")) mv.replaceWith(lineIcon("play"));
     if (logo) { logo.href = `${base.pathname}#events`; logo.setAttribute("aria-label", "予定"); }
     // アプリと同じ「検索」(押すとアプリの検索を開く)。ムービーの左に置く
     if (!nav.querySelector(".nav-search")) {
@@ -84,7 +98,7 @@
       const sp = document.createElementNS(NS, "path");
       sp.setAttribute("d", "M10.5 4a6.5 6.5 0 1 0 4.03 11.6l4.43 4.43 1.41-1.41-4.43-4.43A6.5 6.5 0 0 0 10.5 4Zm0 2a4.5 4.5 0 1 1 0 9 4.5 4.5 0 0 1 0-9Z");
       ss.append(sp);
-      sr.append(ss);
+      sr.append(lineIcon("search") || ss);
       nav.insertBefore(sr, nav.firstChild);
     }
     let bell = nav.querySelector(".nav-bell");
@@ -99,7 +113,7 @@
       const p = document.createElementNS(NS, "path");
       p.setAttribute("d", "M12 22a2.5 2.5 0 0 0 2.45-2h-4.9A2.5 2.5 0 0 0 12 22Zm7-6V11a7 7 0 0 0-5.5-6.84V3.5a1.5 1.5 0 0 0-3 0v.66A7 7 0 0 0 5 11v5l-2 2v1h18v-1z");
       svg.append(p);
-      bell.append(svg);
+      bell.append(lineIcon("bell") || svg);
       nav.append(bell);
     }
     let count = bell.querySelector(".app-badge");

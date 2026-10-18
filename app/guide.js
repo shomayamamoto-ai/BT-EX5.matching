@@ -171,7 +171,7 @@
           return h("li", { class: done ? "is-done" : "" },
             // 丸: 押すと「済み」と「まだ」を切りかえる(まちがえて押したときも戻せる)
             h("button", { type: "button", class: "home-welcome-check", role: "checkbox", "aria-checked": done ? "true" : "false", "aria-label": `${x.label}(${done ? "済み" : "まだ"})`,
-              onclick: () => { marks[x.id] = done ? 0 : 1; save(); draw(); } }, done ? "✓" : ""),
+              onclick: () => { marks[x.id] = done ? 0 : 1; save(); draw(); } }, done ? App.glyph("tick") : ""),
             // 文: 押すと、その画面へ
             h("a", { href: x.href, onclick: x.open ? (e) => { e.preventDefault(); x.open(); } : null }, h("span", null, x.label), done ? h("small", null, "済み") : h("small", { class: "is-go" }, "開く ›")));
         })),

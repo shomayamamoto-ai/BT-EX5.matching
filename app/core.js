@@ -694,8 +694,9 @@ const App = (function () {
         : t.id === "board" ? badges.board || 0
         : t.id === "log" ? badges.inbox || 0
         : t.id === "events" ? badges.rsvp || 0 : 0;
+      // 絵は丸い下地(選んでいるタブ: Material 3 のアクティブインジケーター)の中に
       return h("a", { class: "app-tab", href: t.href || `#${t.id}`, draggable: "false", dataset: { tab: t.id } },
-        icon(t.icon),
+        h("span", { class: "app-tab-ind" }, lineGlyph(TAB_GLYPH[t.id]) || icon(t.icon)),
         h("span", null, t.label),
         count ? h("span", { class: "app-badge", "aria-label": `${count}件` }, count > 99 ? "99+" : String(count)) : null);
     }));
@@ -722,8 +723,21 @@ const App = (function () {
     search: "M10 3a7 7 0 0 1 5.6 11.2l5.1 5.1-1.4 1.4-5.1-5.1A7 7 0 1 1 10 3Zm0 2a5 5 0 1 0 0 10 5 5 0 0 0 0-10Z",
     warn: "M12 2 1 21h22zm-1 7h2v6h-2zm0 8h2v2h-2z",
     crown: "M3 7l4.5 4L12 4l4.5 7L21 7l-2 12H5z",
+    tick: "M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z",
   };
-  function glyph(name) { return icon(GLYPHS[name] || GLYPHS.dot); }
+  // 線のアイコン(assets/icons.js)があればそちらを使う(どの画面でも同じ太さ・形)
+  const TAB_GLYPH = { search: "search", log: "log", events: "calendar", present: "present", board: "board", news: "news" };
+  function lineGlyph(name) { return name && typeof BtexIcons !== "undefined" && BtexIcons.has(name) ? BtexIcons.svg(name) : null; }
+  function glyph(name) { return lineGlyph(name) || icon(GLYPHS[name] || GLYPHS.dot); }
+  // ヘッダーの検索・ベル・ムービーも線のアイコンに
+  function headerIcons() {
+    [["#appSearchBtn", "search"], ["#appBell", "bell"], [".app-top .op-movie-btn", "play"]].forEach(([sel, name]) => {
+      const el = document.querySelector(sel);
+      const old = el && el.querySelector("svg");
+      const nu = lineGlyph(name);
+      if (old && nu) old.replaceWith(nu);
+    });
+  }
 
   function icon(d) {
     const NS = "http://www.w3.org/2000/svg";
@@ -781,6 +795,7 @@ const App = (function () {
     // 共有サーバーに切り替えたあと: この端末に残っているお試し版のプロフィールを送るか聞く
     if (typeof ProfileTransfer !== "undefined") ProfileTransfer.offerUpload(data, memberById(data.memberId));
     document.getElementById("appMe").setAttribute("aria-label", `${data.displayName}さんのマイページ`);
+    headerIcons();
     renderTabs();
     // 電波がないときは、上に「オフライン」と出す(保存できないことがわかるように)
     const offline = h("div", { class: "app-offline", role: "status", hidden: navigator.onLine !== false }, "オフラインです。電波が戻ると、また保存できます(見るだけならこのまま使えます)");
