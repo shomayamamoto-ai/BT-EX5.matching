@@ -516,15 +516,16 @@
     const extras = (label) => {
       extra = true;
       if (D.fits) deck("checks", { name: D.fits.title, step: label, items: D.fits.items });
-      if (D.strengths) deck("strengths", { name: D.strengths.title, step: label, groups: D.strengths.groups });
+      if (D.strengths) deck("strengths", { name: D.strengths.title, step: label, lead: "3つのコミュニティの強みを、ひとつに", groups: D.strengths.groups });
       const R = D.rules;
       if (R) {
         deck("section", { no: 0, name: R.title, step: "BT-EXの規定" });
         deck("rules", { name: "一般規定・出席規定", step: "BT-EXの規定", blocks: [["一般規定", R.general], ["出席規定", R.attendance]], note: R.note });
-        deck("rules", { name: "倫理規定", step: "BT-EXの規定", blocks: [["倫理規定", R.ethics]] });
+        deck("rules", { name: "倫理規定", step: "BT-EXの規定", blocks: [["倫理規定", R.ethics]], single: true });
       }
       if (D.schedule) {
         deck("schedule", { name: D.schedule.title, step: D.schedule.title, lead: D.schedule.lead, rows: D.schedule.rows, note: D.schedule.note });
+        // 次回以降の日程は、予定に入っている定例会から
         const next = (upcoming || []).filter((e) => !ev || (e.id !== ev.id && (e.date + (e.start || "")) > (ev.date + (ev.start || "")))).slice(0, 4);
         if (next.length) deck("schedule", { name: D.schedule.title, step: D.schedule.title, lead: "次回以降のスケジュール", rows: next.map((e) => [mdw(e.date), e.start ? `${e.start}-${e.end || ""}` : ""]) });
       }
@@ -542,10 +543,11 @@
       if (/理念/.test(st.title) && D.about) {
         deck("about", { name: `${D.name || "BT-EX"}とは`, step: label, paras: D.about });
         deck("vision", { name: D.name || "BT-EX", step: label, en: D.en, philosophy: D.philosophy, vision: D.vision });
-        if (D.purposes) deck("list", { name: `${D.name || "BT-EX"}の目的`, step: label, numbered: true, items: D.purposes.map((x) => ({ title: x })) });
+        // 一覧はカードにして並べる(layout: quad=2×2 / grid=3×3 / trio=横に3つ)
+        if (D.purposes) deck("list", { name: `${D.name || "BT-EX"}の目的`, step: label, layout: "quad", lead: "BT-EX が目指す4つのこと", items: D.purposes.map((x) => ({ title: x })) });
         if (D.feature) deck("feature", { name: D.feature.title, step: label, lines: D.feature.lines });
-        if (D.benefits) deck("list", { name: `${D.name || "BT-EX"}の仕組みとベネフィット`, step: label, dense: true, items: D.benefits.map((x) => ({ title: x })) });
-        if (D.activities) deck("list", { name: `${D.name || "BT-EX"}の主な3つの活動`, step: label, numbered: true, items: D.activities });
+        if (D.benefits) deck("list", { name: `${D.name || "BT-EX"}の仕組みとベネフィット`, step: label, layout: "grid", lead: "9つの仕組みが、ビジネスを加速させる", items: D.benefits.map((x) => (typeof x === "string" ? { title: x } : { title: x.head, lines: [x.text] })) });
+        if (D.activities) deck("list", { name: `${D.name || "BT-EX"}の主な3つの活動`, step: label, layout: "trio", items: D.activities });
       }
       if (/プレゼン/.test(st.title) && !pres) {
         pres = true;
@@ -569,6 +571,16 @@
     // 進行表に商談の行がないときは、おわりの前に出す
     if (!extra) extras("BT-EXについて");
     deck("closing", { name: "本日もありがとうございました", step: "おわり" });
+    // 表紙のあとに「本日の流れ」。どのスライドにも、流れの何番目かと流れの一覧を持たせる
+    // (左上の小見出し・区切りのスライドの一覧・下の進行バーに使う)
+    const stepList = steps.map((st) => { const tm = TIME.exec(st.title); return { no: st.no, title: tm ? st.title.replace(TIME, "") : st.title, sub: tm ? `${tm[1]}分${tm[2] ? ` × ${tm[2]}回` : ""}` : "" }; });
+    if (stepList.length) items.splice(2, 0, { key: "d:agenda", kind: "deck", type: "agenda", name: "本日の流れ", step: "定例会" });
+    let cur = 0;
+    items.forEach((it) => {
+      if (it.kind === "deck" && it.type === "section" && it.no) cur = it.no;
+      it.stepNo = it.type === "closing" ? stepList.length + 1 : cur;
+      if (it.kind === "deck") { it.steps = stepList; it.eyebrow = (stepList[cur - 1] || {}).title || ""; }
+    });
     return items;
   }
 
@@ -620,6 +632,17 @@
       people.forEach((p, i) => { if (p.step && !seen.has(p.step)) { seen.add(p.step); jump.append(h("option", { value: String(i) }, p.step)); } });
     }
     const slide = h("div", { class: "pr-slide" });
+    // 定例会のスライドの下の進行バー: 流れの1〜7のどこにいるかと、ページ数
+    const deckSteps = opts.deck ? ((people.find((p) => p.steps) || {}).steps || []) : [];
+    const progress = opts.deck ? h("div", { class: "pd-progress", "aria-hidden": "true" }) : null;
+    function drawProgress() {
+      if (!progress) return;
+      const p = people[idx] || {};
+      App.fill(progress,
+        h("ol", { class: "pd-progress-steps" }, deckSteps.map((st) => h("li", { class: st.no === p.stepNo ? "is-now" : st.no < p.stepNo ? "is-done" : "" },
+          h("i"), h("span", null, st.title)))),
+        h("span", { class: "pd-progress-page" }, `${two(idx + 1)} / ${two(people.length)}`));
+    }
     const pauseBtn = h("button", { type: "button", class: "round-btn is-main" });
     const prevBtn = h("button", { type: "button", class: "round-btn", onclick: () => go(idx - 1) }, "◀ 前へ");
     const nextBtn = h("button", { type: "button", class: "round-btn", onclick: () => go(idx + 1) }, "次へ ▶");
@@ -627,6 +650,7 @@
     const box = h("div", { class: `pr-run is-entering${solo ? " is-solo" : ""}`, role: "dialog", "aria-label": solo ? "タイマー" : "プレゼンの進行" },
       h("div", { class: "pr-top" }, h("p", { class: "pr-title" }, title || `${(PER.find(([v]) => v === per) || [0, ""])[1]}プレゼン`), jump, count),
       slide,
+      progress,
       h("div", { class: "pr-meter-row" }, meterBox, sec),
       h("div", { class: "round-ctrl pr-ctrl" }, prevBtn, pauseBtn, nextBtn, endBtn));
     // <body> ではなく <html> のすぐ下に置く(右上の「あ」で文字を大きくしても、この画面は大きくならない。
@@ -677,103 +701,150 @@
     // 定例会のスライド
     function deckSlide(p) {
       const L = p.leader || {};
+      // 改行(\n)を <br> に
+      const lines = (t) => String(t).split("\n").flatMap((x, i) => (i ? [h("br"), x] : [x]));
+      // 《 》で囲んだところを強調
+      const rich = (t) => String(t).split(/《|》/).map((x, i) => (i % 2 ? h("em", null, x) : x));
+      // カードなどを順に浮かび上がらせる(--i は順番)
+      const nth = (i) => ({ style: `--i:${i}` });
+      // 中身のスライドの共通の形: 左上に「02 BT-EXの理念」の小見出し、題、(あれば)要点の一文、中身
+      const frame = (cls, ...body) => h("div", { class: `pd pd-frame ${cls}` },
+        h("header", { class: "pd-head" },
+          p.eyebrow ? h("p", { class: "pd-eyebrow" }, h("span", { class: "pd-eyebrow-no" }, two(p.stepNo)), p.eyebrow) : null,
+          h("h2", { class: `pd-title${String(p.name).length > 18 ? " is-long" : ""}` }, p.name),
+          p.lead ? h("p", { class: "pd-lead" }, p.lead) : null),
+        h("div", { class: "pd-body" }, ...body));
+      // 流れの一覧(本日の流れ・区切りのスライド)。いまの所を光らせ、終わった所は控えめに
+      const agendaList = (compact) => h("ol", { class: `pd-agenda${compact ? " is-compact" : ""}` }, (p.steps || []).map((st, i) =>
+        h("li", { class: st.no === p.stepNo && p.type !== "agenda" ? "is-now" : st.no < p.stepNo ? "is-done" : "", ...nth(i) },
+          h("span", { class: "pd-agenda-no" }, two(st.no)),
+          h("span", { class: "pd-agenda-title" }, st.title),
+          st.sub ? h("span", { class: "pd-agenda-sub" }, st.sub) : null)));
       if (p.type === "movie") {
-        return h("div", { class: "pd pd-movie" },
+        return h("div", { class: "pd pd-hero pd-movie" },
           h("p", { class: "pd-kicker" }, "BT-EX5"),
-          h("p", { class: "pd-title" }, "オープニングムービー"),
+          h("p", { class: "pd-display" }, "オープニングムービー"),
           h("button", { type: "button", class: "round-btn is-main pd-play", onclick: playMovie }, "▶ もう一度流す"));
       }
       if (p.type === "cover") {
-        return h("div", { class: "pd pd-cover" },
+        return h("div", { class: "pd pd-hero pd-cover" },
           h("img", { class: "pd-mark", src: "../assets/bt-ex5-mark-3d-512.png", alt: "" }),
           h("p", { class: "pd-kicker" }, "BT-EX5 定例会"),
           // 「日本海側最大のマーケット 新潟⇔東京」のように空白で区切った題は、空白のところで改行する
-          h("p", { class: "pd-title" }, ...String(p.name).trim().split(/[\s\u3000]+/).flatMap((x, i) => (i ? [h("br"), x] : [x]))),
+          h("h2", { class: "pd-display" }, ...String(p.name).trim().split(/[\s　]+/).flatMap((x, i) => (i ? [h("br"), x] : [x]))),
+          h("span", { class: "pd-rule", "aria-hidden": "true" }),
           p.date ? h("p", { class: "pd-date" }, p.date) : null,
           p.notes && p.notes.length ? h("ul", { class: "pd-notes" }, p.notes.map((x) => h("li", null, x))) : null);
       }
+      if (p.type === "agenda") {
+        return h("div", { class: "pd pd-frame pd-agenda-slide" },
+          h("header", { class: "pd-head" }, h("p", { class: "pd-eyebrow" }, "AGENDA"), h("h2", { class: "pd-title" }, p.name)),
+          h("div", { class: "pd-body" }, agendaList(false)));
+      }
       if (p.type === "section") {
-        return h("div", { class: `pd pd-section${p.name.length > 14 ? " is-long-title" : ""}` },
-          p.no ? h("p", { class: "pd-no" }, two(p.no)) : null,
-          h("p", { class: "pd-title" }, p.name),
-          p.sub ? h("p", { class: "pd-sub" }, p.sub) : null,
-          h("span", { class: "pd-rule", "aria-hidden": "true" }));
-      }
-      if (p.type === "checks") {
-        return h("div", { class: "pd pd-checks" },
-          h("p", { class: "pd-title" }, p.name),
-          h("span", { class: "pd-rule", "aria-hidden": "true" }),
-          h("ul", { class: "pd-check-items" }, (p.items || []).map((x) => h("li", null, h("span", { class: "pd-check", "aria-hidden": "true" }, "✓"), h("span", null, x)))));
-      }
-      if (p.type === "rules") {
-        // 《 》で囲んだところを強調
-        const rich = (t) => String(t).split(/《|》/).map((x, i) => (i % 2 ? h("em", null, x) : x));
-        return h("div", { class: "pd pd-rules" },
-          p.blocks.map(([head, lines]) => h("section", { class: "pd-rule-block" },
-            h("p", { class: "pd-rule-head" }, head),
-            h("ol", null, lines.map((x, i) => h("li", null, h("span", { class: "pd-rule-no" }, NUMS[i]), h("span", null, ...rich(x))))))),
-          p.note ? h("p", { class: "pd-rule-note" }, `※ ${p.note}`) : null);
-      }
-      if (p.type === "schedule") {
-        return h("div", { class: "pd pd-schedule" },
-          h("p", { class: "pd-title" }, p.name),
-          h("span", { class: "pd-rule", "aria-hidden": "true" }),
-          p.lead ? h("p", { class: "pd-sched-lead" }, p.lead) : null,
-          h("dl", { class: "pd-sched-rows" }, (p.rows || []).map(([a, b]) => h("div", null, h("dt", null, a), h("dd", null, b)))),
-          p.note ? h("p", { class: "pd-sched-note" }, p.note) : null);
-      }
-      if (p.type === "strengths") {
-        return h("div", { class: "pd pd-strengths" },
-          h("p", { class: "pd-title" }, p.name),
-          h("span", { class: "pd-rule", "aria-hidden": "true" }),
-          h("div", { class: "pd-groups" }, (p.groups || []).map((g) => h("section", { class: "pd-group" },
-            h("p", { class: "pd-group-name" }, g.name),
-            h("ul", null, g.items.map((x) => h("li", null, x)))))));
+        // 区切り: 左に大きな番号と題、右に流れの一覧(いまの所が光る)
+        if (!p.no) {
+          return h("div", { class: "pd pd-hero pd-subsection" },
+            p.eyebrow ? h("p", { class: "pd-kicker" }, `${two(p.stepNo)}  ${p.eyebrow}`) : null,
+            h("h2", { class: "pd-display" }, p.name),
+            h("span", { class: "pd-rule", "aria-hidden": "true" }));
+        }
+        return h("div", { class: `pd pd-section${p.name.length > 12 ? " is-long-title" : ""}` },
+          h("div", { class: "pd-section-main" },
+            h("p", { class: "pd-no", "aria-hidden": "true" }, two(p.no)),
+            h("h2", { class: "pd-display" }, p.name),
+            p.sub ? h("p", { class: "pd-sub" }, p.sub) : null),
+          p.steps && p.steps.length > 1 ? agendaList(true) : null);
       }
       if (p.type === "leader") {
         return h("div", { class: "pd pd-leader" },
           h("div", { class: "pd-leader-text" },
+            p.eyebrow ? h("p", { class: "pd-eyebrow" }, h("span", { class: "pd-eyebrow-no" }, two(p.stepNo)), p.eyebrow) : null,
             h("p", { class: "pd-kicker" }, L.title || "BT-EX5 代表"),
-            nameEl(p.name, "p", "pd-title"),
+            nameEl(p.name, "h2", "pd-title"),
             L.kana ? h("p", { class: "pd-kana" }, L.kana) : null,
-            L.achievements && L.achievements.length ? h("ul", { class: "pd-badges" }, L.achievements.map((x) => h("li", null, x))) : null,
-            L.now && L.now.length ? h("div", { class: "pd-block" }, h("p", { class: "pd-h" }, "現在"), h("ul", null, L.now.map((x) => h("li", null, x)))) : null,
-            L.dreams && L.dreams.length ? h("div", { class: "pd-block" }, h("p", { class: "pd-h" }, "想い・夢"), h("ul", null, L.dreams.map((x) => h("li", null, x)))) : null),
+            L.achievements && L.achievements.length ? h("ul", { class: "pd-badges" }, L.achievements.map((x, i) => h("li", nth(i), x))) : null,
+            h("div", { class: "pd-leader-cols" },
+              L.now && L.now.length ? h("div", { class: "pd-block" }, h("p", { class: "pd-h" }, "現在"), h("ul", null, L.now.map((x) => h("li", null, x)))) : null,
+              L.dreams && L.dreams.length ? h("div", { class: "pd-block" }, h("p", { class: "pd-h" }, "想い・夢"), h("ul", null, L.dreams.map((x) => h("li", null, x)))) : null)),
           face(p.photo, p.name, "pr-photo pd-photo"));
       }
       if (p.type === "about") {
-        return h("div", { class: "pd pd-about" },
-          h("p", { class: "pd-title" }, p.name),
-          h("span", { class: "pd-rule", "aria-hidden": "true" }),
-          (p.paras || []).map((x) => h("p", { class: "pd-para" }, ...String(x).split("\n").flatMap((t, i) => (i ? [h("br"), t] : [t])))));
-      }
-      if (p.type === "list") {
-        return h("div", { class: `pd pd-list${p.dense ? " is-dense" : ""}` },
-          h("p", { class: "pd-title" }, p.name),
-          h("span", { class: "pd-rule", "aria-hidden": "true" }),
-          h(p.numbered ? "ol" : "ul", { class: "pd-items" }, (p.items || []).map((it, i) => h("li", null,
-            p.numbered ? h("span", { class: "pd-num" }, String(i + 1)) : h("span", { class: "pd-dot", "aria-hidden": "true" }),
-            h("div", null, h("p", { class: "pd-item-title" }, it.title), (it.lines || []).map((x) => h("p", { class: "pd-item-line" }, x)))))));
-      }
-      if (p.type === "feature") {
-        return h("div", { class: "pd pd-feature" },
-          h("p", { class: "pd-kicker" }, p.name),
-          h("span", { class: "pd-rule", "aria-hidden": "true" }),
-          (p.lines || []).map((x) => h("p", { class: "pd-big" }, x)));
+        return frame("pd-about", ...(p.paras || []).map((x, i) => h("p", { class: `pd-para${i ? "" : " is-first"}`, ...nth(i) }, ...lines(x))));
       }
       if (p.type === "vision") {
-        return h("div", { class: "pd pd-vision" },
-          h("p", { class: "pd-title" }, p.name),
+        return h("div", { class: "pd pd-hero pd-vision" },
+          p.eyebrow ? h("p", { class: "pd-kicker" }, `${two(p.stepNo)}  ${p.eyebrow}`) : null,
+          h("h2", { class: "pd-wordmark" }, p.name),
           p.en ? h("p", { class: "pd-en" }, p.en) : null,
           h("div", { class: "pd-vrow" },
-            h("div", null, h("p", { class: "pd-h" }, "理念"), h("p", { class: "pd-big" }, p.philosophy || "")),
-            h("div", null, h("p", { class: "pd-h" }, "ビジョン"), h("p", { class: "pd-big" }, p.vision || ""))));
+            h("div", nth(0), h("p", { class: "pd-h" }, "理念"), h("p", { class: "pd-big" }, p.philosophy || "")),
+            h("div", nth(1), h("p", { class: "pd-h" }, "ビジョン"), h("p", { class: "pd-big" }, p.vision || ""))));
       }
-      return h("div", { class: "pd pd-closing" },
+      if (p.type === "feature") {
+        // 「新潟 ⇔ 東京」は、2つの街を金の線でつないだ図にする
+        const [head, ...rest] = p.lines || [];
+        return h("div", { class: "pd pd-hero pd-feature" },
+          p.eyebrow ? h("p", { class: "pd-kicker" }, `${two(p.stepNo)}  ${p.eyebrow}`) : null,
+          h("p", { class: "pd-h" }, p.name),
+          head ? h("h2", { class: "pd-display" }, head) : null,
+          rest.map((x) => {
+            const ends = String(x).split(/\s*[⇔↔]\s*/);
+            return ends.length === 2
+              ? h("div", { class: "pd-route", role: "img", "aria-label": x },
+                h("span", { class: "pd-city" }, ends[0]), h("span", { class: "pd-route-line", "aria-hidden": "true" }), h("span", { class: "pd-city" }, ends[1]))
+              : h("p", { class: "pd-big" }, x);
+          }));
+      }
+      if (p.type === "list") {
+        const layout = p.layout || "rows";
+        return frame(`pd-list is-${layout}`,
+          h("ol", { class: "pd-cards" }, (p.items || []).map((it, i) => h("li", Object.assign({ class: "pd-card" }, nth(i)),
+            h("span", { class: "pd-card-no" }, two(i + 1)),
+            h("p", { class: "pd-card-title" }, it.title),
+            (it.lines || []).map((x) => h("p", { class: "pd-card-text" }, x))))));
+      }
+      if (p.type === "checks") {
+        return frame("pd-checks",
+          h("ul", { class: "pd-check-items" }, (p.items || []).map((x, i) => h("li", nth(i), h("span", { class: "pd-check", "aria-hidden": "true" }), h("span", null, x)))));
+      }
+      if (p.type === "strengths") {
+        return frame("pd-strengths",
+          h("div", { class: "pd-groups" }, (p.groups || []).map((g, i) => h("section", Object.assign({ class: "pd-card pd-group" }, nth(i)),
+            h("p", { class: "pd-card-title" }, g.name),
+            h("ul", null, g.items.map((x) => h("li", null, x)))))));
+      }
+      if (p.type === "rules") {
+        return frame(`pd-rules${p.single ? " is-single" : ""}`,
+          h("div", { class: "pd-rule-cols" }, p.blocks.map(([head, rows], bi) => h("section", Object.assign({ class: "pd-card pd-rule-block" }, nth(bi)),
+            p.blocks.length > 1 ? h("p", { class: "pd-card-title" }, head) : null,
+            h("ol", null, rows.map((x, i) => h("li", null, h("span", { class: "pd-rule-no" }, NUMS[i]), h("span", null, ...rich(x)))))))),
+          p.note ? h("p", { class: "pd-note" }, `※ ${p.note}`) : null);
+      }
+      if (p.type === "schedule") {
+        return frame("pd-schedule",
+          h("div", { class: "pd-sched-cards" }, (p.rows || []).map(([a, b], i) => h("div", Object.assign({ class: "pd-card pd-sched-card" }, nth(i)),
+            h("p", { class: "pd-sched-day" }, a), h("p", { class: "pd-sched-time" }, b)))),
+          p.note ? h("p", { class: "pd-note is-center" }, p.note) : null);
+      }
+      return h("div", { class: "pd pd-hero pd-closing" },
         h("img", { class: "pd-mark", src: "../assets/bt-ex5-mark-3d-512.png", alt: "" }),
-        h("p", { class: "pd-title" }, p.name),
+        h("h2", { class: "pd-display" }, p.name),
+        h("span", { class: "pd-rule", "aria-hidden": "true" }),
         h("p", { class: "pd-kicker" }, "BT-EX5 ・ 突破から、拡張へ。"));
     }
+    // 横長の画面では、スライドが枠に収まらないときだけ全体を縮めて収める(スマホなどの縦長は下へ送れる)
+    const tallScreen = window.matchMedia("(max-aspect-ratio: 1/1), (max-width: 760px)");
+    function fitDeck() {
+      const el = slide.firstElementChild;
+      if (!el || !el.classList.contains("pd")) return;
+      el.style.transform = "";
+      if (tallScreen.matches) return;
+      const need = el.scrollHeight, room = slide.clientHeight;
+      if (need > room && room > 0) el.style.transform = `scale(${Math.max(0.6, (room / need) * 0.97).toFixed(3)})`;
+    }
+    window.addEventListener("resize", fitDeck);
+    try { if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitDeck); } catch { /* noop */ }
     // オープニングムービー(この画面の上に流す。終わったら次へ)
     let moviePlaying = false;
     function playMovie() {
@@ -787,8 +858,9 @@
       const nexts = people.slice(idx + 1).filter(isPerson).slice(0, 3);
       box.classList.toggle("is-deck", isDeck(p));
       box.classList.toggle("is-timer", p.kind === "timer");
-      ["movie", "cover", "section", "leader", "about", "vision", "list", "feature", "checks", "strengths", "rules", "schedule", "closing"].forEach((t) => box.classList.toggle(`is-d-${t}`, isDeck(p) && p.type === t));
-      if (isDeck(p)) { App.fill(slide, deckSlide(p)); return; }
+      ["movie", "cover", "agenda", "section", "leader", "about", "vision", "list", "feature", "checks", "strengths", "rules", "schedule", "closing"].forEach((t) => box.classList.toggle(`is-d-${t}`, isDeck(p) && p.type === t));
+      drawProgress();
+      if (isDeck(p)) { App.fill(slide, deckSlide(p)); fitDeck(); return; }
       // スライドの間は残り時間の欄が隠れていて幅を測れないので、出たときに測りなおす
       if (!sec.style.width || parseFloat(sec.style.width) < 20) fixSecWidth();
       // 自分だけのタイマー: まん中に大きく「集中」「休憩」などと、次にくるもの
