@@ -519,7 +519,13 @@
         otherBox, guestBox,
         h("div", { class: "round-head" }, h("p", { class: "round-label" }, "話す順番"),
           h("div", { class: "app-btn-row" },
-            App.btn("シャッフル", () => { order = shuffle(order); draw(); }, "ghost small"),
+            // シャッフルは BT-EX5 のメンバーだけ(ほかの BT-EX の方・ゲスト・ビジターは今の順番の場所のまま)
+            App.btn("シャッフル", () => {
+              const isMember = (k) => (byKey(k) || {}).kind === "member";
+              const mixed = shuffle(order.filter(isMember));
+              order = order.map((k) => (isMember(k) ? mixed.shift() : k));
+              draw();
+            }, "ghost small"),
             App.btn("名前の順", () => { order = order.slice().sort((a, b) => byKey(a).name.localeCompare(byKey(b).name, "ja")); draw(); }, "ghost small"))),
         h("p", { class: "app-field-hint pr-drag-hint" }, "パソコンでは行をつかんで動かせます。スマホは ↑↓ で動かします。"),
         listEl, total,
@@ -584,7 +590,10 @@
     const extras = (label) => {
       extra = true;
       if (D.fits) deck("checks", { name: D.fits.title, step: label, items: D.fits.items });
-      if (D.strengths) deck("strengths", { name: D.strengths.title, step: label, lead: "3つのコミュニティの強みを、ひとつに", groups: D.strengths.groups });
+      if (D.strengths) {
+        deck("venn", { name: "3つのコミュニティの強みを、ひとつに", step: label, groups: D.strengths.groups, center: D.name || "BT-EX" });
+        deck("strengths", { name: D.strengths.title, step: label, groups: D.strengths.groups });
+      }
     };
     // ②理念の「主な3つの活動」のあとに、規定(一般・出席・倫理)とスケジュール
     const rulesAndSchedule = () => {
@@ -592,6 +601,7 @@
       const R = D.rules;
       if (R) {
         deck("section", { no: 0, name: R.title, step: "BT-EXの規定" });
+        if (R.kpis && R.kpis.length) deck("kpis", { name: "数字で見る BT-EX の約束", step: "BT-EXの規定", items: R.kpis });
         deck("rules", { name: "一般規定・出席規定", step: "BT-EXの規定", blocks: [["一般規定", R.general], ["出席規定", R.attendance]], note: R.note });
         deck("rules", { name: "倫理規定", step: "BT-EXの規定", blocks: [["倫理規定", R.ethics]], single: true });
       }
@@ -618,13 +628,14 @@
         if (m) deck("leader", { name: m.name, step: label, photo: (photos && photos[m.id]) || "", leader: D.leader });
       }
       if (/理念/.test(st.title) && D.about) {
-        deck("about", { name: `${D.name || "BT-EX"}とは`, step: label, paras: D.about });
+        deck("about", { name: `${D.name || "BT-EX"}とは`, step: label, paras: D.about, formula: D.formula, center: D.name || "BT-EX" });
         deck("vision", { name: D.name || "BT-EX", step: label, en: D.en, philosophy: D.philosophy, vision: D.vision });
         // 一覧はカードにして並べる(layout: quad=2×2 / grid=3×3 / trio=横に3つ)
-        if (D.purposes) deck("list", { name: `${D.name || "BT-EX"}の目的`, step: label, layout: "quad", lead: "BT-EX が目指す4つのこと", items: D.purposes.map((x) => ({ title: x })) });
+        const withIcon = (arr, icons) => arr.map((x, i) => Object.assign(x, { icon: (icons || [])[i] || "" }));
+        if (D.purposes) deck("list", { name: `${D.name || "BT-EX"}の目的`, step: label, layout: "quad", lead: "BT-EX が目指す4つのこと", items: withIcon(D.purposes.map((x) => ({ title: x })), D.purposeIcons) });
         if (D.feature) deck("feature", { name: D.feature.title, step: label, lines: D.feature.lines });
-        if (D.benefits) deck("list", { name: `${D.name || "BT-EX"}の仕組みとベネフィット`, step: label, layout: "grid", lead: "9つの仕組みが、ビジネスを加速させる", items: D.benefits.map((x) => (typeof x === "string" ? { title: x } : { title: x.head, lines: [x.text] })) });
-        if (D.activities) deck("list", { name: `${D.name || "BT-EX"}の主な3つの活動`, step: label, layout: "trio", items: D.activities });
+        if (D.benefits) deck("list", { name: `${D.name || "BT-EX"}の仕組みとベネフィット`, step: label, layout: "grid", lead: "9つの仕組みが、ビジネスを加速させる", items: withIcon(D.benefits.map((x) => (typeof x === "string" ? { title: x } : { title: x.head, lines: [x.text] })), D.benefitIcons) });
+        if (D.activities) deck("list", { name: `${D.name || "BT-EX"}の主な3つの活動`, step: label, layout: "trio", items: withIcon(D.activities.map((x) => Object.assign({}, x)), D.activityIcons) });
         rulesAndSchedule();
       }
       if (/プレゼン/.test(st.title) && !pres) {
@@ -655,7 +666,7 @@
     // 表紙のあとに「本日の流れ」。どのスライドにも、流れの何番目かと流れの一覧を持たせる
     // (左上の小見出し・区切りのスライドの一覧・下の進行バーに使う)
     const stepList = steps.map((st) => { const tm = TIME.exec(st.title); return { no: st.no, title: tm ? st.title.replace(TIME, "") : st.title, sub: tm ? `${tm[1]}分${tm[2] ? ` × ${tm[2]}回` : ""}` : "" }; });
-    if (stepList.length) items.splice(2, 0, { key: "d:agenda", kind: "deck", type: "agenda", name: "本日の流れ", step: "定例会" });
+    if (stepList.length) items.splice(2, 0, { key: "d:agenda", kind: "deck", type: "agenda", name: "本日の流れ", step: "定例会", plan: (D.timeplan || []).slice(), start: (ev && ev.start) || "" });
     let cur = 0;
     items.forEach((it) => {
       if (it.kind === "deck" && it.type === "section" && it.no) cur = it.no;
@@ -685,6 +696,23 @@
     late: { d: ["M12 7.6v5.1", "M12 16.3v.1"], ring: true },
     early: { d: ["M4.5 16.5l5-5 3.2 3.2 6.3-6.3", "M14.4 8.4h4.6V13"] },
     collapse: { d: ["M7 14.5 12 9.5l5 5"] },
+    // スライドのカードの絵(インフォグラフィック用)
+    growth: { d: ["M4.75 19.25h14.5", "M6.25 15.5l4-4 3 3 5.25-5.75", "M14.75 8.75h3.75v3.75"] },
+    link: { d: ["M10.25 13.75a3.5 3.5 0 0 0 5 0l3-3a3.54 3.54 0 0 0-5-5l-1 1", "M13.75 10.25a3.5 3.5 0 0 0-5 0l-3 3a3.54 3.54 0 0 0 5 5l1-1"] },
+    users: { d: ["M9 5.25a2.75 2.75 0 1 0 0 5.5 2.75 2.75 0 0 0 0-5.5Z", "M4 18.75v-.5a5 5 0 0 1 10 0v.5", "M15.5 5.6a2.5 2.5 0 1 1 0 4.8", "M17 13.3a4.5 4.5 0 0 1 3 4.2v1.25"], sec: ["M9 5.25a2.75 2.75 0 1 0 0 5.5 2.75 2.75 0 0 0 0-5.5Z"] },
+    widen: { d: ["M4.75 9.25v-4.5h4.5", "M19.25 9.25v-4.5h-4.5", "M4.75 14.75v4.5h4.5", "M19.25 14.75v4.5h-4.5", "M4.75 4.75l4.5 4.5", "M19.25 4.75l-4.5 4.5", "M4.75 19.25l4.5-4.5", "M19.25 19.25l-4.5-4.5"] },
+    target: { d: ["M12 3.5a8.5 8.5 0 1 0 0 17 8.5 8.5 0 0 0 0-17Z", "M12 7.5a4.5 4.5 0 1 0 0 9 4.5 4.5 0 0 0 0-9Z", "M12 11.4v1.2"], sec: ["M12 7.5a4.5 4.5 0 1 0 0 9 4.5 4.5 0 0 0 0-9Z"] },
+    mic: { d: ["M12 3.75a2.75 2.75 0 0 0-2.75 2.75v5a2.75 2.75 0 0 0 5.5 0v-5A2.75 2.75 0 0 0 12 3.75Z", "M6.5 11a5.5 5.5 0 0 0 11 0", "M12 16.5v3.75", "M9 20.25h6"], sec: ["M12 3.75a2.75 2.75 0 0 0-2.75 2.75v5a2.75 2.75 0 0 0 5.5 0v-5A2.75 2.75 0 0 0 12 3.75Z"] },
+    globe: { d: ["M12 3.75a8.25 8.25 0 1 0 0 16.5 8.25 8.25 0 0 0 0-16.5Z", "M3.75 12h16.5", "M12 3.75c2.3 2.3 3.4 5 3.4 8.25s-1.1 5.95-3.4 8.25", "M12 3.75c-2.3 2.3-3.4 5-3.4 8.25s1.1 5.95 3.4 8.25"] },
+    school: { d: ["M2.75 9.25 12 5l9.25 4.25L12 13.5Z", "M6.5 11.2v4.3c1.6 1.5 3.4 2.25 5.5 2.25s3.9-.75 5.5-2.25v-4.3", "M21.25 9.25v5"], sec: ["M2.75 9.25 12 5l9.25 4.25L12 13.5Z"] },
+    network: { d: ["M12 4.25a2 2 0 1 0 0 4 2 2 0 0 0 0-4Z", "M5.5 15.75a2 2 0 1 0 0 4 2 2 0 0 0 0-4Z", "M18.5 15.75a2 2 0 1 0 0 4 2 2 0 0 0 0-4Z", "M11 8.1l-4.5 7.8", "M13 8.1l4.5 7.8", "M7.5 17.75h9"] },
+    heart: { d: ["M12 19.25s-7-4.2-7-9.2A3.8 3.8 0 0 1 8.8 6.25c1.4 0 2.5.7 3.2 1.8.7-1.1 1.8-1.8 3.2-1.8A3.8 3.8 0 0 1 19 10.05c0 5-7 9.2-7 9.2Z"], sec: ["M12 19.25s-7-4.2-7-9.2A3.8 3.8 0 0 1 8.8 6.25c1.4 0 2.5.7 3.2 1.8.7-1.1 1.8-1.8 3.2-1.8A3.8 3.8 0 0 1 19 10.05c0 5-7 9.2-7 9.2Z"] },
+    cart: { d: ["M3.75 4.75h2l2 10.5h10l1.75-7.5H6.6", "M9 19.75a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Z", "M17 19.75a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Z"] },
+    shield: { d: ["M12 3.75 5.25 6.5v5c0 4.2 2.9 7.6 6.75 8.75 3.85-1.15 6.75-4.55 6.75-8.75v-5Z", "M9.2 12.1l2 2 3.6-3.7"], sec: ["M12 3.75 5.25 6.5v5c0 4.2 2.9 7.6 6.75 8.75 3.85-1.15 6.75-4.55 6.75-8.75v-5Z"] },
+    calendar: { d: ["M6.75 5.25h10.5a2 2 0 0 1 2 2v10.5a2 2 0 0 1-2 2H6.75a2 2 0 0 1-2-2V7.25a2 2 0 0 1 2-2Z", "M4.75 9.75h14.5", "M8.5 3.5v3.5", "M15.5 3.5v3.5", "M9 14h.01", "M12 14h.01", "M15 14h.01"], sec: ["M6.75 5.25h10.5a2 2 0 0 1 2 2v2.5H4.75v-2.5a2 2 0 0 1 2-2Z"] },
+    chat: { d: ["M5.75 4.75h12.5a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H11l-4.25 3.5v-3.5h-1a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2Z", "M8.5 9.25h7", "M8.5 12.25h4.5"], sec: ["M5.75 4.75h12.5a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H11l-4.25 3.5v-3.5h-1a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2Z"] },
+    clock: { d: ["M12 3.75a8.25 8.25 0 1 0 0 16.5 8.25 8.25 0 0 0 0-16.5Z", "M12 7.75V12l2.75 1.75"] },
+    spark: { d: ["M12 3.5l1.9 6.6 6.6 1.9-6.6 1.9L12 20.5l-1.9-6.6L3.5 12l6.6-1.9Z"], sec: ["M12 3.5l1.9 6.6 6.6 1.9-6.6 1.9L12 20.5l-1.9-6.6L3.5 12l6.6-1.9Z"] },
     expand: { d: ["M7 9.5l5 5 5-5"] },
     // 挙手(SF Symbols の hand.raised のように、指を1本ずつ丸い線で)。右上の2本の弧は「手をあげる」動き
     hand: {
@@ -822,6 +850,92 @@
     requestAnimationFrame(apply);
     el.gripEl = grip;
     if (host) { const mo = new MutationObserver(() => { if (!host.isConnected) { window.removeEventListener("resize", onResize); mo.disconnect(); } }); mo.observe(document.documentElement, { childList: true }); }
+  }
+
+  // ---------- 「新潟 ⇔ 東京」の図(BT-EX5 の特徴) ----------
+  // 上: 飛行機の航路(だ円の弧)。飛行機が東京から新潟へ飛び、通ったあとに点線が順に出る
+  // 下: 線路。新幹線が新潟から東京へ走る。動きを減らす設定では、着いたところで止めて出す
+  let routeId = 0;
+  function routeMap(left, right, label) {
+    const id = `rt${++routeId}`;
+    const NS = NS_SVG;
+    const el = (tag, attrs) => { const e = document.createElementNS(NS, tag); Object.entries(attrs || {}).forEach(([k, v]) => e.setAttribute(k, v)); return e; };
+    const FLY = "M810 146 C700 6 300 6 190 146";   // 東京 → 新潟(上)
+    const RAIL = "M190 174 C300 300 700 300 810 174"; // 新潟 → 東京(下)
+    const svg = el("svg", { viewBox: "0 0 1000 320", class: "pd-route-map", role: "img", "aria-label": label });
+    const defs = el("defs");
+    defs.innerHTML = `
+      <linearGradient id="${id}g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff3c9"/><stop offset=".45" stop-color="#e2b866"/><stop offset="1" stop-color="#a87a35"/></linearGradient>
+      <linearGradient id="${id}t" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fffaf0"/><stop offset="1" stop-color="#e9dcc2"/></linearGradient>
+      <filter id="${id}s" x="-50%" y="-50%" width="200%" height="200%"><feDropShadow dx="0" dy="6" stdDeviation="5" flood-color="#000" flood-opacity=".55"/></filter>
+      <filter id="${id}glow" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="6"/></filter>
+      <mask id="${id}m" maskUnits="userSpaceOnUse" x="0" y="0" width="1000" height="320"><path d="${FLY}" fill="none" stroke="#fff" stroke-width="16" stroke-linecap="round"/></mask>`;
+    svg.append(defs);
+    // 航路のうすい下書きと、飛行機が通ったあとに出る点線
+    svg.append(el("path", { d: FLY, class: "rt-guide" }));
+    const trail = el("path", { d: FLY, class: "rt-trail", mask: `url(#${id}m)` });
+    svg.append(trail);
+    const reveal = defs.querySelector("mask path");
+    // 線路: 枕木 → 2本のレール(太い金の線の上に、背景の色の細い線を重ねて2本に見せる)
+    svg.append(el("path", { d: RAIL, class: "rt-sleepers" }), el("path", { d: RAIL, class: "rt-rails" }), el("path", { d: RAIL, class: "rt-rails-gap" }));
+    // 街の印と名前
+    [[190, 160, left, 92], [810, 160, right, 908]].forEach(([x, y, name, tx]) => {
+      svg.append(el("circle", { cx: x, cy: y, r: 18, class: "rt-halo", filter: `url(#${id}glow)` }), el("circle", { cx: x, cy: y, r: 8, fill: `url(#${id}g)` }));
+      const t = el("text", { x: tx, y: y + 20, class: "rt-city", "text-anchor": "middle" }); t.textContent = name; svg.append(t);
+    });
+    // 飛行機(上から見た旅客機。機首が上 = -90°)
+    const plane = el("g", { class: "rt-plane", filter: `url(#${id}s)` });
+    plane.innerHTML = `<g transform="scale(2.6) translate(-12 -12)"><path fill="url(#${id}g)" stroke="#5b3f17" stroke-width=".35" stroke-linejoin="round" d="M12 1.6c.7 0 1.25.9 1.25 2.05v5.1l8.35 5.05c.25.15.4.42.4.72v1.15c0 .3-.3.5-.58.41l-8.17-2.6v5.08l2.15 1.55c.15.11.24.29.24.48v.83c0 .24-.23.42-.46.36L12 20.9l-3.18.88a.37.37 0 0 1-.46-.36v-.83c0-.19.09-.37.24-.48l2.15-1.55v-5.08l-8.17 2.6a.43.43 0 0 1-.58-.41v-1.15c0-.3.15-.57.4-.72l8.35-5.05v-5.1C10.75 2.5 11.3 1.6 12 1.6Z"/><path d="M11.35 4.4h1.3" stroke="#3a2a12" stroke-width=".5" stroke-linecap="round"/></g>`;
+    svg.append(plane);
+    // 新幹線(横から見た形。鼻先が進む向き = 右)
+    const train = el("g", { class: "rt-train", filter: `url(#${id}s)` });
+    train.innerHTML = `<g transform="scale(1.35)">
+      <path fill="url(#${id}t)" stroke="#6b5530" stroke-width=".6" d="M-34 7.5V-3.5c0-2.2 1.8-4 4-4h32c9 0 17.5 4.2 22 10.4 1.1 1.5.4 3.6-1.4 4.2-1 .3-2 .4-3 .4Z"/>
+      <path fill="#1c140c" d="M-30 -4h24c4 0 8 .9 11.5 2.6l-1.2 2.4H-30Z"/>
+      <path fill="none" stroke="#c9963f" stroke-width="1.6" d="M-34 3.2h50.5"/>
+      <path fill="none" stroke="#2f5b8f" stroke-width="1.1" d="M-34 5.4h48"/>
+      <circle cx="-24" cy="8.2" r="1.6" fill="#3a2a12"/><circle cx="-14" cy="8.2" r="1.6" fill="#3a2a12"/><circle cx="6" cy="8.2" r="1.6" fill="#3a2a12"/></g>`;
+    svg.append(train);
+    const wrap = h("div", { class: "pd-route" }, svg);
+
+    // 動き
+    const fly = el("path", { d: FLY }), rail = el("path", { d: RAIL });
+    const flyLen = 820, railLen = 760; // おおよその長さ(はじめに測りなおす)
+    let fL = flyLen, rL = railLen;
+    const ease = (t) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
+    const clamp = (t) => Math.max(0, Math.min(1, t));
+    function at(path, len, t, ahead) {
+      const p = path.getPointAtLength(len * t);
+      const q = path.getPointAtLength(Math.min(len, len * t + (ahead || 1)));
+      const r = path.getPointAtLength(Math.max(0, len * t - 1));
+      const a = Math.atan2((q.y - r.y), (q.x - r.x)) * 180 / Math.PI;
+      return { x: p.x, y: p.y, a };
+    }
+    const calm = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const CYCLE = 7600;
+    let t0 = 0;
+    function frame(now) {
+      if (!svg.isConnected) { if (t0) return; requestAnimationFrame(frame); return; }
+      if (!t0) {
+        t0 = now;
+        try { svg.append(fly, rail); fL = fly.getTotalLength(); rL = rail.getTotalLength(); fly.remove(); rail.remove(); } catch { /* noop */ }
+        reveal.setAttribute("stroke-dasharray", `${fL} ${fL}`);
+      }
+      const e = calm ? CYCLE * 0.8 : (now - t0) % CYCLE;
+      const tp = ease(clamp(e / 4200)), tt = ease(clamp((e - 900) / 4800));
+      const fade = e > CYCLE - 700 ? clamp((CYCLE - e) / 700) : 1;
+      const pp = at(svg.contains(fly) ? fly : svg.querySelector(".rt-guide"), fL, tp);
+      plane.setAttribute("transform", `translate(${pp.x.toFixed(1)} ${pp.y.toFixed(1)}) rotate(${(pp.a + 90).toFixed(1)})`);
+      plane.style.opacity = String(fade);
+      reveal.setAttribute("stroke-dashoffset", String(fL * (1 - tp)));
+      trail.style.opacity = String(fade);
+      const tr = at(svg.querySelector(".rt-rails"), rL, tt);
+      train.setAttribute("transform", `translate(${tr.x.toFixed(1)} ${(tr.y).toFixed(1)}) rotate(${tr.a.toFixed(1)}) translate(0 -9)`);
+      train.style.opacity = String(fade);
+      if (!calm) requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+    return wrap;
   }
 
   // ---------- 2時間の定例会のタイムマネジメント ----------
@@ -1105,9 +1219,28 @@
           p.notes && p.notes.length ? h("ul", { class: "pd-notes" }, p.notes.map((x) => h("li", null, x))) : null);
       }
       if (p.type === "agenda") {
+        // 時間の配分(タイムマネジメントと同じ時間の目安)を、長さが分の割合の帯で見せ、各行に始まる時刻と分を添える
+        const plan = (p.plan || []).map((v) => Math.max(0, Number(v) || 0));
+        const total = plan.reduce((a, b) => a + b, 0);
+        const m0 = /^(\d{1,2}):(\d{2})$/.exec(p.start || "");
+        const startMin = m0 ? Number(m0[1]) * 60 + Number(m0[2]) : null;
+        const clock = (min) => `${Math.floor(min / 60) % 24}:${String(min % 60).padStart(2, "0")}`;
+        let acc = plan[0] || 0;
+        const at = (p.steps || []).map((st) => { const s0 = acc; acc += plan[st.no] || 0; return { from: s0, min: plan[st.no] || 0 }; });
+        const bar = total ? h("div", { class: "pd-tbar", role: "img", "aria-label": `合計${total}分の時間配分` },
+          plan[0] ? h("span", { class: "pd-tseg is-op", style: `flex:${plan[0]}` }, h("small", null, "OP")) : null,
+          (p.steps || []).map((st, i) => (plan[st.no] ? h("span", Object.assign({ class: "pd-tseg", style: `flex:${plan[st.no]};--i:${i}` }), h("b", null, two(st.no)), h("small", null, `${plan[st.no]}分`)) : null))) : null;
         return h("div", { class: "pd pd-frame pd-agenda-slide" },
-          h("header", { class: "pd-head" }, h("p", { class: "pd-eyebrow" }, "AGENDA"), h("h2", { class: "pd-title" }, p.name)),
-          h("div", { class: "pd-body" }, agendaList(false)));
+          h("header", { class: "pd-head" }, h("p", { class: "pd-eyebrow" }, "AGENDA"), h("h2", { class: "pd-title" }, p.name),
+            total ? h("p", { class: "pd-lead" }, startMin !== null ? `${clock(startMin)} 〜 ${clock(startMin + total)}(${total}分)` : `合計 ${total}分`) : null),
+          h("div", { class: "pd-body" }, bar,
+            h("ol", { class: "pd-agenda" }, (p.steps || []).map((st, i) =>
+              h("li", nth(i),
+                h("span", { class: "pd-agenda-no" }, two(st.no)),
+                h("span", { class: "pd-agenda-title" }, st.title),
+                h("span", { class: "pd-agenda-time" },
+                  startMin !== null && total ? h("b", null, clock(startMin + at[i].from)) : null,
+                  at[i].min ? h("small", null, `${at[i].min}分`) : st.sub ? h("small", null, st.sub) : null))))));
       }
       if (p.type === "section") {
         // 区切り: 左に大きな番号と題、右に流れの一覧(いまの所が光る)
@@ -1131,14 +1264,27 @@
             h("p", { class: "pd-kicker" }, L.title || "BT-EX5 代表"),
             nameEl(p.name, "h2", "pd-title"),
             L.kana ? h("p", { class: "pd-kana" }, L.kana) : null,
-            L.achievements && L.achievements.length ? h("ul", { class: "pd-badges" }, L.achievements.map((x, i) => h("li", nth(i), x))) : null,
+            // 実績は数字を大きく(「4ヶ月で1万人フォロワー達成」→ 1万人 / 4ヶ月でフォロワー達成)
+            L.achievements && L.achievements.length ? h("ul", { class: "pd-stats" }, L.achievements.map((x, i) => {
+              const m = /\d[\d,.]*\s*(?:万|千)?\s*(?:人|件)(?:以上)?/.exec(String(x));
+              if (!m) return h("li", nth(i), h("small", null, x));
+              const rest = String(x).replace(m[0], "").replace(/^[\sの]+|[\s]+$/g, "").replace(/\s{2,}/g, " ");
+              return h("li", nth(i), h("b", null, m[0].replace(/\s+/g, "")), h("small", null, rest));
+            })) : null,
             h("div", { class: "pd-leader-cols" },
               L.now && L.now.length ? h("div", { class: "pd-block" }, h("p", { class: "pd-h" }, "現在"), h("ul", null, L.now.map((x) => h("li", null, x)))) : null,
               L.dreams && L.dreams.length ? h("div", { class: "pd-block" }, h("p", { class: "pd-h" }, "想い・夢"), h("ul", null, L.dreams.map((x) => h("li", null, x)))) : null)),
           face(p.photo, p.name, "pr-photo pd-photo"));
       }
       if (p.type === "about") {
-        return frame("pd-about", ...(p.paras || []).map((x, i) => h("p", { class: `pd-para${i ? "" : " is-first"}`, ...nth(i) }, ...lines(x))));
+        // 上に「LINK の市場 × BT のスキル × 3つの強み = BT-EX」の式
+        const f = p.formula || [];
+        const formula = f.length ? h("div", { class: "pd-formula", role: "img", "aria-label": `${f.map((x) => x[1]).join(" × ")} = ${p.center}` },
+          ...f.flatMap(([ic, label], i) => [i ? h("span", { class: "pd-op", "aria-hidden": "true" }, "×") : null,
+            h("span", Object.assign({ class: "pd-fterm" }, nth(i)), h("span", { class: "pd-ficon" }, lineIcon(ic)), h("span", null, label))]),
+          h("span", { class: "pd-op", "aria-hidden": "true" }, "="),
+          h("span", Object.assign({ class: "pd-fterm is-result" }, nth(f.length)), h("b", null, p.center))) : null;
+        return frame("pd-about", formula, ...(p.paras || []).map((x, i) => h("p", { class: `pd-para${i ? "" : " is-first"}`, ...nth(i + 1) }, ...lines(x))));
       }
       if (p.type === "vision") {
         return h("div", { class: "pd pd-hero pd-vision" },
@@ -1158,16 +1304,14 @@
           head ? h("h2", { class: "pd-display" }, head) : null,
           rest.map((x) => {
             const ends = String(x).split(/\s*[⇔↔]\s*/);
-            return ends.length === 2
-              ? h("div", { class: "pd-route", role: "img", "aria-label": x },
-                h("span", { class: "pd-city" }, ends[0]), h("span", { class: "pd-route-line", "aria-hidden": "true" }), h("span", { class: "pd-city" }, ends[1]))
-              : h("p", { class: "pd-big" }, x);
+            return ends.length === 2 ? routeMap(ends[0], ends[1], x) : h("p", { class: "pd-big" }, x);
           }));
       }
       if (p.type === "list") {
         const layout = p.layout || "rows";
         return frame(`pd-list is-${layout}`,
-          h("ol", { class: "pd-cards" }, (p.items || []).map((it, i) => h("li", Object.assign({ class: "pd-card" }, nth(i)),
+          h("ol", { class: "pd-cards" }, (p.items || []).map((it, i) => h("li", Object.assign({ class: `pd-card${it.icon ? " has-icon" : ""}` }, nth(i)),
+            it.icon ? h("span", { class: "pd-card-ic" }, lineIcon(it.icon)) : null,
             h("span", { class: "pd-card-no" }, two(i + 1)),
             h("p", { class: "pd-card-title" }, ...lines(it.title)),
             // 文は1行ずつ(行の途中では折り返さない。入りきらないときは fitDeck で文字を小さくする)
@@ -1187,6 +1331,37 @@
           h("h2", { class: "pd-display" }, ...lines(p.text || "について、\n発表できる方は\n挙手をお願いします")),
           p.note ? h("p", { class: "pd-raise-note" }, ...rich(p.note)) : null);
       }
+      if (p.type === "venn") {
+        // ベン図: 3つの円(LINK・BNI・守成クラブ)が重なるまん中が BT-EX。円の中に強みの数と代表的な強み
+        const g = (p.groups || []).slice(0, 3);
+        const C = [[300, 205], [500, 205], [400, 365]];
+        const NSv = NS_SVG;
+        const svg = document.createElementNS(NSv, "svg");
+        svg.setAttribute("viewBox", "0 0 800 560"); svg.setAttribute("class", "pd-venn"); svg.setAttribute("role", "img");
+        svg.setAttribute("aria-label", `${g.map((x) => x.name).join("・")} の強みが重なるところが ${p.center}`);
+        const mk = (tag, attrs, text) => { const e = document.createElementNS(NSv, tag); Object.entries(attrs).forEach(([k, v]) => e.setAttribute(k, v)); if (text) e.textContent = text; return e; };
+        const LBL = [[205, 120, "end"], [595, 120, "start"], [400, 545, "middle"]];
+        g.forEach((x, i) => {
+          svg.append(mk("circle", { cx: C[i][0], cy: C[i][1], r: 165, class: `vn-c vn-c${i}`, style: `--i:${i}` }));
+        });
+        g.forEach((x, i) => {
+          const name = x.name.replace(/の強み$/, "");
+          const [lx, ly] = [C[i][0] + [-62, 62, 0][i], C[i][1] + [-38, -38, 80][i]];
+          svg.append(mk("text", { x: lx, y: ly, class: "vn-name", "text-anchor": "middle" }, name));
+          svg.append(mk("text", { x: lx, y: ly + 34, class: "vn-count", "text-anchor": "middle" }, `${x.items.length}の強み`));
+          (x.items || []).slice(0, 2).forEach((t, k) => svg.append(mk("text", { x: lx, y: ly + 62 + k * 24, class: "vn-item", "text-anchor": "middle" }, t.length > 11 ? `${t.slice(0, 10)}…` : t)));
+          void LBL;
+        });
+        svg.append(mk("circle", { cx: 400, cy: 262, r: 54, class: "vn-core" }));
+        svg.append(mk("text", { x: 400, y: 272, class: "vn-center", "text-anchor": "middle" }, p.center || "BT-EX"));
+        return frame("pd-vennslide", h("div", { class: "pd-venn-wrap" }, svg,
+          h("p", { class: "pd-venn-note" }, h("b", null, `${g.reduce((a, x) => a + x.items.length, 0)}の強み`), "を掛け合わせ、", h("br"), "事業主のビジネスと BT の拡大に相乗効果を生む")));
+      }
+      if (p.type === "kpis") {
+        // 数字で見る約束: 大きな数字のタイル
+        return frame("pd-kpis", h("ul", { class: "pd-kpi-grid" }, (p.items || []).map(([num, label], i) =>
+          h("li", Object.assign({ class: "pd-kpi" }, nth(i)), h("b", null, num), h("span", { class: "pd-kpi-rule", "aria-hidden": "true" }), h("small", null, label)))));
+      }
       if (p.type === "strengths") {
         return frame("pd-strengths",
           h("div", { class: "pd-groups" }, (p.groups || []).map((g, i) => h("section", Object.assign({ class: "pd-card pd-group" }, nth(i)),
@@ -1203,7 +1378,7 @@
       if (p.type === "schedule") {
         return frame("pd-schedule",
           h("div", { class: "pd-sched-cards" }, (p.rows || []).map(([a, b], i) => h("div", Object.assign({ class: "pd-card pd-sched-card" }, nth(i)),
-            h("p", { class: "pd-sched-day" }, a), h("p", { class: "pd-sched-time" }, b)))),
+            h("span", { class: "pd-sched-ic" }, lineIcon("calendar")), h("p", { class: "pd-sched-day" }, a), h("p", { class: "pd-sched-time" }, b)))),
           p.note ? h("p", { class: "pd-note is-center" }, p.note) : null);
       }
       return h("div", { class: "pd pd-hero pd-closing" },
@@ -1246,7 +1421,7 @@
       const nexts = people.slice(idx + 1).filter(isPerson).slice(0, 3);
       box.classList.toggle("is-deck", isDeck(p));
       box.classList.toggle("is-timer", p.kind === "timer");
-      ["movie", "cover", "agenda", "section", "leader", "about", "vision", "list", "feature", "checks", "strengths", "rules", "schedule", "raise", "closing"].forEach((t) => box.classList.toggle(`is-d-${t}`, isDeck(p) && p.type === t));
+      ["movie", "cover", "agenda", "section", "leader", "about", "vision", "list", "feature", "checks", "strengths", "venn", "kpis", "rules", "schedule", "raise", "closing"].forEach((t) => box.classList.toggle(`is-d-${t}`, isDeck(p) && p.type === t));
       drawProgress();
       if (isDeck(p)) { App.fill(slide, deckSlide(p)); fitDeck(); return; }
       // スライドの間は残り時間の欄が隠れていて幅を測れないので、出たときに測りなおす

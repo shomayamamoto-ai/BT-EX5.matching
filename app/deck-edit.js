@@ -75,6 +75,7 @@
     ["規定とスケジュール", [
       { path: "rules.general", label: "一般規定(1行に1つ。《 》で囲むと強調)", type: "lines" },
       { path: "rules.attendance", label: "出席規定(1行に1つ。《 》で囲むと強調)", type: "lines" },
+      { path: "rules.kpis", label: "数字で見る約束(「3件/月 | 紹介活動 + 1on1 の合計」を1行に1つ)", type: "pairs" },
       { path: "rules.note", label: "規定の注意書き", type: "text" },
       { path: "rules.ethics", label: "倫理規定(1行に1つ)", type: "lines" },
       { path: "schedule.lead", label: "スケジュールの見出し", type: "text" },
