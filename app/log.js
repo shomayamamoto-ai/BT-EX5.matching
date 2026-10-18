@@ -7,9 +7,8 @@
   const { h } = App;
 
   const TABS = [
-    { id: "home", label: "まとめ" },
     { id: "ref", label: "紹介" },
-    { id: "miles", label: "マイル" },
+    { id: "miles", label: "ありがとうマイル" },
     { id: "1on1", label: "1on1" },
     { id: "rank", label: "ランキング" },
     { id: "stats", label: "数字" },
@@ -19,17 +18,16 @@
     title: "記録",
     autoRefresh: true,
     async render(el, parts, params) {
-      const tab = TABS.some((t) => t.id === parts[0]) ? parts[0] : "home";
+      const tab = TABS.some((t) => t.id === parts[0]) ? parts[0] : "ref";
       el.append(App.segmented(TABS, tab, (id) => App.go(`log/${id}`)));
-      // まとめ(以前のホーム)は、ホームと同じ並び(パソコンは2列)で出す
-      const body = h("div", { class: tab === "home" ? "page-home" : "" });
+      const body = h("div");
       el.append(body);
-      if (tab === "home") await App.renderHome(body, parts.slice(1));
-      if (tab === "ref") await renderRefs(body, params);
+      // 紹介: 上に「今週の紹介チャレンジ」/ 数字: 上に「今月のあなた・BT-EX5 シグナル・全体の今月」
+      if (tab === "ref") { const top = h("div", { class: "log-top is-spot" }); body.append(top); App.renderHome(top, [], new Set(["spot"])); await renderRefs(body, params); }
       if (tab === "miles") await renderMiles(body, params);
       if (tab === "1on1") await renderOnes(body, params);
       if (tab === "rank") await renderRank(body, params);
-      if (tab === "stats") await App.renderStats(body, params);
+      if (tab === "stats") { const top = h("div", { class: "log-top is-mine" }); body.append(top); await App.renderHome(top, [], new Set(["mine", "pulse"])); await App.renderStats(body, params); }
     },
   };
 

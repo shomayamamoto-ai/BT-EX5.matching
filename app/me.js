@@ -26,7 +26,7 @@
           menu("#me/card", "デジタル会員証・QR コード", "交流会でメンバーに QR を読み取ってもらうと、あなたの詳細が開きます"),
           menu("#me/billing", "会費・領収書", "会費のプランと明細。領収書・明細書を PDF で保存")),
         group("記録・目標",
-          menu("#me/goals", "今月の目標", "紹介・成約・1on1・ビジターの数を決めて、「記録」の「まとめ」で進み具合を見る"),
+          menu("#me/goals", "今月の目標", "紹介・成約・1on1・ビジターの数を決めて、「記録」→「数字」で進み具合を見る"),
           menu("#me/pitch", "プレゼンの練習・タイマー", "プレゼンの原稿と、30秒〜25分(ポモドーロ)のタイマー。0秒で音が鳴ります"),
           menu("#present", "プレゼンの進行・顔写真", "定例会で、顔写真と紹介つきの大きな画面で順番に進めます。自分の顔写真もここで入れられます"),
           menu("#invite", "ビジター招待", "招待URL の発行・そのまま使える文・招待履歴"),
@@ -74,7 +74,7 @@
       if (parts[0] === "pitch") App.pitchSheet();
       if (parts[0] === "goals") {
         const st = await App.api("getMySettings", {}, { quiet: true });
-        App.goalsSheet(st && st.goals, () => App.go("log/home"));
+        App.goalsSheet(st && st.goals, () => App.go("log/stats"));
       }
       if (parts[0] === "card" || parts[0] === "qr") App.memberCardSheet();
       if (parts[0] === "quick") App.quickProfileSheet();
@@ -520,7 +520,7 @@
   }
 
   // 送られた画面の場所(#events など)を、画面の名前に
-  const PAGE_NAMES = { home: "記録(まとめ)", log: "記録", events: "予定", board: "掲示板", news: "運営連絡", me: "マイページ", feed: "お知らせ", invite: "ビジター招待", admin: "運営", help: "使い方", referral: "紹介先早見表", profile: "プロフィール", teams: "全体分析" };
+  const PAGE_NAMES = { home: "予定", log: "記録", events: "予定", board: "掲示板", news: "運営連絡", me: "マイページ", feed: "お知らせ", invite: "ビジター招待", admin: "運営", help: "使い方", referral: "紹介先早見表", profile: "プロフィール", teams: "全体分析" };
   function pageName(p) {
     const m = String(p || "").match(/#?([a-z]+)/i);
     return (m && PAGE_NAMES[m[1]]) || p;

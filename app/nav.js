@@ -65,12 +65,12 @@
     const nav = document.querySelector(".ref-header .ref-header-nav");
     if (!nav) return;
     const logo = document.querySelector(".ref-header .ref-logo");
-    if (logo) { logo.href = `${base.pathname}#log/home`; logo.setAttribute("aria-label", "記録のまとめ"); }
+    if (logo) { logo.href = `${base.pathname}#events`; logo.setAttribute("aria-label", "予定"); }
     // アプリと同じ「検索」(押すとアプリの検索を開く)。ムービーの左に置く
     if (!nav.querySelector(".nav-search")) {
       const sr = document.createElement("a");
       sr.className = "nav-search";
-      sr.href = `${base.pathname}#log/home?search=1`;
+      sr.href = `${base.pathname}#events?search=1`;
       sr.setAttribute("aria-label", "アプリ内を検索");
       sr.title = "アプリ内を検索";
       const ss = document.createElementNS(NS, "svg");

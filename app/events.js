@@ -20,8 +20,13 @@
         const r = await App.api("checkIn", { code: qrCode });
         if (r) App.toast(`${r.event.title} に出席しました`);
       }
+      // いちばん上: はじめての方へ・あなたのやること・おすすめの設定(以前のホームから)
+      const todoTop = h("div", { class: "ev-todo" });
+      el.append(todoTop);
+      const todoP = App.renderHome ? App.renderHome(todoTop, [], new Set(["todo"])) : null;
       const d = await App.api("listEvents");
       if (!d) return;
+      if (todoP) await todoP;
       eventMeta = { calendar: d.calendar };
       const upcoming = d.events.filter((e) => !e.past);
       const past = d.events.filter((e) => e.past).reverse();

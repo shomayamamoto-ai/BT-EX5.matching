@@ -273,7 +273,7 @@
           h("button", { type: "button", class: "goal-step", "aria-label": `${label}を増やす`, onclick: () => set(vals[k] + 1) }, "＋"));
       });
       body.append(
-        h("p", { class: "app-lead" }, "今月がんばる数を決めると、「記録」→「まとめ」の「今月のあなた」に進み具合が出ます。0 の項目は出しません。"),
+        h("p", { class: "app-lead" }, "今月がんばる数を決めると、「記録」→「数字」の「今月のあなた」に進み具合が出ます。0 の項目は出しません。"),
         h("div", { class: "goal-rows" }, rows),
         h("button", { type: "button", class: "app-btn primary wide", onclick: async () => {
           const d = await App.api("updateMySettings", { goals: vals });

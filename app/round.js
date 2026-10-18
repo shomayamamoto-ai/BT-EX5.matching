@@ -147,6 +147,18 @@
       ? h(tag, { class: cls }, h("span", { class: "nm-main" }, p.main), h("br"), h("span", { class: "nm-nick" }, p.nick), suffix || null)
       : h(tag, { class: cls }, p.main, suffix || null);
   }
+  // 代表・役職・役割のマーク(早見表と同じ形)
+  const ROLE_PATHS = {
+    leader: "M2 11.5h12L15 4.5l-3.6 2.7L8 2 4.6 7.2 1 4.5z",
+    post: "M8 1.2 14 3.6v4.1c0 3.5-2.6 6.1-6 7.1-3.4-1-6-3.6-6-7.1V3.6z",
+    role: "m8 1.4 1.9 4.1 4.5.5-3.4 3 1 4.4L8 11.2l-4 2.2 1-4.4-3.4-3 4.5-.5z",
+  };
+  function roleBadge(r) {
+    const NS = "http://www.w3.org/2000/svg";
+    const svg = document.createElementNS(NS, "svg"); svg.setAttribute("viewBox", "0 0 16 16"); svg.setAttribute("aria-hidden", "true");
+    const path = document.createElementNS(NS, "path"); path.setAttribute("d", ROLE_PATHS[r.kind] || ROLE_PATHS.role); svg.append(path);
+    return h("span", { class: `pr-role is-${r.kind}` }, svg, r.role);
+  }
   function face(url, name, cls) {
     return url
       ? h("img", { class: cls, src: url, alt: "", loading: "lazy", decoding: "async" })
@@ -169,7 +181,8 @@
       return {
         key, kind: "member", memberId: id, name: m.name, photo: photos[id] || "",
         catch: m.company || m.category || "", team: m.team || "",
-        area: areaLine(m), wants: clip(m.wants, 110), triggers: (m.triggers || []).slice(0, 4),
+        area: areaLine(m), wants: clip(m.wants, 240), triggers: (m.triggers || []).slice(0, 4),
+        role: typeof refRoleOf === "function" ? refRoleOf(id) : null,
       };
     }
     return null;
@@ -203,6 +216,11 @@
       ...members.map((m) => ({ key: `m:${m.id}`, id: m.id, name: m.name, company: m.company || m.category || "", team: m.team || "", kind: "member" })),
       ...visitors.map((v) => ({ ...v, kind: "visitor" })),
     ];
+    // 名簿にいないBT-EXのメンバー・ゲスト(この端末に定例会ごとに覚える)。時間は1人ずつ(はじめは30秒・5秒きざみ)
+    const extraKey = `extras-${ev ? ev.id : "none"}`;
+    let extras = (() => { try { const s = JSON.parse(store.get(extraKey, "[]")); return Array.isArray(s) ? s.filter((x) => x && x.key && x.name) : []; } catch { return []; } })();
+    const saveExtras = () => store.set(extraKey, JSON.stringify(extras));
+    extras.forEach((x) => all.push(x));
     const byKey = (k) => all.find((x) => x.key === k);
     const saveKey = `order-${ev ? ev.id : "none"}`;
     // はじめの順番: この定例会で前に決めた順番 → 出席予定の人(名簿の順)
@@ -253,7 +271,7 @@
         h("span", { class: "pr-grip", "aria-hidden": "true" }, "⋮⋮"),
         h("span", { class: "round-no" }, String(i + 1)),
         face(x.kind === "member" ? photos[x.id] : "", x.name, "pr-row-face"),
-        h("span", { class: "round-name" }, nameEl(x.name, "b"), x.kind === "visitor" ? App.chip("ビジター", "info") : null, x.company ? h("small", null, x.company) : null),
+        h("span", { class: "round-name" }, nameEl(x.name, "b"), x.kind === "visitor" ? App.chip("ビジター", "info") : x.kind === "guest" ? App.chip(`ゲスト・${secLabel(x.sec || 30)}`, "info") : x.kind === "other" ? App.chip(`BT-EX・${secLabel(x.sec || 30)}`, "mute") : null, x.company ? h("small", null, x.company) : null),
         canPhoto ? h("button", { type: "button", class: "pr-photo-btn", onclick: () => App.choosePhoto(x.id, (url) => { photos[x.id] = url; draw(); }) }, photos[x.id] ? "写真を変える" : "写真を入れる") : null,
         h("span", { class: "round-move" },
           h("button", { type: "button", "aria-label": `${x.name}さんを上へ`, disabled: i === 0, onclick: () => { [order[i - 1], order[i]] = [order[i], order[i - 1]]; draw(); } }, "↑"),
@@ -274,12 +292,60 @@
       return li;
     }
 
+    // 1人ずつの時間(ほかのBT-EXのメンバー・ゲスト)。5秒きざみで選ぶ
+    const EXTRA_SECS = []; for (let v = 5; v <= 300; v += 5) EXTRA_SECS.push(v);
+    const secLabel = (v) => (v >= 60 ? `${Math.floor(v / 60)}分${v % 60 ? `${v % 60}秒` : ""}` : `${v}秒`);
+    const secOf = (k) => { const x = byKey(k); return x && x.sec ? x.sec : per; };
+    function extraBox(kind, title, hint) {
+      const nameIn = h("input", { type: "text", maxlength: "30", placeholder: kind === "guest" ? "お名前(例: 田中 太郎)" : "お名前", "aria-label": `${title}のお名前` });
+      const coIn = h("input", { type: "text", maxlength: "60", placeholder: "会社・肩書き(なくてもよい)", "aria-label": `${title}の会社・肩書き` });
+      const add = () => {
+        const name = nameIn.value.trim();
+        if (!name) { nameIn.focus(); App.toast("お名前を入れてください", "error"); return; }
+        const x = { key: `${kind === "guest" ? "g" : "o"}:${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`, kind, name, company: coIn.value.trim(), sec: 30 };
+        extras.push(x); all.push(x); order.push(x.key); saveExtras();
+        nameIn.value = ""; coIn.value = ""; draw(); nameIn.focus();
+      };
+      nameIn.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); add(); } });
+      coIn.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); add(); } });
+      const listBox = h("ul", { class: "pr-extra-list" });
+      const box = h("div", { class: `pr-extra is-${kind}` },
+        h("p", { class: "round-label" }, title, h("small", null, hint)),
+        h("div", { class: "pr-extra-add" }, nameIn, coIn, App.btn("＋ 足す", add, "ghost small")),
+        listBox);
+      box.drawList = () => {
+        const mine = extras.filter((x) => x.kind === kind);
+        App.fill(listBox, mine.map((x) => {
+          const sel = h("select", { class: "pr-extra-sec", "aria-label": `${x.name}さんの時間`, onchange: () => { x.sec = Number(sel.value) || 30; saveExtras(); draw(); } },
+            EXTRA_SECS.map((v) => h("option", { value: String(v) }, secLabel(v))));
+          sel.value = String(x.sec || 30);
+          const n = order.indexOf(x.key);
+          return h("li", { class: `pr-extra-item${n >= 0 ? " is-on" : ""}` },
+            h("button", { type: "button", class: "pr-extra-pick", "aria-pressed": n >= 0 ? "true" : "false", onclick: () => { const i = order.indexOf(x.key); if (i >= 0) order.splice(i, 1); else order.push(x.key); draw(); } },
+              h("span", { class: "pr-extra-no" }, n >= 0 ? String(n + 1) : "＋"),
+              h("span", { class: "pr-extra-name" }, h("b", null, x.name), x.company ? h("small", null, x.company) : null)),
+            h("label", { class: "pr-extra-time" }, h("span", null, "時間"), sel),
+            h("button", { type: "button", class: "pr-extra-del", "aria-label": `${x.name}さんを消す`, onclick: () => {
+              extras = extras.filter((y) => y.key !== x.key); saveExtras();
+              const ai = all.findIndex((y) => y.key === x.key); if (ai >= 0) all.splice(ai, 1);
+              const oi = order.indexOf(x.key); if (oi >= 0) order.splice(oi, 1);
+              draw();
+            } }, "×"));
+        }));
+      };
+      return box;
+    }
+    const otherBox = extraBox("other", "ほかの BT-EX のメンバー", "(名簿にいない方。はじめは30秒)");
+    const guestBox = extraBox("guest", "ゲスト", "(はじめは30秒)");
+
     function draw() {
       saveOrder();
-      App.fill(grid, all.map(card));
+      App.fill(grid, all.filter((x) => x.kind === "member" || x.kind === "visitor").map(card));
+      otherBox.drawList(); guestBox.drawList();
       App.fill(listEl, order.length ? order.map(row) : h("li", { class: "pr-order-empty" }, "上の一覧から、話す順に押してください"));
-      const sec = order.length * per;
-      total.textContent = order.length ? `${order.length}名 × ${PER.find(([v]) => v === per)[1]} = 約${Math.floor(sec / 60)}分${sec % 60 ? `${sec % 60}秒` : ""}` : "";
+      const sec = order.reduce((t, k) => t + secOf(k), 0);
+      const odd = order.filter((k) => secOf(k) !== per).length;
+      total.textContent = order.length ? `${order.length}名(${odd ? `${order.length - odd}名 × ${PER.find(([v]) => v === per)[1]} ほか` : `× ${PER.find(([v]) => v === per)[1]}`}) = 約${Math.floor(sec / 60)}分${sec % 60 ? `${sec % 60}秒` : ""}` : "";
       goBtn.textContent = order.length ? `プレゼンをはじめる(${order.length}名)` : "出る人を選んでください";
       goBtn.disabled = !order.length;
     }
@@ -341,7 +407,7 @@
         const p = personOf(k, photos);
         if (p) return p;
         const x = byKey(k);
-        return x ? { key: k, kind: x.kind, name: x.name, catch: x.company, photo: "", area: "", wants: "", triggers: [] } : null;
+        return x ? { key: k, kind: x.kind, name: x.name, catch: x.company, photo: "", area: "", wants: "", triggers: [], sec: x.sec || 0 } : null;
       }).filter(Boolean);
       if (!people.length) return;
       App.roundRun(people, per, auto ? gapSec : 0, ev ? ev.title : "");
@@ -376,6 +442,7 @@
             teamSel,
             App.btn("選び直す", () => { order = []; draw(); }, "ghost small"))),
         grid,
+        otherBox, guestBox,
         h("div", { class: "round-head" }, h("p", { class: "round-label" }, "話す順番"),
           h("div", { class: "app-btn-row" },
             App.btn("シャッフル", () => { order = shuffle(order); draw(); }, "ghost small"),
@@ -515,7 +582,9 @@
         h("div", { class: "pr-info" },
           h("p", { class: "pr-no", "aria-hidden": "true" }, two(idx + 1)),
           h("div", { class: "pr-body" },
-            h("p", { class: "pr-teamname" }, p.kind === "visitor" ? "ビジター" : p.team || ""),
+            h("p", { class: "pr-teamname" },
+              h("span", null, p.kind === "visitor" ? "ビジター" : p.kind === "guest" ? "ゲスト" : p.kind === "other" ? "BT-EX メンバー" : p.team || ""),
+              p.role ? roleBadge(p.role) : null),
             nameEl(p.name, "h2", "pr-name", h("small", null, "さん")),
             p.catch ? h("p", { class: "pr-catch" }, p.catch) : null,
             h("dl", { class: "pr-rows" },

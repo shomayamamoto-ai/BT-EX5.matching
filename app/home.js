@@ -6,17 +6,21 @@
   "use strict";
   const { h } = App;
 
-  // ホームの画面はなくし、中身は「記録」の「まとめ」に出す(タイマーは「プレゼン」へ)。
-  // 以前のリンク(#home・#home/timer)は、それぞれの場所へ移す
+  // ホーム・まとめの画面はなくした。以前のリンク(#home・#log/home)は「予定」へ、#home/timer はプレゼンのタイマーへ
   App.views.home = {
-    title: "記録",
-    tab: "log",
+    title: "予定",
+    tab: "events",
     async render(el, parts) {
-      history.replaceState(null, "", parts && parts[0] === "timer" ? "#present/timer" : "#log/home");
+      history.replaceState(null, "", parts && parts[0] === "timer" ? "#present/timer" : "#events");
       await App.route();
     },
   };
-  App.renderHome = async function (el, parts) {
+  // 以前のホームの中身を、それぞれの画面に出す。show: 出すまとまり
+  //   mine(今月のあなた・BT-EX5 シグナル)/ pulse(BT-EX5 全体の今月)… 記録 → 数字
+  //   todo(はじめての方へ・あなたのやること・おすすめの設定)… 予定
+  //   spot(今週の紹介チャレンジ)… 記録 → 紹介
+  App.renderHome = async function (el, parts, show) {
+    show = show || new Set();
     {
       const d = await App.api("getHome");
       if (!d) return;
@@ -26,15 +30,12 @@
 
       // ---------- あいさつ(下に、今日のまとめを1行) ----------
       const summary = h("p", { class: "home-sum" });
-      el.append(h("div", { class: "home-hello" },
-        h("p", { class: "home-date" }, App.fmtDateLong(d.today)),
-        h("h1", null, `${d.me.name}さん、`, h("span", { class: "nowrap" }, hello)),
-        summary));
+      void hello;
 
       // ---------- 今月のあなた(順位・数字を1枚に) ----------
       const s = d.stats;
       const r = d.teamRank;
-      el.append(h("section", { class: "home-me", "aria-label": "今月のあなた", "data-home": "me" },
+      if (show.has("mine")) el.append(h("section", { class: "home-me", "aria-label": "今月のあなた", "data-home": "me" },
         r ? h("a", { class: "home-rank", href: "#log/rank" },
           // 0pt のうちは順位を出さない。同点は「同率」と出す
           r.points ? h("span", { class: "home-rank-no" }, h("small", null, r.tied > 1 ? "BT-EX5 で同率" : "BT-EX5 で"), h("span", null, h("b", null, String(r.rank)), "位"), h("small", null, r.tied > 1 ? `${r.tied}名 / ${r.size}名` : `/ ${r.size}名`))
@@ -61,34 +62,13 @@
           ].join("\n"), "今月の活動") }, "シェア"))));
 
       // ---------- BT-EX5 シグナル(直近6か月の活動の信号。本人だけに表示) ----------
-      if (d.signal) el.append(signalCard(d.signal));
-
-      // ---------- 紹介先を探す(聞いた相談を入れてそのまま検索) ----------
-      const ask = h("input", { type: "search", name: "ask", maxlength: "600", enterkeyhint: "search", placeholder: "聞いた相談を入れて、紹介先を探す", "aria-label": "聞いた相談", autocomplete: "off" });
-      el.append(h("form", { class: "home-ask", role: "search", "data-home": "ask", onsubmit: (e) => {
-        e.preventDefault();
-        const q = ask.value.trim();
-        location.href = q ? `../referral/#ask=${encodeURIComponent(q)}` : "../referral/";
-      } },
-        App.icon("M10.5 4a6.5 6.5 0 1 0 4.03 11.6l4.43 4.43 1.41-1.41-4.43-4.43A6.5 6.5 0 0 0 10.5 4Zm0 2a4.5 4.5 0 1 1 0 9 4.5 4.5 0 0 1 0-9Z"),
-        ask,
-        h("button", { type: "submit" }, "探す")));
-
-      // ---------- すぐできること(アイコンを横1列に) ----------
-      el.append(h("nav", { class: "home-actions", "aria-label": "すぐできること", "data-home": "actions" },
-        action("#log/ref?new", "紹介を記録", "紹介を記録", "M4 12h12l-4-4 1.4-1.4L20 13l-6.6 6.4L12 18l4-4H4z"),
-        action("#log/miles?new", "ありがとう", "ありがとうを送る", "M12 21s-7.5-4.6-9.3-9.4C1.4 8 3.6 4.5 7 4.5c2 0 3.4 1.1 5 3 1.6-1.9 3-3 5-3 3.4 0 5.6 3.5 4.3 7.1C19.5 16.4 12 21 12 21Z"),
-        action("#log/1on1?new", "1on1記録", "1on1を記録", "M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm8 0a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM1 20c0-3.3 3.6-6 8-6s8 2.7 8 6v1H1zm16.5-5.9c2.9.4 5.5 2.4 5.5 4.9v1h-4.2c0-2.3-.5-4.3-1.3-5.9Z"),
-        action("#invite", "ビジター招待", "ビジターを招待", "M15 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Zm-9-2V7H4v3H1v2h3v3h2v-3h3v-2Zm9 4c-2.7 0-8 1.3-8 4v2h16v-2c0-2.7-5.3-4-8-4Z"),
-        action("#board?new", "掲示板に投稿", "掲示板に書く", "M4 4h16v12H7l-3 3z")));
+      if (show.has("mine") && d.signal) el.append(signalCard(d.signal));
 
       // パソコンでは左(やること・予定)と右(チャレンジ・お知らせ)の2列。スマホは上から順に
-      const main = h("div", { class: "home-col is-main" });
-      const side = h("div", { class: "home-col is-side" });
-      el.append(h("div", { class: "home-grid" }, main, side));
+      const main = el, side = el;
 
       // ---------- はじめての方へ(終わるか閉じるまで) ----------
-      if (App.welcomeCard) { const wc = App.welcomeCard(d); if (wc) main.append(wc); }
+      if (show.has("todo") && App.welcomeCard) { const wc = App.welcomeCard(d); if (wc) main.append(wc); }
 
       // ---------- やること(声かけ・お知らせ・自分のやることを1つに) ----------
       const todo = [];
@@ -115,7 +95,7 @@
             App.toast(mode === "done" ? "表示を消しました" : "7日後にまた知らせます");
           };
           box.append(
-            alertLink(App.profileHref(f.with, "log/home"),
+            alertLink(App.profileHref(f.with, "events"),
               `${f.withName}さんへの紹介が ${f.days} 日そのままです`, `${f.prospect || "紹介した方"}の件、ひと声かけましょう(LINE などの連絡先を開く)`),
             h("div", { class: "home-alert-acts" },
               h("button", { type: "button", class: "app-btn ghost small", onclick: () => mute("later") }, "声をかけた(7日後にまた)"),
@@ -149,7 +129,7 @@
         if (x.myDone) setTimeout(() => { const li = taskList.querySelector(".task-row.is-done"); if (li) li.remove(); }, 600);
       } })));
       const count = todo.length + tasks.length;
-      main.append(h("section", { class: "app-section home-sec", "data-home": "todo" },
+      if (show.has("todo")) main.append(h("section", { class: "app-section home-sec", "data-home": "todo" },
         h("div", { class: "home-sec-head" },
           h("h2", { class: "app-h2" }, `あなたのやること(${count})`),
           h("button", { type: "button", class: "home-sec-link", onclick: () => App.taskForm({}, () => App.route()) }, "＋ 追加")),
@@ -159,8 +139,8 @@
 
       // ---------- 今日・明日の予定(1on1・顔合わせ・やること。定例会は下のカードで) ----------
       const sched = h("section", { class: "app-section home-sec home-sched", hidden: true, "data-home": "sched" });
-      main.append(sched);
-      if (App.collectSchedule) {
+      if (show.has("sched")) main.append(sched);
+      if (show.has("sched") && App.collectSchedule) {
         const tmr = (() => { const x = new Date(`${d.today}T12:00:00`); x.setDate(x.getDate() + 1); return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, "0")}-${String(x.getDate()).padStart(2, "0")}`; })();
         App.collectSchedule([]).then((items) => {
           const soon = items.filter((x) => x.kind !== "event" && (x.date === d.today || x.date === tmr));
@@ -192,14 +172,14 @@
         count ? h("span", { class: "is-todo" }, `やること ${count}件`) : h("span", { class: "is-clear" }, "やることはありません"),
         next && days >= 0 ? h("span", null, days === 0 ? "今日は定例会です" : `次の定例会まであと${days}日`) : null,
         d.inboxNew.length ? h("span", { class: "is-todo" }, `新しい紹介 ${d.inboxNew.length}件`) : null);
-      main.append(h("section", { class: "app-section home-sec", "data-home": "event" },
+      if (show.has("event")) main.append(h("section", { class: "app-section home-sec", "data-home": "event" },
         h("div", { class: "home-sec-head" },
           h("h2", { class: "app-h2" }, "次の定例会"),
           h("a", { class: "home-sec-link", href: "#events" }, "予定をすべて見る")),
         next ? eventCard(next, d.today, (ev) => { Object.assign(next, ev); }, { noCheckIn: d.checkInOpen }) : App.empty("予定されている定例会はまだありません。")));
 
       // ---------- あなた宛ての新しい紹介・1on1 の予定(あるときだけ) ----------
-      if (d.inboxNew.length) {
+      if (show.has("inbox") && d.inboxNew.length) {
         main.append(tag("inbox", App.section("あなた宛ての新しい紹介",
           h("ul", { class: "app-list" }, d.inboxNew.map((x) => h("li", null,
             h("a", { class: "app-row", href: "#log/ref" },
@@ -207,7 +187,7 @@
               h("span", { class: "app-row-main" }, h("b", null, `${x.fromName}さんから`), h("small", null, `${x.prospect || "お相手"} ${x.memo ? `— ${x.memo}` : ""}`)),
               App.chip("未対応", "warn"))))))));
       }
-      if (d.nextOneOnOnes.length) {
+      if (show.has("ones") && d.nextOneOnOnes.length) {
         main.append(tag("ones", App.section("1on1 の予定",
           h("ul", { class: "app-list" }, d.nextOneOnOnes.map((o) => h("li", null,
             h("a", { class: "app-row", href: "#log/1on1" },
@@ -217,7 +197,7 @@
 
       // ---------- BT-EX5 全体の今月(みんなの動き) ----------
       // 全体の今月は、まだ何も動いていない(すべて0)ときは出さない
-      if (d.community && (d.community.given || d.community.won || d.community.ones || d.community.posts || d.community.miles)) {
+      if (show.has("pulse") && d.community && (d.community.given || d.community.won || d.community.ones || d.community.posts || d.community.miles)) {
         const cm = d.community;
         side.append(h("section", { class: "home-pulse", "aria-label": "BT-EX5 全体の今月", "data-home": "pulse" },
           h("p", { class: "home-pulse-head" }, h("b", null, "BT-EX5 全体の今月"), h("small", null, `メンバー ${cm.members}名`)),
@@ -227,14 +207,14 @@
       }
 
       // ---------- 今週の紹介チャレンジ(最近紹介を受けていない人から、週ごとに1人) ----------
-      if (d.spotlight) {
+      if (show.has("spot") && d.spotlight) {
         const sp = d.spotlight;
         const wants = h("p", { class: "home-spot-wants" }, sp.wants);
         const long = (sp.wants || "").length > 70;
         if (long) wants.classList.add("is-clamped");
         side.append(h("section", { class: "home-spot", "data-home": "spot" },
           h("p", { class: "home-spot-label" }, "今週の紹介チャレンジ"),
-          h("a", { class: "home-spot-head", href: App.profileHref(sp.id, "log/home") }, App.avatar(sp.name),
+          h("a", { class: "home-spot-head", href: App.profileHref(sp.id, "log/ref") }, App.avatar(sp.name),
             h("span", null, h("b", null, `${sp.name}さん`), h("small", null, sp.company))),
           h("p", { class: "home-spot-q" }, "こんな人を紹介してほしい"),
           wants,
@@ -246,11 +226,11 @@
           sp.offer ? h("p", { class: "home-spot-offer" }, `紹介特典:${sp.offer}`) : null,
           h("div", { class: "app-btn-row" },
             h("a", { class: "app-btn primary small", href: `#log/ref?new&to=${encodeURIComponent(sp.id)}` }, "紹介を記録する"),
-            h("a", { class: "app-btn ghost small", href: App.profileHref(sp.id, "log/home") }, "プロフィールを見る"))));
+            h("a", { class: "app-btn ghost small", href: App.profileHref(sp.id, "log/ref") }, "プロフィールを見る"))));
       }
 
       // ---------- 運営連絡(あるときだけ。新しい3件) ----------
-      if (d.announcements.length) {
+      if (show.has("news") && d.announcements.length) {
         side.append(h("section", { class: "app-section home-sec", "data-home": "news" },
           h("div", { class: "home-sec-head" },
             h("h2", { class: "app-h2" }, "運営連絡"),
@@ -264,11 +244,10 @@
       // ---------- おすすめの設定(プロフィール・通知) ----------
       // ---------- 1on1 のおすすめ(まだ 1on1 をしていない人から、週ごとに3人) ----------
       const oneSug = h("section", { class: "app-section home-sec home-onesug", hidden: true, "data-home": "onesug" });
-      side.append(oneSug);
-      oneSuggest(oneSug, d.today);
+      if (show.has("onesug")) { side.append(oneSug); oneSuggest(oneSug, d.today); }
 
       const tips = h("div", { class: "home-tips", "data-home": "tips" });
-      side.append(tips);
+      if (show.has("todo")) side.append(tips);
       if (d.missing.length) {
         // サーバーの missing は PROFILE_ITEMS の7項目 + できること(ジャンル)。早見表・プロフィールと同じ数え方
         const total = typeof PROFILE_SCORE_ITEMS !== "undefined" ? PROFILE_SCORE_ITEMS.length : d.missing.length + 1;
@@ -297,8 +276,7 @@
       }
 
       // ---------- まとめの表示(出すもの・順番。この端末に覚える) ----------
-      applyLayout(el);
-      el.append(h("button", { type: "button", class: "home-layout-btn", onclick: () => layoutSheet() }, "まとめの表示を変える(出すもの・順番)"));
+      void applyLayout; void layoutSheet;
     }
   };
 
@@ -443,7 +421,7 @@
         h("a", { class: "home-sec-link", href: "#log/1on1" }, "1on1 を見る")),
       h("p", { class: "home-onesug-lead" }, `まだ 1on1 をしていないメンバーが ${cand.length}名います。今週はこの方々はいかがですか?`),
       h("ul", { class: "app-list" }, pick.map((m) => h("li", { class: "home-onesug-row" },
-        h("a", { class: "app-row", href: App.profileHref(m.id, "log/home") },
+        h("a", { class: "app-row", href: App.profileHref(m.id, "events") },
           App.avatar(m.name),
           h("span", { class: "app-row-main" }, h("b", null, `${m.name}さん`), h("small", null, m.company || ""))),
         h("a", { class: "app-btn ghost small", href: `#log/1on1?new&with=${encodeURIComponent(m.id)}` }, "1on1 を予定")))));

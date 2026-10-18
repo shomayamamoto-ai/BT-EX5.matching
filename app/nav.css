@@ -35,7 +35,7 @@ body.has-app-tabs .ref-toast { bottom: calc(var(--app-tabs-h) + 18px + env(safe-
   body.has-app-tabs .ref-to-top { bottom: 24px; }
 }
 @media print { .app-tabs { display: none; } }
-html.big-text body { zoom: 1.15; }
+/* 文字を大きく: assets/lux.css(画面に固定したメニューなどは拡大しない) */
 
 /* 早見表・プロフィールなどの上の帯: アプリと同じお知らせのベルとマイページの丸 */
 .nav-bell, .nav-me { position: relative; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; width: 36px; height: 36px; border-radius: 50%; text-decoration: none; }

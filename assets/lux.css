@@ -256,7 +256,11 @@ input, textarea, select { scroll-margin-top: 84px; scroll-margin-bottom: 160px; 
 .ref-btn.ghost { border-color: #d6c6aa; color: #5d5246; background: #fffdf8; font-weight: 800; }
 
 /* ---------- 文字の大きさの切りかえ(右上の「ぁ|あ」。assets/text-size.js) ---------- */
-html.big-text body { zoom: 1.15; }
+/* 文字を大きく(右上の「あ」): 見出し・本文・下の帯と、シートの中身だけを拡大する。
+   画面に固定したもの(下のメニュー・お知らせ・全体を覆う画面)は拡大しない
+   (Safari は固定したものを拡大すると位置がずれ、メニューが画面の外へ消えるため) */
+html.big-text body > header, html.big-text body > main, html.big-text body > footer,
+html.big-text .app-sheet, html.big-text .diag-overlay > * { zoom: 1.15; }
 .ts-toggle { flex-shrink: 0; display: inline-flex; align-items: center; height: 34px; padding: 0 3px; border-radius: 999px;
   background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(226, 184, 102, 0.38); }
 .ts-toggle button { position: relative; min-width: 30px; height: 28px; padding: 0 6px; border: 0; border-radius: 999px; background: transparent; color: #cbb38c;

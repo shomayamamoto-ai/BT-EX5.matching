@@ -653,8 +653,8 @@ const App = (function () {
   // 未読の数: 1分より古ければ取り直す(ホームは画面の中で取り直す)
   let badgesAt = 0;
   function refreshBadges() {
-    // 記録の「まとめ」は画面の中で取り直す
-    if (Date.now() - badgesAt < 60 * 1000 || (current.view === "log" && (!current.parts[0] || current.parts[0] === "home"))) return;
+    // 予定(あなたのやること)は画面の中で取り直す
+    if (Date.now() - badgesAt < 60 * 1000 || current.view === "events") return;
     badgesAt = Date.now();
     AuthApi.call("getHome", {}).then((res) => { if (res.success) setBadges(res.data.badges); });
   }
