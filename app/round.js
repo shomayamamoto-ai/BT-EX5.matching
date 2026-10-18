@@ -369,7 +369,7 @@
     const prevBtn = h("button", { type: "button", class: "round-btn", onclick: () => go(idx - 1) }, "◀ 前へ");
     const nextBtn = h("button", { type: "button", class: "round-btn", onclick: () => go(idx + 1) }, "次へ ▶");
     const endBtn = h("button", { type: "button", class: "round-btn round-end", onclick: () => finish(true) }, "終わる");
-    const box = h("div", { class: "pr-run", role: "dialog", "aria-label": "プレゼンの進行" },
+    const box = h("div", { class: "pr-run is-entering", role: "dialog", "aria-label": "プレゼンの進行" },
       h("div", { class: "pr-top" }, h("p", { class: "pr-title" }, title || `${(PER.find(([v]) => v === per) || [0, ""])[1]}プレゼン`), count),
       slide,
       h("div", { class: "pr-meter-row" }, meterBox, sec),
@@ -402,15 +402,36 @@
     // 押した流れのまま全画面にする(ブラウザが断ったときは、そのまま画面いっぱいで進める)
     // 全画面にするのはページ全体(<html>)。この画面の部品だけを全画面にすると、終わって部品を外したときに
     // ブラウザ(Safari など)が真っ白な全画面のまま戻らないことがあるため
+    // 全画面に切りかわるあいだは画面の大きさが少しずつ変わるので、中身を隠しておき、
+    // 大きさが決まってから(全画面の知らせ+少し待つ)ふわっと出す(切りかえのブレを見せない)
+    function afterFullChange(fn) {
+      let fired = false;
+      const go = () => {
+        if (fired) return;
+        fired = true;
+        document.removeEventListener("fullscreenchange", go);
+        document.removeEventListener("webkitfullscreenchange", go);
+        setTimeout(fn, 180);
+      };
+      document.addEventListener("fullscreenchange", go);
+      document.addEventListener("webkitfullscreenchange", go);
+      setTimeout(go, 1000); // 知らせが来ないブラウザでも出す
+    }
+    function reveal() {
+      fixSecWidth();
+      requestAnimationFrame(() => box.classList.remove("is-entering"));
+    }
     function toggleFull() {
+      box.classList.add("is-entering");
       try {
-        if (fullEl()) exitFull();
-        else {
-          const el = document.documentElement;
-          const req = el.requestFullscreen || el.webkitRequestFullscreen;
-          if (req) { const r = req.call(el); if (r && r.catch) r.catch(() => {}); }
-        }
-      } catch { /* noop */ }
+        if (fullEl()) { afterFullChange(reveal); exitFull(); return; }
+        const el = document.documentElement;
+        const req = el.requestFullscreen || el.webkitRequestFullscreen;
+        if (!req) { reveal(); return; }
+        afterFullChange(reveal);
+        const r = req.call(el);
+        if (r && r.catch) r.catch(() => reveal());
+      } catch { reveal(); }
     }
     toggleFull();
     // 写真は先に読みこんでおく(切りかえたときにすぐ出るように)
@@ -528,24 +549,21 @@
       document.removeEventListener("keydown", onKey);
       halt();
       try { if (wake) wake.release(); } catch { /* noop */ }
-      // 全画面をやめるあいだに画面の大きさが変わっても、ボタンや文字が動いて見えないように中身を隠す
+      // 1) 中身をふわっと消し、画面をアプリの背景の色にする
+      // 2) その色のまま全画面をやめる(大きさが変わっても、動くものが見えない)
+      // 3) プレゼンの準備の画面を読み込み直して出す(全画面から戻ったあと、Safari などで画面が
+      //    描き直されずに真っ白のまま残ることがあるため。選んだ人と順番はこの端末に残っている)
       box.classList.add("is-closing");
-      // 閉じたら、プレゼンの準備の画面を読み込み直して出す(全画面から戻ったあと、Safari などで
-      // 画面が描き直されずに真っ白のまま残ることがあるため。選んだ人と順番はこの端末に残っている)
-      const remove = () => {
-        box.remove();
-        document.documentElement.classList.remove("round-open");
-        const back = /^#present/.test(location.hash) ? location.hash : "#present";
+      const back = /^#present/.test(location.hash) ? location.hash : "#present";
+      const reload = () => {
         try { history.replaceState(null, "", `${location.pathname}${location.search}${back}`); } catch { /* noop */ }
-        setTimeout(() => { try { location.reload(); } catch { App.route(); } }, 60);
+        try { location.reload(); } catch { box.remove(); document.documentElement.classList.remove("round-open"); App.route(); }
       };
-      if (!fullEl()) { remove(); return; }
-      let doneRemove = false;
-      const once = () => { if (doneRemove) return; doneRemove = true; document.removeEventListener("fullscreenchange", once); document.removeEventListener("webkitfullscreenchange", once); remove(); };
-      document.addEventListener("fullscreenchange", once);
-      document.addEventListener("webkitfullscreenchange", once);
-      exitFull();
-      setTimeout(once, 700); // 全画面の終わりの知らせが来ないブラウザでも外す
+      setTimeout(() => {
+        if (!fullEl()) { reload(); return; }
+        afterFullChange(reload);
+        exitFull();
+      }, 320);
     }
     function onKey(e) {
       if (e.target.closest && e.target.closest("input, textarea, select")) return;

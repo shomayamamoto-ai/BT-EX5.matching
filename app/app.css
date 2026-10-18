@@ -1301,7 +1301,12 @@ html.round-open, html.round-open body { overflow: hidden; }
 .pr-ask { flex: 1 1 100%; margin: 0 0 2px; text-align: center; font-size: 15px; font-weight: 800; color: #f3dfb3; }
 .pr-done { grid-column: 1 / -1; text-align: center; }
 .pr-run.is-done .pr-meter-row { visibility: hidden; }
-.pr-run.is-closing > * { visibility: hidden; }
+/* はじめるとき(全画面に切りかわるあいだ)と閉じるときは、中身をふわっと出し入れする */
+.pr-run > * { transition: opacity 0.28s ease; }
+.pr-run.is-entering > *, .pr-run.is-closing > * { opacity: 0; }
+.pr-run::after { content: ""; position: absolute; inset: 0; background: var(--bg, #f6f2ea); opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
+.pr-run.is-closing::after { opacity: 1; }
+@media (prefers-reduced-motion: reduce) { .pr-run > *, .pr-run::after { transition: none; } }
 @media (prefers-reduced-motion: reduce) { .pr-slide.is-in, .pr-run.is-end .pr-meter i.is-on { animation: none; } }
 /* 高さの少ない横長の画面(ノートパソコン・プロジェクター): 行数を減らして、メーターに重ならず、途中で切れずに収める */
 @media (min-aspect-ratio: 1/1) and (max-height: 920px) {
