@@ -1083,8 +1083,12 @@ body.tabs-right .app-to-top { right: calc(var(--dock-w) + 22px); }
 .pitch-btns { display: grid; gap: 8px; flex: 1; min-width: 0; }
 .pitch-btns .app-btn.ghost { background: transparent; color: #ead39f; border-color: rgba(234, 211, 159, 0.45); }
 .evd-pitch { margin-top: 10px; }
-/* スマホでは上の見出しが詰まらないよう、ムービーのボタンはマイページのメニューから */
-@media (max-width: 480px) { .app-top .op-movie-btn { display: none; } }
+/* スマホでは、ムービーのボタンは「▶」だけの丸いボタンにする(上の見出しが詰まらないように、画面の名前は下のタブでわかるので隠す) */
+@media (max-width: 480px) {
+  .app-top .op-movie-btn { width: 32px; height: 32px; padding: 0; justify-content: center; }
+  .app-top .op-movie-btn span { display: none; }
+  .app-top .app-title { visibility: hidden; }
+}
 /* 通知する内容 */
 .notify-kinds { display: grid; gap: 8px; margin: 4px 0 12px; }
 .notify-kind { display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; border-radius: 12px; background: #fff; border: 1px solid var(--line); cursor: pointer; }

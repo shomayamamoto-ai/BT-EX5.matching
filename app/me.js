@@ -39,8 +39,7 @@
           menu("#me/install", "スマホのホーム画面に追加", "アプリのようにすぐ開けます")),
         group("サポート",
           menu("#help", "使い方・よくある質問", "できること・だれに何が見えるか・困ったとき"),
-          menu("#me/feedback", "バグ・要望を送る", "使いにくいところ・ほしい機能を運営へ"),
-          h("button", { type: "button", class: "me-item", "data-open-movie": "" }, h("b", null, "オープニングムービー"), h("small", null, "BT-EX5 の紹介動画"))),
+          menu("#me/feedback", "バグ・要望を送る", "使いにくいところ・ほしい機能を運営へ")),
         App.isAdmin() ? group("運営",
           menu("#admin", "管理者メニュー", "会員の招待・ログイン設定・要望への返信", true),
           menu("../admin/", "名簿の管理", "メンバーの追加・編集")) : null));

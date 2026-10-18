@@ -361,8 +361,8 @@
     const prevBtn = h("button", { type: "button", class: "round-btn", onclick: () => go(idx - 1) }, "◀ 前へ");
     const nextBtn = h("button", { type: "button", class: "round-btn", onclick: () => go(idx + 1) }, "次へ ▶");
     const endBtn = h("button", { type: "button", class: "round-btn round-end", onclick: () => finish(true) }, "終わる");
-    const box = h("div", { class: "pr-run", role: "dialog", "aria-label": "30秒プレゼンの進行" },
-      h("div", { class: "pr-top" }, h("p", { class: "pr-title" }, title ? `${title} ・ 30秒プレゼン` : "30秒プレゼン"), count),
+    const box = h("div", { class: "pr-run", role: "dialog", "aria-label": "プレゼンの進行" },
+      h("div", { class: "pr-top" }, h("p", { class: "pr-title" }, title || `${(PER.find(([v]) => v === per) || [0, ""])[1]}プレゼン`), count),
       slide,
       h("div", { class: "pr-meter-row" }, meterBox, sec),
       h("div", { class: "round-ctrl pr-ctrl" }, prevBtn, pauseBtn, nextBtn, endBtn));

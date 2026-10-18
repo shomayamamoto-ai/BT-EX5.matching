@@ -45,11 +45,19 @@ html.big-text body { zoom: 1.15; }
 .nav-bell .app-badge[hidden] { display: none; }
 .nav-me { width: 34px; height: 34px; background: linear-gradient(145deg, #2f261e, #15110d); color: #ead39f; border: none; box-shadow: 0 0 0 2px #120e0b, 0 0 0 3.5px #c9a45c; font-weight: 800; font-size: 14px; }
 .nav-bell::after, .nav-me::after { content: ""; position: absolute; inset: -5px; border-radius: 50%; }
-/* スマホの上の帯: ロゴ・いまのページの主な操作・ベル・名前の丸だけにする
-   (全体分析・名簿の管理・ムービーはマイページからも開ける) */
+/* スマホの上の帯: ロゴ・いまのページの主な操作・ムービー(「▶」だけ)・文字の大きさ・ベル・名前の丸
+   (全体分析・名簿の管理はマイページからも開ける) */
 @media (max-width: 560px) {
-  .ref-header-nav .ref-header-link, .ref-header-nav .op-movie-btn { display: none; }
-  .ref-header-nav { gap: 10px; }
+  .ref-header-nav .ref-header-link { display: none; }
+  .ref-header-nav .op-movie-btn { width: 32px; height: 32px; padding: 0; justify-content: center; flex-shrink: 0; }
+  .ref-header-nav .op-movie-btn span { display: none; }
+  .ref-header-nav { gap: 8px; }
+  /* ロゴの下の小さな説明文は省く(右の操作が画面からはみ出さないように) */
+  .ref-header-inner .brand-sub { display: none; }
+}
+/* 早見表(紹介診断のボタンがある帯)の狭いスマホでは、ロゴの文字を省いてロゴの印だけにする */
+@media (max-width: 410px) {
+  .ref-header-inner:has(.ref-header-cta) .brand-word { display: none; }
 }
 /* パソコン: プロフィールの保存の帯と下のメニューのあいだから、入力欄が透けて見えないように */
 @media (min-width: 900px) {
