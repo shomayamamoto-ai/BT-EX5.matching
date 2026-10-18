@@ -288,3 +288,24 @@ html.big-text body { zoom: 1.15; }
 /* スクロールバーの分の幅を、どのページでもいつも空けておく(スクロールバーのあるページ・ないページで、
    画面のまん中にそろえたメニューや見出しが左右に少しずれないように) */
 html { scrollbar-gutter: stable; }
+
+/* ---------- 上の帯(すべてのページで同じ形) ----------
+   左: ロゴ・「BT-EX5」・「新潟・東京 紹介者制コミュニティ」/ 右: 検索・ムービー・文字の大きさ・ベル・名前の丸 */
+.app-top, .ref-header .ref-header-inner { padding-top: calc(10px + env(safe-area-inset-top)); padding-bottom: 10px; }
+.app-top .app-logo, .ref-header .ref-logo { gap: 10px; margin-right: auto; }
+.app-top .brand-mark, .ref-header .brand-mark { width: 34px !important; height: 34px !important; }
+.app-top .brand-word, .ref-header .brand-word { display: flex; flex-direction: column; line-height: 1.05; text-align: left; }
+.app-top .brand-name, .ref-header .brand-name { font-family: "Inter", "Noto Sans JP", sans-serif; font-size: 21px; font-weight: 800; letter-spacing: 0.04em; }
+.app-top .brand-sub, .ref-header .brand-sub { display: block; margin-top: 3px; font-size: 12px; font-weight: 700; letter-spacing: 0.14em; color: #b9a688; white-space: nowrap; }
+/* アプリの画面の名前は帯に出さない(読み上げ用には残す) */
+.app-top .app-title { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.nav-search { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; width: 36px; height: 36px; border-radius: 50%; color: #d9c9ac; text-decoration: none; position: relative; }
+.nav-search svg { width: 22px; height: 22px; fill: currentColor; }
+.nav-search::after { content: ""; position: absolute; inset: -5px; border-radius: 50%; }
+@media (max-width: 560px) {
+  .app-top .brand-sub, .ref-header .brand-sub { display: none; }
+  .app-top .brand-name, .ref-header .brand-name { font-size: 19px; }
+}
+@media (max-width: 380px) {
+  .app-top .brand-word, .ref-header .brand-word { display: none; }
+}

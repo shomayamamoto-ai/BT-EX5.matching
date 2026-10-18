@@ -106,4 +106,9 @@
     }
   });
   App.openSearch = open;
+  // ほかのページの上の帯の「検索」から来たとき(#home?search=1)は、すぐ検索を開く
+  if (/[?&]search=1/.test(location.hash)) {
+    history.replaceState(null, "", "#home");
+    window.addEventListener("load", () => setTimeout(open, 400));
+  }
 })();

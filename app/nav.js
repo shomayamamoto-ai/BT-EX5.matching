@@ -67,7 +67,22 @@
     if (!nav) return;
     const logo = document.querySelector(".ref-header .ref-logo");
     if (logo) { logo.href = `${base.pathname}#home`; logo.setAttribute("aria-label", "ホーム"); }
-    nav.querySelectorAll('a.ref-header-link[href="../app/"]').forEach((a) => a.remove());
+    // アプリと同じ「検索」(押すとアプリの検索を開く)。ムービーの左に置く
+    if (!nav.querySelector(".nav-search")) {
+      const sr = document.createElement("a");
+      sr.className = "nav-search";
+      sr.href = `${base.pathname}#home?search=1`;
+      sr.setAttribute("aria-label", "アプリ内を検索");
+      sr.title = "アプリ内を検索";
+      const ss = document.createElementNS(NS, "svg");
+      ss.setAttribute("viewBox", "0 0 24 24");
+      ss.setAttribute("aria-hidden", "true");
+      const sp = document.createElementNS(NS, "path");
+      sp.setAttribute("d", "M10.5 4a6.5 6.5 0 1 0 4.03 11.6l4.43 4.43 1.41-1.41-4.43-4.43A6.5 6.5 0 0 0 10.5 4Zm0 2a4.5 4.5 0 1 1 0 9 4.5 4.5 0 0 1 0-9Z");
+      ss.append(sp);
+      sr.append(ss);
+      nav.insertBefore(sr, nav.firstChild);
+    }
     let bell = nav.querySelector(".nav-bell");
     if (!bell) {
       bell = document.createElement("a");

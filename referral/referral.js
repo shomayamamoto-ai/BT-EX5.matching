@@ -1258,7 +1258,6 @@
     $("#communityLabel").textContent = COMMUNITY.label;
     // 業種・エリアの絞り込みは、広い画面では最初から開いておく
     $("#moreFilters").open = window.matchMedia("(min-width: 720px)").matches;
-    $("#adminLink").hidden = !session.user.isAdmin;
     $("#demoNote").hidden = AuthApi.isShared();
     renderNudge();
     renderPartners();
