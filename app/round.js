@@ -281,17 +281,17 @@
         h("span", { class: "round-name" }, nameEl(x.name, "b"), x.kind === "visitor" ? App.chip("ビジター", "info") : x.kind === "guest" ? App.chip(`ゲスト・${secLabel(x.sec || 30)}`, "info") : x.kind === "other" ? App.chip(`BT-EX・${secLabel(x.sec || 30)}`, "mute") : null, x.company ? h("small", null, x.company) : null),
         canPhoto ? h("button", { type: "button", class: "pr-photo-btn", onclick: () => App.choosePhoto(x.id, (url) => { photos[x.id] = url; draw(); }) }, photos[x.id] ? "写真を変える" : "写真を入れる") : null,
         h("span", { class: "round-move" },
-          h("button", { type: "button", "aria-label": `${x.name}さんを上へ`, disabled: i === 0, onclick: () => { [order[i - 1], order[i]] = [order[i], order[i - 1]]; draw(); } }, "↑"),
-          h("button", { type: "button", "aria-label": `${x.name}さんを下へ`, disabled: i === order.length - 1, onclick: () => { [order[i + 1], order[i]] = [order[i], order[i + 1]]; draw(); } }, "↓"),
+          h("button", { type: "button", "aria-label": `${x.name}さんを上へ`, disabled: i === 0 || groupRank(order[i - 1]) !== groupRank(k), onclick: () => { [order[i - 1], order[i]] = [order[i], order[i - 1]]; draw(); } }, "↑"),
+          h("button", { type: "button", "aria-label": `${x.name}さんを下へ`, disabled: i === order.length - 1 || groupRank(order[i + 1]) !== groupRank(k), onclick: () => { [order[i + 1], order[i]] = [order[i], order[i + 1]]; draw(); } }, "↓"),
           h("button", { type: "button", "aria-label": `${x.name}さんを外す`, onclick: () => { order.splice(i, 1); draw(); } }, "×")));
       // パソコン: つかんで動かす
       li.addEventListener("dragstart", (e) => { dragFrom = i; li.classList.add("is-drag"); try { e.dataTransfer.setData("text/plain", k); e.dataTransfer.effectAllowed = "move"; } catch { /* noop */ } });
       li.addEventListener("dragend", () => { li.classList.remove("is-drag"); dragFrom = -1; });
-      li.addEventListener("dragover", (e) => { if (dragFrom >= 0) { e.preventDefault(); li.classList.add("is-over"); } });
+      li.addEventListener("dragover", (e) => { if (dragFrom >= 0 && groupRank(order[dragFrom]) === groupRank(k)) { e.preventDefault(); li.classList.add("is-over"); } });
       li.addEventListener("dragleave", () => li.classList.remove("is-over"));
       li.addEventListener("drop", (e) => {
         e.preventDefault(); li.classList.remove("is-over");
-        if (dragFrom < 0 || dragFrom === i) return;
+        if (dragFrom < 0 || dragFrom === i || groupRank(order[dragFrom]) !== groupRank(k)) return;
         const [m] = order.splice(dragFrom, 1);
         order.splice(i, 0, m);
         dragFrom = -1; draw();
@@ -430,11 +430,19 @@
     const otherBox = extraBox("other", "ほかの BT-EX のメンバー", "BT-EX5 の名簿にいない方。1人の時間ははじめ30秒(あとで変えられます)");
     const guestBox = extraBox("guest", "ゲスト", "BT-EX 以外の方。1人の時間ははじめ30秒(あとで変えられます)");
 
+    // 話す順番は必ず BT-EX5 のメンバー → ほかの BT-EX(BT-EX1 → BT-EX14 の順)→ ゲスト・ビジター。
+    // それぞれの組の中では、押した順・↑↓・つかんで動かす・シャッフル・名前の順で並べかえられる
+    const groupRank = (k) => { const x = byKey(k) || {}; return x.kind === "member" ? 0 : x.kind === "other" ? x.unit || 15 : 100; };
+    const GROUP_NAMES = { member: "BT-EX5 のメンバー", other: "ほかの BT-EX のメンバー", guest: "ゲスト・ビジター" };
+    const groupOf = (k) => { const r = groupRank(k); return r === 0 ? "member" : r < 100 ? "other" : "guest"; };
     function draw() {
+      order = order.map((k, i) => [k, i]).sort((a, b) => groupRank(a[0]) - groupRank(b[0]) || a[1] - b[1]).map(([k]) => k);
       saveOrder();
       App.fill(grid, all.filter((x) => x.kind === "member" || x.kind === "visitor").map(card));
       otherBox.drawList(); guestBox.drawList();
-      App.fill(listEl, order.length ? order.map(row) : h("li", { class: "pr-order-empty" }, "上の一覧から、話す順に押してください"));
+      App.fill(listEl, order.length ? order.flatMap((k, i) => (i === 0 || groupOf(order[i - 1]) !== groupOf(k)
+        ? [h("li", { class: "pr-order-group", "aria-hidden": "true" }, GROUP_NAMES[groupOf(k)]), row(k, i)] : [row(k, i)]))
+        : h("li", { class: "pr-order-empty" }, "上の一覧から、話す順に押してください"));
       const sec = order.reduce((t, k) => t + secOf(k), 0);
       const odd = order.filter((k) => secOf(k) !== per).length;
       total.textContent = order.length ? `${order.length}名(${odd ? `${order.length - odd}名 × ${PER.find(([v]) => v === per)[1]} ほか` : `× ${PER.find(([v]) => v === per)[1]}`}) = 約${Math.floor(sec / 60)}分${sec % 60 ? `${sec % 60}秒` : ""}` : "";
@@ -548,7 +556,7 @@
         otherBox, guestBox,
         h("div", { class: "round-head" }, h("p", { class: "round-label" }, "話す順番"),
           h("div", { class: "app-btn-row" },
-            // シャッフルは BT-EX5 のメンバーだけ(ほかの BT-EX の方・ゲスト・ビジターは今の順番の場所のまま)
+            // シャッフルは BT-EX5 のメンバーだけ(ほかの BT-EX の方は BT-EX1 → 14 の順、ゲスト・ビジターは最後のまま)
             App.btn("シャッフル", () => {
               const isMember = (k) => (byKey(k) || {}).kind === "member";
               const mixed = shuffle(order.filter(isMember));
@@ -556,7 +564,7 @@
               draw();
             }, "ghost small"),
             App.btn("名前の順", () => { order = order.slice().sort((a, b) => byKey(a).name.localeCompare(byKey(b).name, "ja")); draw(); }, "ghost small"))),
-        h("p", { class: "app-field-hint pr-drag-hint" }, "パソコンでは行をつかんで動かせます。スマホは ↑↓ で動かします。"),
+        h("p", { class: "app-field-hint pr-drag-hint" }, "順番は必ず BT-EX5 のメンバー → ほかの BT-EX(BT-EX1 から 14 の順)→ ゲストです。それぞれの中で、パソコンでは行をつかんで、スマホは ↑↓ で動かせます。"),
         listEl, total,
         h("p", { class: "round-label" }, "1人の時間"), perRow,
         h("div", { class: "pr-auto" },
