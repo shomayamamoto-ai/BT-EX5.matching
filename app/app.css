@@ -1299,7 +1299,6 @@ body.tabs-right .app-to-top { right: calc(var(--dock-w) + 22px); }
 .pr-extra-time { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 800; color: var(--text-sub); }
 .pr-extra-sec { padding: 6px 26px 6px 10px; border-radius: 10px; border: 1.5px solid var(--line-strong); background: #fff; font-size: 14px; font-weight: 800; }
 .pr-extra-del { flex-shrink: 0; width: 32px; height: 32px; border-radius: 10px; border: 1px solid var(--line-strong); background: #fff; font-weight: 800; cursor: pointer; }
-@media (max-width: 560px) { .pr-extra-add { grid-template-columns: minmax(0, 1fr) auto; } .pr-extra-add input:nth-child(2) { grid-column: 1 / -1; grid-row: 2; } }
 .pr-teamname > span:first-child { margin: 0 0 4px; min-height: 1.2em; font-size: clamp(12px, 1.3vw, 16px); color: #cbb38c; letter-spacing: 0.1em; font-weight: 700; }
 .pr-name { margin: 0; font-family: "Shippori Mincho", serif; font-size: clamp(30px, min(6.2vw, 9.5svh), 92px); font-weight: 700; line-height: 1.12; color: #fff3dc; overflow-wrap: anywhere; }
 .pr-name small { font-size: 0.42em; margin-left: 0.3em; color: #d9c08e; font-weight: 600; }
@@ -2176,3 +2175,61 @@ button.home-welcome-check:active { transform: scale(0.94); }
 .pr-dock-btn { touch-action: manipulation; -webkit-user-select: none; user-select: none; }
 /* 「いま」「終了」「開始」の見出しは1行で(縦に折れない) */
 .pr-time .pt-row > span:first-child, .pt-now-label { flex: none; white-space: nowrap; }
+
+/* ---------- プレゼンの「ほかの BT-EX のメンバー」「ゲスト」: ひと目でわかる形に ---------- */
+.pr-extra { margin-top: 16px; padding: 14px; border-radius: 18px; border: 1px solid var(--line); background: #fff; box-shadow: 0 1px 2px rgba(30, 22, 12, 0.04), 0 6px 18px rgba(30, 22, 12, 0.05); }
+.pr-extra.is-other { border-left: 4px solid #b8873f; }
+.pr-extra.is-guest { border-left: 4px solid #6d7f9c; }
+.pr-extra-head { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.pr-extra-ico { flex: none; display: grid; place-items: center; width: 42px; height: 42px; border-radius: 14px; background: linear-gradient(180deg, #f6ead0, #ecd9ae); color: #8a5f22; }
+.pr-extra.is-guest .pr-extra-ico { background: linear-gradient(180deg, #e9eef6, #d6dfec); color: #3f5274; }
+.pr-extra-ico .bi { width: 24px; height: 24px; }
+.pr-extra-ttl { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.pr-extra-ttl b { font-size: 16px; font-weight: 900; color: var(--text); }
+.pr-extra-ttl small { font-size: 12.5px; color: var(--text-light); line-height: 1.5; }
+.pr-extra-count { flex: none; padding: 4px 12px; border-radius: 999px; background: var(--grad); color: #f6e7c4; font-size: 13px; font-weight: 900; }
+.pr-extra.is-guest .pr-extra-count { background: #3f5274; color: #fff; }
+.pr-extra-count[hidden] { display: none; }
+/* 大きな「選んで足す」ボタン */
+.pr-extra-open { width: 100%; min-height: 54px; display: flex; align-items: center; gap: 12px; padding: 10px 16px; border-radius: 14px; border: 1.5px dashed #c9a35c; background: #fffaf0; color: #7a5520; font: inherit; font-size: 15px; font-weight: 900; text-align: left; cursor: pointer; transition: background 0.15s, border-color 0.15s; }
+.pr-extra-open:hover { background: #fff3dc; border-color: #b8873f; }
+.pr-extra-open:focus-visible { outline: 2px solid #b8873f; outline-offset: 2px; }
+.pr-extra-open > span:nth-child(2) { flex: 1; }
+.pr-extra-open-ico { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: var(--grad); color: #f6e7c4; }
+.pr-extra-open-ico .bi { width: 18px; height: 18px; }
+.pr-extra-open-ico .bi .bi-line { stroke-width: 2.25; }
+.pr-extra-open-chev .bi { width: 20px; height: 20px; transition: transform 0.2s; }
+.pr-extra.is-open .pr-extra-open { border-style: solid; background: #fff3dc; }
+.pr-extra.is-open .pr-extra-open-chev .bi { transform: rotate(90deg); }
+.pr-extra-panel { margin-top: 12px; display: grid; gap: 10px; }
+.pr-extra-panel[hidden] { display: none; }
+.pr-step { margin: 4px 0 0; display: flex; align-items: center; flex-wrap: wrap; gap: 8px; font-size: 14px; font-weight: 900; color: var(--text); }
+.pr-step small { flex-basis: 100%; margin-left: 32px; font-size: 12px; font-weight: 700; color: var(--text-light); }
+.pr-step-no { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: #2a1d0c; color: #f3d48d; font-size: 13px; font-weight: 900; }
+/* BT-EX の番号のボタン */
+.pr-unit-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 6px; }
+.pr-unit-chip { min-height: 46px; display: grid; place-content: center; justify-items: center; gap: 0; padding: 4px; border-radius: 12px; border: 1.5px solid var(--line-strong); background: #fff; color: var(--text); font: inherit; cursor: pointer; line-height: 1.1; transition: background 0.15s, border-color 0.15s, box-shadow 0.15s; }
+.pr-unit-chip small { font-size: 10px; font-weight: 800; letter-spacing: 0.04em; color: var(--text-light); }
+.pr-unit-chip b { font-size: 18px; font-weight: 900; font-variant-numeric: tabular-nums; }
+.pr-unit-chip:hover { border-color: #c9a35c; background: #fffaf0; }
+.pr-unit-chip.is-on { border-color: #b8873f; background: linear-gradient(180deg, #f3dca6, #e2b866); box-shadow: 0 4px 12px rgba(168, 129, 62, 0.25); }
+.pr-unit-chip.is-on small { color: #6b4a17; }
+.pr-unit-chip:focus-visible { outline: 2px solid #b8873f; outline-offset: 2px; }
+/* ゲスト: 見出しつきの欄と大きな足すボタン */
+.pr-extra-add { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr) auto; gap: 10px; align-items: end; }
+.pr-extra-field { display: grid; gap: 4px; min-width: 0; }
+.pr-extra-field > span { font-size: 12.5px; font-weight: 900; color: var(--text-sub); }
+.pr-extra-field em { margin-left: 6px; padding: 1px 6px; border-radius: 6px; background: #f6e2dd; color: #a3342a; font-size: 10.5px; font-style: normal; font-weight: 900; }
+.pr-extra-field em.is-opt { background: #efe9df; color: var(--text-light); }
+.pr-extra-add input { min-height: 46px; padding: 10px 12px; border-radius: 12px; border: 1.5px solid var(--line-strong); background: #fffdf8; font-size: 15px; }
+.pr-extra-add input:focus { border-color: #b8873f; outline: none; box-shadow: 0 0 0 3px rgba(184, 135, 63, 0.18); background: #fff; }
+.pr-extra-addbtn { min-height: 46px; white-space: nowrap; }
+.pr-extra-addbtn .bi { width: 18px; height: 18px; }
+.pr-extra-addbtn .bi .bi-line { stroke-width: 2.25; }
+@media (max-width: 640px) {
+  .pr-extra-add { grid-template-columns: minmax(0, 1fr); }
+  .pr-extra-addbtn { width: 100%; }
+  .pr-unit-row { grid-template-columns: repeat(auto-fill, minmax(56px, 1fr)); }
+}
+.pr-extra-list { margin-top: 12px; }
+@media (max-width: 420px) { .pr-extra-open { font-size: 14px; gap: 10px; padding: 10px 12px; } }

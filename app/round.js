@@ -304,12 +304,12 @@
     const secLabel = (v) => (v >= 60 ? `${Math.floor(v / 60)}分${v % 60 ? `${v % 60}秒` : ""}` : `${v}秒`);
     const secOf = (k) => { const x = byKey(k); return x && x.sec ? x.sec : per; };
     function extraBox(kind, title, hint) {
-      const nameIn = h("input", { type: "text", maxlength: "30", placeholder: kind === "guest" ? "お名前(例: 田中 太郎)" : "お名前", "aria-label": `${title}のお名前` });
-      const coIn = h("input", { type: "text", maxlength: "60", placeholder: "会社・肩書き(なくてもよい)", "aria-label": `${title}の会社・肩書き` });
+      const nameIn = h("input", { type: "text", maxlength: "30", placeholder: "例: 田中 太郎", autocomplete: "off" });
+      const coIn = h("input", { type: "text", maxlength: "60", placeholder: "例: 株式会社〇〇 代表", autocomplete: "off" });
       // ほかの BT-EX のメンバーは、BT-EX の番号と一覧から押して選ぶ(お名前を入れて探すこともできる)
       // 参加する方は一覧で色が付き、もう一度押すと外れる
       const bx = kind === "other" && App.btexPicker ? App.btexPicker({
-        unit: 1, onUnit: (n) => { if (unitSel) unitSel.value = String(n); }, onChange: (v) => { if (v) add(); },
+        unit: 1, onUnit: (n) => { if (unitSel) unitSel.value = String(n); drawUnits(n); }, onChange: (v) => { if (v) add(); },
         selected: () => extras.filter((y) => y.kind === "other").map((y) => ({ unit: y.unit, name: y.name })),
         onRemove: (v) => {
           const x = extras.find((y) => y.kind === "other" && y.unit === v.unit && y.name === v.name);
@@ -328,24 +328,56 @@
         const x = { key: `${kind === "guest" ? "g" : "o"}:${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`, kind, name, company: v ? [`BT-EX${v.unit}`, coIn.value.trim()].filter(Boolean).join(" ・ ") : coIn.value.trim(), unit: v ? v.unit : 0, sec: 30 };
         extras.push(x); all.push(x); order.push(x.key); saveExtras();
         nameIn.value = ""; coIn.value = ""; if (bx) { const u = v.unit; bx.setUnit(0); bx.setUnit(u); } draw();
+        if (!bx) { nameIn.focus(); App.toast(`${name}さんを足しました`); }
       };
       nameIn.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); add(); } });
       coIn.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); add(); } });
       const listBox = h("ul", { class: "pr-extra-list" });
       let unitSel = null;
+      // BT-EX の番号は、押して選ぶボタンを並べる(いまの番号に色)。select は番号を覚えておくためだけに残す
+      const unitRow = bx ? h("div", { class: "pr-unit-row", role: "radiogroup", "aria-label": "BT-EX の番号" }) : null;
+      function drawUnits(cur) {
+        if (!unitRow) return;
+        App.fill(unitRow, Array.from({ length: 14 }, (_, i) => i + 1).filter((n) => n !== 5).map((n) =>
+          h("button", { type: "button", class: `pr-unit-chip${n === cur ? " is-on" : ""}`, role: "radio", "aria-checked": n === cur ? "true" : "false", dataset: { unit: String(n) },
+            onclick: () => { unitSel.value = String(n); bx.setUnit(n); drawUnits(n); } }, h("small", null, "BT-EX"), h("b", null, String(n)))));
+      }
       if (bx) {
-        unitSel = h("select", { class: "pr-extra-unit", "aria-label": "BT-EX の番号", onchange: () => bx.setUnit(Number(unitSel.value)) },
+        unitSel = h("select", { class: "pr-extra-unit", hidden: true, "aria-hidden": "true", tabindex: "-1", onchange: () => { bx.setUnit(Number(unitSel.value)); drawUnits(Number(unitSel.value)); } },
           Array.from({ length: 14 }, (_, i) => i + 1).filter((n) => n !== 5).map((n) => h("option", { value: String(n) }, `BT-EX${n}`)));
         unitSel.value = "1";
+        drawUnits(1);
       }
-      const box = h("div", { class: `pr-extra is-${kind}` },
-        h("p", { class: "round-label" }, title, h("small", null, hint)),
-        bx ? h("details", { class: "pr-extra-pick-box" }, h("summary", null, "＋ BT-EX の番号と一覧から選んで足す"), h("div", { class: "pr-extra-bx" }, unitSel, bx))
-          : h("div", { class: "pr-extra-add" }, nameIn, coIn, App.btn("＋ 足す", add, "ghost small")),
-        listBox);
+      // 見出し: 絵・題・説明・入っている人数
+      const countEl = h("span", { class: "pr-extra-count" });
+      const head = h("div", { class: "pr-extra-head" },
+        h("span", { class: "pr-extra-ico", "aria-hidden": "true" }, App.glyph(kind === "guest" ? "visitor" : "one")),
+        h("div", { class: "pr-extra-ttl" }, h("b", null, title), h("small", null, hint)),
+        countEl);
+      let body;
+      if (bx) {
+        // 大きなボタンで開く → ① 番号を押す → ② お名前を押す(押した方は金色)
+        const panel = h("div", { class: "pr-extra-panel", hidden: true },
+          h("p", { class: "pr-step" }, h("span", { class: "pr-step-no" }, "1"), "BT-EX の番号を押す"), unitSel, unitRow,
+          h("p", { class: "pr-step" }, h("span", { class: "pr-step-no" }, "2"), "参加する方のお名前を押す", h("small", null, "押した方は金色になります。お名前で探すこともできます")), bx);
+        const toggle = h("button", { type: "button", class: "pr-extra-open", "aria-expanded": "false" },
+          h("span", { class: "pr-extra-open-ico", "aria-hidden": "true" }, App.glyph("plus")), h("span", null, "BT-EX のメンバーを選んで足す"),
+          h("span", { class: "pr-extra-open-chev", "aria-hidden": "true" }, App.glyph("chevron")));
+        toggle.addEventListener("click", () => { const open = panel.hidden; panel.hidden = !open; toggle.setAttribute("aria-expanded", open ? "true" : "false"); box.classList.toggle("is-open", open); });
+        body = h("div", null, toggle, panel);
+      } else {
+        // ゲスト: 名前と会社をそれぞれ見出しつきの欄に、足すボタンは大きく
+        body = h("div", { class: "pr-extra-add" },
+          h("label", { class: "pr-extra-field" }, h("span", null, "お名前", h("em", null, "必須")), nameIn),
+          h("label", { class: "pr-extra-field" }, h("span", null, "会社・肩書き", h("em", { class: "is-opt" }, "なくてもよい")), coIn),
+          h("button", { type: "button", class: "app-btn primary pr-extra-addbtn", onclick: add }, App.glyph("plus"), "ゲストを足す"));
+      }
+      const box = h("div", { class: `pr-extra is-${kind}` }, head, body, listBox);
       box.drawList = () => {
         if (bx && bx.refresh) bx.refresh();
         const mine = extras.filter((x) => x.kind === kind);
+        countEl.textContent = mine.length ? `${mine.length}名` : "";
+        countEl.hidden = !mine.length;
         App.fill(listBox, mine.map((x) => {
           const sel = h("select", { class: "pr-extra-sec", "aria-label": `${x.name}さんの時間`, onchange: () => { x.sec = Number(sel.value) || 30; saveExtras(); draw(); } },
             EXTRA_SECS.map((v) => h("option", { value: String(v) }, secLabel(v))));
@@ -366,8 +398,8 @@
       };
       return box;
     }
-    const otherBox = extraBox("other", "ほかの BT-EX のメンバー", "(名簿にいない方。はじめは30秒)");
-    const guestBox = extraBox("guest", "ゲスト", "(はじめは30秒)");
+    const otherBox = extraBox("other", "ほかの BT-EX のメンバー", "BT-EX5 の名簿にいない方。1人の時間ははじめ30秒(あとで変えられます)");
+    const guestBox = extraBox("guest", "ゲスト", "BT-EX 以外の方。1人の時間ははじめ30秒(あとで変えられます)");
 
     function draw() {
       saveOrder();
