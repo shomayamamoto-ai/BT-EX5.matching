@@ -2018,3 +2018,6 @@ button.home-welcome-check:active { transform: scale(0.94); }
 
 /* カードの文は1行ずつ(行の途中で折り返さない) */
 .pd-card-text .pd-line { display: block; width: max-content; white-space: nowrap; }
+.pd-hang { display: grid; grid-template-columns: auto auto; justify-content: start; }
+.pd-hang-r { display: grid; }
+.pd-check-items li > span:last-child { min-width: 0; }

@@ -38,9 +38,12 @@
   // lines: 1行に1つ / text: 1行 / paras: 段落(空の行で区切る。段落の中の改行はそのまま)
   // pairs: 「左|右」を1行に1つ / heads: 「見出し|文」を1行に1つ / blocks: 1行目が題、続く行が中身。空の行で区切る
   const SEP = /\s*[|｜]\s*/;
+  // 1行に1つの欄では、項目の中の改行を「↵」で書く(スライドではそこで改行する)
+  const enc = (v) => String(v || "").replace(/\n/g, "↵");
+  const dec = (v) => String(v || "").replace(/\s*↵\s*/g, "\n");
   const TYPES = {
-    text: { rows: 1, to: (v) => String(v || ""), from: (s) => s.trim() },
-    lines: { rows: 5, to: (v) => (v || []).join("\n"), from: (s) => s.split("\n").map((x) => x.trim()).filter(Boolean) },
+    text: { rows: 1, to: (v) => enc(v), from: (s) => dec(s.trim()) },
+    lines: { rows: 5, to: (v) => (v || []).map(enc).join("\n"), from: (s) => s.split("\n").map((x) => x.trim()).filter(Boolean).map(dec) },
     paras: { rows: 9, to: (v) => (v || []).join("\n\n"), from: (s) => s.split(/\n\s*\n/).map((x) => x.split("\n").map((y) => y.trim()).join("\n").trim()).filter(Boolean) },
     pairs: { rows: 4, to: (v) => (v || []).map((r) => r.join(" | ")).join("\n"), from: (s) => s.split("\n").map((x) => x.trim()).filter(Boolean).map((x) => { const [a, ...b] = x.split(SEP); return [a, b.join(" ")]; }) },
     heads: { rows: 9, to: (v) => (v || []).map((r) => (typeof r === "string" ? r : `${r.head} | ${r.text}`)).join("\n"), from: (s) => s.split("\n").map((x) => x.trim()).filter(Boolean).map((x) => { const [a, ...b] = x.split(SEP); return b.length ? { head: a, text: b.join(" ") } : { head: "", text: a }; }) },
@@ -49,8 +52,8 @@
     // cards: 1行目が見出し、続く行が文(文の中の改行はそのまま)。空の行で区切る。見出しだけのときは1行
     cards: { rows: 12, to: (v) => (v || []).map((r) => (typeof r === "string" ? r : [r.head, r.text].filter(Boolean).join("\n"))).join("\n\n"),
       from: (s) => s.split(/\n\s*\n/).map((x) => x.split("\n").map((y) => y.trim()).filter(Boolean)).filter((x) => x.length).map(([a, ...b]) => (b.length ? { head: a, text: b.join("\n") } : { head: "", text: a })) },
-    blocks: { rows: 9, key: "title", to: (v, f) => (v || []).map((b) => [b[f.key || "title"], ...(b[f.items || "lines"] || [])].join("\n")).join("\n\n"),
-      from: (s, f) => s.split(/\n\s*\n/).map((x) => x.split("\n").map((y) => y.trim()).filter(Boolean)).filter((x) => x.length).map(([t, ...rest]) => ({ [f.key || "title"]: t, [f.items || "lines"]: rest })) },
+    blocks: { rows: 9, key: "title", to: (v, f) => (v || []).map((b) => [b[f.key || "title"], ...(b[f.items || "lines"] || [])].map(enc).join("\n")).join("\n\n"),
+      from: (s, f) => s.split(/\n\s*\n/).map((x) => x.split("\n").map((y) => y.trim()).filter(Boolean).map(dec)).filter((x) => x.length).map(([t, ...rest]) => ({ [f.key || "title"]: t, [f.items || "lines"]: rest })) },
   };
   const SECTIONS = [
     ["代表の紹介(はじめの挨拶)", [
@@ -141,6 +144,7 @@
       }, "primary wide");
       body.append(
         h("p", { class: "app-lead" }, "ここで書きかえた内容は、次に「定例会をはじめる」を押したときのスライドに入ります。開催日・開始時刻・当日の流れは、「予定」の定例会の編集で変えられます。"),
+        h("p", { class: "app-field-hint" }, "1行に1つずつ書く欄で、項目の中で改行したいところには「↵」を入れてください(スライドではそこで改行します)。"),
         ...sections, timeSec,
         h("div", { class: "app-btn-row dk-actions" }, reset), save);
     });

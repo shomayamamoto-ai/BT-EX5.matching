@@ -929,6 +929,15 @@
       const lines = (t) => String(t).split("\n").flatMap((x, i) => (i ? [h("br"), x] : [x]));
       // 《 》で囲んだところを強調
       const rich = (t) => String(t).split(/《|》/).map((x, i) => (i % 2 ? h("em", null, x) : x));
+      // カードの文: 改行のある文は1行ずつ(行の途中では折り返さない)。
+      // 「パターン1:リアル定例会⏎& オンライン定例会」のように「:」で始まる文は、続きの行を「:」のあとにそろえる
+      const cardLines = (x) => {
+        const t = String(x);
+        if (!t.includes("\n")) return [t];
+        const m = /^([^:：\n]{1,12}[:：])([\s\S]*)$/.exec(t);
+        const rows = (m ? m[2] : t).split("\n").map((r) => h("span", { class: "pd-line" }, r.trim()));
+        return m ? [h("span", { class: "pd-hang" }, h("span", { class: "pd-hang-l" }, m[1]), h("span", { class: "pd-hang-r" }, ...rows))] : rows;
+      };
       // カードなどを順に浮かび上がらせる(--i は順番)
       const nth = (i) => ({ style: `--i:${i}` });
       // 中身のスライドの共通の形: 左上に「02 BT-EXの理念」の小見出し、題、(あれば)要点の一文、中身
@@ -971,7 +980,7 @@
         if (!p.no) {
           return h("div", { class: "pd pd-hero pd-subsection" },
             p.eyebrow ? h("p", { class: "pd-kicker" }, `${two(p.stepNo)}  ${p.eyebrow}`) : null,
-            h("h2", { class: "pd-display" }, p.name),
+            h("h2", { class: "pd-display" }, ...lines(p.name)),
             h("span", { class: "pd-rule", "aria-hidden": "true" }));
         }
         return h("div", { class: `pd pd-section${p.name.length > 12 ? " is-long-title" : ""}` },
@@ -1028,11 +1037,11 @@
             h("span", { class: "pd-card-no" }, two(i + 1)),
             h("p", { class: "pd-card-title" }, ...lines(it.title)),
             // 文は1行ずつ(行の途中では折り返さない。入りきらないときは fitDeck で文字を小さくする)
-            (it.lines || []).map((x) => h("p", { class: "pd-card-text" }, ...(String(x).includes("\n") ? String(x).split("\n").map((t) => h("span", { class: "pd-line" }, t)) : [x])))))));
+            (it.lines || []).map((x) => h("p", { class: "pd-card-text" }, ...cardLines(x)))))));
       }
       if (p.type === "checks") {
         return frame("pd-checks",
-          h("ul", { class: "pd-check-items" }, (p.items || []).map((x, i) => h("li", nth(i), h("span", { class: "pd-check", "aria-hidden": "true" }), h("span", null, x)))));
+          h("ul", { class: "pd-check-items" }, (p.items || []).map((x, i) => h("li", nth(i), h("span", { class: "pd-check", "aria-hidden": "true" }), h("span", null, ...lines(x))))));
       }
       if (p.type === "raise") {
         // 挙手のお願い: 大きな手のマークと、何について発表するか
@@ -1045,7 +1054,7 @@
           p.eyebrow ? h("p", { class: "pd-kicker" }, `${two(p.stepNo)}  ${p.eyebrow}`) : null,
           h("span", { class: "pd-raise-mark" }, hand),
           p.items && p.items.length ? h("ul", { class: "pd-raise-items" }, p.items.map((x, i) => h("li", nth(i), x))) : null,
-          h("h2", { class: "pd-display" }, ...lines(p.text || "について、発表できる方は\n挙手をお願いします")),
+          h("h2", { class: "pd-display" }, ...lines(p.text || "について、\n発表できる方は\n挙手をお願いします")),
           p.note ? h("p", { class: "pd-raise-note" }, ...rich(p.note)) : null);
       }
       if (p.type === "strengths") {
@@ -1058,7 +1067,7 @@
         return frame(`pd-rules${p.single ? " is-single" : ""}`,
           h("div", { class: "pd-rule-cols" }, p.blocks.map(([head, rows], bi) => h("section", Object.assign({ class: "pd-card pd-rule-block" }, nth(bi)),
             p.blocks.length > 1 ? h("p", { class: "pd-card-title" }, head) : null,
-            h("ol", null, rows.map((x, i) => h("li", null, h("span", { class: "pd-rule-no" }, NUMS[i]), h("span", null, ...rich(x)))))))),
+            h("ol", null, rows.map((x, i) => h("li", null, h("span", { class: "pd-rule-no" }, NUMS[i]), h("span", null, ...String(x).split("\n").flatMap((t, k) => (k ? [h("br"), ...rich(t)] : rich(t)))))))))),
           p.note ? h("p", { class: "pd-note" }, `※ ${p.note}`) : null);
       }
       if (p.type === "schedule") {
@@ -1082,7 +1091,11 @@
       // カードの文: 1行が入りきらないときは、同じスライドのカードの文をそろって小さくする
       const texts = [...el.querySelectorAll(".pd-card-text")];
       texts.forEach((t) => { t.style.fontSize = ""; });
-      const ratio = texts.reduce((r, t) => Math.min(r, [...t.querySelectorAll(".pd-line")].reduce((q, ln) => (ln.scrollWidth > t.clientWidth && t.clientWidth > 0 ? Math.min(q, t.clientWidth / ln.scrollWidth) : q), 1)), 1);
+      // (行の左はしからカードの文の右はしまでを、使える幅とする。「パターン1:」の続きの行も同じ)
+      const ratio = texts.reduce((r, t) => Math.min(r, [...t.querySelectorAll(".pd-line")].reduce((q, ln) => {
+        const room = t.getBoundingClientRect().right - ln.getBoundingClientRect().left - (parseFloat(getComputedStyle(t).paddingRight) || 0);
+        return ln.scrollWidth > room && room > 0 ? Math.min(q, room / ln.scrollWidth) : q;
+      }, 1)), 1);
       if (ratio < 1) texts.forEach((t) => { t.style.fontSize = `${(parseFloat(getComputedStyle(t).fontSize) * ratio * 0.97).toFixed(2)}px`; });
       if (tallScreen.matches) return;
       const need = el.scrollHeight, room = slide.clientHeight;
