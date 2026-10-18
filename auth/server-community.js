@@ -23,7 +23,7 @@
   var DAY = 24 * 60 * 60 * 1000;
   // 掲示板の種類(以前の「雑談」は「告知」に変えた)
   var BOARD_CATS = ["紹介依頼", "イベント・募集", "成約・お礼", "質問・相談", "告知"];
-  var ANNOUNCE_CATS = ["お知らせ", "定例会", "重要", "その他"];
+  var ANNOUNCE_CATS = ["お知らせ", "アップデート", "定例会", "重要", "その他"];
   // invited 招待中 / applied 参加申込 / confirmed 参加確定 / attended 参加済み / joined 入会 / declined キャンセル
   var VISITOR_STATUSES = ["invited", "applied", "confirmed", "attended", "joined", "declined"];
   var FEEDBACK_KINDS = ["bug", "idea", "other"];
@@ -152,6 +152,9 @@
           REF_SEED_ANNOUNCEMENTS.forEach(function (sa) {
             var rev = sa.rev || 1;
             if (db.announcementSeeds.indexOf(sa.seedId) !== -1) {
+              // 種類(アップデート など)だけを変えたとき
+              var had = sa.cat ? c.find(db.announcements, function (a) { return a.seedId === sa.seedId; }) : null;
+              if (had && had.cat !== sa.cat && ANNOUNCE_CATS.indexOf(sa.cat) !== -1) { had.cat = sa.cat; changed = true; }
               // すでに入っている投稿: 中身を直した(rev を上げた)ときだけ、件名・本文を新しくする。
               // 既読・投稿日はそのまま。運営が消した投稿は戻さない
               if ((db.announcementSeedRevs[sa.seedId] || 1) >= rev) return;
@@ -163,7 +166,7 @@
             }
             db.announcementSeeds.push(sa.seedId);
             db.announcementSeedRevs[sa.seedId] = rev;
-            db.announcements.push({ id: newId("a_"), at: Math.min(sa.at, c.nowMs()), readBy: [], by: "yamamoto", byName: "山本 捷真", title: sa.title, body: sa.body, cat: "お知らせ", pinned: false, seedId: sa.seedId });
+            db.announcements.push({ id: newId("a_"), at: Math.min(sa.at, c.nowMs()), readBy: [], by: "yamamoto", byName: "山本 捷真", title: sa.title, body: sa.body, cat: ANNOUNCE_CATS.indexOf(sa.cat) !== -1 ? sa.cat : "お知らせ", pinned: false, seedId: sa.seedId });
             trim(db.announcements, LIMITS.announcements);
             changed = true;
           });

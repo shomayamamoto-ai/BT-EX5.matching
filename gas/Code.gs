@@ -1498,7 +1498,36 @@ const REF_SEED_ANNOUNCEMENTS = [
       "・「〇〇さんへの紹介が N 日そのままです」は、「声をかけた」「もう終わった」で消せます。",
     ].join("\n"),
   },
+  {
+    seedId: "2026-10-18-update-3",
+    cat: "アップデート",
+    at: Date.UTC(2026, 9, 18, 5, 45), // 2026/10/18 14:45(日本時間)
+    title: "【アップデート】ほかの BT-EX の方との 1on1・「記録」に「分析」 など",
+    body: [
+      "前回のアップデート(「まとめ」をなくし、それぞれの画面に移しました・プレゼンにゲスト など)のあとに入れた変更です。前回の内容もあわせて載せます。",
+      "",
+      "■ 今回:1on1",
+      "・ほかの BT-EX のユニットの方との 1on1 も記録できます。「1on1 を予定・記録する」で「ほかの BT-EX の方と 1on1 をした →」を押し、BT-EX の番号(1〜14)を選んでください。",
+      "・BT-EX1〜14 の全員(BT-EX5 をのぞく277名)の一覧から、お名前を押すだけで選べます。お名前を少し入れると、すべてのユニットからすぐ探せます(選ぶと番号も切りかわります)。",
+      "・一覧にいない方は、お名前を入れて記録できます。あなたの 1on1 の回数に数えます(相手のアプリには届きません)。",
+      "",
+      "■ 今回:プレゼン",
+      "・「ほかの BT-EX のメンバー」も、番号と一覧から押して足せます。スライドには「BT-EX7 メンバー」のように番号が出ます。",
+      "",
+      "■ 今回:記録",
+      "・「数字」を「分析」という名前にして、「紹介」の左に置きました。",
+      "",
+      "■ 前回",
+      "・「まとめ」をなくしました。あなたのやることは「予定」のいちばん上、今月のあなた・BT-EX5 シグナルは「記録」→「分析」、今週の紹介チャレンジは「記録」→「紹介」に出ます。",
+      "・「マイル」を「ありがとうマイル」という名前にしました。",
+      "・プレゼンは「1. 定例会のプレゼン」と「2. 自分で使うタイマー(プレゼンの練習・ポモドーロ)」に分け、ゲストやほかの BT-EX のメンバーを1人ずつの時間(5秒きざみ)で足せるようにしました。名前の上には代表・役職・役割のマークが出ます。",
+      "・右上の「あ」で文字を大きくしたとき、メニューが消えてしまうことがあったのを直しました。",
+    ].join("\n"),
+  },
 ];
+
+// 改善のお知らせ(件名が【更新】【修正】【変更】【アップデート】で始まるもの)は、種類を「アップデート」にする
+REF_SEED_ANNOUNCEMENTS.forEach((a) => { if (!a.cat && /^【(更新|修正|変更|アップデート)】/.test(a.title)) a.cat = "アップデート"; });
 
 const PROFILE_ITEMS = [
   { key: "range", label: "活動範囲", ask: "活動範囲(新潟・東京/関東で対面できるか、オンラインで対応できるか)", ok: (m) => m.faceAreas.length > 0 || (m.online && m.online !== "unknown") },
@@ -2778,7 +2807,7 @@ var BtexServerCore = (function () {
   var DAY = 24 * 60 * 60 * 1000;
   // 掲示板の種類(以前の「雑談」は「告知」に変えた)
   var BOARD_CATS = ["紹介依頼", "イベント・募集", "成約・お礼", "質問・相談", "告知"];
-  var ANNOUNCE_CATS = ["お知らせ", "定例会", "重要", "その他"];
+  var ANNOUNCE_CATS = ["お知らせ", "アップデート", "定例会", "重要", "その他"];
   // invited 招待中 / applied 参加申込 / confirmed 参加確定 / attended 参加済み / joined 入会 / declined キャンセル
   var VISITOR_STATUSES = ["invited", "applied", "confirmed", "attended", "joined", "declined"];
   var FEEDBACK_KINDS = ["bug", "idea", "other"];
@@ -2907,6 +2936,9 @@ var BtexServerCore = (function () {
           REF_SEED_ANNOUNCEMENTS.forEach(function (sa) {
             var rev = sa.rev || 1;
             if (db.announcementSeeds.indexOf(sa.seedId) !== -1) {
+              // 種類(アップデート など)だけを変えたとき
+              var had = sa.cat ? c.find(db.announcements, function (a) { return a.seedId === sa.seedId; }) : null;
+              if (had && had.cat !== sa.cat && ANNOUNCE_CATS.indexOf(sa.cat) !== -1) { had.cat = sa.cat; changed = true; }
               // すでに入っている投稿: 中身を直した(rev を上げた)ときだけ、件名・本文を新しくする。
               // 既読・投稿日はそのまま。運営が消した投稿は戻さない
               if ((db.announcementSeedRevs[sa.seedId] || 1) >= rev) return;
@@ -2918,7 +2950,7 @@ var BtexServerCore = (function () {
             }
             db.announcementSeeds.push(sa.seedId);
             db.announcementSeedRevs[sa.seedId] = rev;
-            db.announcements.push({ id: newId("a_"), at: Math.min(sa.at, c.nowMs()), readBy: [], by: "yamamoto", byName: "山本 捷真", title: sa.title, body: sa.body, cat: "お知らせ", pinned: false, seedId: sa.seedId });
+            db.announcements.push({ id: newId("a_"), at: Math.min(sa.at, c.nowMs()), readBy: [], by: "yamamoto", byName: "山本 捷真", title: sa.title, body: sa.body, cat: ANNOUNCE_CATS.indexOf(sa.cat) !== -1 ? sa.cat : "お知らせ", pinned: false, seedId: sa.seedId });
             trim(db.announcements, LIMITS.announcements);
             changed = true;
           });

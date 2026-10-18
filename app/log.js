@@ -7,11 +7,11 @@
   const { h } = App;
 
   const TABS = [
+    { id: "stats", label: "分析" },
     { id: "ref", label: "紹介" },
     { id: "miles", label: "ありがとうマイル" },
     { id: "1on1", label: "1on1" },
     { id: "rank", label: "ランキング" },
-    { id: "stats", label: "数字" },
   ];
 
   App.views.log = {
