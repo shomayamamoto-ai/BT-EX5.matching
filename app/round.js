@@ -955,7 +955,8 @@
           h("img", { class: "pd-mark", src: "../assets/bt-ex5-mark-3d-512.png", alt: "" }),
           h("p", { class: "pd-kicker" }, "BT-EX5 定例会"),
           // 「日本海側最大のマーケット 新潟⇔東京」のように空白で区切った題は、空白のところで改行する
-          h("h2", { class: "pd-display" }, ...String(p.name).trim().split(/[\s　]+/).flatMap((x, i) => (i ? [h("br"), x] : [x]))),
+          // 「の」のあとでだけ折り返せるようにする(入りきらないときは「日本海側最大の/マーケット」と分かれる)
+          h("h2", { class: "pd-display" }, ...String(p.name).trim().split(/[\s　]+/).flatMap((x, i) => [i ? h("br") : null, ...x.replace(/の/g, "の\u0000").split("\u0000").filter(Boolean).flatMap((t, j) => (j ? [h("wbr"), t] : [t]))]).filter(Boolean)),
           h("span", { class: "pd-rule", "aria-hidden": "true" }),
           p.date ? h("p", { class: "pd-date" }, p.date) : null,
           p.notes && p.notes.length ? h("ul", { class: "pd-notes" }, p.notes.map((x) => h("li", null, x))) : null);
@@ -1002,8 +1003,8 @@
           h("h2", { class: "pd-wordmark" }, p.name),
           p.en ? h("p", { class: "pd-en" }, p.en) : null,
           h("div", { class: "pd-vrow" },
-            h("div", nth(0), h("p", { class: "pd-h" }, "理念"), h("p", { class: "pd-big" }, p.philosophy || "")),
-            h("div", nth(1), h("p", { class: "pd-h" }, "ビジョン"), h("p", { class: "pd-big" }, p.vision || ""))));
+            h("div", nth(0), h("p", { class: "pd-h" }, "理念"), h("p", { class: "pd-big" }, ...lines(p.philosophy || ""))),
+            h("div", nth(1), h("p", { class: "pd-h" }, "ビジョン"), h("p", { class: "pd-big" }, ...lines(p.vision || "")))));
       }
       if (p.type === "feature") {
         // 「新潟 ⇔ 東京」は、2つの街を金の線でつないだ図にする
@@ -1025,8 +1026,8 @@
         return frame(`pd-list is-${layout}`,
           h("ol", { class: "pd-cards" }, (p.items || []).map((it, i) => h("li", Object.assign({ class: "pd-card" }, nth(i)),
             h("span", { class: "pd-card-no" }, two(i + 1)),
-            h("p", { class: "pd-card-title" }, it.title),
-            (it.lines || []).map((x) => h("p", { class: "pd-card-text" }, x))))));
+            h("p", { class: "pd-card-title" }, ...lines(it.title)),
+            (it.lines || []).map((x) => h("p", { class: "pd-card-text" }, ...lines(x)))))));
       }
       if (p.type === "checks") {
         return frame("pd-checks",

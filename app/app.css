@@ -1779,7 +1779,7 @@ button.home-welcome-check:active { transform: scale(0.94); }
 .pd-hero { text-align: center; display: grid; justify-items: center; gap: clamp(10px, 2.2svh, 24px); }
 .pd-movie .pd-display, .pd-closing .pd-display { font-size: clamp(30px, min(5.2vw, 8.4svh), 82px); }
 .pd-play { flex: none; min-width: 200px; }
-.pd-cover .pd-display { font-size: clamp(28px, min(5vw, 8svh), 78px); }
+.pd-cover .pd-display { font-size: clamp(28px, min(5vw, 8svh), 78px); word-break: keep-all; overflow-wrap: normal; }
 .pd-date { margin: 0; font-size: clamp(15px, min(2vw, 3.2svh), 28px); font-weight: 800; color: var(--pd-gold); letter-spacing: 0.08em; }
 .pd-notes { list-style: none; margin: 0; padding: 0; color: var(--pd-muted); font-size: clamp(12px, min(1.4vw, 2.2svh), 18px); }
 .pd-subsection .pd-display { font-size: clamp(26px, min(4.2vw, 7svh), 66px); }

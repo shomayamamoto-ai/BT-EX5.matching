@@ -44,6 +44,11 @@
     paras: { rows: 9, to: (v) => (v || []).join("\n\n"), from: (s) => s.split(/\n\s*\n/).map((x) => x.split("\n").map((y) => y.trim()).join("\n").trim()).filter(Boolean) },
     pairs: { rows: 4, to: (v) => (v || []).map((r) => r.join(" | ")).join("\n"), from: (s) => s.split("\n").map((x) => x.trim()).filter(Boolean).map((x) => { const [a, ...b] = x.split(SEP); return [a, b.join(" ")]; }) },
     heads: { rows: 9, to: (v) => (v || []).map((r) => (typeof r === "string" ? r : `${r.head} | ${r.text}`)).join("\n"), from: (s) => s.split("\n").map((x) => x.trim()).filter(Boolean).map((x) => { const [a, ...b] = x.split(SEP); return b.length ? { head: a, text: b.join(" ") } : { head: "", text: a }; }) },
+    // multi: 改行をそのまま(スライドの改行になる)
+    multi: { rows: 3, to: (v) => String(v || ""), from: (s) => s.split("\n").map((x) => x.trim()).join("\n").trim() },
+    // cards: 1行目が見出し、続く行が文(文の中の改行はそのまま)。空の行で区切る。見出しだけのときは1行
+    cards: { rows: 12, to: (v) => (v || []).map((r) => (typeof r === "string" ? r : [r.head, r.text].filter(Boolean).join("\n"))).join("\n\n"),
+      from: (s) => s.split(/\n\s*\n/).map((x) => x.split("\n").map((y) => y.trim()).filter(Boolean)).filter((x) => x.length).map(([a, ...b]) => (b.length ? { head: a, text: b.join("\n") } : { head: "", text: a })) },
     blocks: { rows: 9, key: "title", to: (v, f) => (v || []).map((b) => [b[f.key || "title"], ...(b[f.items || "lines"] || [])].join("\n")).join("\n\n"),
       from: (s, f) => s.split(/\n\s*\n/).map((x) => x.split("\n").map((y) => y.trim()).filter(Boolean)).filter((x) => x.length).map(([t, ...rest]) => ({ [f.key || "title"]: t, [f.items || "lines"]: rest })) },
   };
@@ -57,11 +62,11 @@
     ]],
     ["BT-EXとは・理念とビジョン", [
       { path: "about", label: "BT-EXとは(段落は空の行で区切る。段落の中の改行はそのままスライドの改行になります)", type: "paras" },
-      { path: "philosophy", label: "理念", type: "text" },
-      { path: "vision", label: "ビジョン", type: "text" },
-      { path: "purposes", label: "目的(1行に1つ)", type: "lines" },
+      { path: "philosophy", label: "理念(改行はそのままスライドの改行になります)", type: "multi" },
+      { path: "vision", label: "ビジョン(改行はそのままスライドの改行になります)", type: "multi" },
+      { path: "purposes", label: "目的(空の行で区切る。中の改行はそのままスライドの改行になります)", type: "paras" },
       { path: "feature.lines", label: "BT-EX5 の特徴(1行目が大きな文、2行目は「新潟 ⇔ 東京」のように ⇔ でつなぐと図になります)", type: "lines" },
-      { path: "benefits", label: "仕組みとベネフィット(「見出し | 文」を1行に1つ)", type: "heads" },
+      { path: "benefits", label: "仕組みとベネフィット(1行目が見出し、続く行が文。空の行で区切る。文の中の改行はそのままスライドの改行になります)", type: "cards" },
       { path: "activities", label: "主な3つの活動(1行目が題、続く行が説明。空の行で区切る)", type: "blocks" },
     ]],
     ["規定とスケジュール", [
