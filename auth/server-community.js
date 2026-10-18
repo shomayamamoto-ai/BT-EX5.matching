@@ -2485,4 +2485,47 @@
       return { actions: { getPhotoRevs: getPhotoRevs, getPhotos: getPhotos, setMyPhoto: setMyPhoto, adminSetMemberPhoto: adminSetMemberPhoto } };
     },
   });
+
+  // ---------- 定例会のスライドの内容(日にち・スケジュール・規定・時間の目安など) ----------
+  // 元の内容は referral/data.js の BTEX_DECK。ここには運営が書きかえたところだけを入れる。
+  //   getDeckConfig(だれでも読める)/ saveDeckConfig(進行役だけ。config を空にすると元に戻す)
+  var DECK_OWNERS = ["yamamoto"];
+  var DECK_MAX = 60000; // 文字数
+  BtexServerCore.registerModule({
+    mutating: ["saveDeckConfig"],
+    create: function (c) {
+      function session(body) {
+        var db = c.ensureDb();
+        var a = c.authSession(db, body.sessionToken);
+        return a ? { db: db, a: a } : null;
+      }
+      function readCfg(db) {
+        var raw = c.blobs ? c.blobs.get("deck:config") || "" : db.deckConfig || "";
+        try { return raw ? JSON.parse(raw) : null; } catch (e) { return null; }
+      }
+      function getDeckConfig(body) {
+        var x = session(body);
+        if (!x) return c.fail("SESSION_INVALID");
+        return c.ok({ config: readCfg(x.db), at: x.db.deckConfigAt || 0, canEdit: DECK_OWNERS.indexOf(x.a.user.memberId) !== -1 });
+      }
+      function saveDeckConfig(body) {
+        var x = session(body);
+        if (!x) return c.fail("SESSION_INVALID");
+        if (DECK_OWNERS.indexOf(x.a.user.memberId) === -1) return c.fail("FORBIDDEN_ADMIN");
+        var cfg = body.config;
+        var raw = "";
+        if (cfg && typeof cfg === "object" && !Array.isArray(cfg)) {
+          try { raw = JSON.stringify(cfg); } catch (e) { return c.fail("INVALID_REQUEST"); }
+          if (raw.length > DECK_MAX) return c.fail("INVALID_REQUEST", "内容が長すぎます。");
+          if (raw === "{}") raw = "";
+        } else if (cfg) return c.fail("INVALID_REQUEST");
+        if (c.blobs) c.blobs.set("deck:config", raw);
+        else if (raw) x.db.deckConfig = raw; else delete x.db.deckConfig;
+        x.db.deckConfigAt = c.nowMs();
+        c.saveDb(x.db);
+        return c.ok({ config: raw ? JSON.parse(raw) : null, at: x.db.deckConfigAt });
+      }
+      return { actions: { getDeckConfig: getDeckConfig, saveDeckConfig: saveDeckConfig } };
+    },
+  });
 })();

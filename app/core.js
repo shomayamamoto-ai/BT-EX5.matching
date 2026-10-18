@@ -594,8 +594,11 @@ const App = (function () {
     { id: "events", label: "予定", icon: "M7 2v2H5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-2V2h-2v2H9V2zm-2 8h14v9H5z" },
     { id: "present", label: "プレゼン", icon: "M3 3h18v2h-1v10a1 1 0 0 1-1 1h-6v2.3l3.6 2.4-1.1 1.6L12 20.1l-3.5 2.2-1.1-1.6L11 18.3V16H5a1 1 0 0 1-1-1V5H3zm3 2v9h12V5zm2 6h3v2H8zm0-3h8v2H8z" },
     { id: "board", label: "掲示板", icon: "M4 3h16a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H8l-4 4V4a1 1 0 0 1 1-1Zm3 4v2h10V7Zm0 4v2h7v-2Z" },
-    { id: "news", label: "運営連絡", icon: "M3 10v4a1 1 0 0 0 1 1h2l5 4V5L6 9H4a1 1 0 0 0-1 1Zm13.5 2A4.5 4.5 0 0 0 14 8v8a4.5 4.5 0 0 0 2.5-4ZM14 3.2v2.1a7 7 0 0 1 0 13.4v2.1a9 9 0 0 0 0-17.6Z" },
+    { id: "news", label: "アップデート", icon: "M3 10v4a1 1 0 0 0 1 1h2l5 4V5L6 9H4a1 1 0 0 0-1 1Zm13.5 2A4.5 4.5 0 0 0 14 8v8a4.5 4.5 0 0 0 2.5-4ZM14 3.2v2.1a7 7 0 0 1 0 13.4v2.1a9 9 0 0 0 0-17.6Z" },
   ];
+  // プレゼン(定例会の進行)のタブは、この人だけに出す
+  const PRESENT_OWNERS = ["yamamoto"];
+  const canPresent = () => !!(session && PRESENT_OWNERS.includes(session.memberId));
   let badges = {};
   let current = { view: "", parts: [], params: new URLSearchParams() };
   let cleanup = null;
@@ -670,7 +673,9 @@ const App = (function () {
 
   function renderTabs() {
     const nav = document.getElementById("appTabs");
-    nav.replaceChildren(...TABS.map((t) => {
+    const tabs = TABS.filter((t) => t.id !== "present" || canPresent());
+    nav.style.setProperty("--tab-n", String(tabs.length));
+    nav.replaceChildren(...tabs.map((t) => {
       const count = t.id === "news" ? badges.announcements || 0
         : t.id === "board" ? badges.board || 0
         : t.id === "log" ? badges.inbox || 0
@@ -755,7 +760,7 @@ const App = (function () {
       if (pending && location.hash.length <= 1) history.replaceState(null, "", pending);
     } catch { /* noop */ }
     session = data;
-    try { sessionStorage.setItem("btex5-my-name", data.displayName || ""); } catch { /* noop */ }
+    try { sessionStorage.setItem("btex5-my-name", data.displayName || ""); sessionStorage.setItem("btex5-present", canPresent() ? "1" : "0"); } catch { /* noop */ }
     const res = await AuthApi.listReferralMembers(AuthSession.getToken());
     members = res.success ? res.data.members : [];
     document.getElementById("appMe").replaceChildren(avatar(data.displayName));
@@ -884,6 +889,7 @@ const App = (function () {
     get session() { return session; },
     get current() { return current; },
     isAdmin: () => !!(session && session.user && session.user.isAdmin),
+    canPresent,
     siteUrl: (path) => new URL(path, location.href).href,
   };
 })();

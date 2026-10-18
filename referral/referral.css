@@ -959,6 +959,13 @@ a:hover > .brand-mark { transform: rotate(-10deg) scale(1.06); }
   cursor: pointer;
 }
 .md-head { padding-right: 44px; margin-bottom: 6px; }
+.md-head.has-photo { display: grid; grid-template-columns: 96px minmax(0, 1fr); column-gap: 16px; align-items: start; }
+.md-head.has-photo > :not(.md-photo) { grid-column: 2; }
+.md-photo { grid-row: 1 / span 6; width: 96px; height: 128px; object-fit: cover; object-position: 50% 25%; border-radius: 14px; box-shadow: 0 0 0 1px rgba(184, 135, 63, 0.45), 0 8px 20px rgba(30, 22, 12, 0.18); }
+@media (max-width: 480px) {
+  .md-head.has-photo { grid-template-columns: 76px minmax(0, 1fr); column-gap: 12px; }
+  .md-photo { width: 76px; height: 101px; }
+}
 .md-name { font-size: 24px; font-weight: 900; }
 .md-company { font-size: 14px; color: var(--text-sub); margin-bottom: 8px; }
 .md-sec { border-top: 1px solid var(--line); padding-top: 12px; margin-top: 12px; }

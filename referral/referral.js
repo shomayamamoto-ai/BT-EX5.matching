@@ -311,6 +311,10 @@
     return `<a class="md-link ${t.kind} is-${escapeHtml(l.type)}" href="${escapeHtml(linkHref(l.url))}" target="_blank" rel="noopener noreferrer"><span class="md-link-type">${escapeHtml(t.label)}</span><span class="md-link-text">${escapeHtml(text)}</span><span class="md-link-go" aria-hidden="true">↗</span></a>`;
   }
 
+  // 運営が用意した顔写真(サイトの一番上からの場所)。早見表のページからは ../ をつける
+  function memberPhoto(id) {
+    return typeof REF_MEMBER_PHOTOS !== "undefined" && REF_MEMBER_PHOTOS[id] ? `../${REF_MEMBER_PHOTOS[id]}` : "";
+  }
   function detailHtml(m) {
     const links = m.links || [];
     const materials = links.filter((l) => linkType(l.type).kind === "material");
@@ -320,7 +324,8 @@
     const text = (v, empty = "まだ入力されていません") => (v ? `<p>${escapeHtml(v)}</p>` : `<p class="ref-muted">${empty}</p>`);
     const range = [m.face ? `対面:${m.face}` : "", m.online && m.online !== "unknown" ? `オンライン:${ONLINE_LABELS[m.online]}` : ""].filter(Boolean).join(" / ");
     return `
-      <header class="md-head">
+      <header class="md-head${memberPhoto(m.id) ? " has-photo" : ""}">
+        ${memberPhoto(m.id) ? `<img class="md-photo" src="${escapeHtml(memberPhoto(m.id))}" alt="" width="96" height="128" loading="lazy">` : ""}
         <h2 class="md-name" id="detailTitle">${escapeHtml(m.name)}</h2>
         ${roleMark(m.id)}
         <p class="md-company">${escapeHtml(m.company || "")}</p>

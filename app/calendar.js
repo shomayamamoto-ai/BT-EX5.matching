@@ -238,9 +238,10 @@
     const hh = dial.querySelector(".lux-h"), mm = dial.querySelector(".lux-m"), ss = dial.querySelector(".lux-s");
     const dateText = dial.querySelector(".lux-date");
     const calm = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    let started = false, lastMin = -1;
+    let started = false, lastMin = -1, running = true;
     function frame() {
-      if (!wrap.isConnected) { if (started) return; requestAnimationFrame(frame); return; }
+      // 画面から外れたら止める(もう一度画面に出したときは restart() で動かし直す)
+      if (!wrap.isConnected) { if (started) { running = false; return; } requestAnimationFrame(frame); return; }
       started = true;
       const now = jstNow();
       const ms = now.getUTCMilliseconds();
@@ -260,6 +261,7 @@
       else requestAnimationFrame(frame);
     }
     requestAnimationFrame(frame);
+    wrap.restart = () => { if (!running) { running = true; requestAnimationFrame(frame); } };
     void NS;
     return wrap;
   }

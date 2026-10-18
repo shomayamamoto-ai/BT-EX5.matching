@@ -296,7 +296,7 @@
     ["ones", "1on1 の予定", "main"],
     ["pulse", "BT-EX5 全体の今月", "side"],
     ["spot", "今週の紹介チャレンジ", "side"],
-    ["news", "運営連絡", "side"],
+    ["news", "アップデート", "side"],
     ["onesug", "1on1 のおすすめ", "side"],
     ["tips", "おすすめの設定(プロフィール・通知)", "side"],
   ];

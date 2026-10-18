@@ -8,7 +8,7 @@
 
   // 運営連絡・掲示板は、下のメニューにそれぞれのタブを置く
   App.views.news = {
-    title: "運営連絡",
+    title: "アップデート",
     autoRefresh: true,
     async render(el, parts, params) { await renderNews(el, params); },
   };

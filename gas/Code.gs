@@ -829,6 +829,23 @@ const BTEX_DECK = {
       "公の場やチャットにおいても、メンバーやグループへの否定的な発言は控え、互いを尊重するコミュニケーションを大切にします。",
     ],
   },
+  // ⑥LINKのビジネス実績紹介のあとの「挙手をお願いします」(《 》は強調)
+  raise: [
+    {
+      title: "1on1・リファーラル・招待ビジターの発表",
+      items: ["1on1", "リファーラル", "招待ビジター"],
+      text: "について、発表できる方は\n挙手をお願いします",
+      note: "※ ありがとうマイルは《次のページで発表》します。ここでは発表しないでください。",
+    },
+    {
+      title: "ありがとうマイルの発表",
+      items: ["ありがとうマイル"],
+      text: "について、発表できる方は\n挙手をお願いします",
+      note: "",
+    },
+  ],
+  // 時間の目安(分)。2時間の定例会のタイムマネジメントに使う(0: オープニング、1〜: 流れの番号)
+  timeplan: [5, 5, 20, 5, 25, 35, 15, 10],
   // スケジュール(次回以降の日程は、予定に入っている定例会から出す)
   schedule: {
     title: "BT-EX5 スケジュール",
@@ -842,6 +859,19 @@ const BTEX_DECK = {
 // 30秒プレゼンの画面などに出す。本人の了解があるものだけを置く
 const REF_MEMBER_PHOTOS = {
   yamamoto: "assets/members/yamamoto.jpg",
+  // 2026年10月、運営から受け取った顔写真
+  m02: "assets/members/m02.jpg", // あまみや 七音
+  m04: "assets/members/m04.jpg", // 吉澤 美和子
+  m08: "assets/members/m08.jpg", // 床島 良夫
+  m10: "assets/members/m10.jpg", // 大枝 篤志
+  m11: "assets/members/m11.jpg", // 品川 瑞樹
+  m12: "assets/members/m12.jpg", // 菅野 節子
+  m14: "assets/members/m14.jpg", // 三村 隆
+  m16: "assets/members/m16.jpg", // 桜羽 李果
+  m17: "assets/members/m17.jpg", // むらさき やえ
+  m19: "assets/members/m19.jpg", // 岡本 伸
+  m22: "assets/members/m22.jpg", // 小林 末季こばねぇ
+  m24: "assets/members/m24.jpg", // 柳橋 雅也
 };
 
 // 代表・役職・役割と、その基礎ポイント(大きいほど上に出る)
@@ -1734,6 +1764,35 @@ const REF_SEED_ANNOUNCEMENTS = [
       "■ 前回",
       "・定例会スライドを、プレゼン資料づくりの定番の考え方に合わせて作り直しました(本日の流れ・いまの流れの表示・下の進行バー・カードや図での見せ方)。",
       "・パソコンでは、スライドが画面に収まらないときに自動で縮めて収めます。",
+    ].join("\n"),
+  },
+  {
+    seedId: "2026-10-18-update-8",
+    cat: "アップデート",
+    at: Date.UTC(2026, 9, 18, 12, 0), // 2026/10/18 21:00(日本時間)
+    title: "【アップデート】顔写真・定例会のタイムマネジメント・スライドの編集 など",
+    body: [
+      "前回のアップデート(プレゼン中の操作を下のバーにまとめました)のあとに入れた変更です。前回の内容もあわせて載せます。",
+      "",
+      "■ 今回:顔写真",
+      "・運営から受け取った12名の顔写真を入れました(桜羽さん・柳橋さん・あまみやさん・三村さん・岡本さん・こばねぇさん・大枝さん・床島さん・菅野さん・品川さん・吉澤さん・むらさきさん)。紹介先早見表のくわしい画面と、定例会のプレゼンの画面に出ます。",
+      "",
+      "■ 今回:定例会の進行",
+      "・2時間の定例会のタイムマネジメントを付けました。いまの時刻と、予定より遅れていれば赤で「○分○秒 遅れ」、早ければ緑で「○分○秒 早い」、定刻どおりなら灰色で表示します。",
+      "・タイムマネジメントと下の操作バーは、左のつまみ(⠿)をつかんで好きな場所に動かせます(2回押すと元の場所)。",
+      "・ブレイクアウトルーム商談のときに、アナログ時計が止まっていたのを直しました。商談の画面の「次は…」の表示は消しました。",
+      "・規定(一般・出席・倫理)とスケジュールのスライドを、「BT-EXの主な3つの活動」のすぐあとに移しました。",
+      "・「LINKのビジネス実績紹介」のあとに、「1on1・リファーラル・招待ビジターの発表」と「ありがとうマイルの発表」の挙手のお願いを入れました。",
+      "・プレゼンのスライドでは、呼び名のある方のお名前を「小林 末季 こばねぇ さん」のように1行で出します。",
+      "・スライドの内容(スケジュール・規定・代表の紹介など)と時間の目安を、アプリの中で編集できるようにしました(進行役のみ)。",
+      "",
+      "■ 今回:そのほか",
+      "・下のメニューの「運営連絡」を「アップデート」という名前にしました。",
+      "・プレゼン(定例会の進行)の画面は、進行役だけが使えるようにしました。",
+      "",
+      "■ 前回",
+      "・プレゼン中の「戻る」「はじめる/とめる」「進む」「終了」を、下のメニューと同じ形のバーにまとめました。",
+      "・「おつかれさまでした」の画面からも「戻る」で最後のスライドに戻れます。",
     ].join("\n"),
   },
 ];
@@ -5479,6 +5538,49 @@ var BtexServerCore = (function () {
         return save(x.db, id, body.photo);
       }
       return { actions: { getPhotoRevs: getPhotoRevs, getPhotos: getPhotos, setMyPhoto: setMyPhoto, adminSetMemberPhoto: adminSetMemberPhoto } };
+    },
+  });
+
+  // ---------- 定例会のスライドの内容(日にち・スケジュール・規定・時間の目安など) ----------
+  // 元の内容は referral/data.js の BTEX_DECK。ここには運営が書きかえたところだけを入れる。
+  //   getDeckConfig(だれでも読める)/ saveDeckConfig(進行役だけ。config を空にすると元に戻す)
+  var DECK_OWNERS = ["yamamoto"];
+  var DECK_MAX = 60000; // 文字数
+  BtexServerCore.registerModule({
+    mutating: ["saveDeckConfig"],
+    create: function (c) {
+      function session(body) {
+        var db = c.ensureDb();
+        var a = c.authSession(db, body.sessionToken);
+        return a ? { db: db, a: a } : null;
+      }
+      function readCfg(db) {
+        var raw = c.blobs ? c.blobs.get("deck:config") || "" : db.deckConfig || "";
+        try { return raw ? JSON.parse(raw) : null; } catch (e) { return null; }
+      }
+      function getDeckConfig(body) {
+        var x = session(body);
+        if (!x) return c.fail("SESSION_INVALID");
+        return c.ok({ config: readCfg(x.db), at: x.db.deckConfigAt || 0, canEdit: DECK_OWNERS.indexOf(x.a.user.memberId) !== -1 });
+      }
+      function saveDeckConfig(body) {
+        var x = session(body);
+        if (!x) return c.fail("SESSION_INVALID");
+        if (DECK_OWNERS.indexOf(x.a.user.memberId) === -1) return c.fail("FORBIDDEN_ADMIN");
+        var cfg = body.config;
+        var raw = "";
+        if (cfg && typeof cfg === "object" && !Array.isArray(cfg)) {
+          try { raw = JSON.stringify(cfg); } catch (e) { return c.fail("INVALID_REQUEST"); }
+          if (raw.length > DECK_MAX) return c.fail("INVALID_REQUEST", "内容が長すぎます。");
+          if (raw === "{}") raw = "";
+        } else if (cfg) return c.fail("INVALID_REQUEST");
+        if (c.blobs) c.blobs.set("deck:config", raw);
+        else if (raw) x.db.deckConfig = raw; else delete x.db.deckConfig;
+        x.db.deckConfigAt = c.nowMs();
+        c.saveDb(x.db);
+        return c.ok({ config: raw ? JSON.parse(raw) : null, at: x.db.deckConfigAt });
+      }
+      return { actions: { getDeckConfig: getDeckConfig, saveDeckConfig: saveDeckConfig } };
     },
   });
 })();
