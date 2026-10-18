@@ -124,6 +124,11 @@
     if (done) done(stockPhoto(memberId));
   };
 
+  // 名前(呼び名が付いているときは2行。例: 小林 末季 / こばねぇ)
+  function nameEl(name, tag, cls, suffix) {
+    const p = typeof refNameParts === "function" ? refNameParts(name) : { main: name, nick: "" };
+    return h(tag, { class: cls }, p.main, p.nick ? h("br") : null, p.nick ? h("span", { class: "nm-nick" }, p.nick) : null, suffix || null);
+  }
   function face(url, name, cls) {
     return url
       ? h("img", { class: cls, src: url, alt: "", loading: "lazy", decoding: "async" })
@@ -218,7 +223,7 @@
       },
       face(x.kind === "member" ? photos[x.id] : "", x.name, "pr-card-face"),
       on ? h("span", { class: "pr-card-no", "aria-label": `${n + 1}番目` }, String(n + 1)) : null,
-      h("span", { class: "pr-card-name" }, x.name),
+      nameEl(x.name, "span", "pr-card-name"),
       h("span", { class: "pr-card-sub" }, x.kind === "visitor" ? "ビジター" : going.has(x.key) ? "出席予定" : absent.has(x.key) ? "欠席" : x.team || ""));
     }
 
@@ -230,7 +235,7 @@
         h("span", { class: "pr-grip", "aria-hidden": "true" }, "⋮⋮"),
         h("span", { class: "round-no" }, String(i + 1)),
         face(x.kind === "member" ? photos[x.id] : "", x.name, "pr-row-face"),
-        h("span", { class: "round-name" }, h("b", null, x.name), x.kind === "visitor" ? App.chip("ビジター", "info") : null, x.company ? h("small", null, x.company) : null),
+        h("span", { class: "round-name" }, nameEl(x.name, "b"), x.kind === "visitor" ? App.chip("ビジター", "info") : null, x.company ? h("small", null, x.company) : null),
         canPhoto ? h("button", { type: "button", class: "pr-photo-btn", onclick: () => App.choosePhoto(x.id, (url) => { photos[x.id] = url; draw(); }) }, photos[x.id] ? "写真を変える" : "写真を入れる") : null,
         h("span", { class: "round-move" },
           h("button", { type: "button", "aria-label": `${x.name}さんを上へ`, disabled: i === 0, onclick: () => { [order[i - 1], order[i]] = [order[i], order[i - 1]]; draw(); } }, "↑"),
@@ -381,7 +386,7 @@
           h("p", { class: "pr-no", "aria-hidden": "true" }, two(idx + 1)),
           h("div", { class: "pr-body" },
             h("p", { class: "pr-teamname" }, p.kind === "visitor" ? "ビジター" : p.team || ""),
-            h("h2", { class: "pr-name" }, p.name, h("small", null, "さん")),
+            nameEl(p.name, "h2", "pr-name", h("small", null, "さん")),
             p.catch ? h("p", { class: "pr-catch" }, p.catch) : null,
             h("dl", { class: "pr-rows" },
               p.area ? h("div", null, h("dt", null, "活動範囲"), h("dd", null, p.area)) : null,

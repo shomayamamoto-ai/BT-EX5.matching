@@ -1565,3 +1565,7 @@ button.home-welcome-check:active { transform: scale(0.94); }
   .app-tab span { font-size: 10.5px; letter-spacing: -0.03em; }
   .app-tabs .app-tab .app-badge { left: auto; right: 2px; }
 }
+
+/* 名前のうしろの呼び名(2行目) */
+.nm-nick { font-size: 0.82em; }
+.pr-name .nm-nick { font-size: 0.62em; }

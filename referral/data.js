@@ -689,6 +689,13 @@ const REF_SEED_MEMBERS = [
   }),
 ];
 
+// 名前のうしろに付いた呼び名(例:「小林 末季こばねぇ」の「こばねぇ」)を分ける。
+// 漢字の名前のすぐあとに、ひらがな・カタカナが続くときだけ分け、カードなどでは2行に出す
+function refNameParts(name) {
+  const m = /^(.*[\u4e00-\u9fff\u3005])([\u3041-\u3096\u30a1-\u30fa\u30fc]{2,})$/.exec(String(name || "").trim());
+  return m ? { main: m[1], nick: m[2] } : { main: String(name || ""), nick: "" };
+}
+
 // 運営が用意した顔写真(本人がアプリで写真を入れていないときに使う。サイトの一番上からの場所)。
 // 30秒プレゼンの画面などに出す。本人の了解があるものだけを置く
 const REF_MEMBER_PHOTOS = {

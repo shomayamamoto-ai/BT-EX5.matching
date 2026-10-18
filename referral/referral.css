@@ -1424,3 +1424,6 @@ a.ref-btn { display: inline-flex; align-items: center; justify-content: center; 
 .ref-card .ref-tag.memo { background: #fff8e6; color: #7d5a22; border-color: #f2d58f; }
 .ref-link-badge, .ref-link-badge.contact, .ref-link-badge.web { background: none; color: #7d5a22; padding: 1px 2px; }
 .ref-link-badge + .ref-link-badge::before { content: "・"; color: #b9a688; margin-right: 2px; }
+
+/* 名前のうしろの呼び名(2行目) */
+.ref-name .nm-nick { font-size: 0.82em; font-weight: 700; }

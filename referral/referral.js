@@ -245,7 +245,7 @@
         <div class="ref-col ref-col-member">
           <div class="ref-card-head">
             <div>
-              <h3 class="ref-name"><button type="button" class="ref-name-btn" data-detail="${m.id}">${escapeHtml(m.name)}</button></h3>
+              <h3 class="ref-name"><button type="button" class="ref-name-btn" data-detail="${m.id}">${nameHtml(m.name)}</button></h3>
               ${roleMark(m.id)}
               <p class="ref-company">${escapeHtml(m.company)}</p>
             </div>
@@ -427,7 +427,12 @@
   };
   // 入っていない項目: 自分のカードには「まだ入力されていません」(入れるきっかけに)、ほかの人のカードは「—」だけ
   // 一致度の%は細かく見えすぎるため、言葉の目安もそえる(85%〜 とても合う / 70%〜 合う / それより下 参考)
-  function bandOf(score) { return score >= 85 ? "とても合う" : score >= 70 ? "合う" : "参考に"; }
+  // 呼び名が付いた名前は2行に(例: 小林 末季 / こばねぇ)
+  function nameHtml(name) {
+    const p = refNameParts(name);
+    return p.nick ? `${escapeHtml(p.main)}<br><span class="nm-nick">${escapeHtml(p.nick)}</span>` : escapeHtml(name);
+  }
+    function bandOf(score) { return score >= 85 ? "とても合う" : score >= 70 ? "合う" : "参考に"; }
   function blank(m) { return m.id === myMemberId ? "まだ入力されていません" : "—"; }
 
   function roleMark(id, compact) {
