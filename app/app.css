@@ -2171,3 +2171,6 @@ button.home-welcome-check:active { transform: scale(0.94); }
 .bx-item.is-on { border-color: #b8873f; background: linear-gradient(180deg, #f3dca6, #e2b866); color: #2a1d0c; box-shadow: 0 4px 12px rgba(168, 129, 62, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.5); }
 .bx-item.is-on .bx-tag { background: rgba(255, 255, 255, 0.55); color: #6b4a17; }
 .bx-check { flex: none; display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: #2a1d0c; color: #f3d48d; font-size: 12px; font-weight: 900; line-height: 1; }
+/* 押したときの反応: 絵と文字は押す対象にしない(ボタンそのものが受け取る)。ダブルタップの拡大もしない */
+.pr-dock-btn > * { pointer-events: none; }
+.pr-dock-btn { touch-action: manipulation; -webkit-user-select: none; user-select: none; }

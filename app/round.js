@@ -935,14 +935,21 @@
     }
     // 下の操作バー(アプリの下のメニューと同じ形: 絵と文字のボタンを横に並べる)
     // 絵は丸い下地(いま押すもの)の中に、その下に文字(Material 3 のナビゲーションバーと同じ形)
+    // 絵と文字が変わるときだけ作り直す(時間を計っているあいだは1秒に10回ほど描き直すので、
+    // 毎回作り直すと、押した瞬間に中身が入れかわって「押しても反応しない」ことがあるため)
     function setBtn(btn, icon, label) {
+      const key = `${icon}|${label}`;
+      if (btn.dataset.face === key) return btn;
+      btn.dataset.face = key;
       btn.replaceChildren(h("span", { class: "pr-dock-ind" }, lineIcon(icon)), h("span", { class: "pr-dock-label" }, label));
+      btn.setAttribute("aria-label", label);
       return btn;
     }
     const dockBtn = (icon, label, cls, onclick) => setBtn(h("button", { type: "button", class: `pr-dock-btn${cls ? ` ${cls}` : ""}`, onclick }), icon, label);
     const pauseBtn = dockBtn("play", "はじめる", "is-main");
     const prevBtn = dockBtn("prev", "戻る", "", () => go(idx - 1));
-    const nextBtn = dockBtn("next", "進む", "", () => go(idx + 1));
+    // 時間の途中で話し終わったとき: 計っている最中に「進む」を押すと、次の人の時間もそのまま始まる
+    const nextBtn = dockBtn("next", "進む", "", () => { const keep = running() || gapUntil > 0; go(idx + 1, keep && idx + 1 < people.length && !isDeck(people[idx + 1])); });
     const endBtn = dockBtn("end", "終了", "is-end", () => finish(true));
     const box = h("div", { class: `pr-run is-entering${solo ? " is-solo" : ""}`, role: "dialog", "aria-label": solo ? "タイマー" : "プレゼンの進行" },
       h("div", { class: "pr-top" }, h("p", { class: "pr-title" }, title || `${(PER.find(([v]) => v === per) || [0, ""])[1]}プレゼン`), jump, count),
