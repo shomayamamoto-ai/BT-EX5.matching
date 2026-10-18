@@ -2174,3 +2174,5 @@ button.home-welcome-check:active { transform: scale(0.94); }
 /* 押したときの反応: 絵と文字は押す対象にしない(ボタンそのものが受け取る)。ダブルタップの拡大もしない */
 .pr-dock-btn > * { pointer-events: none; }
 .pr-dock-btn { touch-action: manipulation; -webkit-user-select: none; user-select: none; }
+/* 「いま」「終了」「開始」の見出しは1行で(縦に折れない) */
+.pr-time .pt-row > span:first-child, .pt-now-label { flex: none; white-space: nowrap; }

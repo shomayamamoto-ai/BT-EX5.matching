@@ -722,6 +722,16 @@
       try { pos = JSON.parse(localStorage.getItem(KEY) || "null"); } catch { /* noop */ }
       setSide(opt.sides && pos && pos.side ? pos.side : "");
       if (pos && typeof pos.x === "number") { el.classList.add("is-floating"); place(pos.x, pos.y); if (opt.sides && pos.side) snapSide(pos.side); }
+      else if (opt.defaultPlace && vw() > 760) {
+        // まだ動かしていないときの場所(広い画面): 下のメーターのすぐ上
+        const d = opt.defaultPlace;
+        setSide(opt.sides && d.side ? d.side : "");
+        el.classList.add("is-floating");
+        const r = el.getBoundingClientRect();
+        const top = Math.max(4, vh() - r.height - (d.bottom || 0));
+        const left = d.side === "right" ? vw() - r.width - (d.inset || 0) : (d.inset || 0);
+        el.style.left = `${Math.round(Math.max(0, left))}px`; el.style.top = `${Math.round(top)}px`;
+      }
       else { el.classList.remove("is-floating"); el.style.left = ""; el.style.top = ""; }
     }
     function save() {
@@ -849,7 +859,10 @@
     // スマホなど狭い画面では、はじめは小さく(時刻とずれだけ)出す
     setMini((document.documentElement.clientWidth || innerWidth) <= 760);
     host.append(panel);
-    floatable(panel, "time", host);
+    // はじめの場所(広い画面): 左はし、メーターのすぐ上
+    floatable(panel, "time", host, { defaultPlace: { side: "left", inset: 4, bottom: 136 } });
+    // 小さく・大きくしたときも、下のはしの位置をそろえる
+    toggle.addEventListener("click", () => window.dispatchEvent(new Event("resize")));
 
     function tick() {
       const now = Date.now();
@@ -863,7 +876,7 @@
       if (state !== lastState) { lastState = state; statusIcon.replaceChildren(lineIcon(state)); }
       statusText.textContent = state === "ok" ? "定刻どおり" : state === "late" ? `${ms2(lag)} 遅れ` : `${ms2(lag)} 早い`;
       const st = stepList.find((x) => x.no === items[i].stepNo);
-      now2.replaceChildren(h("span", null, "いま"), h("b", { class: "pt-now-name" }, st ? `${two(st.no)} ${st.title}` : items[i].stepNo ? "おわり" : "オープニング"), h("span", { class: "pt-now-time" }, `${hm(ps)}〜${hm(pe)}`));
+      now2.replaceChildren(h("span", { class: "pt-now-label" }, "いま"), h("b", { class: "pt-now-name" }, st ? `${two(st.no)} ${st.title}` : items[i].stepNo ? "おわり" : "オープニング"), h("span", { class: "pt-now-time" }, `${hm(ps)}〜${hm(pe)}`));
       endRow.replaceChildren(h("span", null, "終了"), h("b", null, `${hm(start + total)}`), h("span", { class: "pt-sep" }, "見込み"), h("b", { class: "pt-eta" }, hm(start + total + lag)));
       const span = total || 1;
       bar.firstChild.style.width = `${Math.max(0, Math.min(100, ((ps - start) / span) * 100))}%`;
@@ -962,7 +975,8 @@
     document.documentElement.append(box);
     // 下の操作バーは、つまみ(⠿)をつかんで好きな場所へ動かせる
     const dock = box.querySelector(".pr-dock");
-    floatable(dock, "dock", box, { sides: true });
+    // はじめの場所(広い画面): 右はしに縦に並べ、メーターのすぐ上
+    floatable(dock, "dock", box, { sides: true, defaultPlace: { side: "right", inset: 8, bottom: 116 } });
     const dockGrip = dock.gripEl;
     // 定例会のスライドのときは、2時間の定例会のタイムマネジメント(動かせる)
     const timing = opts.deck && opts.timing ? timePanel(people, opts.timing, () => idx, box) : null;
