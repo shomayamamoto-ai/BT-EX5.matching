@@ -1004,6 +1004,8 @@
         const rows = (m ? m[2] : t).split("\n").map((r) => h("span", { class: "pd-line" }, r.trim()));
         return m ? [h("span", { class: "pd-hang" }, h("span", { class: "pd-hang-l" }, m[1]), h("span", { class: "pd-hang-r" }, ...rows))] : rows;
       };
+      // 長いカタカナの言葉は、決めたところで改行する(「ブレイクアウト/ルーム商談」)
+      const softBreaks = (t) => String(t).split(/(?=ルーム商談)/).flatMap((x, i) => (i ? [h("br"), x] : [x]));
       // カードなどを順に浮かび上がらせる(--i は順番)
       const nth = (i) => ({ style: `--i:${i}` });
       // 中身のスライドの共通の形: 左上に「02 BT-EXの理念」の小見出し、題、(あれば)要点の一文、中身
@@ -1052,7 +1054,7 @@
         return h("div", { class: `pd pd-section${p.name.length > 10 ? " is-long-title" : ""}` },
           h("div", { class: "pd-section-main" },
             h("p", { class: "pd-no", "aria-hidden": "true" }, two(p.no)),
-            h("h2", { class: "pd-display" }, p.name),
+            h("h2", { class: "pd-display" }, ...softBreaks(p.name)),
             p.sub ? h("p", { class: "pd-sub" }, p.sub) : null),
           p.steps && p.steps.length > 1 ? agendaList(true) : null);
       }
@@ -1224,7 +1226,11 @@
       const pi = persons.indexOf(cur);
       count.textContent = opts.deck ? (pi >= 0 ? `プレゼン ${two(pi + 1)} / ${two(persons.length)}` : "") : `${two(idx + 1)} / ${two(people.length)}`;
       if (jump) { let j = -1; jump.querySelectorAll("option").forEach((o) => { if (Number(o.value) <= idx) j = Number(o.value); }); jump.value = String(j); }
-      pauseBtn.hidden = isDeck(cur);
+      // スライドの間は「はじめる」を見えなくするだけ(場所は残す。「進む」などの位置が動かないように)
+      const noTimer = isDeck(cur);
+      pauseBtn.classList.toggle("is-slot", noTimer);
+      pauseBtn.disabled = noTimer;
+      if (noTimer) pauseBtn.setAttribute("aria-hidden", "true"); else pauseBtn.removeAttribute("aria-hidden");
       prevBtn.disabled = idx === 0;
       setBtn(nextBtn, "next", idx === people.length - 1 ? "おわり" : "進む");
       if (isDeck(cur)) { box.classList.remove("is-last", "is-red", "is-end", "is-gap"); return; }
