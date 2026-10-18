@@ -333,6 +333,14 @@
   }
 
   // ---------- 進行(全画面) ----------
+  const fullEl = () => document.fullscreenElement || document.webkitFullscreenElement || null;
+  function exitFull() {
+    try {
+      const ex = document.exitFullscreen || document.webkitExitFullscreen;
+      if (ex) { const r = ex.call(document); if (r && r.catch) r.catch(() => {}); }
+    } catch { /* noop */ }
+  }
+
   // gap: 0秒のあと次の人へ移るまでの秒数(0 なら自動で移らない)
   App.roundRun = function (people, per, gap, title) {
     App.timerSound.ready();
@@ -366,7 +374,9 @@
       slide,
       h("div", { class: "pr-meter-row" }, meterBox, sec),
       h("div", { class: "round-ctrl pr-ctrl" }, prevBtn, pauseBtn, nextBtn, endBtn));
-    document.body.append(box);
+    // <body> ではなく <html> のすぐ下に置く(右上の「あ」で文字を大きくしても、この画面は大きくならない。
+    // 文字の大きさは <body> を拡大して変えているため)
+    document.documentElement.append(box);
     // 残り秒数の欄は、いちばん幅を取る表示(「残り 8:88 秒」「次の人まで 88 秒」)に合わせて幅を決めておく。
     // はじめる・止める・次の人までの待ちで、数字やメーターの位置が動かないように
     function fixSecWidth() {
@@ -390,10 +400,16 @@
     document.documentElement.classList.add("round-open");
     try { if ("wakeLock" in navigator) navigator.wakeLock.request("screen").then((w) => { wake = w; }).catch(() => {}); } catch { /* noop */ }
     // 押した流れのまま全画面にする(ブラウザが断ったときは、そのまま画面いっぱいで進める)
+    // 全画面にするのはページ全体(<html>)。この画面の部品だけを全画面にすると、終わって部品を外したときに
+    // ブラウザ(Safari など)が真っ白な全画面のまま戻らないことがあるため
     function toggleFull() {
       try {
-        if (document.fullscreenElement) document.exitFullscreen();
-        else if (box.requestFullscreen) box.requestFullscreen().catch(() => {});
+        if (fullEl()) exitFull();
+        else {
+          const el = document.documentElement;
+          const req = el.requestFullscreen || el.webkitRequestFullscreen;
+          if (req) { const r = req.call(el); if (r && r.catch) r.catch(() => {}); }
+        }
       } catch { /* noop */ }
     }
     toggleFull();
@@ -411,9 +427,9 @@
             nameEl(p.name, "h2", "pr-name", h("small", null, "さん")),
             p.catch ? h("p", { class: "pr-catch" }, p.catch) : null,
             h("dl", { class: "pr-rows" },
-              p.area ? h("div", null, h("dt", null, "活動範囲"), h("dd", null, p.area)) : null,
-              p.wants ? h("div", null, h("dt", null, "つながりたい人"), h("dd", null, p.wants)) : null,
-              p.triggers && p.triggers.length ? h("div", null, h("dt", null, "こんな話が出たら"), h("dd", { class: "pr-tags" }, p.triggers.map((t) => h("span", null, t)))) : null))),
+              p.area ? h("div", { class: "pr-row-area" }, h("dt", null, "活動範囲"), h("dd", null, p.area)) : null,
+              p.wants ? h("div", { class: "pr-row-wants" }, h("dt", null, "つながりたい人"), h("dd", null, p.wants)) : null,
+              p.triggers && p.triggers.length ? h("div", { class: "pr-row-tags" }, h("dt", null, "こんな話が出たら"), h("dd", { class: "pr-tags" }, p.triggers.map((t) => h("span", null, t)))) : null))),
         h("div", { class: "pr-side" },
           face(p.photo, p.name, "pr-photo"),
           h("div", { class: "pr-next" },
@@ -486,12 +502,28 @@
       App.fill(slide, h("div", { class: "pr-done" }, h("p", { class: "pr-name" }, "おつかれさまでした"), h("p", { class: "pr-catch" }, `${said}名の方が話しました`)));
       App.fill(box.querySelector(".pr-ctrl"), h("button", { type: "button", class: "round-btn is-main", onclick: closeRun }, "閉じる"));
     }
+    // 閉じる: 先に全画面をやめてから、この画面を外す(全画面のまま外すと、真っ白な画面が残ることがある)
+    let closed = false;
     function closeRun() {
+      if (closed) return;
+      closed = true;
       window.removeEventListener("resize", fixSecWidth);
-      halt(); box.remove(); document.documentElement.classList.remove("round-open");
       document.removeEventListener("keydown", onKey);
-      try { if (document.fullscreenElement) document.exitFullscreen(); } catch { /* noop */ }
+      halt();
       try { if (wake) wake.release(); } catch { /* noop */ }
+      const remove = () => {
+        box.remove();
+        document.documentElement.classList.remove("round-open");
+        // 念のため、いまの画面を描き直す(スクロールの止まりや表示の崩れを残さない)
+        try { window.scrollTo(0, 0); } catch { /* noop */ }
+      };
+      if (!fullEl()) { remove(); return; }
+      let doneRemove = false;
+      const once = () => { if (doneRemove) return; doneRemove = true; document.removeEventListener("fullscreenchange", once); document.removeEventListener("webkitfullscreenchange", once); remove(); };
+      document.addEventListener("fullscreenchange", once);
+      document.addEventListener("webkitfullscreenchange", once);
+      exitFull();
+      setTimeout(once, 700); // 全画面の終わりの知らせが来ないブラウザでも外す
     }
     function onKey(e) {
       if (e.target.closest && e.target.closest("input, textarea, select")) return;
@@ -499,7 +531,7 @@
       else if (e.key === "ArrowRight" && !done) go(idx + 1);
       else if (e.key === "ArrowLeft" && !done && idx > 0) go(idx - 1);
       else if ((e.key === "f" || e.key === "F") && !done) toggleFull();
-      else if (e.key === "Escape") { if (document.fullscreenElement) return; if (done) closeRun(); else finish(true); }
+      else if (e.key === "Escape") { if (fullEl()) return; if (done) closeRun(); else finish(true); }
     }
     document.addEventListener("keydown", onKey);
     drawSlide();
