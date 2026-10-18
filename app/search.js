@@ -1,6 +1,7 @@
 // ============================================
 // app/search.js — アプリ内をまとめて探す(上の 🔍。パソコンは「/」か Ctrl+K でも開く)
-// メンバー(名前・会社・事業・求める紹介・こんな話が出たら)・掲示板・運営連絡・定例会を一度に探す
+// メンバー(名前・会社・事業・求める紹介・こんな話が出たら)・掲示板・定例会を一度に探す
+// (アップデート(運営からのお知らせ)は探す対象にしない)
 // ============================================
 
 (function () {
@@ -46,12 +47,11 @@
   let cache = null;
   async function load() {
     if (cache && Date.now() - cache.at < 60 * 1000) return cache;
-    const [board, news, events] = await Promise.all([
+    const [board, events] = await Promise.all([
       App.api("listBoard", {}, { quiet: true }),
-      App.api("listAnnouncements", {}, { quiet: true }),
       App.api("listEvents", {}, { quiet: true }),
     ]);
-    cache = { at: Date.now(), posts: (board && board.items) || [], anns: (news && news.items) || [], events: (events && events.events) || [] };
+    cache = { at: Date.now(), posts: (board && board.items) || [], events: (events && events.events) || [] };
     return cache;
   }
 
@@ -59,7 +59,7 @@
     App.openSheet("アプリ内を探す", (body, close) => {
       const input = h("input", { type: "search", class: "srch-input", placeholder: "人の名前・仕事・掲示板の言葉など", "aria-label": "探す言葉", autocomplete: "off", enterkeyhint: "search" });
       const results = h("div", { class: "srch-results", "aria-live": "polite" },
-        h("p", { class: "srch-hint" }, "メンバー(名前・会社・事業・求める紹介)・掲示板・運営連絡・定例会をまとめて探します。"));
+        h("p", { class: "srch-hint" }, "メンバー(名前・会社・事業・求める紹介)・掲示板・定例会をまとめて探します。"));
       body.append(input, results);
       setTimeout(() => input.focus(), 50);
       let data = null;
@@ -73,17 +73,15 @@
       }
       function draw() {
         const words = norm(input.value).split(/\s+/).filter(Boolean);
-        if (!words.length) { App.fill(results, h("p", { class: "srch-hint" }, "メンバー(名前・会社・事業・求める紹介)・掲示板・運営連絡・定例会をまとめて探します。")); return; }
+        if (!words.length) { App.fill(results, h("p", { class: "srch-hint" }, "メンバー(名前・会社・事業・求める紹介)・掲示板・定例会をまとめて探します。")); return; }
         const match = (text) => { const t = norm(text); return words.every((w) => t.includes(w)); };
         const mem = App.members.filter((m) => match([m.name, m.company, m.category, m.business, m.wants, (m.triggers || []).join(" "), m.team].join(" "))).slice(0, 10)
           .map((m) => row(App.profileHref(m.id, "home"), App.avatar(m.name), m.name, snippet([m.company, m.business, m.wants, (m.triggers || []).join(" ")].filter(Boolean).join(" ・ "), words)));
         const posts = data ? data.posts.filter((p) => match([p.body, p.byName, p.cat, ...(p.comments || []).map((c) => c.body)].join(" "))).slice(0, 8)
           .map((p) => row(`#board?post=${p.id}`, h("span", { class: "srch-ico" }, App.glyph("post")), `${p.byName}さん ・ ${p.cat}`, snippet(p.body, words))) : [];
-        const anns = data ? data.anns.filter((a) => match([a.title, a.body].join(" "))).slice(0, 8)
-          .map((a) => row(`#news?open=${a.id}`, h("span", { class: "srch-ico" }, App.glyph("ann")), a.title, snippet(a.body, words))) : [];
         const evs = data ? data.events.filter((e) => match([e.title, e.place, e.body, e.agenda, e.date].join(" "))).slice(0, 6)
           .map((e) => row(`#events/detail/${e.id}`, h("span", { class: "srch-ico" }, App.glyph("calendar")), `${App.fmtDate(e.date)} ${e.title}`, snippet([e.place, e.body, e.agenda].filter(Boolean).join(" ・ ") || e.title, words))) : [];
-        const all = [section("メンバー", mem), section("掲示板", posts), section("運営連絡", anns), section("定例会", evs)].filter(Boolean);
+        const all = [section("メンバー", mem), section("掲示板", posts), section("定例会", evs)].filter(Boolean);
         App.fill(results, all.length ? all : h("p", { class: "srch-hint" }, data ? "見つかりませんでした。言葉を短くするか、別の言い方で探してください。" : "読み込み中…"));
       }
       input.addEventListener("input", draw);
