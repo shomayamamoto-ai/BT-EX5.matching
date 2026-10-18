@@ -1027,7 +1027,8 @@
           h("ol", { class: "pd-cards" }, (p.items || []).map((it, i) => h("li", Object.assign({ class: "pd-card" }, nth(i)),
             h("span", { class: "pd-card-no" }, two(i + 1)),
             h("p", { class: "pd-card-title" }, ...lines(it.title)),
-            (it.lines || []).map((x) => h("p", { class: "pd-card-text" }, ...lines(x)))))));
+            // 文は1行ずつ(行の途中では折り返さない。入りきらないときは fitDeck で文字を小さくする)
+            (it.lines || []).map((x) => h("p", { class: "pd-card-text" }, ...(String(x).includes("\n") ? String(x).split("\n").map((t) => h("span", { class: "pd-line" }, t)) : [x])))))));
       }
       if (p.type === "checks") {
         return frame("pd-checks",
@@ -1078,6 +1079,11 @@
       const el = slide.firstElementChild;
       if (!el || !el.classList.contains("pd")) return;
       el.style.transform = "";
+      // カードの文: 1行が入りきらないときは、同じスライドのカードの文をそろって小さくする
+      const texts = [...el.querySelectorAll(".pd-card-text")];
+      texts.forEach((t) => { t.style.fontSize = ""; });
+      const ratio = texts.reduce((r, t) => Math.min(r, [...t.querySelectorAll(".pd-line")].reduce((q, ln) => (ln.scrollWidth > t.clientWidth && t.clientWidth > 0 ? Math.min(q, t.clientWidth / ln.scrollWidth) : q), 1)), 1);
+      if (ratio < 1) texts.forEach((t) => { t.style.fontSize = `${(parseFloat(getComputedStyle(t).fontSize) * ratio * 0.97).toFixed(2)}px`; });
       if (tallScreen.matches) return;
       const need = el.scrollHeight, room = slide.clientHeight;
       if (need > room && room > 0) el.style.transform = `scale(${Math.max(0.6, (room / need) * 0.97).toFixed(3)})`;
