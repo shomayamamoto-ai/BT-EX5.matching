@@ -1164,6 +1164,8 @@ var BtexServerCore = (function () {
       push: env.push || null,
       // LINE 公式アカウント(共有サーバーで、運営が設定したときだけ。{ addUrl } など。なければ null)
       line: env.line || null,
+      // 写真などの大きなデータの置き場所(共有サーバーでは別のシート。なければ null=本体に入れる)
+      blobs: env.blobs || null,
     };
     var MODULE_INSTANCES = MODULES.map(function (m) {
       var inst = m.create(ctx) || {};

@@ -38,9 +38,15 @@ const RefScoring = (function () {
     // anyTopic(「まだ分からない」)のときは、どれか1つに対応していれば高い点、多いほど少し上がる
     const topicHits = [...a.topics].filter((t) => m.topics.includes(t));
     const groups = a.topicGroups && a.topicGroups.length ? a.topicGroups : [...a.topics].map((t) => [t]);
-    const covered = groups.filter((g) => g.some((t) => m.topics.includes(t))).length;
+    // 組ごとの重み(topicGroupWeights。AI導入のように「その枠の本業ではない」組は 1 より小さい)
+    const weights = a.topicGroups && a.topicGroups.length ? a.topicGroupWeights || [] : [];
+    const coveredIdx = groups.map((g, i) => (g.some((t) => m.topics.includes(t)) ? i : -1)).filter((i) => i >= 0);
+    const covered = coveredIdx.length;
     if (groups.length && covered) {
-      const coverage = a.anyTopic ? Math.min(1, 0.85 + 0.075 * (covered - 1)) : covered / groups.length;
+      const w = (i) => (typeof weights[i] === "number" ? weights[i] : 1);
+      const coverage = a.anyTopic
+        ? Math.min(1, 0.85 + 0.075 * (covered - 1)) * Math.max(...coveredIdx.map(w))
+        : coveredIdx.reduce((sum, i) => sum + w(i), 0) / groups.length;
       s += 42 * coverage;
       s += (8 * topicHits.length) / Math.max(m.topics.length, topicHits.length);
     }

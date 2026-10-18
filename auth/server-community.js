@@ -2375,4 +2375,73 @@
       };
     },
   });
+
+  // ---------- 顔写真(30秒プレゼンの画面・名簿で使う) ----------
+  // 写真は小さな JPEG(data:image/jpeg;base64,…)。名簿の本体とは別の置き場所(env.blobs)に入れ、
+  // 本体には「いつ変えたか」(photoRevs)だけを持つ。置き場所がないとき(お試し版の古い形)は本体に入れる。
+  //   getPhotoRevs(写真のある人と更新日時)/ getPhotos(写真そのもの。最大40人)
+  //   setMyPhoto(自分の写真)/ adminSetMemberPhoto(運営がほかの人の写真を入れる)。photo を空にすると消す
+  var PHOTO_MAX = 48000; // 文字数(スプレッドシートの1セルに収まる大きさ)
+  BtexServerCore.registerModule({
+    create: function (c) {
+      function blobGet(db, key) {
+        if (c.blobs) return c.blobs.get(key) || "";
+        return (db.photoBlobs && db.photoBlobs[key]) || "";
+      }
+      function blobSet(db, key, value) {
+        if (c.blobs) { c.blobs.set(key, value); return; }
+        if (!db.photoBlobs) db.photoBlobs = {};
+        if (value) db.photoBlobs[key] = value; else delete db.photoBlobs[key];
+      }
+      function cleanPhoto(v) {
+        var s = String(v || "");
+        if (!s) return "";
+        if (s.length > PHOTO_MAX || !/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+\/=]+$/.test(s)) return null;
+        return s;
+      }
+      function session(body) {
+        var db = c.ensureDb();
+        var a = c.authSession(db, body.sessionToken);
+        return a ? { db: db, a: a } : null;
+      }
+      function save(db, memberId, photo) {
+        var p = cleanPhoto(photo);
+        if (p === null) return c.fail("INVALID_REQUEST", "写真が大きすぎるか、形式が読めません。別の写真でお試しください。");
+        blobSet(db, "photo:" + memberId, p);
+        if (!db.photoRevs) db.photoRevs = {};
+        if (p) db.photoRevs[memberId] = c.nowMs(); else delete db.photoRevs[memberId];
+        c.saveDb(db);
+        return c.ok({ memberId: memberId, rev: db.photoRevs[memberId] || 0 });
+      }
+      function getPhotoRevs(body) {
+        var x = session(body);
+        if (!x) return c.fail("SESSION_INVALID");
+        return c.ok({ revs: x.db.photoRevs || {} });
+      }
+      function getPhotos(body) {
+        var x = session(body);
+        if (!x) return c.fail("SESSION_INVALID");
+        var revs = x.db.photoRevs || {};
+        var ids = (Array.isArray(body.ids) ? body.ids : []).map(function (v) { return c.cleanStr(v, 40); })
+          .filter(function (id, i, a) { return id && revs[id] && a.indexOf(id) === i; }).slice(0, 40);
+        var photos = {};
+        ids.forEach(function (id) { var p = blobGet(x.db, "photo:" + id); if (p) photos[id] = { data: p, rev: revs[id] }; });
+        return c.ok({ photos: photos });
+      }
+      function setMyPhoto(body) {
+        var x = session(body);
+        if (!x) return c.fail("SESSION_INVALID");
+        return save(x.db, x.a.user.memberId, body.photo);
+      }
+      function adminSetMemberPhoto(body) {
+        var x = session(body);
+        if (!x) return c.fail("SESSION_INVALID");
+        if (!x.a.isAdmin) return c.fail("FORBIDDEN_ADMIN");
+        var id = c.cleanStr(body.memberId, 40);
+        if (!c.find(x.db.referralMembers || [], function (m) { return m.id === id; })) return c.fail("NOT_FOUND");
+        return save(x.db, id, body.photo);
+      }
+      return { actions: { getPhotoRevs: getPhotoRevs, getPhotos: getPhotos, setMyPhoto: setMyPhoto, adminSetMemberPhoto: adminSetMemberPhoto } };
+    },
+  });
 })();

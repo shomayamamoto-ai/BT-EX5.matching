@@ -647,6 +647,7 @@
     if (!n || !n.methods) { answers.topicGroups = []; return; }
     const chosen = answers.anyTopic ? n.methods : [...answers.methods].sort((a, b) => a - b).map((i) => n.methods[i]);
     answers.topicGroups = chosen.map((x) => x.topics);
+    answers.topicGroupWeights = chosen.map((x) => x.match || 1);
     answers.topics = new Set(chosen.flatMap((x) => x.topics));
   }
 

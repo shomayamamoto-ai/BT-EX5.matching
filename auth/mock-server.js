@@ -39,6 +39,14 @@ const AuthMockServer = (function () {
     randomBytes(n) {
       return Array.from(crypto.getRandomValues(new Uint8Array(n)));
     },
+    // 写真などの大きなデータは、名簿の本体とは別のキーに入れる
+    blobs: {
+      get(key) { try { return localStorage.getItem(`kouryukai-blob-${key}`) || ""; } catch { return ""; } },
+      set(key, value) {
+        if (value) localStorage.setItem(`kouryukai-blob-${key}`, value);
+        else localStorage.removeItem(`kouryukai-blob-${key}`);
+      },
+    },
   });
 
   async function handle(body) {

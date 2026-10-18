@@ -5,7 +5,7 @@
 body.has-app-tabs { padding-bottom: calc(var(--app-tabs-h) + env(safe-area-inset-bottom, 0px)); }
 .app-tabs {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 45;
-  display: grid; grid-template-columns: repeat(6, minmax(0, 1fr));
+  display: grid; grid-template-columns: repeat(7, minmax(0, 1fr));
   height: calc(var(--app-tabs-h) + env(safe-area-inset-bottom, 0px)); padding-bottom: env(safe-area-inset-bottom, 0px);
   background: rgba(255, 255, 255, 0.96); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
   border-top: 1px solid #e6dccb;
@@ -29,7 +29,7 @@ body.has-app-tabs .prof-actions { bottom: calc(var(--app-tabs-h) + env(safe-area
 body.has-app-tabs .ref-to-top { bottom: calc(var(--app-tabs-h) + 14px + env(safe-area-inset-bottom, 0px)); }
 body.has-app-tabs .ref-toast { bottom: calc(var(--app-tabs-h) + 18px + env(safe-area-inset-bottom, 0px)); }
 @media (min-width: 900px) {
-  .app-tabs { left: 50%; right: auto; width: 640px; transform: translateX(-50%); bottom: 14px; border: 1px solid #e6dccb; border-radius: 20px; box-shadow: 0 10px 30px rgba(30, 22, 12, 0.12); height: var(--app-tabs-h); padding: 0; }
+  .app-tabs { left: 50%; right: auto; width: 720px; transform: translateX(-50%); bottom: 14px; border: 1px solid #e6dccb; border-radius: 20px; box-shadow: 0 10px 30px rgba(30, 22, 12, 0.12); height: var(--app-tabs-h); padding: 0; }
   body.has-app-tabs { padding-bottom: calc(var(--app-tabs-h) + 30px); }
   body.has-app-tabs .prof-actions { bottom: calc(var(--app-tabs-h) + 24px); }
   body.has-app-tabs .ref-to-top { bottom: 24px; }
@@ -55,4 +55,10 @@ html.big-text body { zoom: 1.15; }
 @media (min-width: 900px) {
   body.has-app-tabs .prof-actions { background: #fff; border-radius: var(--radius); box-shadow: 0 8px 24px rgba(30, 22, 12, 0.1); border: 1px solid #e6dccb; }
   body.has-app-tabs .prof-actions::after { content: ""; position: absolute; left: -24px; right: -24px; top: 100%; height: calc(var(--app-tabs-h) + 26px); background: linear-gradient(180deg, rgba(246, 242, 234, 0.96), #f6f2ea); pointer-events: none; z-index: -1; }
+}
+
+/* 下のタブは7つ。幅の狭いスマホでは文字を少し小さくして、はみ出さないようにする */
+@media (max-width: 430px) {
+  .app-tab span { font-size: 10.5px; letter-spacing: -0.03em; }
+  .app-tabs .app-tab .app-badge { left: auto; right: 2px; }
 }

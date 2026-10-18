@@ -324,7 +324,46 @@ function handleLineWebhook_(e) {
   return json_({ success: true });
 }
 
+// ---------- 写真の置き場所(名簿の本体とは別の隠しシート「_photos」。A列=名前(photo:メンバーID)、B列=写真) ----------
+var PHOTO_SHEET = "_photos";
+function photoSheet_(create) {
+  var ss = spreadsheet_();
+  var sh = ss.getSheetByName(PHOTO_SHEET);
+  if (!sh && create) {
+    sh = ss.insertSheet(PHOTO_SHEET);
+    sh.getRange("A:B").setNumberFormat("@");
+    sh.hideSheet();
+  }
+  return sh;
+}
+var BLOBS_ = {
+  get: function (key) {
+    var sh = photoSheet_(false);
+    if (!sh || sh.getLastRow() < 1) return "";
+    var keys = sh.getRange(1, 1, sh.getLastRow(), 1).getValues();
+    for (var i = 0; i < keys.length; i++) {
+      // 先頭1文字は目印("j")。数式として読まれないように
+      if (String(keys[i][0]) === key) return String(sh.getRange(i + 1, 2).getValue()).slice(1);
+    }
+    return "";
+  },
+  set: function (key, value) {
+    var sh = photoSheet_(true);
+    var last = sh.getLastRow();
+    var keys = last ? sh.getRange(1, 1, last, 1).getValues() : [];
+    for (var i = 0; i < keys.length; i++) {
+      if (String(keys[i][0]) === key) {
+        if (value) sh.getRange(i + 1, 2).setValue("j" + value);
+        else sh.deleteRow(i + 1);
+        return;
+      }
+    }
+    if (value) sh.getRange(last + 1, 1, 1, 2).setValues([[key, "j" + value]]);
+  },
+};
+
 var SERVER_ = BtexServerCore.createServer({
+  blobs: BLOBS_,
   passcodes: passcodes_(),
   line: lineConfig_(),
   load: loadDb_,

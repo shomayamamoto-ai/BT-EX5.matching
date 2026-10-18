@@ -113,13 +113,15 @@ const TOPIC_GROUPS = [
 // ジャンル(話題)。1人に当てはまるものをいくつでも付けられ、カードにはタグ(tag)として並ぶ。
 // 紹介診断の「どんな話が出ましたか?」と「話題で探す」でも使う
 const TOPICS = [
-  { id: "efficiency", group: "it", label: "システム開発・業務効率化", tag: "業務効率化" },
+  { id: "efficiency", group: "it", label: "システム開発・業務効率化(AI導入をふくむ)", tag: "システム開発" },
   { id: "line", group: "it", label: "公式LINE・LINE Bot構築", tag: "公式LINE構築" },
   { id: "web", group: "it", label: "ホームページ・LP制作", tag: "HP・LP制作" },
   { id: "seo", group: "it", label: "SEO・MEO・AIO対策", tag: "SEO・MEO・AIO" },
   { id: "ec", group: "it", label: "ネットショップ・EC", tag: "EC・ネットショップ" },
-  { id: "ai", group: "it", label: "AI活用・AI導入", tag: "AI導入" },
-  { id: "aitraining", group: "it", label: "AI研修・AI講座", tag: "AI研修" },
+  // AI活用は個人がAIを使いこなす手伝い(個人向け)。AI研修は個人・法人のどちらも。
+  // 会社へのAI導入は「システム開発」の枠に入れる(ただし一致度は下げる: match)
+  { id: "ai", group: "it", label: "AI活用(個人向け・使い方のサポート)", tag: "AI活用" },
+  { id: "aitraining", group: "it", label: "AI研修・AI講座(個人・法人)", tag: "AI研修" },
   { id: "sns", group: "biz", label: "SNS運用・集客", tag: "SNS運用" },
   { id: "ad", group: "biz", label: "広告・販促", tag: "広告・販促" },
   { id: "consult", group: "biz", label: "経営・集客コンサル", tag: "コンサル" },
@@ -172,7 +174,7 @@ const TOPICS = [
 const REF_NEEDS = [
   { id: "hire", label: "人を採用したい・人手が足りない", desc: "求人・採用・人手不足", methods: [
     { label: "採用・人材紹介の相談", topics: ["hiring"] },
-    { label: "システム開発で人手を補う", desc: "業務をシステム・AIで減らし、人を増やさずに回す", topics: ["efficiency", "ai"] },
+    { label: "システム開発で人手を補う", desc: "業務をシステム・AIで減らし、人を増やさずに回す", topics: ["efficiency"] },
     { label: "社員の離職を減らす(定着)", desc: "辞めない職場・人が続く組織にする", topics: ["retention"] },
     { label: "求人ページ・採用サイトを作る", topics: ["web"] },
     { label: "SNSで採用を強くする", topics: ["sns"] },
@@ -215,7 +217,7 @@ const REF_NEEDS = [
   ] },
   { id: "efficiency", label: "業務を楽にしたい・コストを下げたい", desc: "手作業・Excel・人件費・固定費", methods: [
     { label: "業務システムを作る", desc: "予約・在庫・顧客管理など", topics: ["efficiency"] },
-    { label: "AIを導入する", topics: ["ai"] },
+    { label: "AIを導入する", desc: "会社の仕事にAIのしくみを組みこむ", topics: ["efficiency"], match: 0.75 },
     { label: "社員にAIを教える", topics: ["aitraining"] },
     { label: "公式LINE・自動応答", topics: ["line"] },
     { label: "固定費(携帯・光熱費)を下げる", topics: ["fixedcost"] },
@@ -281,15 +283,18 @@ const CONSULT_PHRASES = [
   { label: "集客", words: ["集客", "お客様を増やしたい", "お客さんを増やしたい", "客が来ない", "お客が来ない", "新規客", "問い合わせを増やしたい", "売上が伸びない", "知名度"], topics: ["seo", "web", "sns", "consult", "ad"] },
   { label: "採用・人手不足", words: ["人が採れない", "人が足りな", "人手が足りな", "人手不足", "スタッフが足りな", "従業員が足りな", "人員が足りな", "スタッフ採用", "求人", "採用したい"], topics: ["hiring", "sns", "prvideo", "efficiency"] },
   // 人手が足りないときは、採用だけでなく「仕組みで人手を補う」システム開発・業務効率化も出す(運営の依頼)
-  { label: "システム開発で人手を補う", words: ["人が足りな", "人手が足りな", "人手不足", "スタッフが足りな", "人が採れない", "人員不足", "人員が足りな", "従業員が足りな", "手が回らな", "人が辞めて回らな", "少人数で回したい", "人件費を減らしたい", "人件費を抑えたい"], topics: ["efficiency", "ai", "line"] },
+  { label: "システム開発で人手を補う", words: ["人が足りな", "人手が足りな", "人手不足", "スタッフが足りな", "人が採れない", "人員不足", "人員が足りな", "従業員が足りな", "手が回らな", "人が辞めて回らな", "少人数で回したい", "人件費を減らしたい", "人件費を抑えたい"], topics: ["efficiency", "line"] },
   { label: "離職・定着", words: ["辞める", "辞めて", "離職", "定着しない", "人が続かない"], topics: ["retention", "org", "coaching"] },
   { label: "人材育成", words: ["育たない", "育てたい", "社員教育", "研修したい", "人材育成"], topics: ["org", "aitraining", "mindset", "coaching"] },
   { label: "単価アップ", words: ["高く売りたい", "単価", "値上げ", "安売り", "価格競争", "付加価値"], topics: ["branding", "consult", "design"] },
-  { label: "業務効率化", words: ["効率化", "手作業", "忙しすぎ", "残業", "人手をかけずに", "Excel管理", "エクセル管理", "自動化したい"], topics: ["efficiency", "ai", "line"] },
+  { label: "業務効率化", words: ["効率化", "手作業", "忙しすぎ", "残業", "人手をかけずに", "Excel管理", "エクセル管理", "自動化したい"], topics: ["efficiency", "line"] },
   { label: "開業・独立", words: ["開業", "独立", "起業", "創業", "お店を出したい", "店を出す"], topics: ["funding", "tax", "legal", "realestate", "reform", "web"] },
   { label: "資金", words: ["資金繰り", "お金が足りない", "融資", "借入", "補助金", "助成金"], topics: ["funding", "labor"] },
   { label: "SNS発信", words: ["発信したい", "インスタを伸ばしたい", "フォロワーを増やしたい", "SNSを始めたい"], topics: ["sns", "video", "photo", "casting"] },
-  { label: "AI活用", words: ["AIを使いたい", "AIを導入", "ChatGPT", "生成AI"], topics: ["ai", "aitraining"] },
+  { label: "AI活用", words: ["AIを使いたい", "AIを使いこなしたい", "AIの使い方", "ChatGPT", "生成AI", "AIを学びたい"], topics: ["ai", "aitraining"] },
+  { label: "AI研修", words: ["AI研修", "社員にAI", "AIセミナー", "AI講座"], topics: ["aitraining"] },
+  // 会社へのAI導入は「システム開発」の枠。AIだけの話なので、一致度は少し下げる(match)
+  { label: "AI導入", words: ["AI導入", "AIを導入", "AIを入れたい", "AIシステム", "AIで自動化"], topics: ["efficiency"], match: 0.75 },
   { label: "悩み・迷い", words: ["迷って", "悩んで", "モヤモヤ", "考えがまとまらない", "一歩が踏み出せない"], topics: ["mindset", "coaching"] },
   { label: "固定費", words: ["固定費", "携帯代", "携帯料金", "電気代", "光熱費", "節約"], topics: ["fixedcost"] },
   { label: "イベント", words: ["イベント", "パーティー", "懇親会", "周年", "式典", "結婚式", "二次会", "セミナーを開きたい"], topics: ["event", "mc", "catering", "venue"] },
@@ -343,7 +348,7 @@ const TOPIC_KEYWORDS = {
   web: ["ホームページ", "HP", "Web", "ウェブ", "サイト", "LP"],
   seo: ["SEO", "MEO", "AIO", "LLMO", "AI検索", "検索順位", "Googleマップ", "口コミ"],
   ec: ["EC", "ネットショップ", "通販", "楽天", "Amazon", "ネット販売"],
-  ai: ["AI", "ChatGPT", "生成AI", "AI導入"],
+  ai: ["AI活用", "ChatGPT", "生成AI", "AIの使い方", "AIを使いこなす"],
   aitraining: ["AI研修", "AI講座", "AI講師", "AIセミナー", "AIを学びたい"],
   sns: ["SNS", "インスタ", "Instagram", "TikTok", "集客", "フォロワー", "運用代行"],
   ad: ["広告", "販促", "チラシ配布", "看板", "サイネージ"],
@@ -480,7 +485,8 @@ const REF_SEED_MEMBERS = [
   {
     id: "yamamoto",
     name: "山本 捷真",
-    company: "Lumenium(ルメニウム)代表",
+    // カードの名前の下に出る肩書き(本人の依頼で、ブランディングの表記にそろえる)
+    company: "Lumenium 代表/夢を叶えるシステム開発屋、売れるAI集客システム付きWebサイト制作、セキュリティ特化のAI研修、有名監督による企業PR動画・SNS運用",
     team: "フェリシア",
     base: "東京",
     category: "システム開発",
@@ -507,7 +513,7 @@ const REF_SEED_MEMBERS = [
       { type: "line", url: "https://line.me/ti/p/2viaHtuXEu", label: "山本 捷真(LINE で友だち追加)" },
     ],
   },
-  Object.assign(rosterMember("m02", "あまみや 七音", "echo studio 代表/声優・ナレーター・ボイストレーナー", "Over", "声・司会・キャスティング", ["voice", "mc", "recording", "casting", "video", "prvideo", "health"]), {
+  Object.assign(rosterMember("m02", "あまみや 七音", "echo studio 代表/声優・ナレーター・ボイストレーナー", "Over", "声・司会・キャスティング", ["voice", "mc", "recording", "casting", "health"]), {
     // 本人のホームページ(amamiyanao.com)の内容から(2026年10月)
     business: "echo studio 代表。声優・ナレーター(会社案内・企業VP・CM・教材・イベントPVのナレーション、TVアニメ・海外ドラマ・洋画の吹き替え)、ボイストレーニング教室(複数のトレーナーが在籍)、「BVB(ビジネスボイスブースター)」=「あなたの声が、ビジネスの武器になる」ビジネス特化型のオンラインボイストレーニング(月16,500円・税込。ビジネスに必要な「通る声・聞きやすい声」、呼吸・姿勢・発声の基礎、発声・滑舌・声量・トーン・表現力。プレゼン・会議・商談での説得力・信頼感・好感度を上げる。会員はほかのイベントに会員価格で参加できる)、「イケボスパルタ塾」=「眠る声を、叩き起こせ」。男女問わず、自分の声を最大限に生かした魅力のある声(イケボ)をつくる期ごとの講座、レコーディングスタジオ(ナレーション・歌の録音)、動画制作、声優・タレントのキャスティング。4オクターブの声で、中性的な低音ハスキーボイスから子ども・男性・おばあちゃんまで演じ分ける。ステージの専属ショーシンガーの経験があり、JAZZ・POPs・Soul・ROCK・ゴスペル・演歌・オペラ・アニメソングも歌うボーカリスト。失声症を乗り越えた経験から、声を聞けば出し方と改善法が分かるボイストレーナー。",
     customers: "会社案内・採用・研修・商品紹介の動画を作る企業の広報・人事/映像制作会社・広告代理店・TV局/人前で話す経営者・営業職・講師/声優・ナレーターを目指す人/歌の活動をしたい人/喉を痛めやすい人",
@@ -641,13 +647,18 @@ const REF_SEED_MEMBERS = [
     targets: ["salon", "pro"],
     prospects: ["owner"],
   }),
-  Object.assign(rosterMember("m22", "小林 末季こばねぇ", "preseia 代表/心を整えるマインドコーチ", "SunnyUp🌞", "人材・組織", ["retention", "mindset", "coaching", "org", "consult", "health", "spiritual", "insurance"]), {
-    business: "社員の離職率を下げる支援(辞めない職場・人が定着する組織づくり)、思考を整理するマインドセット(個別コーチング)、ビジネスコンサル、健康事業、共済保険。",
-    customers: "社員の離職・定着に悩む経営者/頭の中を整理して前に進みたい人/人生に迷いながらも進み出したい人/セミナーを作りたい方/コーチの方/新潟・長野の方",
-    wants: "社員がすぐ辞めてしまう・離職率を下げたい経営者/考えがまとまらず一歩が踏み出せない方/新潟・長野の方/コーチングをグレードアップしたい方/健康事業に興味のある方/スピリチュアルに興味のある方",
-    triggers: ["社員がすぐ辞める", "離職率を下げたい", "人が定着しない", "頭の中を整理したい", "考えがまとまらない", "人生に迷っている", "セミナーを作りたい", "コーチング", "健康に興味がある", "スピリチュアル", "新潟・長野"],
+  // 本人の回答(2026年10月)をもとに書き直し。オンラインは全国、対面は新潟
+  Object.assign(rosterMember("m22", "小林 末季こばねぇ", "preseia 代表/心を整えるマインドコーチ", "SunnyUp🌞", "人材・組織", ["mindset", "coaching", "org", "hiring", "branding", "voice", "mc", "health", "spiritual", "family", "kids"], "新潟"), {
+    business: "オンラインコーチング(個人・法人)。話すだけで頭の中が整理でき、モヤモヤが晴れて次の一歩が見えるようになります。マインド・メンタル系のセミナー・講座・講演(自己肯定感・やる気・モチベーション・コミュニケーション)。研修やセミナーの前に入れる、場をほぐすコミュニケーションのワークもお伝えできます。",
+    customers: "個人事業主/起業家/一般の社会人",
+    wants: "考えを整理したい・気軽に話せる相談相手がほしい経営者の方/社内向けのセミナー・研修を探している会社の方/マインドを整えて自己肯定感を上げたい方",
+    triggers: ["社内のコミュニケーションを良くしたい", "自己肯定感を上げたい", "やる気・モチベーションが下がっている", "モチベーションを上げたい", "セミナーの壁打ち相手がほしい", "セミナーにフィードバックがほしい", "相談相手がほしい", "頭の中を整理したい", "モヤモヤしている", "社内向けのセミナーを探している", "研修の前のアイスブレイク"],
+    note: "誰とでもすぐ仲良くなれる「コミュ力おばけ」が強み。話すだけで思考が整理でき、モヤモヤを解消できます。マインドセットが得意なので、研修・セミナーの前に入れるコミュニケーションのワークもお伝えできます。",
+    face: "新潟",
+    faceAreas: ["niigata"],
+    online: "all",
     targets: ["any"],
-    prospects: ["owner", "individual"],
+    prospects: ["owner", "staff", "individual"],
   }),
   Object.assign(rosterMember("m23", "見上 恵", "ちきゅあそびくらぶ/AI絵本クリエイター、スクール講師、クリエイター募集", "Team Bloom∞🌸", "AI研修・AI活用", ["ai", "aitraining", "ehon", "design", "kids"]), {
     business: "AI絵本クリエイター、講座講師。",
@@ -656,7 +667,7 @@ const REF_SEED_MEMBERS = [
     targets: ["any"],
     prospects: ["individual", "owner"],
   }),
-  Object.assign(rosterMember("m24", "柳橋 雅也", "合同会社フライコア 代表社員/地方創生", "Team Bloom∞🌸", "暮らし・サービス", ["regional", "inbound", "ai", "efficiency", "reform", "realestate", "ad"]), {
+  Object.assign(rosterMember("m24", "柳橋 雅也", "合同会社フライコア 代表社員/地方創生", "Team Bloom∞🌸", "暮らし・サービス", ["regional", "inbound", "efficiency", "reform", "realestate", "ad"]), {
     business: "地方創生コンサル、災害対策商材、AIシステム導入、内装造作費用0円、LED広告透過フィルム。",
     customers: "税収を上げるための働きかけ、余った駐車場スペースの活用、作業効率の向上、内装費用のコスト削減などを考えている方",
     triggers: ["地方創生", "税収を上げたい", "駐車場が余っている", "災害対策", "内装費用を抑えたい", "LED広告", "AIシステムを導入したい"],
@@ -685,6 +696,12 @@ const REF_SEED_MEMBERS = [
     prospects: ["owner", "staff", "individual"],
   }),
 ];
+
+// 運営が用意した顔写真(本人がアプリで写真を入れていないときに使う。サイトの一番上からの場所)。
+// 30秒プレゼンの画面などに出す。本人の了解があるものだけを置く
+const REF_MEMBER_PHOTOS = {
+  yamamoto: "assets/members/yamamoto.jpg",
+};
 
 // 代表・役職・役割と、その基礎ポイント(大きいほど上に出る)
 // - マーク: 名前の下に表示する(kind: leader=代表 / post=役職 / role=役割)
@@ -759,6 +776,13 @@ const REF_SEED_REVISIONS = [
   { rev: "2026-10-yamamoto-hitode", ids: ["yamamoto"], fields: ["triggers"], addTriggers: ["人手が足りない", "人が足りない", "スタッフが足りない", "従業員が足りない", "人員が足りない", "人が採れない"] },
   // 本人の依頼で、山本 捷真のパーソナルブランディングシートを資料のいちばん上に追加(ほかのリンクはそのまま)
   { rev: "2026-10-yamamoto-branding", ids: ["yamamoto"], fields: ["links"], addLinks: ["proposal"], linksFirst: true },
+  // 本人の依頼で、山本 捷真の肩書きをブランディングの表記にする(編集済みでも置き換える)
+  { rev: "2026-10-yamamoto-headline", ids: ["yamamoto"], fields: ["company"], force: true },
+  // 運営の依頼で、あまみや 七音さんから「動画編集」「企業PR動画」を外す(本人はできないため。編集済みでも外す)。
+  // AI のジャンルの見直し: 会社への AI 導入は「システム開発」の枠に入れたので、柳橋さんの「AI活用」を外す
+  { rev: "2026-10-genre-fix-2", ids: ["m02", "m24"], fields: ["topics"], removeTopics: { m02: ["video", "prvideo"], m24: ["ai"] } },
+  // 本人の回答で、小林 末季こばねぇさんのプロフィールを書き直す(活動範囲・事業内容・求める紹介・こんな話が出たら・ジャンルなど。編集済みでも置き換える)
+  { rev: "2026-10-kobane-2", ids: ["m22"], fields: ["base", "business", "customers", "wants", "triggers", "note", "face", "faceAreas", "online", "prospects", "topics"], force: true },
 ];
 
 // 紹介に効く項目(重要な順)。足りない項目は管理者ページの「お願い文」と、
@@ -1247,6 +1271,36 @@ const REF_SEED_ANNOUNCEMENTS = [
       "・運営連絡の運営だけの操作(声かけ文・もう一度通知・編集・削除)を「運営の操作」にまとめ、未読の人数を目立たせました。",
       "・運営連絡を新しく出すときは、全員に届く前に内容を確かめる画面を出します。",
       "・バグ・要望は「まだ・受付・対応中・対応済み」で絞りこめ、どの画面から送られたかがわかるようにしました。",
+    ].join("\n"),
+  },
+  {
+    seedId: "2026-10-18-features",
+    at: Date.UTC(2026, 9, 17, 16, 0), // 2026/10/18 1:00(日本時間)
+    title: "【更新】30秒プレゼンを顔写真つきの大きな画面に・AIのジャンルの整理 など",
+    body: [
+      "前回のお知らせ(ログインの制限をゆるやかに・早見表の結果を見やすく など)のあとに入れた更新です。前回の内容もあわせて載せます。",
+      "",
+      "■ 今回:30秒プレゼン(下のメニューに「プレゼン」を追加)",
+      "・定例会の30秒プレゼンを、名前・肩書き・活動範囲・つながりたい人・こんな話が出たら・顔写真つきの大きな画面で順番に進められます。会場のスクリーンや Meet の画面共有でそのまま映せます。",
+      "・時間は、下のメーター(1目盛り=1秒)と大きな残り秒数で見えます。残り10秒でオレンジ、残り5秒で赤になり、音でもお知らせします。",
+      "・出る人は、顔の一覧を押すだけで選べます。押した順が話す順番です。「出席予定の人」「全員」「チームで足す」でまとめて選ぶこともでき、順番は ↑↓・つかんで動かす・シャッフルで変えられます。",
+      "・右には次の3人が出ます。0秒になったら3秒あけて自動で次の人へ進めることもできます。",
+      "・「プレゼン」の画面で、ご自分の顔写真を入れられます(縦長に切り抜いて小さくして保存します)。ぜひ入れてください。",
+      "",
+      "■ 今回:紹介先早見表のジャンル",
+      "・「AI活用」は個人の方向け(AIの使い方のサポート)、「AI研修」は個人・法人どちらも、に分けました。2つは同じ「AI研修・AI活用」の業種です。",
+      "・会社への「AI導入」は「システム開発」の枠に入れました。AI導入だけで合ったときは、一致度を少し低めに出します。システム開発の相談に、AIの使い方を教える方が出ないようにしました。",
+      "・メンバーのジャンル・プロフィールの誤りを直し、内容を充実させました。",
+      "",
+      "■ 前回:ログイン",
+      "・パスワード(共通パスコード)は、5回まではまちがえてもログインが止まりません。6回目のまちがいで、15分だけ止まります。",
+      "・お名前は、これまでどおり一覧から選ぶ形です。",
+      "",
+      "■ 前回:紹介先早見表・プロフィール・運営の画面",
+      "・紹介診断の入口を相談の箱の下にまとめ、一致度に「とても合う」「合う」「参考に」の目安を出しました。",
+      "・結果と詳細では「紹介文をコピー」をいちばん押しやすくしました。",
+      "・プロフィールのジャンルなどは、押すと色が変わるボタンで選べます。",
+      "・運営連絡・バグ・要望の運営の画面を使いやすくしました。",
     ].join("\n"),
   },
 ];
@@ -2444,6 +2498,8 @@ var BtexServerCore = (function () {
       push: env.push || null,
       // LINE 公式アカウント(共有サーバーで、運営が設定したときだけ。{ addUrl } など。なければ null)
       line: env.line || null,
+      // 写真などの大きなデータの置き場所(共有サーバーでは別のシート。なければ null=本体に入れる)
+      blobs: env.blobs || null,
     };
     var MODULE_INSTANCES = MODULES.map(function (m) {
       var inst = m.create(ctx) || {};
@@ -4879,6 +4935,75 @@ var BtexServerCore = (function () {
       };
     },
   });
+
+  // ---------- 顔写真(30秒プレゼンの画面・名簿で使う) ----------
+  // 写真は小さな JPEG(data:image/jpeg;base64,…)。名簿の本体とは別の置き場所(env.blobs)に入れ、
+  // 本体には「いつ変えたか」(photoRevs)だけを持つ。置き場所がないとき(お試し版の古い形)は本体に入れる。
+  //   getPhotoRevs(写真のある人と更新日時)/ getPhotos(写真そのもの。最大40人)
+  //   setMyPhoto(自分の写真)/ adminSetMemberPhoto(運営がほかの人の写真を入れる)。photo を空にすると消す
+  var PHOTO_MAX = 48000; // 文字数(スプレッドシートの1セルに収まる大きさ)
+  BtexServerCore.registerModule({
+    create: function (c) {
+      function blobGet(db, key) {
+        if (c.blobs) return c.blobs.get(key) || "";
+        return (db.photoBlobs && db.photoBlobs[key]) || "";
+      }
+      function blobSet(db, key, value) {
+        if (c.blobs) { c.blobs.set(key, value); return; }
+        if (!db.photoBlobs) db.photoBlobs = {};
+        if (value) db.photoBlobs[key] = value; else delete db.photoBlobs[key];
+      }
+      function cleanPhoto(v) {
+        var s = String(v || "");
+        if (!s) return "";
+        if (s.length > PHOTO_MAX || !/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+\/=]+$/.test(s)) return null;
+        return s;
+      }
+      function session(body) {
+        var db = c.ensureDb();
+        var a = c.authSession(db, body.sessionToken);
+        return a ? { db: db, a: a } : null;
+      }
+      function save(db, memberId, photo) {
+        var p = cleanPhoto(photo);
+        if (p === null) return c.fail("INVALID_REQUEST", "写真が大きすぎるか、形式が読めません。別の写真でお試しください。");
+        blobSet(db, "photo:" + memberId, p);
+        if (!db.photoRevs) db.photoRevs = {};
+        if (p) db.photoRevs[memberId] = c.nowMs(); else delete db.photoRevs[memberId];
+        c.saveDb(db);
+        return c.ok({ memberId: memberId, rev: db.photoRevs[memberId] || 0 });
+      }
+      function getPhotoRevs(body) {
+        var x = session(body);
+        if (!x) return c.fail("SESSION_INVALID");
+        return c.ok({ revs: x.db.photoRevs || {} });
+      }
+      function getPhotos(body) {
+        var x = session(body);
+        if (!x) return c.fail("SESSION_INVALID");
+        var revs = x.db.photoRevs || {};
+        var ids = (Array.isArray(body.ids) ? body.ids : []).map(function (v) { return c.cleanStr(v, 40); })
+          .filter(function (id, i, a) { return id && revs[id] && a.indexOf(id) === i; }).slice(0, 40);
+        var photos = {};
+        ids.forEach(function (id) { var p = blobGet(x.db, "photo:" + id); if (p) photos[id] = { data: p, rev: revs[id] }; });
+        return c.ok({ photos: photos });
+      }
+      function setMyPhoto(body) {
+        var x = session(body);
+        if (!x) return c.fail("SESSION_INVALID");
+        return save(x.db, x.a.user.memberId, body.photo);
+      }
+      function adminSetMemberPhoto(body) {
+        var x = session(body);
+        if (!x) return c.fail("SESSION_INVALID");
+        if (!x.a.isAdmin) return c.fail("FORBIDDEN_ADMIN");
+        var id = c.cleanStr(body.memberId, 40);
+        if (!c.find(x.db.referralMembers || [], function (m) { return m.id === id; })) return c.fail("NOT_FOUND");
+        return save(x.db, id, body.photo);
+      }
+      return { actions: { getPhotoRevs: getPhotoRevs, getPhotos: getPhotos, setMyPhoto: setMyPhoto, adminSetMemberPhoto: adminSetMemberPhoto } };
+    },
+  });
 })();
 
 
@@ -5533,7 +5658,46 @@ function handleLineWebhook_(e) {
   return json_({ success: true });
 }
 
+// ---------- 写真の置き場所(名簿の本体とは別の隠しシート「_photos」。A列=名前(photo:メンバーID)、B列=写真) ----------
+var PHOTO_SHEET = "_photos";
+function photoSheet_(create) {
+  var ss = spreadsheet_();
+  var sh = ss.getSheetByName(PHOTO_SHEET);
+  if (!sh && create) {
+    sh = ss.insertSheet(PHOTO_SHEET);
+    sh.getRange("A:B").setNumberFormat("@");
+    sh.hideSheet();
+  }
+  return sh;
+}
+var BLOBS_ = {
+  get: function (key) {
+    var sh = photoSheet_(false);
+    if (!sh || sh.getLastRow() < 1) return "";
+    var keys = sh.getRange(1, 1, sh.getLastRow(), 1).getValues();
+    for (var i = 0; i < keys.length; i++) {
+      // 先頭1文字は目印("j")。数式として読まれないように
+      if (String(keys[i][0]) === key) return String(sh.getRange(i + 1, 2).getValue()).slice(1);
+    }
+    return "";
+  },
+  set: function (key, value) {
+    var sh = photoSheet_(true);
+    var last = sh.getLastRow();
+    var keys = last ? sh.getRange(1, 1, last, 1).getValues() : [];
+    for (var i = 0; i < keys.length; i++) {
+      if (String(keys[i][0]) === key) {
+        if (value) sh.getRange(i + 1, 2).setValue("j" + value);
+        else sh.deleteRow(i + 1);
+        return;
+      }
+    }
+    if (value) sh.getRange(last + 1, 1, 1, 2).setValues([[key, "j" + value]]);
+  },
+};
+
 var SERVER_ = BtexServerCore.createServer({
+  blobs: BLOBS_,
   passcodes: passcodes_(),
   line: lineConfig_(),
   load: loadDb_,

@@ -27,7 +27,7 @@ const RefConsult = (function () {
     const add = (g) => {
       const key = g.topics.slice().sort().join(",");
       const same = groups.find((x) => x.topics.slice().sort().join(",") === key);
-      if (same) { same.weight += g.weight; g.words.forEach((w) => same.words.push(w)); return; }
+      if (same) { same.weight += g.weight; same.match = Math.max(same.match || 1, g.match || 1); g.words.forEach((w) => same.words.push(w)); return; }
       groups.push(g);
     };
     // 相手の業種を表す言葉(「美容室のオーナー」の美容室など)。この言葉の一部だけで当たったジャンルは外す
@@ -37,7 +37,7 @@ const RefConsult = (function () {
     // 1) 困りごとの言い方(集客・採用・開業 など)。読み取った言葉は、次のジャンルの読み取りから外す
     CONSULT_PHRASES.forEach((p) => {
       const w = hits(rest, p.words);
-      if (w.length) { add({ label: p.label, topics: p.topics.slice(), weight: 2 + w.length, words: w }); w.forEach((x) => words.add(x)); }
+      if (w.length) { add({ label: p.label, topics: p.topics.slice(), weight: 2 + w.length, words: w, match: p.match || 1 }); w.forEach((x) => words.add(x)); }
     });
     let rest2 = rest;
     words.forEach((w) => { rest2 = rest2.split(norm(w)).join(" "); });
@@ -73,6 +73,8 @@ const RefConsult = (function () {
       // 解決したいことが2つ以上なら、どれかに対応できれば高い点(多く対応できるほど上)
       anyTopic: a.groups.length >= 2,
       topicGroups: a.groups.map((g) => g.topics),
+      // 組ごとの重み(AI導入だけでシステム開発の人に当たったときは、一致度を下げる)
+      topicGroupWeights: a.groups.map((g) => g.match || 1),
       topics,
       keyword: a.words.join(" "),
       who: a.who || "unknown",
