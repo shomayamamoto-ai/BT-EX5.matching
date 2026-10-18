@@ -500,6 +500,11 @@
       changed = (memos[ta.dataset.memo] || "") !== before || Boolean(before) !== Boolean(ta.value.trim());
       changed = changed || Boolean(memos[ta.dataset.memo]) !== Boolean(document.querySelector(`#member-${ta.dataset.memo} .ref-tag.memo`));
     }
+    // 会員アプリ(ホームなど)から開いたときは、×・Esc・外側を押しても元の画面へ戻る
+    if (detailBack) {
+      location.href = `../app/#${detailBack}`;
+      return;
+    }
     $("#detailOverlay").hidden = true;
     document.body.style.overflow = "";
     detailBack = "";

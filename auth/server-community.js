@@ -35,7 +35,7 @@
       "rsvpEvent", "checkIn", "adminSaveEvent", "adminDeleteEvent", "adminOpenCheckIn", "adminMarkAttendance",
       "adminSyncMeetAttendance", "adminMapMeetName",
       "createVisitorInvite", "updateVisitor", "visitorApply",
-      "reportThanks", "deleteThanks", "save1on1", "delete1on1", "confirm1on1",
+      "reportThanks", "deleteThanks", "save1on1", "delete1on1", "confirm1on1", "muteReferralNudge",
     ],
     // 書き込みのあとに、通知(プッシュ)を送るか確かめる操作(mutating に加えて)
     notifying: ["createPost", "commentPost", "adminSaveAnnouncement", "adminRemindAnnouncement", "setReferralMeeting", "adminSaveMinutes", "saveTask"],
@@ -1339,6 +1339,20 @@
       }
 
       // 自分だけの設定(Google カレンダーの招待を受け取るメールアドレス)。ほかの会員には返さない
+      // ホームの「〇〇さんへの紹介が N 日そのままです」を、紹介した本人が消す・あとにする
+      //   mode: "done"(もう終わった・表示を消す)/ "later"(声をかけた。7日あとにまた知らせる)
+      function muteReferralNudge(body) {
+        var w = who(body);
+        if (w.error) return w.error;
+        var id = c.cleanStr(body.id, 40);
+        var l = c.find(w.db.referralLogs, function (x) { return x.id === id; });
+        if (!l || memberIdOfUser(w.db, l.fromUserId) !== w.id) return c.fail("NOT_FOUND");
+        if (body.mode === "done") l.giverDone = true;
+        else if (body.mode === "later") l.giverSnoozeUntil = c.nowMs() + 7 * DAY;
+        else return c.fail("INVALID_REQUEST");
+        c.saveDb(w.db);
+        return c.ok({ id: l.id });
+      }
       function getMySettings(body) {
         var w = who(body);
         if (w.error) return w.error;
@@ -1963,7 +1977,8 @@
         // 声かけが必要なこと(放っておくと紹介が止まるもの)
         var followUps = [];
         myLogs.forEach(function (l) {
-          if (l.status === "new" && c.nowMs() - l.at > 3 * DAY) {
+          // 自分で「もう終わった」にしたもの・「あとで」にしたもの・30日より前のものは出さない
+          if (l.status === "new" && !l.giverDone && !(l.giverSnoozeUntil > c.nowMs()) && c.nowMs() - l.at > 3 * DAY && c.nowMs() - l.at <= 30 * DAY) {
             followUps.push({ type: "givenStale", id: l.id, with: l.toMemberId, withName: nameOf(db, l.toMemberId), prospect: l.prospect, days: Math.floor((c.nowMs() - l.at) / DAY) });
           }
         });
@@ -2363,7 +2378,7 @@
           visitorInfo: visitorInfo, visitorApply: visitorApply,
           listMyReferrals: listMyReferrals, setReferralMeeting: setReferralMeeting, reportThanks: reportThanks, deleteThanks: deleteThanks, getRankings: getRankings, getTeamRanking: getTeamRanking, getStats: getStats, logSearch: logSearch, adminSetTeamGoals: adminSetTeamGoals,
           list1on1: list1on1, save1on1: save1on1, delete1on1: delete1on1, confirm1on1: confirm1on1,
-          getMySettings: getMySettings, updateMySettings: updateMySettings, lineLinkCode: lineLinkCode, lineSetting: lineSetting, adminLineStatus: adminLineStatus,
+          getMySettings: getMySettings, updateMySettings: updateMySettings, muteReferralNudge: muteReferralNudge, lineLinkCode: lineLinkCode, lineSetting: lineSetting, adminLineStatus: adminLineStatus,
           listAnnouncements: listAnnouncements, markAnnouncementsRead: markAnnouncementsRead,
           adminSaveAnnouncement: adminSaveAnnouncement, adminDeleteAnnouncement: adminDeleteAnnouncement, adminRemindAnnouncement: adminRemindAnnouncement,
           listTasks: listTasks, saveTask: saveTask, toggleTask: toggleTask, deleteTask: deleteTask,

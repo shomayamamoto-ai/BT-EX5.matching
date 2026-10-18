@@ -221,6 +221,8 @@ a.app-row:active, button.app-row:active { background: #f4ede1; }
 a.home-alert::after { content: "›"; position: absolute; right: 13px; top: 50%; transform: translateY(-52%); font-size: 22px; color: var(--text-light); }
 a.home-alert:active { background: #f7f1e7; }
 .home-alert b { font-size: 14px; line-height: 1.5; }
+.home-alert-wrap { display: grid; gap: 6px; }
+.home-alert-acts { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
 .home-alert span { font-size: 12px; line-height: 1.55; color: var(--text-sub); }
 .home-alert.is-warn { border-left-color: #e8833a; }
 .home-alert.is-warn b { color: var(--warn); }

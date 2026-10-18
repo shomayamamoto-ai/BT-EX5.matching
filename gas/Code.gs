@@ -1388,7 +1388,7 @@ const REF_SEED_ANNOUNCEMENTS = [
   },
   {
     seedId: "2026-10-18-fix-2",
-    rev: 11,
+    rev: 12,
     at: Date.UTC(2026, 9, 18, 1, 25), // 2026/10/18 10:25(日本時間)
     title: "【修正】プレゼンを閉じたあと、プレゼンの画面に戻るようにしました",
     body: [
@@ -1403,6 +1403,8 @@ const REF_SEED_ANNOUNCEMENTS = [
       "・人が変わっても、名前・写真の位置が上下に動かないようにそろえました。次の人に移るときは、上下に動かさずにふわっと切りかえます。",
       "・プレゼンをはじめるとき・閉じたあとに、プレゼンの準備の画面が左右に少し動いていたのを直しました(スクロールバーを消さないようにしました)。",
       "・メニューの「探す」を「早見表」という名前にして、いちばん左に置きました。",
+      "・ホームの「〇〇さんへの紹介が N 日そのままです」に、「声をかけた(7日後にまた)」「もう終わった(消す)」のボタンを付けました。30日たったものは自動で出なくなります。",
+      "・ホームなどから紹介先早見表の詳しい画面を開いたときは、右上の × を押すと元の画面(ホームなど)に戻ります。",
       "・アプリを開いたままにしていると、更新が入っても古い画面(メニューの並びなど)のままになることがありました。画面を切りかえたときに新しい版があれば、自動で読み直すようにしました。",
       "・メニューを上か下に置いたとき、どのページでも同じまん中の位置に出るようにしました(ページによって少し左右にずれていました)。",
       "・上の帯を、すべてのページで同じ形にしました(左に「BT-EX5 新潟・東京 紹介者制コミュニティ」、右に 検索・ムービー・文字の大きさ・ベル・名前の丸)。帯にあった「紹介診断」「全体分析」などのボタンは外しました(紹介診断は早見表の相談の箱の下から、全体分析は早見表の「あなたと紹介し合えそうな人」の下から開けます)。",
@@ -2707,7 +2709,7 @@ var BtexServerCore = (function () {
       "rsvpEvent", "checkIn", "adminSaveEvent", "adminDeleteEvent", "adminOpenCheckIn", "adminMarkAttendance",
       "adminSyncMeetAttendance", "adminMapMeetName",
       "createVisitorInvite", "updateVisitor", "visitorApply",
-      "reportThanks", "deleteThanks", "save1on1", "delete1on1", "confirm1on1",
+      "reportThanks", "deleteThanks", "save1on1", "delete1on1", "confirm1on1", "muteReferralNudge",
     ],
     // 書き込みのあとに、通知(プッシュ)を送るか確かめる操作(mutating に加えて)
     notifying: ["createPost", "commentPost", "adminSaveAnnouncement", "adminRemindAnnouncement", "setReferralMeeting", "adminSaveMinutes", "saveTask"],
@@ -4011,6 +4013,20 @@ var BtexServerCore = (function () {
       }
 
       // 自分だけの設定(Google カレンダーの招待を受け取るメールアドレス)。ほかの会員には返さない
+      // ホームの「〇〇さんへの紹介が N 日そのままです」を、紹介した本人が消す・あとにする
+      //   mode: "done"(もう終わった・表示を消す)/ "later"(声をかけた。7日あとにまた知らせる)
+      function muteReferralNudge(body) {
+        var w = who(body);
+        if (w.error) return w.error;
+        var id = c.cleanStr(body.id, 40);
+        var l = c.find(w.db.referralLogs, function (x) { return x.id === id; });
+        if (!l || memberIdOfUser(w.db, l.fromUserId) !== w.id) return c.fail("NOT_FOUND");
+        if (body.mode === "done") l.giverDone = true;
+        else if (body.mode === "later") l.giverSnoozeUntil = c.nowMs() + 7 * DAY;
+        else return c.fail("INVALID_REQUEST");
+        c.saveDb(w.db);
+        return c.ok({ id: l.id });
+      }
       function getMySettings(body) {
         var w = who(body);
         if (w.error) return w.error;
@@ -4635,7 +4651,8 @@ var BtexServerCore = (function () {
         // 声かけが必要なこと(放っておくと紹介が止まるもの)
         var followUps = [];
         myLogs.forEach(function (l) {
-          if (l.status === "new" && c.nowMs() - l.at > 3 * DAY) {
+          // 自分で「もう終わった」にしたもの・「あとで」にしたもの・30日より前のものは出さない
+          if (l.status === "new" && !l.giverDone && !(l.giverSnoozeUntil > c.nowMs()) && c.nowMs() - l.at > 3 * DAY && c.nowMs() - l.at <= 30 * DAY) {
             followUps.push({ type: "givenStale", id: l.id, with: l.toMemberId, withName: nameOf(db, l.toMemberId), prospect: l.prospect, days: Math.floor((c.nowMs() - l.at) / DAY) });
           }
         });
@@ -5035,7 +5052,7 @@ var BtexServerCore = (function () {
           visitorInfo: visitorInfo, visitorApply: visitorApply,
           listMyReferrals: listMyReferrals, setReferralMeeting: setReferralMeeting, reportThanks: reportThanks, deleteThanks: deleteThanks, getRankings: getRankings, getTeamRanking: getTeamRanking, getStats: getStats, logSearch: logSearch, adminSetTeamGoals: adminSetTeamGoals,
           list1on1: list1on1, save1on1: save1on1, delete1on1: delete1on1, confirm1on1: confirm1on1,
-          getMySettings: getMySettings, updateMySettings: updateMySettings, lineLinkCode: lineLinkCode, lineSetting: lineSetting, adminLineStatus: adminLineStatus,
+          getMySettings: getMySettings, updateMySettings: updateMySettings, muteReferralNudge: muteReferralNudge, lineLinkCode: lineLinkCode, lineSetting: lineSetting, adminLineStatus: adminLineStatus,
           listAnnouncements: listAnnouncements, markAnnouncementsRead: markAnnouncementsRead,
           adminSaveAnnouncement: adminSaveAnnouncement, adminDeleteAnnouncement: adminDeleteAnnouncement, adminRemindAnnouncement: adminRemindAnnouncement,
           listTasks: listTasks, saveTask: saveTask, toggleTask: toggleTask, deleteTask: deleteTask,

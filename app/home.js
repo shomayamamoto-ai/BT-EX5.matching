@@ -98,8 +98,21 @@
       }
       (d.followUps || []).forEach((f) => {
         if (f.type === "givenStale") {
-          todo.push(alertLink(App.profileHref(f.with, "home"),
-            `${f.withName}さんへの紹介が ${f.days} 日そのままです`, `${f.prospect || "紹介した方"}の件、ひと声かけましょう(LINE などの連絡先を開く)`));
+          // 押すと相手の連絡先。終わっている・声をかけた ときは、この場で消せる
+          const box = h("div", { class: "home-alert-wrap" });
+          const mute = async (mode) => {
+            const r = await App.api("muteReferralNudge", { id: f.id, mode });
+            if (!r) return;
+            box.remove();
+            App.toast(mode === "done" ? "表示を消しました" : "7日後にまた知らせます");
+          };
+          box.append(
+            alertLink(App.profileHref(f.with, "home"),
+              `${f.withName}さんへの紹介が ${f.days} 日そのままです`, `${f.prospect || "紹介した方"}の件、ひと声かけましょう(LINE などの連絡先を開く)`),
+            h("div", { class: "home-alert-acts" },
+              h("button", { type: "button", class: "app-btn ghost small", onclick: () => mute("later") }, "声をかけた(7日後にまた)"),
+              h("button", { type: "button", class: "app-btn ghost small", onclick: () => mute("done") }, "もう終わった(消す)")));
+          todo.push(box);
         } else if (f.type === "inboxStale") {
           todo.push(alertLink("#log/ref", `${f.withName}さんからの紹介に ${f.days} 日返事をしていません`, `${f.prospect || "紹介された方"}へ連絡したら「連絡済み」にしてください`, "is-warn"));
         } else if (f.type === "thanksMissing") {
