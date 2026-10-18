@@ -78,7 +78,14 @@
         return w;
       }
       function member(db, id) { return c.find(db.referralMembers || [], function (m) { return m.id === id; }); }
-      function nameOf(db, id) { var m = member(db, id); return m ? m.name : "(退会したメンバー)"; }
+      function nameOf(db, id) {
+        var m = member(db, id);
+        if (m) return m.name;
+        // ほかの BT-EX のユニットの方(1on1 の相手)
+        var x = db.extPeople && db.extPeople[id];
+        if (x) return x.name;
+        return "(退会したメンバー)";
+      }
       function memberIdOfUser(db, userId) {
         var u = c.find(db.users, function (x) { return x.userId === userId; });
         return u ? u.memberId : "";
@@ -1221,7 +1228,7 @@
       function oneView(db, o, me) {
         var other = o.a === me ? o.b : o.a;
         return {
-          id: o.id, with: other, withName: nameOf(db, other), date: o.date, time: o.time || "", end: endTime(o), endDate: endDate(o), duration: o.duration || 60,
+          id: o.id, with: other, withName: nameOf(db, other), ext: db.extPeople && db.extPeople[other] ? "BT-EX" + db.extPeople[other].unit : "", date: o.date, time: o.time || "", end: endTime(o), endDate: endDate(o), duration: o.duration || 60,
           mode: o.mode || "onsite", place: o.place || "", meetUrl: o.meetUrl || "", calLink: o.calLink || "", synced: !!o.calId,
           status: o.status, autoDone: !!o.autoDone, awaiting: awaitingConfirm(o), confirmedByName: o.confirmedBy ? nameOf(db, o.confirmedBy) : "", note: (o.notes || {})[me] || "", next: (o.nexts || {})[me] || "", by: o.by, at: o.at,
         };
@@ -1277,7 +1284,17 @@
         if (!date) return c.fail("INVALID_REQUEST", "日付を入れてください。");
         if (!o) {
           var other = c.cleanStr(body.withMemberId, 40);
-          if (!member(db, other) || other === w.id) return c.fail("INVALID_REQUEST", "相手を選んでください。");
+          // ほかの BT-EX のユニットの方: ユニットの番号(1〜14)とお名前で記録する(相手には届かず、自分の 1on1 として数える)
+          var ext = body.ext && typeof body.ext === "object" ? body.ext : null;
+          if (ext) {
+            var unit = Math.round(Number(ext.unit));
+            var extName = c.cleanStr(ext.name, 40);
+            if (!(unit >= 1 && unit <= 14) || !extName) return c.fail("INVALID_REQUEST", "BT-EX の番号とお名前を入れてください。");
+            if (!db.extPeople) db.extPeople = {};
+            var known = Object.keys(db.extPeople).filter(function (k) { var p = db.extPeople[k]; return p.unit === unit && p.name === extName; })[0];
+            other = known || ("x_" + c.randomHex(6));
+            if (!known) db.extPeople[other] = { unit: unit, name: extName };
+          } else if (!member(db, other) || other === w.id) return c.fail("INVALID_REQUEST", "相手を選んでください。");
           o = { id: newId("o_"), a: w.id, b: other, by: w.id, at: c.nowMs(), notes: {}, nexts: {} };
           db.oneOnOnes.push(o);
         }

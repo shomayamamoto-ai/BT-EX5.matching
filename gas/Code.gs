@@ -708,6 +708,26 @@ function refNameParts(name) {
   return m ? { main: m[1], nick: m[2] } : { main: String(name || ""), nick: "" };
 }
 
+// ほかの BT-EX のユニットのメンバー(BT-EX のメンバー一覧から。2026年10月)。1on1 の相手を選ぶときに使う。
+// BT-EX5 はこのアプリの名簿そのもの。BT-EX1・3 は一覧の画像が小さく、はっきり読めた方だけを入れている
+// (ここにいない方は、1on1 の記録でお名前を手で入れられる)
+const BTEX_UNIT_MEMBERS = {
+  1: ["石田 祐介", "伊藤 剛", "水落 瑞樹", "佐藤 大介", "中野 未佳子", "MASAKI", "岸 宏保", "中田 信太郎", "菊池 智美", "楢永 あみ", "内山 由依子", "城谷 コウ", "柳田 真広", "寺本 勲", "有松健太 ありけん", "大竹 直美", "小松 茂子", "大谷 有紀子|gerochan", "武村 岳人", "ねこすけ 福井", "山崎 美優希", "ぎゅうちゃん 小松れいな", "深澤 歩", "田中 良行", "仲山 一真"],
+  2: ["佐久知 あみ", "福井 貴子", "生谷 直美", "須山 舞夏", "竹内 友喜", "中川 覚郎", "横田 あつし", "藤澤 博章", "仲田 昌弘", "OK!!ShowGo 柴崎翔吾", "川村 英紀", "水谷 美根子", "前田 千賀子", "桝室 和寛", "三浦 健二", "守國 寿記", "澁川 光宏", "木村 晶子", "張本 美有", "綿谷 美佳", "狩俣 良一", "前田 祐里", "櫻井 靖子", "金子 麻里子", "中谷 志奈子", "髙橋 亜津子", "太田 剛"],
+  3: ["夏川 Sunday", "岩瀬 よしの", "小笠原 志帆", "佐藤 勇樹", "谷口 美保", "中村 友美", "長谷川 浩平", "マカロン 広美", "村野 秀二", "田中 裕美子", "平井 友香子", "西村 和子", "増山 拓也", "村井 芳久", "大西 茂之", "アモーレ 石上", "小林 ちかふみ", "水谷 美優", "ウエノ シンゴ"],
+  4: ["伊東 亜由", "酒谷 薫", "杉沼 俊和", "岡田 翔伍", "寺嶋 智子", "衛藤 祥一", "松下 真紀子", "池田 恭朋", "足立 裕次朗", "松本 香鶴央", "打矢 健一", "川井 智貴", "尾田 笑子", "保井 秀一", "山元 あゆみ", "小島 啓誉", "眞清水 よしこ", "山下 文恵", "田中 吾一", "山内 陽子", "ナンバ ユキコ", "明治 成慈", "荻原 豪", "三枝 孝伊", "もふみ (友枝かすみ)", "中村 あずさ", "東橋 達矢", "髙木 剛", "おぎの まさみ", "横田 亜佐恵", "中山 裕貴", "桝田 加奈子", "白岩 成友", "下市 知佳", "とん とん", "間 実夏", "望月 泰成", "八田 奈緒美", "秋葉 麻里", "内田 彩加", "勝見 喜樹", "宮里 阿弥華", "田中 侑"],
+  5: null, // このアプリの名簿
+  6: ["もり めぐみ", "村上 嘉朗", "岩井 久典", "原田 あつ子", "根本 小百合", "野口 晃", "青木 めぐみ", "ウィリス 朋子", "西野 恵子", "春川 美鈴", "樺良 侑香里", "富岡 光城", "塩満 彩子", "長谷川 豊", "井上 信子", "石田 水央", "堺 典子", "大森 裕貴", "高麗 淳子", "川本 一希", "田村 正斗"],
+  7: ["熊坂 亮浩", "黒澤 篤", "服部 好江", "寺内 正樹", "関戸 朋子", "畔見 知子", "土屋 正路", "周藤 緑", "礒部 昌之", "マジシャン DAI", "太田 ちえこ", "矢口 健彦", "古賀 有紀", "宮崎 豊久", "井上 信次", "豊田 大和", "渡辺 将人", "伊佐治 依子", "土田 浩美", "吉野 正悟", "松岡 知宏", "市川 さちえ"],
+  8: ["杉原 かおり", "木村 潤子", "渡部 玉枝", "渡部 靖史", "わたなべ 皓至", "和地 峰子", "さかえ みきこ", "小山 有香", "Maayan (まーやん)", "北條 愛", "赤地 周作", "佐藤 勇士", "市原 由紀", "鈴木 雄久", "菅野 幸悦", "小川 了大", "黒沼 玲太", "武田 一樹", "福崎 芳枝", "寺口 真弘", "堀内 千尋", "丸山 その子", "旗手 愛", "廣松 寛子", "山崎 貴博", "清水 洋子", "本多 俊一"],
+  9: ["杜丞 なおん", "福田 耕治", "奥森 九月"],
+  10: ["川端 健支", "近藤 陽子", "多嶋 僚介", "山本 晴功", "兼重 日奈子", "坂川 和穂", "大野 和哉", "高井 ちずこ", "寺本 美乃里", "堀田 将伍", "川本 光輝", "小野 はるの", "西村 健太郎", "和田 拓巳"],
+  11: ["横辻 悠太", "猪飼 玲子", "MAKI マキ", "工藤 大和", "宮守 洋輔", "竪道 美智代", "川崎 怜央", "大森 由佳子", "若松 大祐", "瑞野 りあ", "橋本 あけみ", "白川 由美子", "田中 みっち", "妻鹿 正裕", "四ヶ所 伸一"],
+  12: [],
+  13: ["堂元 亜希子", "鏑木 仁美", "佐藤 準", "小野 珠実(たまちゃん先生)", "鈴木 貴博", "中山 由己", "下原 貴武", "松本 美樹"],
+  14: [],
+};
+
 // 運営が用意した顔写真(本人がアプリで写真を入れていないときに使う。サイトの一番上からの場所)。
 // 30秒プレゼンの画面などに出す。本人の了解があるものだけを置く
 const REF_MEMBER_PHOTOS = {
@@ -1444,6 +1464,7 @@ const REF_SEED_ANNOUNCEMENTS = [
   },
   {
     seedId: "2026-10-18-menu-2",
+    rev: 2,
     at: Date.UTC(2026, 9, 18, 5, 0), // 2026/10/18 14:00(日本時間)
     title: "【変更】「まとめ」をなくし、それぞれの画面に移しました・プレゼンにゲスト など",
     body: [
@@ -1461,6 +1482,9 @@ const REF_SEED_ANNOUNCEMENTS = [
       "・名前の上に、代表・役職・役割のマーク(例:BT-EX5代表、本システム開発者)を出します。",
       "・自分で使うタイマーは、時間のボタンを押すたびに足せます(例:10分を2回で20分)。画面はアナログ時計を大きく出します。",
       "・「つながりたい人」を、途中で切らずに出すようにしました。",
+      "",
+      "■ 今回:1on1",
+      "・ほかの BT-EX のユニットの方との 1on1 も記録できるようにしました。「相手」で BT-EX の番号(1〜14)を選び、一覧からお名前を選ぶか、お名前を入れてください。あなたの 1on1 の回数に数えます(相手のアプリには届きません)。BT-EX5 を選ぶと、これまでどおりこのアプリのメンバーから選べます。",
       "",
       "■ 今回:そのほか",
       "・右上の「あ」で文字を大きくしたとき、下(横)のメニューが消えてしまうことがあったのを直しました。",
@@ -2807,7 +2831,14 @@ var BtexServerCore = (function () {
         return w;
       }
       function member(db, id) { return c.find(db.referralMembers || [], function (m) { return m.id === id; }); }
-      function nameOf(db, id) { var m = member(db, id); return m ? m.name : "(退会したメンバー)"; }
+      function nameOf(db, id) {
+        var m = member(db, id);
+        if (m) return m.name;
+        // ほかの BT-EX のユニットの方(1on1 の相手)
+        var x = db.extPeople && db.extPeople[id];
+        if (x) return x.name;
+        return "(退会したメンバー)";
+      }
       function memberIdOfUser(db, userId) {
         var u = c.find(db.users, function (x) { return x.userId === userId; });
         return u ? u.memberId : "";
@@ -3950,7 +3981,7 @@ var BtexServerCore = (function () {
       function oneView(db, o, me) {
         var other = o.a === me ? o.b : o.a;
         return {
-          id: o.id, with: other, withName: nameOf(db, other), date: o.date, time: o.time || "", end: endTime(o), endDate: endDate(o), duration: o.duration || 60,
+          id: o.id, with: other, withName: nameOf(db, other), ext: db.extPeople && db.extPeople[other] ? "BT-EX" + db.extPeople[other].unit : "", date: o.date, time: o.time || "", end: endTime(o), endDate: endDate(o), duration: o.duration || 60,
           mode: o.mode || "onsite", place: o.place || "", meetUrl: o.meetUrl || "", calLink: o.calLink || "", synced: !!o.calId,
           status: o.status, autoDone: !!o.autoDone, awaiting: awaitingConfirm(o), confirmedByName: o.confirmedBy ? nameOf(db, o.confirmedBy) : "", note: (o.notes || {})[me] || "", next: (o.nexts || {})[me] || "", by: o.by, at: o.at,
         };
@@ -4006,7 +4037,17 @@ var BtexServerCore = (function () {
         if (!date) return c.fail("INVALID_REQUEST", "日付を入れてください。");
         if (!o) {
           var other = c.cleanStr(body.withMemberId, 40);
-          if (!member(db, other) || other === w.id) return c.fail("INVALID_REQUEST", "相手を選んでください。");
+          // ほかの BT-EX のユニットの方: ユニットの番号(1〜14)とお名前で記録する(相手には届かず、自分の 1on1 として数える)
+          var ext = body.ext && typeof body.ext === "object" ? body.ext : null;
+          if (ext) {
+            var unit = Math.round(Number(ext.unit));
+            var extName = c.cleanStr(ext.name, 40);
+            if (!(unit >= 1 && unit <= 14) || !extName) return c.fail("INVALID_REQUEST", "BT-EX の番号とお名前を入れてください。");
+            if (!db.extPeople) db.extPeople = {};
+            var known = Object.keys(db.extPeople).filter(function (k) { var p = db.extPeople[k]; return p.unit === unit && p.name === extName; })[0];
+            other = known || ("x_" + c.randomHex(6));
+            if (!known) db.extPeople[other] = { unit: unit, name: extName };
+          } else if (!member(db, other) || other === w.id) return c.fail("INVALID_REQUEST", "相手を選んでください。");
           o = { id: newId("o_"), a: w.id, b: other, by: w.id, at: c.nowMs(), notes: {}, nexts: {} };
           db.oneOnOnes.push(o);
         }
