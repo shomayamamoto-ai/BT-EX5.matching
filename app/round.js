@@ -828,11 +828,11 @@
       toggle.replaceChildren(lineIcon(mini ? "expand" : "collapse"));
     };
     const toggle = h("button", { type: "button", class: "pt-min", onclick: () => setMini(!panel.classList.contains("is-mini")) });
+    // 小さくまとめる: 1行目に時刻と小さくするボタン、2行目にずれ、その下に予定の3行(小さくしたときは時刻とずれの1行だけ)
     const panel = h("section", { class: "pr-time", "aria-label": "タイムマネジメント" },
-      h("div", { class: "pt-head" }, h("p", { class: "pt-label" }, "TIME MANAGEMENT"), toggle),
-      clock, status,
+      clock, toggle, status,
       h("div", { class: "pt-more" }, now2, bar, endRow,
-        h("label", { class: "pt-row pt-start-row" }, h("span", null, "開始"), startIn, h("span", null, `〜 ${Math.round(total / 60000)}分`))));
+        h("label", { class: "pt-row pt-start-row" }, h("span", null, "開始"), startIn, h("span", null, `〜${Math.round(total / 60000)}分`))));
     // スマホなど狭い画面では、はじめは小さく(時刻とずれだけ)出す
     setMini((document.documentElement.clientWidth || innerWidth) <= 760);
     host.append(panel);
@@ -850,8 +850,8 @@
       if (state !== lastState) { lastState = state; statusIcon.replaceChildren(lineIcon(state)); }
       statusText.textContent = state === "ok" ? "定刻どおり" : state === "late" ? `${ms2(lag)} 遅れ` : `${ms2(lag)} 早い`;
       const st = stepList.find((x) => x.no === items[i].stepNo);
-      now2.replaceChildren(h("span", null, "いまの予定"), h("b", null, `${st ? `${two(st.no)} ${st.title}` : items[i].stepNo ? "おわり" : "オープニング"}  ${hm(ps)}〜${hm(pe)}`));
-      endRow.replaceChildren(h("span", null, "終了予定"), h("b", null, `${hm(start + total)}`), h("span", { class: "pt-sep" }, "見込み"), h("b", { class: "pt-eta" }, hm(start + total + lag)));
+      now2.replaceChildren(h("span", null, "いま"), h("b", { class: "pt-now-name" }, st ? `${two(st.no)} ${st.title}` : items[i].stepNo ? "おわり" : "オープニング"), h("span", { class: "pt-now-time" }, `${hm(ps)}〜${hm(pe)}`));
+      endRow.replaceChildren(h("span", null, "終了"), h("b", null, `${hm(start + total)}`), h("span", { class: "pt-sep" }, "見込み"), h("b", { class: "pt-eta" }, hm(start + total + lag)));
       const span = total || 1;
       bar.firstChild.style.width = `${Math.max(0, Math.min(100, ((ps - start) / span) * 100))}%`;
       bar.lastChild.style.left = `${Math.max(0, Math.min(100, ((now - start) / span) * 100))}%`;

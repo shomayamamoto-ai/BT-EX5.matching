@@ -2115,3 +2115,53 @@ button.home-welcome-check:active { transform: scale(0.94); }
 .pd-check-text .pd-line { display: block; width: max-content; white-space: nowrap; }
 /* スライドの間の「はじめる」: 見えなくするが場所は残す(ほかのボタンの位置が動かない) */
 .pr-dock-btn.is-slot { visibility: hidden; pointer-events: none; }
+
+/* ---------- 操作バーとタイムマネジメントを小さくまとめる(機能はそのまま) ---------- */
+/* 操作バー: 横は中身の幅だけ。ボタンは押しやすい大きさ(44pt 以上)を保ったまま小さく */
+.pr-dock { width: auto; max-width: calc(100vw - 32px); grid-auto-columns: minmax(64px, auto); padding: 4px; gap: 0; border-radius: 24px; }
+.pr-dock-btn { min-width: 64px; min-height: 50px; padding: 4px 6px; gap: 2px; border-radius: 20px; }
+.pr-dock-ind { width: 44px; height: 26px; border-radius: 13px; }
+.pr-dock-ind .pr-icon { width: 20px; height: 20px; }
+.pr-dock-label { font-size: 11px; letter-spacing: 0.02em; }
+.pr-dock .pr-grip { width: 22px; }
+.pr-dock.is-floating { width: auto; }
+.pr-dock.is-vertical { grid-template-columns: 60px; padding: 4px; border-radius: 24px; }
+.pr-dock.is-vertical .pr-grip { height: 22px; }
+.pr-dock.is-vertical .pr-dock-btn { min-width: 0; min-height: 52px; }
+.pr-dock.is-vertical .pr-ask { font-size: 11px; padding: 4px 2px; }
+@media (max-width: 480px) { .pr-dock { width: 100%; max-width: none; } .pr-dock.is-floating, .pr-dock.is-vertical { width: auto; } }
+
+/* タイムマネジメント: 時刻・ずれ・予定を、小さな板にまとめる */
+.pr-time { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: "grip clock tog" "st st st" "more more more"; align-items: center; gap: 6px 6px; width: 236px; padding: 8px 10px 10px; border-radius: 20px; }
+.pr-time .pr-grip { position: static; grid-area: grip; width: 18px; height: 28px; }
+.pr-time .pt-clock { grid-area: clock; margin: 0; font-size: 30px; text-align: left; letter-spacing: 0.01em; }
+.pr-time .pt-min { grid-area: tog; width: 28px; height: 28px; }
+.pr-time .pt-status { grid-area: st; margin: 0; padding: 5px 10px 5px 8px; font-size: 14px; justify-content: flex-start; }
+.pr-time .pt-ic .pr-icon { width: 17px; height: 17px; }
+.pr-time .pt-more { grid-area: more; margin: 2px 0 0; gap: 5px; }
+.pr-time .pt-row { font-size: 11.5px; gap: 6px; flex-wrap: nowrap; min-width: 0; }
+.pt-now-name { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pt-now-time { flex: none; color: #d9c8a6; font-variant-numeric: tabular-nums; }
+.pr-time .pt-bar { height: 4px; }
+.pr-time .pt-bar-now { width: 8px; height: 8px; margin-left: -4px; }
+.pr-time .pt-start { padding: 1px 6px; font-size: 11.5px; }
+/* 小さくしたとき: 時刻とずれだけの1行 */
+.pr-time.is-mini { grid-template-columns: auto auto auto auto; grid-template-areas: "grip clock st tog"; width: auto; padding: 6px 8px; gap: 6px; border-radius: 999px; }
+.pr-time.is-mini .pt-clock { font-size: 20px; }
+.pr-time.is-mini .pt-status { padding: 3px 9px 3px 6px; font-size: 12px; white-space: nowrap; }
+.pr-time.is-mini .pt-ic .pr-icon { width: 15px; height: 15px; }
+.pr-time.is-mini .pt-min { width: 26px; height: 26px; }
+.pr-time.is-mini .pr-grip { height: 24px; }
+@media (max-width: 760px) {
+  .pr-time { width: 220px; }
+  .pr-time:not(.is-mini) .pt-clock { font-size: 26px; }
+  /* 小さくしたときは、上のあいている所(写真の右・残り秒数にかからない) */
+  .pr-time.is-mini:not(.is-floating) { width: auto; top: 104px; bottom: auto; right: 8px; }
+}
+@media (max-width: 760px) {
+  .pr-time.is-mini { gap: 4px; padding: 4px 6px; }
+  .pr-time.is-mini .pt-clock { font-size: 17px; }
+  .pr-time.is-mini .pt-status { font-size: 11px; padding: 2px 7px 2px 5px; gap: 4px; }
+  .pr-time.is-mini .pr-grip { width: 14px; }
+  .pr-time.is-mini .pt-min { width: 24px; height: 24px; }
+}
