@@ -2347,3 +2347,13 @@ button.home-welcome-check:active { transform: scale(0.94); }
 .pd-progress-steps li { align-content: start; }
 .pr-time .pt-row.pt-now, .pr-time .pt-more > .pt-row:first-child { flex-wrap: wrap; }
 .pt-now-name { white-space: normal; overflow: visible; text-overflow: clip; }
+/* ゲスト・ほかの BT-EX の方の「編集」 */
+.pr-extra-edit { flex-shrink: 0; display: inline-flex; align-items: center; gap: 4px; height: 32px; padding: 0 10px; border-radius: 10px; border: 1px solid var(--line-strong); background: #fff; color: var(--accent-dark); font: inherit; font-size: 12.5px; font-weight: 800; cursor: pointer; }
+.pr-extra-edit:hover { background: #fff3dc; border-color: #b8873f; }
+.pr-extra-edit:focus-visible { outline: 2px solid #b8873f; outline-offset: 2px; }
+.pr-extra-edit .bi { width: 16px; height: 16px; }
+@media (max-width: 520px) {
+  .pr-extra-item { flex-wrap: wrap; }
+  .pr-extra-pick { flex-basis: 100%; }
+  .pr-extra-time { margin-right: auto; }
+}

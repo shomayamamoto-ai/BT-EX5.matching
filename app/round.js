@@ -303,6 +303,34 @@
     const EXTRA_SECS = []; for (let v = 5; v <= 300; v += 5) EXTRA_SECS.push(v);
     const secLabel = (v) => (v >= 60 ? `${Math.floor(v / 60)}分${v % 60 ? `${v % 60}秒` : ""}` : `${v}秒`);
     const secOf = (k) => { const x = byKey(k); return x && x.sec ? x.sec : per; };
+    // ほかの BT-EX の方の会社の欄は「BT-EX7 ・ 会社・肩書き」。編集では番号と会社・肩書きに分けて出す
+    const extraCompany = (unit, co) => [unit ? `BT-EX${unit}` : "", co].filter(Boolean).join(" ・ ");
+    const extraCo = (x) => (x.kind === "other" ? String(x.company || "").replace(/^BT-EX\d+(\s*・\s*)?/, "") : String(x.company || ""));
+    // 足したあとの方を編集する(お名前・会社・肩書き。ほかの BT-EX の方は番号も)
+    function editExtra(x) {
+      App.openSheet(x.kind === "guest" ? "ゲストを編集" : "ほかの BT-EX のメンバーを編集", (body, close) => {
+        const nameIn = h("input", { type: "text", maxlength: "30", value: x.name, autocomplete: "off" });
+        const coIn = h("input", { type: "text", maxlength: "60", value: extraCo(x), placeholder: "例: 株式会社〇〇 代表", autocomplete: "off" });
+        const unitIn = x.kind === "other" ? h("select", null, Array.from({ length: 14 }, (_, i) => i + 1).filter((n) => n !== 5).map((n) => h("option", { value: String(n) }, `BT-EX${n}`))) : null;
+        if (unitIn) unitIn.value = String(x.unit || 1);
+        const save = () => {
+          const name = nameIn.value.trim();
+          if (!name) { nameIn.focus(); App.toast("お名前を入れてください", "error"); return; }
+          const unit = unitIn ? Number(unitIn.value) || 0 : 0;
+          if (extras.some((y) => y.key !== x.key && y.kind === x.kind && y.name === name && (!unitIn || y.unit === unit))) { App.toast(`${name}さんはもう入っています`, "error"); return; }
+          x.name = name;
+          if (unitIn) { x.unit = unit; x.company = extraCompany(unit, coIn.value.trim()); } else x.company = coIn.value.trim();
+          saveExtras(); close(); draw(); App.toast(`${name}さんを直しました`);
+        };
+        [nameIn, coIn].forEach((el) => el.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); save(); } }));
+        body.append(
+          unitIn ? App.field("BT-EX の番号", unitIn) : "",
+          App.field("お名前", nameIn),
+          App.field("会社・肩書き(なくてもよい)", coIn),
+          App.btn("保存する", save, "primary wide"));
+        setTimeout(() => nameIn.focus(), 50);
+      });
+    }
     function extraBox(kind, title, hint) {
       const nameIn = h("input", { type: "text", maxlength: "30", placeholder: "例: 田中 太郎", autocomplete: "off" });
       const coIn = h("input", { type: "text", maxlength: "60", placeholder: "例: 株式会社〇〇 代表", autocomplete: "off" });
@@ -325,7 +353,7 @@
         const name = v ? v.name : nameIn.value.trim();
         if (!name) { (bx || nameIn).focus && nameIn.focus(); App.toast("お名前を選ぶか、入れてください", "error"); return; }
         if (extras.some((y) => y.kind === kind && y.name === name && (!v || y.unit === v.unit))) { App.toast(`${name}さんはもう入っています`); if (bx) bx.setUnit(v.unit); return; }
-        const x = { key: `${kind === "guest" ? "g" : "o"}:${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`, kind, name, company: v ? [`BT-EX${v.unit}`, coIn.value.trim()].filter(Boolean).join(" ・ ") : coIn.value.trim(), unit: v ? v.unit : 0, sec: 30 };
+        const x = { key: `${kind === "guest" ? "g" : "o"}:${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`, kind, name, company: v ? extraCompany(v.unit, coIn.value.trim()) : coIn.value.trim(), unit: v ? v.unit : 0, sec: 30 };
         extras.push(x); all.push(x); order.push(x.key); saveExtras();
         nameIn.value = ""; coIn.value = ""; if (bx) { const u = v.unit; bx.setUnit(0); bx.setUnit(u); } draw();
         if (!bx) { nameIn.focus(); App.toast(`${name}さんを足しました`); }
@@ -388,6 +416,7 @@
               h("span", { class: "pr-extra-no" }, n >= 0 ? String(n + 1) : "＋"),
               h("span", { class: "pr-extra-name" }, h("b", null, x.name), x.company ? h("small", null, x.company) : null)),
             h("label", { class: "pr-extra-time" }, h("span", null, "時間"), sel),
+            h("button", { type: "button", class: "pr-extra-edit", "aria-label": `${x.name}さんを編集`, title: "編集", onclick: () => editExtra(x) }, App.glyph("post"), h("span", null, "編集")),
             h("button", { type: "button", class: "pr-extra-del", "aria-label": `${x.name}さんを消す`, onclick: () => {
               extras = extras.filter((y) => y.key !== x.key); saveExtras();
               const ai = all.findIndex((y) => y.key === x.key); if (ai >= 0) all.splice(ai, 1);
