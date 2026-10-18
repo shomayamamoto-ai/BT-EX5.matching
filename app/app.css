@@ -1733,7 +1733,7 @@ button.home-welcome-check:active { transform: scale(0.94); }
 /* BT-EX とは */
 .pd-about { text-align: center; }
 .pd-about .pd-title { font-size: clamp(30px, min(5vw, 8svh), 76px); }
-.pd-para { margin: 0 auto clamp(10px, 2.2svh, 24px); max-width: 34em; font-size: clamp(15px, min(2vw, 3.1svh), 28px); line-height: 1.75; color: #f3e6cc; }
+.pd-para { word-break: auto-phrase; margin: 0 auto clamp(10px, 2.2svh, 24px); max-width: 40em; font-size: clamp(15px, min(2vw, 3.1svh), 28px); line-height: 1.75; color: #f3e6cc; }
 /* 理念とビジョン */
 .pd-vision { text-align: center; }
 .pd-vision .pd-title { font-family: "Cormorant Garamond", "Inter", serif; font-size: clamp(56px, min(10vw, 16svh), 170px); letter-spacing: 0.06em; line-height: 1; }

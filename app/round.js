@@ -687,7 +687,8 @@
         return h("div", { class: "pd pd-cover" },
           h("img", { class: "pd-mark", src: "../assets/bt-ex5-mark-3d-512.png", alt: "" }),
           h("p", { class: "pd-kicker" }, "BT-EX5 定例会"),
-          h("p", { class: "pd-title" }, p.name),
+          // 「日本海側最大のマーケット 新潟⇔東京」のように空白で区切った題は、空白のところで改行する
+          h("p", { class: "pd-title" }, ...String(p.name).trim().split(/[\s\u3000]+/).flatMap((x, i) => (i ? [h("br"), x] : [x]))),
           p.date ? h("p", { class: "pd-date" }, p.date) : null,
           p.notes && p.notes.length ? h("ul", { class: "pd-notes" }, p.notes.map((x) => h("li", null, x))) : null);
       }
@@ -744,7 +745,7 @@
         return h("div", { class: "pd pd-about" },
           h("p", { class: "pd-title" }, p.name),
           h("span", { class: "pd-rule", "aria-hidden": "true" }),
-          (p.paras || []).map((x) => h("p", { class: "pd-para" }, x)));
+          (p.paras || []).map((x) => h("p", { class: "pd-para" }, ...String(x).split("\n").flatMap((t, i) => (i ? [h("br"), t] : [t])))));
       }
       if (p.type === "list") {
         return h("div", { class: `pd pd-list${p.dense ? " is-dense" : ""}` },
