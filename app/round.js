@@ -643,16 +643,35 @@
           h("i"), h("span", null, st.title)))),
         h("span", { class: "pd-progress-page" }, `${two(idx + 1)} / ${two(people.length)}`));
     }
-    const pauseBtn = h("button", { type: "button", class: "round-btn is-main" });
-    const prevBtn = h("button", { type: "button", class: "round-btn", onclick: () => go(idx - 1) }, "◀ 前へ");
-    const nextBtn = h("button", { type: "button", class: "round-btn", onclick: () => go(idx + 1) }, "次へ ▶");
-    const endBtn = h("button", { type: "button", class: "round-btn round-end", onclick: () => finish(true) }, "終わる");
+    // 下の操作バー(アプリの下のメニューと同じ形: 絵と文字のボタンを横に並べる)
+    const ICONS = {
+      prev: "M15.4 7.4 14 6l-6 6 6 6 1.4-1.4-4.6-4.6z",
+      next: "M8.6 16.6 10 18l6-6-6-6-1.4 1.4 4.6 4.6z",
+      play: "M8 5v14l11-7z",
+      pause: "M6 19h4V5H6zm8-14v14h4V5z",
+      again: "M12 5V1L7 6l5 5V7c3.3 0 6 2.7 6 6s-2.7 6-6 6-6-2.7-6-6H4c0 4.4 3.6 8 8 8s8-3.6 8-8-3.6-8-8-8z",
+      end: "M6 6h12v12H6z",
+      close: "M19 6.4 17.6 5 12 10.6 6.4 5 5 6.4 10.6 12 5 17.6 6.4 19 12 13.4 17.6 19 19 17.6 13.4 12z",
+    };
+    const NS = "http://www.w3.org/2000/svg";
+    function setBtn(btn, icon, label) {
+      const svg = document.createElementNS(NS, "svg");
+      svg.setAttribute("viewBox", "0 0 24 24"); svg.setAttribute("aria-hidden", "true");
+      const path = document.createElementNS(NS, "path"); path.setAttribute("d", ICONS[icon]); svg.append(path);
+      btn.replaceChildren(svg, h("span", null, label));
+      return btn;
+    }
+    const dockBtn = (icon, label, cls, onclick) => setBtn(h("button", { type: "button", class: `pr-dock-btn${cls ? ` ${cls}` : ""}`, onclick }), icon, label);
+    const pauseBtn = dockBtn("play", "はじめる", "is-main");
+    const prevBtn = dockBtn("prev", "戻る", "", () => go(idx - 1));
+    const nextBtn = dockBtn("next", "進む", "", () => go(idx + 1));
+    const endBtn = dockBtn("end", "終了", "is-end", () => finish(true));
     const box = h("div", { class: `pr-run is-entering${solo ? " is-solo" : ""}`, role: "dialog", "aria-label": solo ? "タイマー" : "プレゼンの進行" },
       h("div", { class: "pr-top" }, h("p", { class: "pr-title" }, title || `${(PER.find(([v]) => v === per) || [0, ""])[1]}プレゼン`), jump, count),
       slide,
       progress,
       h("div", { class: "pr-meter-row" }, meterBox, sec),
-      h("div", { class: "round-ctrl pr-ctrl" }, prevBtn, pauseBtn, nextBtn, endBtn));
+      h("div", { class: "pr-ctrl pr-dock", role: "toolbar", "aria-label": "進行の操作" }, prevBtn, pauseBtn, nextBtn, endBtn));
     // <body> ではなく <html> のすぐ下に置く(右上の「あ」で文字を大きくしても、この画面は大きくならない。
     // 文字の大きさは <body> を拡大して変えているため)
     document.documentElement.append(box);
@@ -903,7 +922,7 @@
       if (jump) { let j = -1; jump.querySelectorAll("option").forEach((o) => { if (Number(o.value) <= idx) j = Number(o.value); }); jump.value = String(j); }
       pauseBtn.hidden = isDeck(cur);
       prevBtn.disabled = idx === 0;
-      nextBtn.textContent = idx === people.length - 1 ? "おわり ▶" : "次へ ▶";
+      setBtn(nextBtn, "next", idx === people.length - 1 ? "おわり" : "進む");
       if (isDeck(cur)) { box.classList.remove("is-last", "is-red", "is-end", "is-gap"); return; }
       const gap = gapUntil > Date.now();
       const left = gap ? 0 : Math.max(0, leftNow());
@@ -918,9 +937,10 @@
       box.classList.toggle("is-red", !gap && left <= 5 && left > 0);
       box.classList.toggle("is-end", !gap && left <= 0);
       box.classList.toggle("is-gap", gap);
-      pauseBtn.textContent = running() || gap ? "Ⅱ とめる" : left0 < per && left0 > 0 ? "▶ つづける" : left <= 0 ? "▶ もう一度" : "▶ はじめる";
-      prevBtn.disabled = idx === 0;
-      nextBtn.textContent = idx === people.length - 1 ? "おわり ▶" : "次へ ▶";
+      if (running() || gap) setBtn(pauseBtn, "pause", "とめる");
+      else if (left0 < per && left0 > 0) setBtn(pauseBtn, "play", "つづける");
+      else if (left <= 0) setBtn(pauseBtn, "again", "もう一度");
+      else setBtn(pauseBtn, "play", "はじめる");
     }
     function halt() { clearInterval(timer); timer = null; }
     function start() {
@@ -969,8 +989,8 @@
       asking = back;
       App.fill(ctrl,
         h("p", { class: "pr-ask" }, "進行を終わりますか?"),
-        h("button", { type: "button", class: "round-btn", onclick: back }, "つづける"),
-        h("button", { type: "button", class: "round-btn is-main", onclick: () => { asking = null; finish(false, true); } }, "終わる"));
+        dockBtn("play", "つづける", "", back),
+        dockBtn("end", "終わる", "is-main", () => { asking = null; finish(false, true); }));
       ctrl.querySelector(".is-main").focus({ preventScroll: true });
     }
     function finish(early, confirmed) {
@@ -979,7 +999,16 @@
       box.classList.remove("is-last", "is-red", "is-end", "is-gap");
       box.classList.add("is-done");
       App.fill(slide, h("div", { class: "pr-done" }, h("p", { class: "pr-name" }, "おつかれさまでした")));
-      App.fill(box.querySelector(".pr-ctrl"), h("button", { type: "button", class: "round-btn is-main", onclick: closeRun }, "閉じる"));
+      // 「おつかれさまでした」からも、最後のスライドへ戻れる
+      App.fill(box.querySelector(".pr-ctrl"), dockBtn("prev", "戻る", "", reopen), dockBtn("close", "閉じる", "is-main", closeRun));
+    }
+    function reopen() {
+      if (!done || closed) return;
+      done = false;
+      box.classList.remove("is-done");
+      App.fill(box.querySelector(".pr-ctrl"), prevBtn, pauseBtn, nextBtn, endBtn);
+      go(people.length - 1);
+      prevBtn.focus({ preventScroll: true });
     }
     // 閉じる: ふわっと消してから、この画面を外す(下のプレゼンの準備の画面がそのまま見える)
     let closed = false;
@@ -1002,6 +1031,7 @@
       if (document.querySelector(".op-intro")) return; // オープニングムービーを流しているあいだはムービーの操作
       if (e.key === " ") { e.preventDefault(); if (!done) { if (isDeck(people[idx])) go(idx + 1); else pauseBtn.click(); } }
       else if (e.key === "ArrowRight" && !done) go(idx + 1);
+      else if (e.key === "ArrowLeft" && done) reopen();
       else if (e.key === "ArrowLeft" && !done && idx > 0) go(idx - 1);
       else if (e.key === "Escape") { if (done) closeRun(); else if (asking) asking(); else finish(true); }
     }

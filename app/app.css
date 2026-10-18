@@ -1158,7 +1158,7 @@ body.tabs-right .app-to-top { right: calc(var(--dock-w) + 22px); }
 .pr-timer-slide { text-align: center; display: grid; justify-items: center; gap: clamp(6px, 1.6svh, 16px); }
 /* まん中のアナログ時計(予定の画面と同じもの)。画面の高さに合わせて大きさを変える */
 .pr-timer-clock { display: flex; justify-content: center; }
-.pr-timer-clock .lux-clock { --size: clamp(150px, min(38vw, 42svh), 480px); margin: calc(var(--size) * 0.1) 0; }
+.pr-timer-clock .lux-clock { --size: clamp(150px, min(38vw, 38svh), 480px); margin: calc(var(--size) * 0.1) 0; }
 /* ふつうのタイマーは時計だけを大きく */
 .pr-timer-slide.is-plain .lux-clock { --size: clamp(180px, min(46vw, 56svh), 620px); }
 .pr-timer-slide:has(.pr-timer-clock) .pr-timer-name { font-size: clamp(30px, min(5vw, 6.5svh), 76px); }
@@ -1910,4 +1910,28 @@ button.home-welcome-check:active { transform: scale(0.94); }
   .pr-run.is-long .pr-meter-row { flex-wrap: wrap; row-gap: 4px; }
   .pr-run.is-long .pr-meter-box { flex-basis: 100%; }
   .pr-run.is-long .pr-sec { margin-left: auto; }
+}
+
+/* ---------- プレゼン中の操作バー(アプリの下のメニューと同じ形) ----------
+   戻る・はじめる/とめる・進む・終了を、絵と文字の大きなボタンで横に並べる */
+.pr-dock { justify-self: center; width: min(100%, 560px); max-width: none; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); align-items: stretch; gap: 4px; padding: 6px; border-radius: 22px; border: 1px solid rgba(226, 184, 102, 0.32); background: rgba(22, 16, 10, 0.92); box-shadow: 0 14px 40px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 241, 201, 0.06); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+.pr-dock-btn { min-width: 0; min-height: 60px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; padding: 6px 4px; border: 0; border-radius: 16px; background: none; color: #d9c8a6; font: inherit; font-size: 12.5px; font-weight: 800; letter-spacing: 0.04em; white-space: nowrap; cursor: pointer; -webkit-tap-highlight-color: transparent; transition: background 0.15s, color 0.15s; }
+.pr-dock-btn svg { width: 26px; height: 26px; fill: currentColor; }
+.pr-dock-btn[hidden] { display: none; }
+.pr-dock-btn:hover:not(:disabled) { background: rgba(255, 241, 201, 0.07); color: #fff3dc; }
+.pr-dock-btn:active:not(:disabled) { background: rgba(255, 241, 201, 0.12); }
+.pr-dock-btn:focus-visible { outline: 2px solid #e2b866; outline-offset: -2px; }
+.pr-dock-btn:disabled { opacity: 0.28; cursor: default; }
+.pr-dock-btn.is-main { color: #e2b866; background: rgba(226, 184, 102, 0.12); }
+.pr-dock-btn.is-main:hover:not(:disabled) { background: rgba(226, 184, 102, 0.2); color: #f3d48d; }
+.pr-dock-btn.is-end { color: #c9b28a; }
+.pr-dock .pr-ask { grid-column: auto; align-self: center; margin: 0; padding: 0 8px; font-size: 13.5px; white-space: nowrap; }
+@media (max-height: 820px) {
+  .pr-dock-btn { min-height: 54px; }
+  .pr-dock-btn svg { width: 24px; height: 24px; }
+}
+@media (max-width: 480px) {
+  .pr-dock { width: 100%; border-radius: 20px; }
+  .pr-dock-btn { min-height: 56px; font-size: 11.5px; }
+  .pr-dock .pr-ask { font-size: 12px; white-space: normal; text-align: center; }
 }
