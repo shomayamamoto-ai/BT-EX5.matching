@@ -55,9 +55,10 @@ html.big-text body { zoom: 1.15; }
   /* ロゴの下の小さな説明文は省く(右の操作が画面からはみ出さないように) */
   .ref-header-inner .brand-sub { display: none; }
 }
-/* 早見表(紹介診断のボタンがある帯)の狭いスマホでは、ロゴの文字を省いてロゴの印だけにする */
-@media (max-width: 410px) {
-  .ref-header-inner:has(.ref-header-cta) .brand-word { display: none; }
+/* スマホでは早見表の上の帯の「紹介診断」ボタンを出さない(紹介診断は、相談の箱の下の
+   「言葉が浮かばないときは、質問に答えて探す」から開ける)。そのぶんロゴの「BT-EX5」の文字を出す */
+@media (max-width: 560px) {
+  .ref-header-nav .ref-header-cta { display: none; }
 }
 /* パソコン: プロフィールの保存の帯と下のメニューのあいだから、入力欄が透けて見えないように */
 @media (min-width: 900px) {
