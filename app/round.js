@@ -405,6 +405,8 @@
     // 残り秒数の欄は、いちばん幅を取る表示(「残り 8:88 秒」「次の人まで 88 秒」)に合わせて幅を決めておく。
     // はじめる・止める・次の人までの待ちで、数字やメーターの位置が動かないように
     const gapLabel = solo ? "次まで" : "次の人まで";
+    // 自分だけのタイマーは、まん中に「予定」の画面と同じアナログ時計(いまの時刻)を出す。項目が変わっても同じ時計を使う
+    const soloClock = solo && App.luxClock ? App.luxClock() : null;
     function fixSecWidth() {
       const keep = [secHead.textContent, secNum.textContent, box.classList.contains("is-gap")];
       sec.style.width = ""; secNum.style.minWidth = "";
@@ -448,6 +450,7 @@
       if (p.kind === "timer") {
         box.classList.toggle("is-rest", !!p.rest);
         App.fill(slide, h("div", { class: "pr-timer-slide" },
+          soloClock ? h("div", { class: "pr-timer-clock" }, soloClock) : null,
           h("p", { class: "pr-timer-name" }, p.name),
           p.sub ? h("p", { class: "pr-timer-sub" }, p.sub) : null,
           nexts[0] ? h("p", { class: "pr-timer-next" }, `次は ${nexts[0].name}(${scaleTxt(durOf(nexts[0]))})`) : null));

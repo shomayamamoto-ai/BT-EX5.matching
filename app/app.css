@@ -1155,7 +1155,11 @@ body.tabs-right .app-to-top { right: calc(var(--dock-w) + 22px); }
 .pr-solo { margin-top: 10px; }
 /* 自分だけのタイマー(ポモドーロ): まん中に大きく */
 .pr-run.is-solo .pr-slide { display: flex; align-items: center; justify-content: center; }
-.pr-timer-slide { text-align: center; display: grid; gap: clamp(8px, 2svh, 18px); }
+.pr-timer-slide { text-align: center; display: grid; justify-items: center; gap: clamp(6px, 1.6svh, 16px); }
+/* まん中のアナログ時計(予定の画面と同じもの)。画面の高さに合わせて大きさを変える */
+.pr-timer-clock { display: flex; justify-content: center; }
+.pr-timer-clock .lux-clock { --size: clamp(110px, min(24vw, 27svh), 290px); margin: calc(var(--size) * 0.1) 0; }
+.pr-timer-slide:has(.pr-timer-clock) .pr-timer-name { font-size: clamp(40px, min(8vw, 10svh), 120px); }
 .pr-timer-name { margin: 0; font-family: "Shippori Mincho", serif; font-size: clamp(56px, min(12vw, 18svh), 168px); font-weight: 700; line-height: 1.05; color: #fff3dc; }
 .pr-run.is-rest .pr-timer-name { color: #9fd3b0; }
 .pr-timer-sub { margin: 0; font-size: clamp(15px, min(2vw, 3svh), 26px); font-weight: 800; color: #f0b25a; }
