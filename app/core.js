@@ -597,7 +597,7 @@ const App = (function () {
     { id: "news", label: "アップデート", icon: "M3 10v4a1 1 0 0 0 1 1h2l5 4V5L6 9H4a1 1 0 0 0-1 1Zm13.5 2A4.5 4.5 0 0 0 14 8v8a4.5 4.5 0 0 0 2.5-4ZM14 3.2v2.1a7 7 0 0 1 0 13.4v2.1a9 9 0 0 0 0-17.6Z" },
   ];
   // プレゼン(定例会の進行)のタブは、この人だけに出す
-  const PRESENT_OWNERS = ["yamamoto"];
+  const PRESENT_OWNERS = ["yamamoto", "m22"]; // 山本 捷真・小林 末季(こばねぇ)
   const canPresent = () => !!(session && PRESENT_OWNERS.includes(session.memberId));
   let badges = {};
   let current = { view: "", parts: [], params: new URLSearchParams() };

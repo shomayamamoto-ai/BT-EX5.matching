@@ -193,7 +193,7 @@
   App.views.present = {
     title: "プレゼン",
     async render(el, parts, params) {
-      // 定例会の進行は、決まった人(山本)だけが使う。ほかの人は予定の画面へ
+      // 定例会の進行は、決まった人(山本・こばねぇ)だけが使う。ほかの人は予定の画面へ
       if (App.canPresent && !App.canPresent()) { history.replaceState(null, "", "#events"); App.route(); return; }
       await renderSetup(el, params, parts);
     },
