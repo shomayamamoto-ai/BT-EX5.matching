@@ -1,6 +1,6 @@
 // ============================================
 // app/pitch.js — プレゼンの練習・タイマーと、今月の目標
-// ・30秒プレゼン: 原稿(本人だけが見る。サーバーに保存)・文字数と読む時間の目安・読み上げ
+// ・プレゼン: 原稿(本人だけが見る。サーバーに保存)・文字数と読む時間の目安・読み上げ
 // ・タイマー: 30秒・1分・3分・5分・10分・25分(ポモドーロ)。続けて押すと足せる(10分×3で30分。最大3時間)。
 //   一時停止・つづける。残りわずかと 0秒で、音(鐘)・色・ふるえ。練習のシートとホームに同じタイマーを出し、
 //   画面を移っても動きつづける(タイマーが出ていない画面では右上に残り時間)。
@@ -13,7 +13,7 @@
   const { h } = App;
   const CHARS_PER_SEC = 8.5; // 人前で話す速さの目安(1秒に約8〜9文字)
 
-  // ---------- 30秒プレゼン ----------
+  // ---------- プレゼン ----------
   function template() {
     const s = App.session;
     const me = App.memberById(s.memberId) || {};
@@ -209,14 +209,14 @@
       const sayBtn = h("button", { type: "button", class: "app-btn ghost" }, "読み上げて聞く");
       const saved = h("small", { class: "pitch-saved" });
       body.append(
-        h("p", { class: "app-lead" }, "定例会の「30秒プレゼンテーション」の原稿を書いて、時間を計って練習できます。原稿はあなただけが見られます。タイマーは 1分・5分・25分(ポモドーロ)なども選べ、続けて押すと足せます。ホームにも同じタイマーがあります。"),
+        h("p", { class: "app-lead" }, "定例会の「プレゼンテーション」の原稿を書いて、時間を計って練習できます。原稿はあなただけが見られます。タイマーは 1分・5分・25分(ポモドーロ)なども選べ、続けて押すと足せます。ホームにも同じタイマーがあります。"),
         h("div", { class: "app-btn-row pitch-tools" }, App.btn("プロフィールからひな形を入れる", async () => {
           if (text.value.trim() && !(await App.confirm("いまの原稿を、ひな形で置きかえますか?", { ok: "置きかえる" }))) return;
           text.value = template(); update(); save();
         }, "ghost small"), saved),
         text, meter,
         App.timerWidget({ extra: "speechSynthesis" in window ? sayBtn : null, onChange: () => update() }),
-        App.roundSheet ? h("button", { type: "button", class: "app-btn ghost wide pitch-round", onclick: () => App.roundSheet() }, "定例会で、みんなの30秒プレゼンを順番に進行する") : null,
+        App.roundSheet ? h("button", { type: "button", class: "app-btn ghost wide pitch-round", onclick: () => App.roundSheet() }, "定例会で、みんなのプレゼンを順番に進行する") : null,
         h("p", { class: "app-field-hint" }, "残りわずか(1分までは残り10秒、それより長いときは残り1分)と、0秒になったときに、音・画面の色・スマホのふるえ(対応する端末)でお知らせします。マナーモードのときは音が出ないことがあります。シートを閉じても、タイマーは動きつづけます。"));
 
       // 文字数と、読むのにかかる時間の目安(5分までの長さで比べる)

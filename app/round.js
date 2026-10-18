@@ -1,6 +1,6 @@
 // ============================================
-// app/round.js — 30秒プレゼン(下のメニューの「プレゼン」)
-// 定例会の「30秒プレゼンテーション」を、顔写真と紹介つきの大きな画面で順番に進める。
+// app/round.js — プレゼン(下のメニューの「プレゼン」)
+// 定例会の「プレゼンテーション」を、顔写真と紹介つきの大きな画面で順番に進める。
 // ・準備(#present): 定例会を選ぶ → 出る人を押して選ぶ(押した順が話す順番)→ 並べかえ(つかんで動かす・↑↓・シャッフル)
 //   → 1人の時間(30秒・1分・2分・5分)・次の人までの間(1〜10秒)→「全画面ではじめる」
 // ・進行(全画面): 番号・名前・肩書き・活動範囲・つながりたい人・こんな話が出たら・顔写真・次の人、
@@ -161,7 +161,7 @@
 
   // ---------- 準備(下のメニューの「プレゼン」) ----------
   App.views.present = {
-    title: "30秒プレゼン",
+    title: "プレゼン",
     async render(el, parts, params) { await renderSetup(el, params); },
   };
   // 以前の入口(定例会の画面・ホーム)からは、この画面へ
@@ -296,7 +296,7 @@
     const goingN = going.size;
     App.fill(el,
       h("section", { class: "app-section pr-intro" },
-        h("p", { class: "app-lead" }, "定例会の30秒プレゼンを、顔写真と紹介つきの大きな画面で順番に進めます。会場のスクリーンや Meet の画面共有でそのまま映せます。"),
+        h("p", { class: "app-lead" }, "定例会のプレゼンを、顔写真と紹介つきの大きな画面で順番に進めます。会場のスクリーンや Meet の画面共有でそのまま映せます。"),
         me ? h("div", { class: "pr-me" },
           face(myPhoto, me.name, "pr-me-face"),
           h("div", { class: "pr-me-text" },
@@ -511,8 +511,8 @@
     function finish(early, confirmed) {
       if (early && !confirmed) { askEnd(); return; }
       halt(); gapUntil = 0; done = true;
-      // おつかれさまの画面からは全画面をやめておく(閉じるときに全画面から戻る処理をしなくてよいように)
-      exitFull();
+      // 全画面はここではやめない(やめると画面の大きさが変わり、「閉じる」が一度画面の外へずれて見えるため)。
+      // 全画面は「閉じる」を押したときにやめる
       const said = early || confirmed ? idx : people.length;
       box.classList.remove("is-last", "is-red", "is-end", "is-gap");
       box.classList.add("is-done");
@@ -528,6 +528,8 @@
       document.removeEventListener("keydown", onKey);
       halt();
       try { if (wake) wake.release(); } catch { /* noop */ }
+      // 全画面をやめるあいだに画面の大きさが変わっても、ボタンや文字が動いて見えないように中身を隠す
+      box.classList.add("is-closing");
       // 閉じたら、プレゼンの準備の画面を読み込み直して出す(全画面から戻ったあと、Safari などで
       // 画面が描き直されずに真っ白のまま残ることがあるため。選んだ人と順番はこの端末に残っている)
       const remove = () => {

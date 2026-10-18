@@ -171,7 +171,7 @@
             h("h2", { class: "app-h2" }, "タイマー"),
             h("a", { class: "home-sec-link", href: "#me/pitch" }, "プレゼンの原稿を書く")),
           App.timerWidget({ compact: true }),
-          App.roundSheet ? h("button", { type: "button", class: "home-timer-round", onclick: () => App.roundSheet() }, App.glyph("clock"), "定例会の30秒プレゼンを、出席者の順番で進行する →") : null);
+          App.roundSheet ? h("button", { type: "button", class: "home-timer-round", onclick: () => App.roundSheet() }, App.glyph("clock"), "定例会のプレゼンを、出席者の順番で進行する →") : null);
         main.append(timerSec);
         // #home/timer(ホーム画面のアイコンの長押しなど)で開いたときは、タイマーまで動かす
         if (parts && parts[0] === "timer") setTimeout(() => { if (timerSec.isConnected) timerSec.scrollIntoView({ behavior: "smooth", block: "start" }); }, 80);
