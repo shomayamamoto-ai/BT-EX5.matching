@@ -875,7 +875,8 @@ const BTEX_DECK = {
     },
   ],
   // 時間の目安(分)。2時間の定例会のタイムマネジメントに使う(0: オープニング、1〜: 流れの番号)
-  timeplan: [5, 5, 20, 5, 25, 35, 15, 10],
+  // オープニング1分・挨拶5分・理念20分・エデュケーション6分・1分プレゼン32分・商談(10分×3回+6分)36分・実績紹介15分・終わりの挨拶5分 = 120分
+  timeplan: [1, 5, 20, 6, 32, 36, 15, 5],
   // スケジュール(次回以降の日程は、予定に入っている定例会から出す)
   schedule: {
     title: "BT-EX5 スケジュール",
@@ -1009,11 +1010,15 @@ const REF_SEED_REVISIONS = [
 // 参加リンク(Zoom など)はここに置かない(このファイルは誰でも読めるため)。オンラインの回は Google Meet を作る
 // 当日の流れは BT-EX の指針(オンライン定例会)の順。①②③⑥⑦は BT-EX 共通、④⑤はユニットごとに変えてよい
 const REF_SEED_AGENDA = [
-  "①はじめの挨拶", "②BT-EXの理念", "③エデュケーションコーナー 5分", "④1分プレゼンテーション",
-  "⑤ブレイクアウトルーム商談 15分×2", "⑥LINKのビジネス実績紹介", "⑦終わりの挨拶",
+  "①はじめの挨拶", "②BT-EXの理念", "③エデュケーションコーナー 6分", "④1分プレゼンテーション",
+  "⑤ブレイクアウトルーム商談 10分×3", "⑥LINKのビジネス実績紹介", "⑦終わりの挨拶",
 ].join("\n");
 // 以前の流れ(運営が書きかえていない定例会だけ、上の流れに置きかえる)
 const REF_SEED_AGENDA_PREV = [
+  [
+    "①はじめの挨拶", "②BT-EXの理念", "③エデュケーションコーナー 5分", "④1分プレゼンテーション",
+    "⑤ブレイクアウトルーム商談 15分×2", "⑥LINKのビジネス実績紹介", "⑦終わりの挨拶",
+  ].join("\n"),
   [
     "①はじめの挨拶", "②BT-EXの理念", "③エデュケーションコーナー 5分", "④1分プレゼンテーション",
     "⑤ブレイクアウトルーム商談 15分×2", "⑥LINKのビジネス実績紹介", "⑦終わりの挨拶", "", "★貢献、ありがとう発表は11月以降から",
@@ -1847,6 +1852,23 @@ const REF_SEED_ANNOUNCEMENTS = [
       "・定例会のタイムマネジメント(遅れは赤・早いと緑・定刻は灰色)と、動かせる操作バーを付けました。",
       "・挙手のお願いの2ページを足し、規定とスケジュールを「主な3つの活動」のあとに移しました。",
       "・下のメニューの「運営連絡」を「アップデート」という名前にしました。",
+    ].join("\n"),
+  },
+  {
+    seedId: "2026-10-18-update-10",
+    cat: "アップデート",
+    at: Date.UTC(2026, 9, 18, 13, 0), // 2026/10/18 22:00(日本時間)
+    title: "【アップデート】定例会の時間配分を決め直しました(商談は10分×3回)",
+    body: [
+      "前回のアップデート(7名の資料を追加し、プロフィールを充実)のあとに入れた変更です。前回の内容もあわせて載せます。",
+      "",
+      "■ 今回:定例会の時間配分(合計2時間)",
+      "・オープニング 1分/① はじめの挨拶 5分/② BT-EXの理念 20分/③ エデュケーションコーナー 6分/④ 1分プレゼンテーション 32分/⑤ ブレイクアウトルーム商談 10分×3回=30分+α 6分/⑥ LINKのビジネス実績紹介 15分/⑦ 終わりの挨拶 5分",
+      "・ブレイクアウトルーム商談のタイマーを、15分×2回から10分×3回にしました。エデュケーションコーナーのタイマーは6分です。",
+      "・タイムマネジメントの「遅れ・早い」は、この時間配分で計算します。",
+      "",
+      "■ 前回",
+      "・柳橋さん・あまみやさん・吉原さん・岡本さん・むらさきさん・菅野さん・こばねぇさんの資料を、紹介先早見表の「資料」に入れ、プロフィールを充実させました。",
     ].join("\n"),
   },
 ];
@@ -3228,8 +3250,8 @@ var BtexServerCore = (function () {
           });
         }
         // 初めに入れた定例会の「当日の流れ」を BT-EX の指針の順にする(運営が書きかえた回はそのまま)
-        if (typeof REF_SEED_AGENDA_PREV !== "undefined" && typeof REF_SEED_AGENDA !== "undefined" && db.eventSeeds && db.eventSeeds.indexOf("agenda-shishin-2") === -1) {
-          db.eventSeeds.push("agenda-shishin-2");
+        if (typeof REF_SEED_AGENDA_PREV !== "undefined" && typeof REF_SEED_AGENDA !== "undefined" && db.eventSeeds && db.eventSeeds.indexOf("agenda-shishin-3") === -1) {
+          db.eventSeeds.push("agenda-shishin-3");
           db.events.forEach(function (ev) { if (ev.seed && REF_SEED_AGENDA_PREV.indexOf(ev.agenda) !== -1) ev.agenda = REF_SEED_AGENDA; });
           changed = true;
         }
@@ -5634,7 +5656,21 @@ var BtexServerCore = (function () {
         c.saveDb(x.db);
         return c.ok({ config: raw ? JSON.parse(raw) : null, at: x.db.deckConfigAt });
       }
-      return { actions: { getDeckConfig: getDeckConfig, saveDeckConfig: saveDeckConfig } };
+      // 運営が時間の目安を決め直したとき(2026年10月: 商談10分×3回)、前に保存した時間の目安を一度だけ外す
+      function migrate(db) {
+        if (!db.cleanups) db.cleanups = [];
+        if (db.cleanups.indexOf("deck-timeplan-2") !== -1) return false;
+        db.cleanups.push("deck-timeplan-2");
+        var cfg = readCfg(db);
+        if (cfg && "timeplan" in cfg) {
+          delete cfg.timeplan;
+          var raw = Object.keys(cfg).length ? JSON.stringify(cfg) : "";
+          if (c.blobs) c.blobs.set("deck:config", raw);
+          else if (raw) db.deckConfig = raw; else delete db.deckConfig;
+        }
+        return true;
+      }
+      return { migrate: migrate, actions: { getDeckConfig: getDeckConfig, saveDeckConfig: saveDeckConfig } };
     },
   });
 })();

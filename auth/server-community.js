@@ -119,8 +119,8 @@
           });
         }
         // 初めに入れた定例会の「当日の流れ」を BT-EX の指針の順にする(運営が書きかえた回はそのまま)
-        if (typeof REF_SEED_AGENDA_PREV !== "undefined" && typeof REF_SEED_AGENDA !== "undefined" && db.eventSeeds && db.eventSeeds.indexOf("agenda-shishin-2") === -1) {
-          db.eventSeeds.push("agenda-shishin-2");
+        if (typeof REF_SEED_AGENDA_PREV !== "undefined" && typeof REF_SEED_AGENDA !== "undefined" && db.eventSeeds && db.eventSeeds.indexOf("agenda-shishin-3") === -1) {
+          db.eventSeeds.push("agenda-shishin-3");
           db.events.forEach(function (ev) { if (ev.seed && REF_SEED_AGENDA_PREV.indexOf(ev.agenda) !== -1) ev.agenda = REF_SEED_AGENDA; });
           changed = true;
         }
@@ -2525,7 +2525,21 @@
         c.saveDb(x.db);
         return c.ok({ config: raw ? JSON.parse(raw) : null, at: x.db.deckConfigAt });
       }
-      return { actions: { getDeckConfig: getDeckConfig, saveDeckConfig: saveDeckConfig } };
+      // 運営が時間の目安を決め直したとき(2026年10月: 商談10分×3回)、前に保存した時間の目安を一度だけ外す
+      function migrate(db) {
+        if (!db.cleanups) db.cleanups = [];
+        if (db.cleanups.indexOf("deck-timeplan-2") !== -1) return false;
+        db.cleanups.push("deck-timeplan-2");
+        var cfg = readCfg(db);
+        if (cfg && "timeplan" in cfg) {
+          delete cfg.timeplan;
+          var raw = Object.keys(cfg).length ? JSON.stringify(cfg) : "";
+          if (c.blobs) c.blobs.set("deck:config", raw);
+          else if (raw) db.deckConfig = raw; else delete db.deckConfig;
+        }
+        return true;
+      }
+      return { migrate: migrate, actions: { getDeckConfig: getDeckConfig, saveDeckConfig: saveDeckConfig } };
     },
   });
 })();
