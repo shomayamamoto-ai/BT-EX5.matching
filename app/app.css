@@ -1281,6 +1281,9 @@ html.round-open, html.round-open body { overflow: hidden; }
 .pr-meter i.is-on { opacity: 1; box-shadow: 0 0 12px color-mix(in srgb, var(--c) 55%, transparent); }
 .pr-sec { display: flex; align-items: baseline; gap: 4px; min-width: 2.6em; justify-content: flex-end; color: var(--ink); }
 .pr-sec .pr-sec-head { margin-right: 4px; }
+.pr-sec { flex: none; }
+.pr-sec-num { display: inline-block; text-align: right; }
+.pr-sec .pr-sec-head { white-space: nowrap; }
 .pr-sec-num { font-family: "Cormorant Garamond", "Inter", serif; font-size: clamp(44px, 6.4vw, 96px); font-weight: 600; line-height: 0.9; font-variant-numeric: tabular-nums; }
 .pr-sec small { font-size: clamp(13px, 1.4vw, 18px); font-weight: 800; color: #cbb38c; white-space: nowrap; }
 .pr-run.is-last .pr-sec-num { color: #ffb15c; }

@@ -367,6 +367,26 @@
       h("div", { class: "pr-meter-row" }, meterBox, sec),
       h("div", { class: "round-ctrl pr-ctrl" }, prevBtn, pauseBtn, nextBtn, endBtn));
     document.body.append(box);
+    // 残り秒数の欄は、いちばん幅を取る表示(「残り 8:88 秒」「次の人まで 88 秒」)に合わせて幅を決めておく。
+    // はじめる・止める・次の人までの待ちで、数字やメーターの位置が動かないように
+    function fixSecWidth() {
+      const keep = [secHead.textContent, secNum.textContent, box.classList.contains("is-gap")];
+      sec.style.width = ""; secNum.style.minWidth = "";
+      box.classList.remove("is-gap");
+      secHead.textContent = "残り"; secNum.textContent = per >= 60 ? "8:88" : "88";
+      const numW = secNum.getBoundingClientRect().width;
+      secNum.style.minWidth = `${Math.ceil(numW)}px`;
+      const wA = sec.getBoundingClientRect().width;
+      box.classList.add("is-gap");
+      secHead.textContent = "次の人まで"; secNum.textContent = "88";
+      const wB = sec.getBoundingClientRect().width;
+      box.classList.toggle("is-gap", keep[2]);
+      secHead.textContent = keep[0]; secNum.textContent = keep[1];
+      sec.style.width = `${Math.ceil(Math.max(wA, wB)) + 2}px`;
+    }
+    fixSecWidth();
+    try { if (document.fonts && document.fonts.ready) document.fonts.ready.then(fixSecWidth); } catch { /* noop */ }
+    window.addEventListener("resize", fixSecWidth);
     document.documentElement.classList.add("round-open");
     try { if ("wakeLock" in navigator) navigator.wakeLock.request("screen").then((w) => { wake = w; }).catch(() => {}); } catch { /* noop */ }
     // 押した流れのまま全画面にする(ブラウザが断ったときは、そのまま画面いっぱいで進める)
@@ -412,8 +432,9 @@
       segs.forEach((s, i) => s.classList.toggle("is-on", i < on));
       meter.setAttribute("aria-valuenow", String(Math.ceil(left)));
       const s = Math.ceil(left);
-      if (gap) { secHead.textContent = "次の人まで"; secNum.textContent = String(Math.ceil((gapUntil - Date.now()) / 1000)); secUnit.textContent = "秒"; }
-      else { secHead.textContent = "残り"; secNum.textContent = fmt(s); secUnit.textContent = s >= 60 ? "" : "秒"; }
+      // 「秒」は1分以上のとき見えなくするだけ(場所は残す。数字や文字が変わっても位置が動かないように)
+      if (gap) { secHead.textContent = "次の人まで"; secNum.textContent = String(Math.ceil((gapUntil - Date.now()) / 1000)); secUnit.style.visibility = "visible"; }
+      else { secHead.textContent = "残り"; secNum.textContent = fmt(s); secUnit.style.visibility = s >= 60 ? "hidden" : "visible"; }
       box.classList.toggle("is-last", !gap && left <= 10 && left > 5);
       box.classList.toggle("is-red", !gap && left <= 5 && left > 0);
       box.classList.toggle("is-end", !gap && left <= 0);
@@ -466,6 +487,7 @@
       App.fill(box.querySelector(".pr-ctrl"), h("button", { type: "button", class: "round-btn is-main", onclick: closeRun }, "閉じる"));
     }
     function closeRun() {
+      window.removeEventListener("resize", fixSecWidth);
       halt(); box.remove(); document.documentElement.classList.remove("round-open");
       document.removeEventListener("keydown", onKey);
       try { if (document.fullscreenElement) document.exitFullscreen(); } catch { /* noop */ }
