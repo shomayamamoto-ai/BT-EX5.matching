@@ -2329,3 +2329,21 @@ button.home-welcome-check:active { transform: scale(0.94); }
 /* 大きな数字は枠の内側に収める(入りきらないときは fitDeck で小さくする) */
 .pd-kpi b, .pd-stats b { display: block; max-width: 100%; }
 .pd-kpi { min-width: 0; overflow: hidden; }
+/* 仕組みとベネフィット: カードの中身を中央にそろえる */
+.pd-list.is-grid .pd-card.has-icon { grid-template-columns: auto auto auto; justify-content: center; text-align: center; }
+.pd-list.is-grid .pd-card-text { text-align: center; }
+.pd-list.is-grid .pd-card-text .pd-line { margin-left: auto; margin-right: auto; }
+/* 3つの活動: パターン1・2・3 を1つずつ枠で */
+.pd-card-text.is-boxed { margin: 0; padding: clamp(6px, 1.1svh, 11px) clamp(10px, 1vw, 14px); border-radius: 12px; border: 1px solid var(--pd-gold-soft); background: rgba(226, 184, 102, 0.07); }
+.pd-list.is-trio .pd-card.has-icon .pd-card-text.is-boxed + .pd-card-text.is-boxed { margin-top: clamp(4px, 0.8svh, 8px); }
+/* ベン図の説明: 3行で、行の途中では折り返さない */
+.pd-venn-note .pd-line { display: block; white-space: nowrap; }
+@media (max-width: 480px) { .pd-venn-note { font-size: 15px; } }
+.pd-list.is-grid .pd-card.has-icon { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; column-gap: 8px; row-gap: clamp(4px, 0.9svh, 10px); }
+.pd-list.is-grid .pd-card.has-icon .pd-card-title { white-space: nowrap; }
+.pd-list.is-grid .pd-card.has-icon .pd-card-text { flex-basis: 100%; }
+/* 「…」で切らず最後まで出す(下の進行バーの名前・タイムマネジメントの「いま」) */
+.pd-progress-steps span { min-width: 0; max-width: 100%; white-space: normal; overflow: visible; text-overflow: clip; line-height: 1.3; word-break: keep-all; overflow-wrap: anywhere; }
+.pd-progress-steps li { align-content: start; }
+.pr-time .pt-row.pt-now, .pr-time .pt-more > .pt-row:first-child { flex-wrap: wrap; }
+.pt-now-name { white-space: normal; overflow: visible; text-overflow: clip; }

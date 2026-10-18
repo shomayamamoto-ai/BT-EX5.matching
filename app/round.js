@@ -480,7 +480,7 @@
       if (withDeck) {
         const D = App.deckData ? App.deckData(deckInfo.config) : {};
         App.roundRun(buildDeck(ev, people, photos, upcoming, deckInfo.config), per, auto ? gapSec : 0, ev ? ev.title : "BT-EX5 定例会",
-          { deck: true, timing: { plan: D.timeplan || [], start: eventStartMs(ev), per, gap: auto ? gapSec : 0 } });
+          { deck: true, timing: { plan: eventPlan(ev, D.timeplan), start: eventStartMs(ev), per, gap: auto ? gapSec : 0 } });
         return;
       }
       if (!people.length) return;
@@ -567,6 +567,21 @@
     const [y, m, d] = ev.date.split("-").map(Number);
     const [hh, mm] = ev.start.split(":").map(Number);
     return Date.UTC(y, m - 1, d, hh - 9, mm); // 日本時間
+  }
+  // 時間の目安を、登録した定例会の時間(開始〜終了)に合わせる。
+  // 長さがちがう回(例: 90分)は、各項目の分を同じ割合でのばす・ちぢめる(合計は定例会の長さにそろえる)
+  function eventPlan(ev, plan) {
+    const base = (plan || []).map((v) => Math.max(0, Number(v) || 0));
+    const total = base.reduce((a, b) => a + b, 0);
+    const toMin = (t) => { const m = /^(\d{1,2}):(\d{2})$/.exec(t || ""); return m ? Number(m[1]) * 60 + Number(m[2]) : null; };
+    const a = toMin(ev && ev.start), b = toMin(ev && ev.end);
+    if (a === null || b === null || !total) return base;
+    const len = b > a ? b - a : b + 1440 - a;
+    if (len === total || len < 10) return base;
+    const out = base.map((v) => Math.floor((v * len) / total));
+    let rest = len - out.reduce((x, y) => x + y, 0);
+    base.map((v, i) => [((v * len) / total) % 1, i]).sort((x, y) => y[0] - x[0]).forEach(([, i]) => { if (rest > 0 && base[i]) { out[i]++; rest--; } });
+    return out;
   }
   // 当日の流れ(①〜の行)
   function deckSteps(ev) {
@@ -666,7 +681,7 @@
     // 表紙のあとに「本日の流れ」。どのスライドにも、流れの何番目かと流れの一覧を持たせる
     // (左上の小見出し・区切りのスライドの一覧・下の進行バーに使う)
     const stepList = steps.map((st) => { const tm = TIME.exec(st.title); return { no: st.no, title: tm ? st.title.replace(TIME, "") : st.title, sub: tm ? `${tm[1]}分${tm[2] ? ` × ${tm[2]}回` : ""}` : "" }; });
-    if (stepList.length) items.splice(2, 0, { key: "d:agenda", kind: "deck", type: "agenda", name: "本日の流れ", step: "定例会", plan: (D.timeplan || []).slice(), start: (ev && ev.start) || "" });
+    if (stepList.length) items.splice(2, 0, { key: "d:agenda", kind: "deck", type: "agenda", name: "本日の流れ", step: "定例会", plan: eventPlan(ev, D.timeplan), start: (ev && ev.start) || "", end: (ev && ev.end) || "" });
     let cur = 0;
     items.forEach((it) => {
       if (it.kind === "deck" && it.type === "section" && it.no) cur = it.no;
@@ -1083,13 +1098,17 @@
     const slide = h("div", { class: "pr-slide" });
     // 定例会のスライドの下の進行バー: 流れの1〜7のどこにいるかと、ページ数
     const deckSteps = opts.deck ? ((people.find((p) => p.steps) || {}).steps || []) : [];
+    // 進行バーの名前を、ことばの切れ目で折り返す(「エデュケーション/コーナー」「ブレイクアウト/ルーム商談」)
+    const STEP_BREAK = /(エデュケーション|ブレイクアウト|ビジネス|1分|の)/;
+    const stepWords = (title) => String(title || "").split(STEP_BREAK).filter(Boolean)
+      .flatMap((part, i, a) => (STEP_BREAK.test(part) && i < a.length - 1 ? [part, h("wbr")] : [part]));
     const progress = opts.deck ? h("div", { class: "pd-progress", "aria-hidden": "true" }) : null;
     function drawProgress() {
       if (!progress) return;
       const p = people[idx] || {};
       App.fill(progress,
         h("ol", { class: "pd-progress-steps" }, deckSteps.map((st) => h("li", { class: st.no === p.stepNo ? "is-now" : st.no < p.stepNo ? "is-done" : "" },
-          h("i"), h("span", null, st.title)))),
+          h("i"), h("span", null, ...stepWords(st.title))))),
         h("span", { class: "pd-progress-page" }, `${two(idx + 1)} / ${two(people.length)}`));
     }
     // 下の操作バー(アプリの下のメニューと同じ形: 絵と文字のボタンを横に並べる)
@@ -1315,7 +1334,8 @@
             h("span", { class: "pd-card-no" }, two(i + 1)),
             h("p", { class: "pd-card-title" }, ...lines(it.title)),
             // 文は1行ずつ(行の途中では折り返さない。入りきらないときは fitDeck で文字を小さくする)
-            (it.lines || []).map((x) => h("p", { class: "pd-card-text" }, ...cardLines(x)))))));
+            // 3つの活動で文が複数あるとき(パターン1・2・3)は、1つずつ枠で囲む
+            (it.lines || []).map((x) => h("p", { class: `pd-card-text${layout === "trio" && (it.lines || []).length > 1 ? " is-boxed" : ""}` }, ...cardLines(x)))))));
       }
       if (p.type === "checks") {
         return frame("pd-checks",
@@ -1337,7 +1357,7 @@
         const C = [[300, 205], [500, 205], [400, 365]];
         const NSv = NS_SVG;
         const svg = document.createElementNS(NSv, "svg");
-        svg.setAttribute("viewBox", "0 0 800 560"); svg.setAttribute("class", "pd-venn"); svg.setAttribute("role", "img");
+        svg.setAttribute("viewBox", "0 0 800 610"); svg.setAttribute("class", "pd-venn"); svg.setAttribute("role", "img");
         svg.setAttribute("aria-label", `${g.map((x) => x.name).join("・")} の強みが重なるところが ${p.center}`);
         const mk = (tag, attrs, text) => { const e = document.createElementNS(NSv, tag); Object.entries(attrs).forEach(([k, v]) => e.setAttribute(k, v)); if (text) e.textContent = text; return e; };
         const LBL = [[205, 120, "end"], [595, 120, "start"], [400, 545, "middle"]];
@@ -1349,13 +1369,23 @@
           const [lx, ly] = [C[i][0] + [-62, 62, 0][i], C[i][1] + [-38, -38, 80][i]];
           svg.append(mk("text", { x: lx, y: ly, class: "vn-name", "text-anchor": "middle" }, name));
           svg.append(mk("text", { x: lx, y: ly + 34, class: "vn-count", "text-anchor": "middle" }, `${x.items.length}の強み`));
-          (x.items || []).slice(0, 2).forEach((t, k) => svg.append(mk("text", { x: lx, y: ly + 62 + k * 24, class: "vn-item", "text-anchor": "middle" }, t.length > 11 ? `${t.slice(0, 10)}…` : t)));
+          // 強みは省略せず最後まで。長いものは「、」(なければまん中)で2行に分ける
+          let yy = ly + 62;
+          (x.items || []).slice(0, 2).forEach((t) => {
+            let parts = [t];
+            if (t.length > 9) { const c = t.indexOf("、"); const at = c > 0 && c < t.length - 1 ? c + 1 : Math.ceil(t.length / 2); parts = [t.slice(0, at), t.slice(at)]; }
+            parts.forEach((part) => { svg.append(mk("text", { x: lx, y: yy, class: "vn-item", "text-anchor": "middle" }, part)); yy += 22; });
+            yy += 4;
+          });
           void LBL;
         });
         svg.append(mk("circle", { cx: 400, cy: 262, r: 54, class: "vn-core" }));
         svg.append(mk("text", { x: 400, y: 272, class: "vn-center", "text-anchor": "middle" }, p.center || "BT-EX"));
         return frame("pd-vennslide", h("div", { class: "pd-venn-wrap" }, svg,
-          h("p", { class: "pd-venn-note" }, h("b", null, `${g.reduce((a, x) => a + x.items.length, 0)}の強み`), "を掛け合わせ、", h("br"), "事業主のビジネスと BT の拡大に相乗効果を生む")));
+          h("p", { class: "pd-venn-note" },
+            h("span", { class: "pd-line" }, h("b", null, `${g.reduce((a, x) => a + x.items.length, 0)}の強み`), "を掛け合わせ、"),
+            h("span", { class: "pd-line" }, "事業主のビジネスと"),
+            h("span", { class: "pd-line" }, "BT の拡大に相乗効果を生む"))));
       }
       if (p.type === "kpis") {
         // 数字で見る約束: 大きな数字のタイル
@@ -1406,7 +1436,7 @@
       texts.forEach((t) => { t.style.fontSize = ""; });
       // (行の左はしからカードの文の右はしまでを、使える幅とする。「パターン1:」の続きの行も同じ)
       const ratio = texts.reduce((r, t) => Math.min(r, [...t.querySelectorAll(".pd-line")].reduce((q, ln) => {
-        const room = t.getBoundingClientRect().right - ln.getBoundingClientRect().left - (parseFloat(getComputedStyle(t).paddingRight) || 0);
+        const room = Math.min(t.getBoundingClientRect().right - ln.getBoundingClientRect().left - (parseFloat(getComputedStyle(t).paddingRight) || 0), t.clientWidth);
         return ln.scrollWidth > room && room > 0 ? Math.min(q, room / ln.scrollWidth) : q;
       }, 1)), 1);
       if (ratio < 1) texts.forEach((t) => { t.style.fontSize = `${(parseFloat(getComputedStyle(t).fontSize) * ratio * 0.97).toFixed(2)}px`; });
