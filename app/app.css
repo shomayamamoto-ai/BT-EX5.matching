@@ -2165,3 +2165,9 @@ button.home-welcome-check:active { transform: scale(0.94); }
   .pr-time.is-mini .pr-grip { width: 14px; }
   .pr-time.is-mini .pt-min { width: 24px; height: 24px; }
 }
+/* BT-EX の一覧で参加する方: 金色の地と ✓ で、ひと目でわかるように */
+.bx-item { transition: background 0.18s, border-color 0.18s, box-shadow 0.18s; }
+.bx-item .bx-name { flex: 1 1 auto; min-width: 0; }
+.bx-item.is-on { border-color: #b8873f; background: linear-gradient(180deg, #f3dca6, #e2b866); color: #2a1d0c; box-shadow: 0 4px 12px rgba(168, 129, 62, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.5); }
+.bx-item.is-on .bx-tag { background: rgba(255, 255, 255, 0.55); color: #6b4a17; }
+.bx-check { flex: none; display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: #2a1d0c; color: #f3d48d; font-size: 12px; font-weight: 900; line-height: 1; }

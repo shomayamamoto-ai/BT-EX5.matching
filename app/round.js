@@ -307,7 +307,19 @@
       const nameIn = h("input", { type: "text", maxlength: "30", placeholder: kind === "guest" ? "お名前(例: 田中 太郎)" : "お名前", "aria-label": `${title}のお名前` });
       const coIn = h("input", { type: "text", maxlength: "60", placeholder: "会社・肩書き(なくてもよい)", "aria-label": `${title}の会社・肩書き` });
       // ほかの BT-EX のメンバーは、BT-EX の番号と一覧から押して選ぶ(お名前を入れて探すこともできる)
-      const bx = kind === "other" && App.btexPicker ? App.btexPicker({ unit: 1, onUnit: (n) => { if (unitSel) unitSel.value = String(n); }, onChange: (v) => { if (v) add(); } }) : null;
+      // 参加する方は一覧で色が付き、もう一度押すと外れる
+      const bx = kind === "other" && App.btexPicker ? App.btexPicker({
+        unit: 1, onUnit: (n) => { if (unitSel) unitSel.value = String(n); }, onChange: (v) => { if (v) add(); },
+        selected: () => extras.filter((y) => y.kind === "other").map((y) => ({ unit: y.unit, name: y.name })),
+        onRemove: (v) => {
+          const x = extras.find((y) => y.kind === "other" && y.unit === v.unit && y.name === v.name);
+          if (!x) return;
+          extras = extras.filter((y) => y.key !== x.key); saveExtras();
+          const ai = all.findIndex((y) => y.key === x.key); if (ai >= 0) all.splice(ai, 1);
+          const oi = order.indexOf(x.key); if (oi >= 0) order.splice(oi, 1);
+          draw();
+        },
+      }) : null;
       const add = () => {
         const v = bx ? bx.getValue() : null;
         const name = v ? v.name : nameIn.value.trim();
@@ -332,6 +344,7 @@
           : h("div", { class: "pr-extra-add" }, nameIn, coIn, App.btn("＋ 足す", add, "ghost small")),
         listBox);
       box.drawList = () => {
+        if (bx && bx.refresh) bx.refresh();
         const mine = extras.filter((x) => x.kind === kind);
         App.fill(listBox, mine.map((x) => {
           const sel = h("select", { class: "pr-extra-sec", "aria-label": `${x.name}さんの時間`, onchange: () => { x.sec = Number(sel.value) || 30; saveExtras(); draw(); } },

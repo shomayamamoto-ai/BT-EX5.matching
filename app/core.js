@@ -530,25 +530,34 @@ const App = (function () {
     const norm = (x) => String(x || "").replace(/[\s　|｜()（）]/g, "").toLowerCase();
     let unit = opt.unit && opt.unit !== 5 ? opt.unit : 0;
     let picked = "";
-    const q = h("input", { type: "search", class: "bx-q", maxlength: "40", autocomplete: "off", placeholder: "お名前で探す(すべてのユニットから)", "aria-label": "お名前で探す" });
+    // 複数を選ぶとき(opt.selected が選んだ方の一覧を返す): 選んだ方には色と ✓ が付き、もう一度押すと外す(opt.onRemove)
+    const multi = typeof opt.selected === "function";
+    const isSel = (u, name) => (multi ? opt.selected().some((x) => x.unit === u && x.name === name) : picked === name && u === unit);
+    // 日本語の変換中(変換の確定・取り消しの Enter / Shift+Enter)は、選ばない
+    let composing = false, compEndAt = 0;
+    const q = h("input", { type: "text", inputmode: "search", class: "bx-q", maxlength: "40", autocomplete: "off", autocorrect: "off", spellcheck: "false", placeholder: "お名前で探す(すべてのユニットから)", "aria-label": "お名前で探す" });
     const list = h("ul", { class: "bx-list", role: "listbox", "aria-label": "お名前" });
     const chosen = h("p", { class: "bx-chosen", "aria-live": "polite" });
     const wrap = h("div", { class: "bx-picker" }, q, chosen, list);
     const fire = () => { if (opt.onChange) opt.onChange(wrap.getValue()); };
     function pick(u, name) {
+      if (multi && isSel(u, name)) { if (opt.onRemove) opt.onRemove({ unit: u, name }); draw(); return; }
       picked = name;
       if (u && u !== unit) { unit = u; if (opt.onUnit) opt.onUnit(u); }
       q.value = "";
       draw(); fire();
     }
     function row(u, name, tag) {
-      const on = picked === name && u === unit;
-      return h("li", null, h("button", { type: "button", class: `bx-item${on ? " is-on" : ""}`, role: "option", "aria-selected": on ? "true" : "false", onclick: () => pick(u, name) },
+      const on = isSel(u, name);
+      return h("li", null, h("button", { type: "button", class: `bx-item${on ? " is-on" : ""}`, role: "option", "aria-selected": on ? "true" : "false", title: on && multi ? "もう一度押すと外します" : null, onclick: () => pick(u, name) },
+        on && multi ? h("span", { class: "bx-check", "aria-hidden": "true" }, "✓") : null,
         h("span", { class: "bx-name" }, name), tag ? h("span", { class: "bx-tag" }, `BT-EX${u}`) : null));
     }
     function draw() {
       const words = norm(q.value);
-      App.fill(chosen, picked ? [h("span", null, "選んだ方:"), h("b", null, `${picked}さん`), unit ? h("span", { class: "bx-tag" }, `BT-EX${unit}`) : null,
+      const selN = multi ? opt.selected().length : 0;
+      if (multi) App.fill(chosen, selN ? [h("span", null, "参加する方:"), h("b", null, `${selN}名`), h("span", { class: "bx-hint" }, "(色の付いた方。もう一度押すと外します)")] : h("span", { class: "bx-hint" }, "参加する方を押してください(押した方に色が付きます)"));
+      else App.fill(chosen, picked ? [h("span", null, "選んだ方:"), h("b", null, `${picked}さん`), unit ? h("span", { class: "bx-tag" }, `BT-EX${unit}`) : null,
         h("button", { type: "button", class: "bx-clear", onclick: () => { picked = ""; draw(); fire(); } }, "選び直す")] : h("span", { class: "bx-hint" }, "下の一覧から押して選ぶか、お名前を入れてください"));
       const rows = [];
       if (words) {
@@ -572,9 +581,13 @@ const App = (function () {
       }
       App.fill(list, rows);
     }
-    q.addEventListener("input", draw);
+    q.addEventListener("compositionstart", () => { composing = true; });
+    q.addEventListener("compositionend", () => { composing = false; compEndAt = Date.now(); draw(); });
+    q.addEventListener("input", (e) => { if (!composing && !e.isComposing) draw(); });
     q.addEventListener("keydown", (e) => {
       if (e.key !== "Enter") return;
+      // 変換中・変換を終えた直後(Safari は確定の Enter が変換のあとに届く)・Shift+Enter は、選ばない
+      if (composing || e.isComposing || e.keyCode === 229 || e.shiftKey || Date.now() - compEndAt < 120) { if (e.shiftKey) e.preventDefault(); return; }
       e.preventDefault();
       const first = list.querySelector(".bx-item");
       if (first) first.click();
@@ -582,6 +595,7 @@ const App = (function () {
     wrap.getValue = () => (picked && unit ? { unit, name: picked } : null);
     wrap.setUnit = (n) => { if (n !== unit) { unit = n; picked = ""; q.value = ""; draw(); fire(); } };
     wrap.focusInput = () => q.focus();
+    wrap.refresh = () => draw();
     draw();
     return wrap;
   }
