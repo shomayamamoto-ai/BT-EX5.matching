@@ -502,10 +502,9 @@
     function finish(early, confirmed) {
       if (early && !confirmed) { askEnd(); return; }
       halt(); gapUntil = 0; done = true;
-      const said = early || confirmed ? idx : people.length;
       box.classList.remove("is-last", "is-red", "is-end", "is-gap");
       box.classList.add("is-done");
-      App.fill(slide, h("div", { class: "pr-done" }, h("p", { class: "pr-name" }, "おつかれさまでした"), h("p", { class: "pr-catch" }, `${said}名の方が話しました`)));
+      App.fill(slide, h("div", { class: "pr-done" }, h("p", { class: "pr-name" }, "おつかれさまでした")));
       App.fill(box.querySelector(".pr-ctrl"), h("button", { type: "button", class: "round-btn is-main", onclick: closeRun }, "閉じる"));
     }
     // 閉じる: ふわっと消してから、この画面を外す(下のプレゼンの準備の画面がそのまま見える)

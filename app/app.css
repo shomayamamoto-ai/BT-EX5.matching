@@ -1303,7 +1303,9 @@ body.tabs-right .app-to-top { right: calc(var(--dock-w) + 22px); }
 .pr-ctrl .round-btn { min-height: 46px; font-size: 14.5px; }
 .pr-ask { flex: 1 1 100%; margin: 0 0 2px; text-align: center; font-size: 15px; font-weight: 800; color: #f3dfb3; }
 .pr-done { grid-column: 1 / -1; text-align: center; }
-.pr-run.is-done .pr-meter-row { visibility: hidden; }
+/* おつかれさまの画面は、文字を画面全体のまん中(上下・左右)に */
+.pr-run.is-done .pr-done { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 0 16px; pointer-events: none; }
+.pr-run.is-done .pr-meter-row { visibility: hidden; opacity: 0; } /* 「秒」の文字も残さない */
 /* はじめるときと閉じるときは、画面ごとふわっと出し入れする(大きさや位置は変えない) */
 .pr-run { transition: opacity 0.28s ease; }
 .pr-run.is-entering, .pr-run.is-closing { opacity: 0; }
