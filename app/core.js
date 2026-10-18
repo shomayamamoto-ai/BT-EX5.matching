@@ -548,7 +548,28 @@ const App = (function () {
     return route();
   }
 
+  // 新しい版の確認: アプリは一度開くとページを読み直さずに画面を切りかえるので、更新しても古い画面のままになる。
+  // 画面を切りかえるとき(2分に1回まで)に、このページの最新の版(?v=)を確かめ、変わっていれば読み直す
+  const MY_VERSION = (() => { const m = /[?&]v=(\d+)/.exec((document.currentScript && document.currentScript.src) || ""); return m ? m[1] : ""; })();
+  let versionCheckedAt = Date.now();
+  async function newerVersion() {
+    if (!MY_VERSION || Date.now() - versionCheckedAt < 2 * 60 * 1000) return false;
+    versionCheckedAt = Date.now();
+    try {
+      const res = await fetch(location.pathname, { cache: "no-cache", credentials: "same-origin" });
+      if (!res.ok) return false;
+      const m = /core\.js\?v=(\d+)/.exec(await res.text());
+      return Boolean(m && m[1] !== MY_VERSION);
+    } catch { return false; }
+  }
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState !== "visible" || document.querySelector(".app-sheet-wrap, .pr-run")) return;
+    newerVersion().then((yes) => { if (yes) location.reload(); });
+  });
+
   async function route() {
+    // 画面の切りかえは待たせずに、裏で確かめる(新しい版があれば、入力中のシートやプレゼン中でないときに読み直す)
+    newerVersion().then((yes) => { if (yes && !document.querySelector(".app-sheet-wrap, .pr-run")) location.reload(); });
     const r = parseHash();
     const view = views[r.view] ? r.view : "home";
     if (cleanup) { try { cleanup(); } catch { /* noop */ } cleanup = null; }

@@ -1,6 +1,6 @@
 // ============================================
 // BT-EX5 のサービスワーカー(電波の弱い会場でも開けるように)
-// - ページ(HTML): まずネットから取り、つながらないときは前に保存したものを出す
+// - ページ(HTML): まずネットから(ブラウザの保存を使わずに)取り、つながらないときは前に保存したものを出す
 // - JS・CSS・画像: 保存したものをすぐ出し、裏でネットから新しくする(?v= が変われば別物として取り直す)
 // - 動画・ほかのサイト(フォント・共有サーバー)は扱わない
 // - プッシュ通知: 共有サーバーから合図が来たら、自分あての最新のお知らせを取りに行って表示する
@@ -35,11 +35,14 @@ self.addEventListener("fetch", (e) => {
   if (url.origin !== self.location.origin) return;
   if (/\.(mp4|webm)$/i.test(url.pathname)) return;
 
-  if (req.mode === "navigate") {
+  // ページ(HTML)は、開くとき(navigate)も、アプリが新しい版を確かめるとき(fetch)も、ネットを先に見る
+  if (req.mode === "navigate" || req.destination === "document" || /(\/|\.html)$/.test(url.pathname)) {
     e.respondWith((async () => {
       const cache = await caches.open(CACHE);
       try {
-        const res = await fetch(req);
+        // ブラウザに残っている古いページを使わず、毎回サーバーに新しいか確かめる(変わっていなければすぐ返ってくる)
+        let res;
+        try { res = await fetch(req.url, { cache: "no-cache", credentials: "same-origin" }); } catch { res = await fetch(req); }
         if (res.ok) await cache.put(new Request(url.origin + url.pathname), res.clone());
         return res;
       } catch {
