@@ -17,12 +17,26 @@
   // 時間(プレゼンの1人あたり・自分だけのタイマー)。25分はポモドーロ(25分集中+5分休憩 を4回)
   const PER = [[30, "30秒"], [60, "1分"], [120, "2分"], [180, "3分"], [300, "5分"], [600, "10分"], [1500, "25分"]];
   const POMODORO = 1500, POMO_BREAK = 300, POMO_ROUNDS = 4;
+  // 定例会のプレゼンの1人あたりの時間(1つ選ぶ)と、自分で使うタイマーの時間(押すたびに足す)
+  const MEET_PER = PER.filter(([v]) => v <= 300);
+  const SOLO_STEPS = [[30, "30秒"], [60, "1分"], [180, "3分"], [300, "5分"], [600, "10分"]];
+  const SOLO_MAX = 3 * 60 * 60; // 自分で使うタイマーは3時間まで
+  // 「1時間5分」「13分30秒」のように
+  const fmtLong = (sec) => {
+    const hr = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), x = sec % 60;
+    return [hr ? `${hr}時間` : "", m ? `${m}分` : "", x ? `${x}秒` : ""].join("") || "0秒";
+  };
   // 0秒のあと、次の人へ移るまであける秒数(選べる範囲)
   const GAPS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
   // メーターの目盛り: 1分までは1目盛り=1秒、それより長いときは60目盛りに分ける(2分=2秒、5分=5秒)
   const meterUnit = (per) => (per <= 60 ? 1 : per / 60);
   // 目盛りの下の数字(残り時間)の間隔。数字が12個以下になる、切りのよい秒数
-  const labelStep = (per) => [5, 10, 15, 20, 30, 60, 120, 150, 300, 600].find((v) => v % meterUnit(per) === 0 && per / v <= 12) || per;
+  const labelStep = (per) => {
+    const u = meterUnit(per);
+    const steps = [5, 10, 15, 20, 30, 60, 120, 150, 300, 600, 900, 1200, 1800];
+    // 目盛りの区切りにそろう間隔 → なければ(足した時間など)切りのよい間隔
+    return steps.find((v) => per / v <= 12 && v % u === 0) || steps.find((v) => per / v <= 12 && per / v >= 3) || per;
+  };
   const store = {
     get(k, d) { try { const v = localStorage.getItem(`btex5-round-${k}`); return v === null ? d : v; } catch { return d; } },
     set(k, v) { try { localStorage.setItem(`btex5-round-${k}`, String(v)); } catch { /* noop */ } },
@@ -197,7 +211,7 @@
       return [...going];
     })();
     let per = Number(store.get("per", 30)) || 30;
-    if (!PER.some(([v]) => v === per)) per = 30;
+    if (!MEET_PER.some(([v]) => v === per)) per = 30;
     let auto = store.get("auto", "1") === "1";
     let gapSec = Number(store.get("gap", 5)) || 5;
     if (!GAPS.includes(gapSec)) gapSec = 5;
@@ -267,30 +281,55 @@
       const sec = order.length * per;
       total.textContent = order.length ? `${order.length}名 × ${PER.find(([v]) => v === per)[1]} = 約${Math.floor(sec / 60)}分${sec % 60 ? `${sec % 60}秒` : ""}` : "";
       goBtn.textContent = order.length ? `プレゼンをはじめる(${order.length}名)` : "出る人を選んでください";
-      soloBtn.textContent = per === POMODORO ? "ポモドーロをはじめる(25分集中+5分休憩 を4回・自分で使う)" : `${PER.find(([v]) => v === per)[1]}のタイマーをはじめる(自分で使う)`;
       goBtn.disabled = !order.length;
     }
 
-    const perRow = h("div", { class: "pitch-lens round-per" }, PER.map(([v, label]) =>
+    const perRow = h("div", { class: "pitch-lens round-per" }, MEET_PER.map(([v, label]) =>
       h("button", { type: "button", class: `pitch-len${v === per ? " is-on" : ""}`, onclick: (e) => {
         per = v; store.set("per", v);
         perRow.querySelectorAll(".pitch-len").forEach((b) => b.classList.toggle("is-on", b === e.currentTarget));
         draw();
-      } }, label, v === POMODORO ? h("small", null, "ポモドーロ") : null)));
-    // 自分だけで使うタイマー(人を選ばずに、同じ大きなメーターの画面で)。25分はポモドーロ
-    const soloBtn = h("button", { type: "button", class: "app-btn ghost wide pr-solo", onclick: () => {
-      const label = PER.find(([v]) => v === per)[1];
-      if (per === POMODORO) {
-        const items = [];
-        for (let r = 1; r <= POMO_ROUNDS; r++) {
-          items.push({ key: `t:f${r}`, kind: "timer", name: "集中", sub: `ポモドーロ ${r} / ${POMO_ROUNDS} ・ 25分`, sec: POMODORO });
-          items.push({ key: `t:b${r}`, kind: "timer", name: "休憩", sub: r < POMO_ROUNDS ? "5分 ・ 体を伸ばして、目を休めましょう" : "5分 ・ おつかれさまでした", sec: POMO_BREAK, rest: true });
-        }
-        App.roundRun(items, per, auto ? gapSec : 0, "ポモドーロ", { solo: true });
-      } else {
-        App.roundRun([{ key: "t:1", kind: "timer", name: label, sub: "タイマー", sec: per }], per, 0, "タイマー", { solo: true });
-      }
+      } }, label)));
+
+    // ---------- 自分で使うタイマー(プレゼンの練習・作業)。時間のボタンは押すたびに足せる ----------
+    const soloCount = {};
+    const soloTotal = () => Object.entries(soloCount).reduce((t, [v, n]) => t + Number(v) * n, 0);
+    const soloRow = h("div", { class: "pitch-lens round-per pr-solo-row" }, SOLO_STEPS.map(([v, label]) => {
+      const b = h("button", { type: "button", class: "pitch-len", onclick: () => {
+        if (soloTotal() + v > SOLO_MAX) { App.toast("タイマーは3時間までです", "error"); return; }
+        soloCount[v] = (soloCount[v] || 0) + 1; drawSolo();
+      } }, label, h("span", { class: "pr-solo-n", "aria-hidden": "true" }));
+      b.dataset.v = String(v);
+      return b;
+    }));
+    const soloSum = h("p", { class: "pr-solo-sum", "aria-live": "polite" });
+    const soloClear = App.btn("リセット", () => { Object.keys(soloCount).forEach((k) => delete soloCount[k]); drawSolo(); }, "ghost small");
+    const soloGo = h("button", { type: "button", class: "app-btn primary wide pr-solo", onclick: () => {
+      const total = soloTotal();
+      if (!total) return;
+      App.roundRun([{ key: "t:1", kind: "timer", name: "", sec: total }], total, 0, "タイマー", { solo: true });
     } });
+    const pomoBtn = h("button", { type: "button", class: "app-btn ghost wide pr-pomo", onclick: () => {
+      const items = [];
+      for (let r = 1; r <= POMO_ROUNDS; r++) {
+        items.push({ key: `t:f${r}`, kind: "timer", name: "集中", sub: `ポモドーロ ${r} / ${POMO_ROUNDS} ・ 25分`, sec: POMODORO });
+        items.push({ key: `t:b${r}`, kind: "timer", name: "休憩", sub: r < POMO_ROUNDS ? "5分 ・ 体を伸ばして、目を休めましょう" : "5分 ・ おつかれさまでした", sec: POMO_BREAK, rest: true });
+      }
+      App.roundRun(items, POMODORO, 5, "ポモドーロ", { solo: true });
+    } }, "ポモドーロをはじめる(25分集中+5分休憩 を4回)");
+    function drawSolo() {
+      const total = soloTotal();
+      soloRow.querySelectorAll(".pitch-len").forEach((b) => {
+        const n = soloCount[b.dataset.v] || 0;
+        b.classList.toggle("is-on", n > 0);
+        b.querySelector(".pr-solo-n").textContent = n > 1 ? `×${n}` : "";
+      });
+      const parts = SOLO_STEPS.filter(([v]) => soloCount[v]).map(([v, label]) => (soloCount[v] > 1 ? `${label}×${soloCount[v]}` : label));
+      App.fill(soloSum, total ? [h("b", null, `合計 ${fmtLong(total)}`), h("small", null, `(${parts.join(" + ")})`)] : h("small", null, "押すたびに時間を足せます(例: 10分を2回で20分)"));
+      soloClear.hidden = !total;
+      soloGo.disabled = !total;
+      soloGo.textContent = total ? `タイマーをはじめる(${fmtLong(total)})` : "時間を選んでください";
+    }
     const autoBox = h("input", { type: "checkbox", onchange: () => { auto = autoBox.checked; store.set("auto", auto ? "1" : "0"); } });
     autoBox.checked = auto;
     const gapSel = h("select", { class: "pr-gap", "aria-label": "次の人へ移るまでの秒数", onchange: () => { gapSec = Number(gapSel.value) || 5; store.set("gap", gapSec); } },
@@ -313,7 +352,7 @@
     const goingN = going.size;
     App.fill(el,
       h("section", { class: "app-section pr-intro" },
-        h("p", { class: "app-lead" }, "定例会のプレゼンを、顔写真と紹介つきの大きな画面で順番に進めます。会場のスクリーンや Meet の画面共有でそのまま映せます。"),
+        h("p", { class: "app-lead" }, "「1. 定例会のプレゼン」は、顔写真と紹介つきの大きな画面で順番に進めます(会場のスクリーンや Meet の画面共有でそのまま映せます)。「2. 自分で使うタイマー」は、プレゼンの練習やポモドーロに使えます。"),
         me ? h("div", { class: "pr-me" },
           face(myPhoto, me.name, "pr-me-face"),
           h("div", { class: "pr-me-text" },
@@ -322,7 +361,12 @@
           h("div", { class: "pr-me-btns" },
             App.btn(myPhoto ? "変える" : "写真を入れる", () => App.choosePhoto(me.id, () => App.route()), "ghost small"),
             myPhoto && memo[me.id] ? App.btn("外す", () => App.removePhoto(me.id, () => App.route()), "ghost small") : null)) : null),
-      h("section", { class: "app-section" },
+      // ---------- 1. 定例会のプレゼン ----------
+      h("section", { class: "app-section pr-block is-meet" },
+        h("div", { class: "pr-block-head" },
+          h("span", { class: "pr-block-no", "aria-hidden": "true" }, "1"),
+          h("div", null, h("h2", { class: "pr-block-title" }, "定例会のプレゼン"),
+            h("p", { class: "pr-block-lead" }, "出る人を選んで、顔写真と紹介つきの大きな画面で順番に進めます"))),
         h("p", { class: "round-label" }, "定例会"), evSel,
         h("div", { class: "round-head" },
           h("p", { class: "round-label" }, "出る人を選ぶ(押した順が話す順番)"),
@@ -331,25 +375,36 @@
             App.btn(`全員(${members.length}名)`, () => { order = all.filter((x) => x.kind === "member" && !absent.has(x.key)).map((x) => x.key); draw(); }, "ghost small"),
             teamSel,
             App.btn("選び直す", () => { order = []; draw(); }, "ghost small"))),
-        grid),
-      h("section", { class: "app-section" },
+        grid,
         h("div", { class: "round-head" }, h("p", { class: "round-label" }, "話す順番"),
           h("div", { class: "app-btn-row" },
             App.btn("シャッフル", () => { order = shuffle(order); draw(); }, "ghost small"),
             App.btn("名前の順", () => { order = order.slice().sort((a, b) => byKey(a).name.localeCompare(byKey(b).name, "ja")); draw(); }, "ghost small"))),
         h("p", { class: "app-field-hint pr-drag-hint" }, "パソコンでは行をつかんで動かせます。スマホは ↑↓ で動かします。"),
-        listEl, total),
-      h("section", { class: "app-section", id: "present-timer" },
-        h("p", { class: "round-label" }, "時間(プレゼンの1人あたり・自分だけのタイマー)"), perRow,
-        soloBtn,
+        listEl, total,
+        h("p", { class: "round-label" }, "1人の時間"), perRow,
         h("div", { class: "pr-auto" },
-          h("label", { class: "pitch-sound" }, autoBox, h("span", null, "0秒になったら、自動で次へ(次の人・ポモドーロの次)")),
-          h("label", { class: "pr-gap-row" }, h("span", null, "次までの間"), gapSel)),
-        h("p", { class: "app-field-hint" }, "残り10秒で小さな音、0秒で鐘の音が鳴ります。キーボードでは スペース=止める・つづける、→=次へ、←=前へ、Esc=終わる。会場のスクリーンで画面いっぱいに映すときは、ブラウザの全画面(Mac は control+command+F、Windows は F11)を使ってください。")),
-      h("div", { class: "pr-go-bar" }, goBtn));
+          h("label", { class: "pitch-sound" }, autoBox, h("span", null, "0秒になったら、自動で次の人へ")),
+          h("label", { class: "pr-gap-row" }, h("span", null, "次の人までの間"), gapSel)),
+        h("p", { class: "app-field-hint" }, "残り10秒で小さな音、0秒で鐘の音が鳴ります。キーボードでは スペース=止める・つづける、→=次へ、←=前へ、Esc=終わる。会場のスクリーンで画面いっぱいに映すときは、ブラウザの全画面(Mac は control+command+F、Windows は F11)を使ってください。"),
+        h("div", { class: "pr-go-bar" }, goBtn)),
+      // ---------- 2. 自分で使うタイマー ----------
+      h("section", { class: "app-section pr-block is-solo", id: "present-timer" },
+        h("div", { class: "pr-block-head" },
+          h("span", { class: "pr-block-no", "aria-hidden": "true" }, "2"),
+          h("div", null, h("h2", { class: "pr-block-title" }, "自分で使うタイマー"),
+            h("p", { class: "pr-block-lead" }, "プレゼンの練習や作業に。大きな時計とメーターの画面で使えます"))),
+        h("p", { class: "round-label" }, "時間(押すたびに足せます)"), soloRow,
+        h("div", { class: "pr-solo-line" }, soloSum, soloClear),
+        soloGo,
+        h("div", { class: "pr-pomo" },
+          h("p", { class: "round-label" }, "ポモドーロ"),
+          h("p", { class: "app-field-hint" }, "25分集中して5分休む、を4回くり返します(自動で次へ進みます)。"),
+          pomoBtn)));
     // #present/timer(タイマーのショートカットなど)で開いたときは、時間の選び方まで動かす
     if (parts && parts[0] === "timer") setTimeout(() => { const t = el.querySelector("#present-timer"); if (t && t.isConnected) t.scrollIntoView({ behavior: "smooth", block: "start" }); }, 120);
     draw();
+    drawSolo();
   }
 
   // ---------- 進行(画面いっぱい) ----------
@@ -411,7 +466,7 @@
       const keep = [secHead.textContent, secNum.textContent, box.classList.contains("is-gap")];
       sec.style.width = ""; secNum.style.minWidth = "";
       box.classList.remove("is-gap");
-      secHead.textContent = "残り"; secNum.textContent = people.some((p) => durOf(p) >= 600) ? "88:88" : people.some((p) => durOf(p) >= 60) ? "8:88" : "88";
+      secHead.textContent = "残り"; secNum.textContent = people.some((p) => durOf(p) >= 6000) ? "888:88" : people.some((p) => durOf(p) >= 600) ? "88:88" : people.some((p) => durOf(p) >= 60) ? "8:88" : "88";
       const numW = secNum.getBoundingClientRect().width;
       secNum.style.minWidth = `${Math.ceil(numW)}px`;
       const wA = sec.getBoundingClientRect().width;
@@ -449,9 +504,9 @@
       // 自分だけのタイマー: まん中に大きく「集中」「休憩」などと、次にくるもの
       if (p.kind === "timer") {
         box.classList.toggle("is-rest", !!p.rest);
-        App.fill(slide, h("div", { class: "pr-timer-slide" },
+        App.fill(slide, h("div", { class: `pr-timer-slide${p.name ? "" : " is-plain"}` },
           soloClock ? h("div", { class: "pr-timer-clock" }, soloClock) : null,
-          h("p", { class: "pr-timer-name" }, p.name),
+          p.name ? h("p", { class: "pr-timer-name" }, p.name) : null,
           p.sub ? h("p", { class: "pr-timer-sub" }, p.sub) : null,
           nexts[0] ? h("p", { class: "pr-timer-next" }, `次は ${nexts[0].name}(${scaleTxt(durOf(nexts[0]))})`) : null));
         return;
