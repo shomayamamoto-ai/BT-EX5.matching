@@ -1241,38 +1241,39 @@ html.round-open, html.round-open body { overflow: hidden; }
 @media (min-width: 900px) { .pr-go-bar { bottom: calc(var(--tabs-h) + 24px); } }
 
 /* 進行(全画面のスライド) */
-.pr-run { --gold: #e2b866; --ink: #f6e7c4; position: fixed; inset: 0; z-index: 210; font-family: "Inter", "Noto Sans JP", "Hiragino Kaku Gothic ProN", sans-serif; line-height: 1.5; -webkit-text-size-adjust: 100%; display: grid; grid-template-rows: auto minmax(0, 1fr) auto auto; gap: clamp(10px, 2vh, 22px);
-  padding: clamp(14px, 3vh, 34px) clamp(16px, 4.5vw, 64px) calc(clamp(12px, 2.4vh, 26px) + env(safe-area-inset-bottom));
+.pr-run { --gold: #e2b866; --ink: #f6e7c4; position: fixed; inset: 0; z-index: 210; font-family: "Inter", "Noto Sans JP", "Hiragino Kaku Gothic ProN", sans-serif; line-height: 1.5; -webkit-text-size-adjust: 100%; display: grid; grid-template-rows: auto minmax(0, 1fr) auto auto; gap: clamp(10px, 2svh, 22px);
+  padding: clamp(14px, 3svh, 34px) clamp(16px, 4.5vw, 64px) calc(clamp(12px, 2.4svh, 26px) + env(safe-area-inset-bottom));
   background: radial-gradient(120% 90% at 70% 0%, #33261b 0%, #15100c 55%, #0b0806 100%); color: var(--ink); overflow: hidden; }
 .pr-top { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
 .pr-title { margin: 0; font-size: clamp(12px, 1.4vw, 16px); letter-spacing: 0.24em; color: #cbb38c; font-weight: 700; }
 .pr-count { margin: 0; font-family: "Cormorant Garamond", "Inter", serif; font-size: clamp(16px, 2vw, 24px); letter-spacing: 0.12em; color: #cbb38c; font-variant-numeric: tabular-nums; white-space: nowrap; }
-.pr-slide { display: grid; grid-template-columns: minmax(0, 1fr) clamp(200px, min(27vw, 46vh), 400px); gap: clamp(16px, 4vw, 64px); align-items: center; min-height: 0; overflow: hidden; }
-.pr-slide.is-in { animation: round-in 0.45s ease; }
+.pr-slide { display: grid; grid-template-columns: minmax(0, 1fr) clamp(200px, min(27vw, 46svh), 400px); gap: clamp(16px, 4vw, 64px); align-items: start; align-content: start; min-height: 0; overflow: hidden; } /* 人が変わっても名前・写真の位置が上下に動かないように上でそろえる */
+.pr-slide.is-in { animation: pr-fade 0.35s ease; }
+@keyframes pr-fade { from { opacity: 0; } }
 .pr-info { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: clamp(10px, 3vw, 44px); align-items: start; min-width: 0; }
-.pr-no { margin: -0.08em 0 0; font-family: "Cormorant Garamond", "Inter", serif; font-size: clamp(56px, min(11vw, 17vh), 168px); font-weight: 600; line-height: 0.9; color: rgba(226, 184, 102, 0.28); font-variant-numeric: tabular-nums; }
+.pr-no { margin: -0.08em 0 0; font-family: "Cormorant Garamond", "Inter", serif; font-size: clamp(56px, min(11vw, 17svh), 168px); font-weight: 600; line-height: 0.9; color: rgba(226, 184, 102, 0.28); font-variant-numeric: tabular-nums; }
 .pr-body { min-width: 0; }
 .pr-teamname { margin: 0 0 4px; min-height: 1.2em; font-size: clamp(12px, 1.3vw, 16px); color: #cbb38c; letter-spacing: 0.1em; font-weight: 700; }
-.pr-name { margin: 0; font-family: "Shippori Mincho", serif; font-size: clamp(30px, min(6.2vw, 9.5vh), 92px); font-weight: 700; line-height: 1.12; color: #fff3dc; overflow-wrap: anywhere; }
+.pr-name { margin: 0; font-family: "Shippori Mincho", serif; font-size: clamp(30px, min(6.2vw, 9.5svh), 92px); font-weight: 700; line-height: 1.12; color: #fff3dc; overflow-wrap: anywhere; }
 .pr-name small { font-size: 0.42em; margin-left: 0.3em; color: #d9c08e; font-weight: 600; }
-.pr-catch { margin: clamp(6px, 1.4vh, 18px) 0 0; font-size: clamp(15px, min(2.15vw, 3.3vh), 30px); font-weight: 800; line-height: 1.45; color: #f0b25a; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
-.pr-rows { margin: clamp(8px, 2vh, 26px) 0 0; display: grid; gap: 0; }
-.pr-rows > div { padding: clamp(6px, 1.3vh, 16px) 0; border-top: 1px solid rgba(226, 184, 102, 0.28); }
-.pr-rows dt { margin: 0 0 4px; font-size: clamp(11px, min(1.2vw, 1.9vh), 15px); font-weight: 800; letter-spacing: 0.12em; color: var(--gold); }
-.pr-rows dd { margin: 0; font-size: clamp(13px, min(1.75vw, 2.7vh), 24px); line-height: 1.55; color: #f3e6cc; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.pr-catch { margin: clamp(6px, 1.4svh, 18px) 0 0; font-size: clamp(15px, min(2.15vw, 3.3svh), 30px); font-weight: 800; line-height: 1.45; color: #f0b25a; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.pr-rows { margin: clamp(8px, 2svh, 26px) 0 0; display: grid; gap: 0; }
+.pr-rows > div { padding: clamp(6px, 1.3svh, 16px) 0; border-top: 1px solid rgba(226, 184, 102, 0.28); }
+.pr-rows dt { margin: 0 0 4px; font-size: clamp(11px, min(1.2vw, 1.9svh), 15px); font-weight: 800; letter-spacing: 0.12em; color: var(--gold); }
+.pr-rows dd { margin: 0; font-size: clamp(13px, min(1.75vw, 2.7svh), 24px); line-height: 1.55; color: #f3e6cc; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 .pr-tags { display: flex !important; flex-wrap: wrap; gap: 6px 8px; }
 .pr-tags span:nth-child(n+5) { display: none; }
 .pr-tags span { padding: 0.18em 0.7em; border-radius: 999px; border: 1px solid rgba(226, 184, 102, 0.5); font-size: 0.82em; white-space: nowrap; }
-.pr-side { display: grid; gap: clamp(10px, 2vh, 18px); align-content: center; min-height: 0; }
-.pr-photo { width: 100%; aspect-ratio: 3 / 4; max-height: 52vh; object-fit: cover; object-position: 50% 25%; border-radius: 16px; box-shadow: 0 0 0 1px rgba(226, 184, 102, 0.55), 0 0 0 7px rgba(226, 184, 102, 0.08), 0 24px 60px rgba(0, 0, 0, 0.5); justify-self: center; }
+.pr-side { display: grid; gap: clamp(10px, 2svh, 18px); align-content: center; min-height: 0; }
+.pr-photo { width: 100%; aspect-ratio: 3 / 4; max-height: 52svh; object-fit: cover; object-position: 50% 25%; border-radius: 16px; box-shadow: 0 0 0 1px rgba(226, 184, 102, 0.55), 0 0 0 7px rgba(226, 184, 102, 0.08), 0 24px 60px rgba(0, 0, 0, 0.5); justify-self: center; }
 .pr-photo.is-initial { display: grid; place-content: center; background: linear-gradient(160deg, #3a2b1f, #120d0a); color: #f1dcae; font-family: "Shippori Mincho", serif; font-size: clamp(72px, 12vw, 180px); }
-.pr-next { padding: clamp(8px, 1.4vh, 14px) clamp(12px, 1.4vw, 18px); border-radius: 14px; border: 1px solid rgba(226, 184, 102, 0.45); background: rgba(255, 240, 210, 0.05); }
+.pr-next { padding: clamp(8px, 1.4svh, 14px) clamp(12px, 1.4vw, 18px); border-radius: 14px; border: 1px solid rgba(226, 184, 102, 0.45); background: rgba(255, 240, 210, 0.05); }
 .pr-next p { margin: 0; font-size: clamp(13px, 1.35vw, 18px); color: #bfa883; line-height: 1.65; padding-left: 3.1em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .pr-next p.is-first { padding-left: 0; color: #fff1d6; font-weight: 800; }
 .pr-next b { color: var(--gold); }
 .pr-meter-row { display: flex; align-items: center; gap: clamp(12px, 2vw, 28px); }
 .pr-meter-box { flex: 1; min-width: 0; display: grid; gap: 6px; }
-.pr-meter { --n: 30; display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); gap: clamp(2px, 0.3vw, 5px); height: clamp(22px, 4.6vh, 46px); }
+.pr-meter { --n: 30; display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); gap: clamp(2px, 0.3vw, 5px); height: clamp(22px, 4.6svh, 46px); }
 .pr-scale { position: relative; height: 1.4em; font-family: "Inter", sans-serif; font-size: clamp(11px, 1.15vw, 15px); font-weight: 700; color: #bfa883; font-variant-numeric: tabular-nums; }
 .pr-scale span { position: absolute; top: 0; transform: translateX(-50%); white-space: nowrap; }
 .pr-scale span::before { content: ""; position: absolute; left: 50%; top: -6px; width: 1px; height: 5px; background: rgba(226, 184, 102, 0.6); }
@@ -1301,12 +1302,10 @@ html.round-open, html.round-open body { overflow: hidden; }
 .pr-ask { flex: 1 1 100%; margin: 0 0 2px; text-align: center; font-size: 15px; font-weight: 800; color: #f3dfb3; }
 .pr-done { grid-column: 1 / -1; text-align: center; }
 .pr-run.is-done .pr-meter-row { visibility: hidden; }
-/* はじめるとき(全画面に切りかわるあいだ)と閉じるときは、中身をふわっと出し入れする */
-.pr-run > * { transition: opacity 0.28s ease; }
-.pr-run.is-entering > *, .pr-run.is-closing > * { opacity: 0; }
-.pr-run::after { content: ""; position: absolute; inset: 0; background: var(--bg, #f6f2ea); opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
-.pr-run.is-closing::after { opacity: 1; }
-@media (prefers-reduced-motion: reduce) { .pr-run > *, .pr-run::after { transition: none; } }
+/* はじめるときと閉じるときは、画面ごとふわっと出し入れする(大きさや位置は変えない) */
+.pr-run { transition: opacity 0.28s ease; }
+.pr-run.is-entering, .pr-run.is-closing { opacity: 0; }
+@media (prefers-reduced-motion: reduce) { .pr-run { transition: none; } }
 @media (prefers-reduced-motion: reduce) { .pr-slide.is-in, .pr-run.is-end .pr-meter i.is-on { animation: none; } }
 /* 高さの少ない横長の画面(ノートパソコン・プロジェクター): 行数を減らして、メーターに重ならず、途中で切れずに収める */
 @media (min-aspect-ratio: 1/1) and (max-height: 920px) {
@@ -1323,7 +1322,7 @@ html.round-open, html.round-open body { overflow: hidden; }
 @media (min-aspect-ratio: 1/1) and (max-height: 460px) {
   .pr-row-tags { display: none; } /* こんな話が出たら も省く */
   .pr-next { display: none; } /* 次の人は「次へ ▶」で進めるので、とても低い画面では省く */
-  .pr-slide { grid-template-columns: minmax(0, 1fr) clamp(100px, 32vh, 200px); }
+  .pr-slide { grid-template-columns: minmax(0, 1fr) clamp(100px, 32svh, 200px); }
 }
 /* 縦長の画面(スマホ): 写真を上に小さく、文字を下に */
 @media (max-aspect-ratio: 1/1), (max-width: 640px) {

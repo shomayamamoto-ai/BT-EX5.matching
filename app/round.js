@@ -2,11 +2,11 @@
 // app/round.js — プレゼン(下のメニューの「プレゼン」)
 // 定例会の「プレゼンテーション」を、顔写真と紹介つきの大きな画面で順番に進める。
 // ・準備(#present): 定例会を選ぶ → 出る人を押して選ぶ(押した順が話す順番)→ 並べかえ(つかんで動かす・↑↓・シャッフル)
-//   → 1人の時間(30秒・1分・2分・5分)・次の人までの間(1〜10秒)→「全画面ではじめる」
-// ・進行(全画面): 番号・名前・肩書き・活動範囲・つながりたい人・こんな話が出たら・顔写真・次の人、
+//   → 1人の時間(30秒・1分・2分・5分)・次の人までの間(1〜10秒)→「プレゼンをはじめる」
+// ・進行(画面いっぱい): 番号・名前・肩書き・活動範囲・つながりたい人・こんな話が出たら・顔写真・次の人、
 //   下に残り時間のメーター(1分までは1目盛り=1秒。左の5秒が赤、次の5秒がオレンジ。目盛りの下に残り秒数の数字)と残り秒数。
 //   残り10秒と 0秒で音(鐘)。「自動で次へ」なら 0秒のあと、選んだ秒数(はじめは5秒)で次の人へ。
-//   キー操作: スペース=止める・つづける、→=次へ、←=前へ、F=全画面、Esc=終わる(会場のスクリーンや Meet の画面共有で映す想定)
+//   キー操作: スペース=止める・つづける、→=次へ、←=前へ、Esc=終わる(会場のスクリーンや Meet の画面共有で映す想定)
 // 連絡先は出さない(名簿でメンバーが見られる内容だけ)
 // 顔写真: 本人(または運営)がこの画面で入れた写真 → 運営が用意した写真(REF_MEMBER_PHOTOS)→ 頭文字
 // ============================================
@@ -264,7 +264,7 @@
       App.fill(listEl, order.length ? order.map(row) : h("li", { class: "pr-order-empty" }, "上の一覧から、話す順に押してください"));
       const sec = order.length * per;
       total.textContent = order.length ? `${order.length}名 × ${PER.find(([v]) => v === per)[1]} = 約${Math.floor(sec / 60)}分${sec % 60 ? `${sec % 60}秒` : ""}` : "";
-      goBtn.textContent = order.length ? `全画面ではじめる(${order.length}名)` : "出る人を選んでください";
+      goBtn.textContent = order.length ? `プレゼンをはじめる(${order.length}名)` : "出る人を選んでください";
       goBtn.disabled = !order.length;
     }
 
@@ -327,20 +327,12 @@
         h("div", { class: "pr-auto" },
           h("label", { class: "pitch-sound" }, autoBox, h("span", null, "0秒になったら、自動で次の人へ")),
           h("label", { class: "pr-gap-row" }, h("span", null, "次の人までの間"), gapSel)),
-        h("p", { class: "app-field-hint" }, "残り10秒で小さな音、0秒で鐘の音が鳴ります。キーボードでは スペース=止める・つづける、→=次へ、←=前へ、F=全画面、Esc=終わる。")),
+        h("p", { class: "app-field-hint" }, "残り10秒で小さな音、0秒で鐘の音が鳴ります。キーボードでは スペース=止める・つづける、→=次へ、←=前へ、Esc=終わる。会場のスクリーンで画面いっぱいに映すときは、ブラウザの全画面(Mac は control+command+F、Windows は F11)を使ってください。")),
       h("div", { class: "pr-go-bar" }, goBtn));
     draw();
   }
 
-  // ---------- 進行(全画面) ----------
-  const fullEl = () => document.fullscreenElement || document.webkitFullscreenElement || null;
-  function exitFull() {
-    try {
-      const ex = document.exitFullscreen || document.webkitExitFullscreen;
-      if (ex) { const r = ex.call(document); if (r && r.catch) r.catch(() => {}); }
-    } catch { /* noop */ }
-  }
-
+  // ---------- 進行(画面いっぱい) ----------
   // gap: 0秒のあと次の人へ移るまでの秒数(0 なら自動で移らない)
   App.roundRun = function (people, per, gap, title) {
     App.timerSound.ready();
@@ -399,41 +391,10 @@
     window.addEventListener("resize", fixSecWidth);
     document.documentElement.classList.add("round-open");
     try { if ("wakeLock" in navigator) navigator.wakeLock.request("screen").then((w) => { wake = w; }).catch(() => {}); } catch { /* noop */ }
-    // 押した流れのまま全画面にする(ブラウザが断ったときは、そのまま画面いっぱいで進める)
-    // 全画面にするのはページ全体(<html>)。この画面の部品だけを全画面にすると、終わって部品を外したときに
-    // ブラウザ(Safari など)が真っ白な全画面のまま戻らないことがあるため
-    // 全画面に切りかわるあいだは画面の大きさが少しずつ変わるので、中身を隠しておき、
-    // 大きさが決まってから(全画面の知らせ+少し待つ)ふわっと出す(切りかえのブレを見せない)
-    function afterFullChange(fn) {
-      let fired = false;
-      const go = () => {
-        if (fired) return;
-        fired = true;
-        document.removeEventListener("fullscreenchange", go);
-        document.removeEventListener("webkitfullscreenchange", go);
-        setTimeout(fn, 180);
-      };
-      document.addEventListener("fullscreenchange", go);
-      document.addEventListener("webkitfullscreenchange", go);
-      setTimeout(go, 1000); // 知らせが来ないブラウザでも出す
-    }
-    function reveal() {
-      fixSecWidth();
-      requestAnimationFrame(() => box.classList.remove("is-entering"));
-    }
-    function toggleFull() {
-      box.classList.add("is-entering");
-      try {
-        if (fullEl()) { afterFullChange(reveal); exitFull(); return; }
-        const el = document.documentElement;
-        const req = el.requestFullscreen || el.webkitRequestFullscreen;
-        if (!req) { reveal(); return; }
-        afterFullChange(reveal);
-        const r = req.call(el);
-        if (r && r.catch) r.catch(() => reveal());
-      } catch { reveal(); }
-    }
-    toggleFull();
+    // ブラウザの「全画面」には切りかえない(切りかえのあいだに画面の大きさが変わって上下にブレる・
+    // 閉じたあとに Safari で真っ白になる、の原因になるため)。この画面はブラウザの窓いっぱいに出し、ふわっと表示する。
+    // プロジェクターなどで本当の全画面にしたいときは、ブラウザの全画面(Mac は control+command+F)を使う
+    requestAnimationFrame(() => requestAnimationFrame(() => { fixSecWidth(); box.classList.remove("is-entering"); }));
     // 写真は先に読みこんでおく(切りかえたときにすぐ出るように)
     people.forEach((p) => { if (p.photo) { const im = new Image(); im.src = p.photo; } });
 
@@ -532,15 +493,13 @@
     function finish(early, confirmed) {
       if (early && !confirmed) { askEnd(); return; }
       halt(); gapUntil = 0; done = true;
-      // 全画面はここではやめない(やめると画面の大きさが変わり、「閉じる」が一度画面の外へずれて見えるため)。
-      // 全画面は「閉じる」を押したときにやめる
       const said = early || confirmed ? idx : people.length;
       box.classList.remove("is-last", "is-red", "is-end", "is-gap");
       box.classList.add("is-done");
       App.fill(slide, h("div", { class: "pr-done" }, h("p", { class: "pr-name" }, "おつかれさまでした"), h("p", { class: "pr-catch" }, `${said}名の方が話しました`)));
       App.fill(box.querySelector(".pr-ctrl"), h("button", { type: "button", class: "round-btn is-main", onclick: closeRun }, "閉じる"));
     }
-    // 閉じる: 先に全画面をやめてから、この画面を外す(全画面のまま外すと、真っ白な画面が残ることがある)
+    // 閉じる: ふわっと消してから、この画面を外す(下のプレゼンの準備の画面がそのまま見える)
     let closed = false;
     function closeRun() {
       if (closed) return;
@@ -549,29 +508,19 @@
       document.removeEventListener("keydown", onKey);
       halt();
       try { if (wake) wake.release(); } catch { /* noop */ }
-      // 1) 中身をふわっと消し、画面をアプリの背景の色にする
-      // 2) その色のまま全画面をやめる(大きさが変わっても、動くものが見えない)
-      // 3) プレゼンの準備の画面を読み込み直して出す(全画面から戻ったあと、Safari などで画面が
-      //    描き直されずに真っ白のまま残ることがあるため。選んだ人と順番はこの端末に残っている)
       box.classList.add("is-closing");
-      const back = /^#present/.test(location.hash) ? location.hash : "#present";
-      const reload = () => {
-        try { history.replaceState(null, "", `${location.pathname}${location.search}${back}`); } catch { /* noop */ }
-        try { location.reload(); } catch { box.remove(); document.documentElement.classList.remove("round-open"); App.route(); }
-      };
       setTimeout(() => {
-        if (!fullEl()) { reload(); return; }
-        afterFullChange(reload);
-        exitFull();
-      }, 320);
+        box.remove();
+        document.documentElement.classList.remove("round-open");
+        if (!/^#present/.test(location.hash)) { try { history.replaceState(null, "", "#present"); } catch { /* noop */ } App.route(); }
+      }, 300);
     }
     function onKey(e) {
       if (e.target.closest && e.target.closest("input, textarea, select")) return;
       if (e.key === " ") { e.preventDefault(); if (!done) pauseBtn.click(); }
       else if (e.key === "ArrowRight" && !done) go(idx + 1);
       else if (e.key === "ArrowLeft" && !done && idx > 0) go(idx - 1);
-      else if ((e.key === "f" || e.key === "F") && !done) toggleFull();
-      else if (e.key === "Escape") { if (fullEl()) return; if (done) closeRun(); else if (asking) asking(); else finish(true); }
+      else if (e.key === "Escape") { if (done) closeRun(); else if (asking) asking(); else finish(true); }
     }
     document.addEventListener("keydown", onKey);
     drawSlide();
