@@ -2112,3 +2112,4 @@ button.home-welcome-check:active { transform: scale(0.94); }
   .pr-top .pr-count { font-size: 15px; letter-spacing: 0.06em; }
   .pr-top .pr-count:empty { display: none; }
 }
+.pd-check-text .pd-line { display: block; width: max-content; white-space: nowrap; }

@@ -1107,7 +1107,7 @@
       }
       if (p.type === "checks") {
         return frame("pd-checks",
-          h("ul", { class: "pd-check-items" }, (p.items || []).map((x, i) => h("li", nth(i), h("span", { class: "pd-check", "aria-hidden": "true" }, lineIcon("check")), h("span", null, ...lines(x))))));
+          h("ul", { class: "pd-check-items" }, (p.items || []).map((x, i) => h("li", nth(i), h("span", { class: "pd-check", "aria-hidden": "true" }, lineIcon("check")), h("span", { class: "pd-check-text" }, ...cardLines(x))))));
       }
       if (p.type === "raise") {
         // 挙手のお願い: 大きな手のマークと、何について発表するか
@@ -1151,7 +1151,7 @@
       if (!el || !el.classList.contains("pd")) return;
       el.style.transform = "";
       // カードの文: 1行が入りきらないときは、同じスライドのカードの文をそろって小さくする
-      const texts = [...el.querySelectorAll(".pd-card-text")];
+      const texts = [...el.querySelectorAll(".pd-card-text, .pd-check-text")];
       texts.forEach((t) => { t.style.fontSize = ""; });
       // (行の左はしからカードの文の右はしまでを、使える幅とする。「パターン1:」の続きの行も同じ)
       const ratio = texts.reduce((r, t) => Math.min(r, [...t.querySelectorAll(".pd-line")].reduce((q, ln) => {
