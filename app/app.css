@@ -1154,7 +1154,7 @@ body.tabs-right .app-to-top { right: calc(var(--dock-w) + 22px); }
 .round-per .pitch-len small { font-size: 10.5px; font-weight: 700; opacity: 0.8; }
 .pr-solo { margin-top: 10px; }
 /* 自分だけのタイマー(ポモドーロ): まん中に大きく */
-.pr-run.is-solo .pr-slide { display: flex; align-items: center; justify-content: center; }
+.pr-run.is-solo .pr-slide, .pr-run.is-timer .pr-slide { display: flex; align-items: center; justify-content: center; }
 .pr-timer-slide { text-align: center; display: grid; justify-items: center; gap: clamp(6px, 1.6svh, 16px); }
 /* まん中のアナログ時計(予定の画面と同じもの)。画面の高さに合わせて大きさを変える */
 .pr-timer-clock { display: flex; justify-content: center; }
@@ -1698,3 +1698,114 @@ button.home-welcome-check:active { transform: scale(0.94); }
 .pr-extra-pick-box > summary { cursor: pointer; font-weight: 800; font-size: 13.5px; color: var(--accent-dark); padding: 6px 2px; }
 .pr-extra-bx { display: grid; gap: 8px; margin-top: 6px; }
 .pr-extra-unit { padding: 9px 30px 9px 12px; border-radius: 10px; border: 1.5px solid var(--line-strong); background: #fff; font-size: 14px; font-weight: 800; justify-self: start; }
+
+/* ---------- 定例会のスライド(プレゼンの画面の「定例会をはじめる」) ---------- */
+.pr-run.is-deck .pr-meter-row { visibility: hidden; }
+.pr-run.is-deck .pr-slide { display: flex; align-items: center; justify-content: center; overflow: hidden; }
+.pr-jump { max-width: min(46vw, 420px); padding: 6px 30px 6px 12px; border-radius: 999px; border: 1px solid rgba(226, 184, 102, 0.5); background: rgba(255, 255, 255, 0.06); color: #f3dfb3; font-size: clamp(12px, 1.2vw, 15px); font-weight: 800; }
+.pr-jump option { color: #1a120c; }
+.pr-top { align-items: center; }
+.pd { width: min(100%, 1200px); color: #f6e7c4; }
+.pd-kicker { margin: 0; font-size: clamp(13px, min(1.5vw, 2.4svh), 20px); letter-spacing: 0.28em; color: #cbb38c; font-weight: 800; }
+.pd-title { margin: 0; font-family: "Shippori Mincho", serif; font-weight: 700; line-height: 1.2; color: #fff3dc; }
+.pd-rule { display: block; width: clamp(80px, 14vw, 220px); height: 2px; margin: clamp(10px, 2.4svh, 26px) auto; background: linear-gradient(90deg, transparent, #e2b866, transparent); }
+.pd-mark { width: clamp(70px, min(10vw, 16svh), 150px); height: auto; filter: drop-shadow(0 10px 30px rgba(0, 0, 0, 0.5)); }
+/* ムービー・表紙・おわり */
+.pd-movie, .pd-cover, .pd-closing, .pd-section { text-align: center; display: grid; justify-items: center; gap: clamp(8px, 2svh, 20px); }
+.pd-movie .pd-title, .pd-closing .pd-title { font-size: clamp(30px, min(5.4vw, 8.5svh), 84px); }
+.pd-play { flex: none; min-width: 200px; }
+.pd-cover .pd-title { font-size: clamp(28px, min(5vw, 8svh), 78px); }
+.pd-date { margin: 0; font-size: clamp(16px, min(2.2vw, 3.4svh), 30px); font-weight: 800; color: #f0b25a; letter-spacing: 0.06em; }
+.pd-notes { list-style: none; margin: 0; padding: 0; color: #bfa883; font-size: clamp(12px, min(1.4vw, 2.2svh), 18px); }
+/* 区切り(1. はじめの挨拶 など) */
+.pd-no { margin: 0; font-family: "Cormorant Garamond", "Inter", serif; font-size: clamp(80px, min(16vw, 24svh), 240px); font-weight: 600; line-height: 0.9; color: transparent; -webkit-text-stroke: 1.5px rgba(226, 184, 102, 0.75); }
+.pd-section .pd-title { font-size: clamp(34px, min(6vw, 9.5svh), 96px); }
+/* 代表の紹介 */
+.pd-leader { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: clamp(16px, 4vw, 60px); align-items: center; }
+.pd-leader .pd-title { font-size: clamp(36px, min(6vw, 9svh), 92px); margin-top: 4px; }
+.pd-kana { margin: 2px 0 0; color: #cbb38c; letter-spacing: 0.3em; font-size: clamp(11px, min(1.2vw, 1.9svh), 16px); }
+.pd-badges { list-style: none; margin: clamp(10px, 2svh, 22px) 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.pd-badges li { padding: 0.3em 0.9em; border-radius: 999px; background: linear-gradient(135deg, rgba(255, 241, 201, 0.16), rgba(226, 184, 102, 0.12)); border: 1px solid rgba(226, 184, 102, 0.55); color: #ffe7b0; font-size: clamp(12px, min(1.3vw, 2.1svh), 17px); font-weight: 800; }
+.pd-block { margin-top: clamp(8px, 1.8svh, 20px); }
+.pd-h { margin: 0 0 4px; font-size: clamp(12px, min(1.3vw, 2svh), 16px); font-weight: 900; letter-spacing: 0.2em; color: #e2b866; }
+.pd-block ul { margin: 0; padding-left: 1.2em; display: grid; gap: 2px; font-size: clamp(13px, min(1.5vw, 2.4svh), 20px); line-height: 1.55; color: #f3e6cc; }
+.pd-photo { max-height: 62svh; }
+/* BT-EX とは */
+.pd-about { text-align: center; }
+.pd-about .pd-title { font-size: clamp(30px, min(5vw, 8svh), 76px); }
+.pd-para { margin: 0 auto clamp(10px, 2.2svh, 24px); max-width: 34em; font-size: clamp(15px, min(2vw, 3.1svh), 28px); line-height: 1.75; color: #f3e6cc; }
+/* 理念とビジョン */
+.pd-vision { text-align: center; }
+.pd-vision .pd-title { font-family: "Cormorant Garamond", "Inter", serif; font-size: clamp(56px, min(10vw, 16svh), 170px); letter-spacing: 0.06em; line-height: 1; }
+.pd-en { margin: 0.2em 0 0; font-family: "Cormorant Garamond", serif; font-style: italic; font-size: clamp(18px, min(3vw, 4.6svh), 44px); color: #e2b866; letter-spacing: 0.08em; }
+.pd-vrow { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(14px, 3vw, 48px); margin-top: clamp(16px, 4svh, 48px); }
+.pd-vrow > div { padding: clamp(14px, 2.6svh, 30px) clamp(12px, 2vw, 28px); border-radius: 18px; border: 1px solid rgba(226, 184, 102, 0.45); background: rgba(255, 240, 210, 0.05); }
+.pd-big { margin: 0; font-family: "Shippori Mincho", serif; font-size: clamp(20px, min(3vw, 4.6svh), 44px); font-weight: 700; line-height: 1.4; color: #fff3dc; }
+@media (max-aspect-ratio: 1/1), (max-width: 640px) {
+  .pr-run.is-deck .pr-slide { overflow-y: auto; align-items: flex-start; }
+  .pd-leader, .pd-vrow { grid-template-columns: minmax(0, 1fr); }
+  .pd-leader .pd-photo { order: -1; width: clamp(120px, 40vw, 220px); justify-self: center; }
+  .pr-jump { max-width: 52vw; }
+}
+
+.pr-run.is-deck .pr-meter-row { display: none; }
+/* スマホで 10分をこえるタイマー: 「残り 15:00」が大きいので、メーターは上の段に全幅で出す */
+@media (max-width: 560px) {
+  .pr-run.is-long .pr-meter-row { flex-wrap: wrap; row-gap: 4px; }
+  .pr-run.is-long .pr-meter-box { flex-basis: 100%; }
+  .pr-run.is-long .pr-sec { margin-left: auto; }
+}
+/* 代表の紹介: 画面に収める */
+.pd-leader { align-items: center; max-height: 100%; }
+.pd-leader .pd-title { font-size: clamp(28px, min(4.4vw, 7svh), 70px); }
+.pd-leader .pd-badges li { font-size: clamp(11px, min(1.15vw, 1.9svh), 15px); }
+.pd-leader .pd-block ul { font-size: clamp(12px, min(1.25vw, 2.05svh), 17px); line-height: 1.5; }
+.pd-leader .pd-photo { max-height: 56svh; width: auto; aspect-ratio: 3 / 4; justify-self: center; }
+/* 一覧(目的・仕組みとベネフィット・3つの活動) */
+.pd-list { text-align: left; max-width: 1100px; }
+.pd-list > .pd-title { text-align: center; font-size: clamp(26px, min(4.2vw, 6.6svh), 64px); }
+.pd-items { list-style: none; margin: 0 auto; padding: 0; display: grid; gap: clamp(8px, 2svh, 22px); width: fit-content; max-width: 100%; }
+.pd-items li { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: clamp(10px, 1.4vw, 20px); align-items: start; }
+.pd-num { width: clamp(30px, min(3.4vw, 5.4svh), 52px); height: clamp(30px, min(3.4vw, 5.4svh), 52px); border-radius: 50%; display: grid; place-content: center; border: 1.5px solid #e2b866; color: #ffe7b0; font-family: "Cormorant Garamond", serif; font-weight: 700; font-size: clamp(16px, min(2vw, 3.2svh), 30px); }
+.pd-dot { width: 8px; height: 8px; margin-top: 0.62em; border-radius: 50%; background: #e2b866; }
+.pd-item-title { margin: 0; font-family: "Shippori Mincho", serif; font-weight: 700; font-size: clamp(18px, min(2.6vw, 4.2svh), 38px); line-height: 1.4; color: #fff3dc; }
+.pd-item-line { margin: 2px 0 0; font-size: clamp(13px, min(1.5vw, 2.4svh), 21px); line-height: 1.55; color: #e9d9b8; }
+.pd-list.is-dense .pd-items { gap: clamp(4px, 1svh, 12px); }
+.pd-list.is-dense .pd-item-title { font-family: inherit; font-weight: 600; font-size: clamp(13px, min(1.55vw, 2.5svh), 22px); line-height: 1.5; color: #f3e6cc; }
+.pd-sub { margin: 0; font-family: "Shippori Mincho", serif; font-size: clamp(20px, min(3vw, 4.8svh), 46px); font-weight: 700; color: #f0b25a; letter-spacing: 0.06em; }
+.pd-checks > .pd-title, .pd-strengths > .pd-title { text-align: center; font-size: clamp(20px, min(3.1vw, 5.4svh), 50px); }
+.pd-section.is-long-title .pd-title { font-size: clamp(26px, min(4.2vw, 7svh), 68px); }
+.pd-check-items { list-style: none; margin: 0 auto; padding: 0; width: fit-content; max-width: 100%; display: grid; grid-template-columns: repeat(2, minmax(0, auto)); gap: clamp(6px, 1.6svh, 18px) clamp(18px, 4vw, 60px); }
+.pd-check-items li { display: flex; align-items: flex-start; gap: 0.6em; font-size: clamp(14px, min(1.8vw, 2.9svh), 26px); font-weight: 600; line-height: 1.45; color: #f3e6cc; }
+.pd-check { flex: none; width: 1.3em; height: 1.3em; margin-top: 0.08em; border-radius: 50%; display: grid; place-content: center; background: linear-gradient(135deg, #f3d48d, #c9963f); color: #1c140a; font-size: 0.8em; font-weight: 900; }
+.pd-groups { display: grid; gap: clamp(6px, 1.4svh, 16px); }
+.pd-group { padding: clamp(8px, 1.6svh, 18px) clamp(12px, 2vw, 28px); border-radius: 16px; border: 1px solid rgba(226, 184, 102, 0.5); background: rgba(255, 240, 210, 0.05); text-align: left; }
+.pd-group-name { margin: 0 0 6px; font-family: "Shippori Mincho", serif; font-size: clamp(16px, min(2vw, 3.2svh), 28px); font-weight: 700; color: #ffe7b0; }
+.pd-group ul { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 14em), 1fr)); gap: 2px clamp(8px, 1.6vw, 22px); font-size: clamp(11.5px, min(1.35vw, 2.2svh), 19px); line-height: 1.55; color: #f3e6cc; }
+.pd-group li { display: flex; gap: 0.15em; }
+.pd-group li::before { content: "・"; flex: none; color: #e2b866; }
+@media (max-width: 720px) {
+  .pd-check-items { grid-template-columns: minmax(0, 1fr); }
+  .pd-group ul { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+.pd-rules { max-width: 1100px; display: grid; gap: clamp(10px, 2.4svh, 26px); text-align: left; }
+.pd-rule-head { margin: 0 0 6px; padding-bottom: 4px; width: fit-content; min-width: 7em; border-bottom: 2px solid #e2b866; font-family: "Shippori Mincho", serif; font-size: clamp(22px, min(3.2vw, 5svh), 48px); font-weight: 700; color: #fff3dc; }
+.pd-rule-block ol { list-style: none; margin: 0; padding: 0; display: grid; gap: clamp(2px, 0.8svh, 10px); }
+.pd-rule-block li { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 0.5em; font-size: clamp(13px, min(1.65vw, 2.7svh), 24px); line-height: 1.55; color: #f3e6cc; }
+.pd-rule-no { color: #e2b866; font-weight: 800; }
+.pd-rule-block em { font-style: normal; font-weight: 800; color: #ff9a7a; }
+.pd-rule-note { margin: 0; text-align: right; font-size: clamp(11px, min(1.3vw, 2.1svh), 17px); color: #bfa883; }
+.pd-schedule { text-align: center; }
+.pd-schedule > .pd-title { font-size: clamp(26px, min(4.2vw, 6.6svh), 64px); }
+.pd-sched-lead { margin: 0 0 clamp(10px, 2.4svh, 26px); font-size: clamp(16px, min(2.2vw, 3.4svh), 30px); font-weight: 800; color: #f0b25a; letter-spacing: 0.06em; }
+.pd-sched-rows { margin: 0 auto; width: fit-content; display: grid; gap: clamp(6px, 1.6svh, 18px); }
+.pd-sched-rows > div { display: grid; grid-template-columns: auto auto; gap: clamp(16px, 3vw, 48px); align-items: baseline; justify-content: start; }
+.pd-sched-rows dt, .pd-sched-rows dd { margin: 0; font-family: "Shippori Mincho", serif; font-size: clamp(22px, min(3.6vw, 5.8svh), 56px); font-weight: 700; color: #fff3dc; text-align: left; }
+.pd-sched-rows dd { font-family: "Cormorant Garamond", "Inter", serif; color: #ffe7b0; font-variant-numeric: tabular-nums; }
+.pd-sched-note { margin: clamp(16px, 4svh, 44px) 0 0; font-size: clamp(14px, min(1.8vw, 2.8svh), 24px); color: #cbb38c; }
+@media (max-width: 560px) {
+  .pd-sched-rows > div { grid-template-columns: minmax(0, 1fr); gap: 0; }
+}
+.pd-feature { text-align: center; }
+.pd-feature .pd-kicker { font-size: clamp(16px, min(2vw, 3.2svh), 28px); }
+.pd-feature .pd-big { font-size: clamp(30px, min(5.4vw, 8.6svh), 86px); line-height: 1.35; }

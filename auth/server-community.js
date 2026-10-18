@@ -118,6 +118,12 @@
             changed = true;
           });
         }
+        // 初めに入れた定例会の「当日の流れ」を BT-EX の指針の順にする(運営が書きかえた回はそのまま)
+        if (typeof REF_SEED_AGENDA_PREV !== "undefined" && typeof REF_SEED_AGENDA !== "undefined" && db.eventSeeds && db.eventSeeds.indexOf("agenda-shishin-1") === -1) {
+          db.eventSeeds.push("agenda-shishin-1");
+          db.events.forEach(function (ev) { if (ev.seed && REF_SEED_AGENDA_PREV.indexOf(ev.agenda) !== -1) ev.agenda = REF_SEED_AGENDA; });
+          changed = true;
+        }
         // 入っていない値がつながって保存された「null」「nullnull」などの文字を、一度だけ消す
         // (ログイン・通知の登録・鍵などは触らない)
         if (!Array.isArray(db.cleanups)) { db.cleanups = []; changed = true; }

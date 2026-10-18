@@ -35,7 +35,9 @@
       <button type="button" class="op-intro-btn primary op-intro-skip" data-op="skip">スキップ</button>
       <button type="button" class="op-intro-btn op-intro-sound" data-op="sound"></button>
       <p class="op-intro-hint">画面を押すとスキップ</p>`;
-    document.body.appendChild(box);
+    // ほかの全画面(定例会の進行など)の上に出すとき
+    if (opts && opts.zIndex) box.style.zIndex = String(opts.zIndex);
+    (opts && opts.zIndex ? document.documentElement : document.body).appendChild(box);
     document.documentElement.classList.add("op-intro-open");
     const video = box.querySelector("video");
     const soundBtn = box.querySelector("[data-op=sound]");
@@ -48,8 +50,8 @@
       current.classList.add("is-closing");
       document.documentElement.classList.remove("op-intro-open");
       document.removeEventListener("keydown", onKey);
-      setTimeout(() => { video.pause(); current.remove(); }, 450);
-      const back = (opts && opts.returnFocus) || document.getElementById("login-passcode");
+      setTimeout(() => { video.pause(); current.remove(); if (opts && opts.onClose) opts.onClose(); }, 450);
+      const back = (opts && opts.returnFocus) || (opts && opts.onClose ? null : document.getElementById("login-passcode"));
       if (back) back.focus();
     }
     function onKey(e) { if (e.key === "Escape") close(); }
