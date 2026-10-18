@@ -94,12 +94,12 @@
   function emit() {
     T.subs = T.subs.filter((s) => { if (s.root.isConnected) s.seen = true; return !s.seen || s.root.isConnected; });
     T.subs.forEach((s) => s.fn());
-    // どこにもタイマーが出ていない画面では、右上に小さく残りを出す(押すとホームのタイマーへ)
+    // どこにもタイマーが出ていない画面では、右上に小さく残りを出す(押すとプレゼンの画面のタイマーへ)
     const shown = T.subs.some((s) => s.root.isConnected);
     const active = running() || paused();
     if (active && !shown) {
       if (!pill) {
-        pill = h("a", { class: "timer-pill", href: "#home/timer", "aria-label": "タイマー(ホームで開く)" });
+        pill = h("a", { class: "timer-pill", href: "#present/timer", "aria-label": "タイマー(プレゼンの画面で開く)" });
         document.body.append(pill);
       }
       pill.textContent = `⏱ ${fmt(Math.max(0, Math.ceil(leftNow())))}${paused() ? " 停止中" : ""}`;
@@ -209,7 +209,7 @@
       const sayBtn = h("button", { type: "button", class: "app-btn ghost" }, "読み上げて聞く");
       const saved = h("small", { class: "pitch-saved" });
       body.append(
-        h("p", { class: "app-lead" }, "定例会の「プレゼンテーション」の原稿を書いて、時間を計って練習できます。原稿はあなただけが見られます。タイマーは 1分・5分・25分(ポモドーロ)なども選べ、続けて押すと足せます。ホームにも同じタイマーがあります。"),
+        h("p", { class: "app-lead" }, "定例会の「プレゼンテーション」の原稿を書いて、時間を計って練習できます。原稿はあなただけが見られます。タイマーは 1分・5分・25分(ポモドーロ)なども選べ、続けて押すと足せます。「プレゼン」の画面にも同じタイマーがあります。"),
         h("div", { class: "app-btn-row pitch-tools" }, App.btn("プロフィールからひな形を入れる", async () => {
           if (text.value.trim() && !(await App.confirm("いまの原稿を、ひな形で置きかえますか?", { ok: "置きかえる" }))) return;
           text.value = template(); update(); save();
@@ -273,7 +273,7 @@
           h("button", { type: "button", class: "goal-step", "aria-label": `${label}を増やす`, onclick: () => set(vals[k] + 1) }, "＋"));
       });
       body.append(
-        h("p", { class: "app-lead" }, "今月がんばる数を決めると、ホームの「今月のあなた」に進み具合が出ます。0 の項目は出しません。"),
+        h("p", { class: "app-lead" }, "今月がんばる数を決めると、「記録」→「まとめ」の「今月のあなた」に進み具合が出ます。0 の項目は出しません。"),
         h("div", { class: "goal-rows" }, rows),
         h("button", { type: "button", class: "app-btn primary wide", onclick: async () => {
           const d = await App.api("updateMySettings", { goals: vals });

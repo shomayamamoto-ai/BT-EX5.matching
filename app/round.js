@@ -162,14 +162,14 @@
   // ---------- 準備(下のメニューの「プレゼン」) ----------
   App.views.present = {
     title: "プレゼン",
-    async render(el, parts, params) { await renderSetup(el, params); },
+    async render(el, parts, params) { await renderSetup(el, params, parts); },
   };
   // 以前の入口(定例会の画面・ホーム)からは、この画面へ
   App.roundSheet = function (opts = {}) {
     App.go(opts.eventId ? `present?event=${encodeURIComponent(opts.eventId)}` : "present");
   };
 
-  async function renderSetup(el, params) {
+  async function renderSetup(el, params, parts) {
     const today = App.todayKey();
     const list = await App.api("listEvents", {}, { quiet: true });
     const upcoming = ((list && list.events) || []).filter((e) => e.date >= today)
@@ -329,6 +329,17 @@
           h("label", { class: "pr-gap-row" }, h("span", null, "次の人までの間"), gapSel)),
         h("p", { class: "app-field-hint" }, "残り10秒で小さな音、0秒で鐘の音が鳴ります。キーボードでは スペース=止める・つづける、→=次へ、←=前へ、Esc=終わる。会場のスクリーンで画面いっぱいに映すときは、ブラウザの全画面(Mac は control+command+F、Windows は F11)を使ってください。")),
       h("div", { class: "pr-go-bar" }, goBtn));
+    // タイマー(プレゼンの練習・ポモドーロ。以前はホームにあったもの)
+    if (App.timerWidget) {
+      const timerSec = h("section", { class: "app-section home-sec home-timer", id: "present-timer" },
+        h("div", { class: "home-sec-head" },
+          h("h2", { class: "app-h2" }, "タイマー"),
+          h("a", { class: "home-sec-link", href: "#me/pitch" }, "プレゼンの原稿を書く")),
+        App.timerWidget({ compact: true }));
+      el.append(timerSec);
+      // #present/timer(画面の上に出るタイマーの表示や、ホーム画面のアイコンの長押し)で開いたときは、タイマーまで動かす
+      if (parts && parts[0] === "timer") setTimeout(() => { if (timerSec.isConnected) timerSec.scrollIntoView({ behavior: "smooth", block: "start" }); }, 120);
+    }
     draw();
   }
 

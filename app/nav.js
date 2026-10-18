@@ -12,7 +12,6 @@
   const base = new URL("../app/", script ? script.src : location.href);
   const TABS = [
     { id: "search", label: "早見表", href: new URL("../referral/", base).pathname, icon: "M10.5 4a6.5 6.5 0 1 0 4.03 11.6l4.43 4.43 1.41-1.41-4.43-4.43A6.5 6.5 0 0 0 10.5 4Zm0 2a4.5 4.5 0 1 1 0 9 4.5 4.5 0 0 1 0-9Z" },
-    { id: "home", label: "ホーム", href: `${base.pathname}#home`, icon: "M3 11.5 12 4l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z" },
     { id: "log", label: "記録", href: `${base.pathname}#log`, icon: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Zm1 4v4h4v2h-4v4h-2v-4H7v-2h4V7z" },
     { id: "events", label: "予定", href: `${base.pathname}#events`, icon: "M7 2v2H5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-2V2h-2v2H9V2zm-2 8h14v9H5z" },
     { id: "present", label: "プレゼン", href: `${base.pathname}#present`, icon: "M3 3h18v2h-1v10a1 1 0 0 1-1 1h-6v2.3l3.6 2.4-1.1 1.6L12 20.1l-3.5 2.2-1.1-1.6L11 18.3V16H5a1 1 0 0 1-1-1V5H3zm3 2v9h12V5zm2 6h3v2H8zm0-3h8v2H8z" },
@@ -66,12 +65,12 @@
     const nav = document.querySelector(".ref-header .ref-header-nav");
     if (!nav) return;
     const logo = document.querySelector(".ref-header .ref-logo");
-    if (logo) { logo.href = `${base.pathname}#home`; logo.setAttribute("aria-label", "ホーム"); }
+    if (logo) { logo.href = `${base.pathname}#log/home`; logo.setAttribute("aria-label", "記録のまとめ"); }
     // アプリと同じ「検索」(押すとアプリの検索を開く)。ムービーの左に置く
     if (!nav.querySelector(".nav-search")) {
       const sr = document.createElement("a");
       sr.className = "nav-search";
-      sr.href = `${base.pathname}#home?search=1`;
+      sr.href = `${base.pathname}#log/home?search=1`;
       sr.setAttribute("aria-label", "アプリ内を検索");
       sr.title = "アプリ内を検索";
       const ss = document.createElementNS(NS, "svg");

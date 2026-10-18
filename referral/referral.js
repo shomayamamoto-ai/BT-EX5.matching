@@ -472,7 +472,7 @@
   const BACK_LABELS = [
     [/^log\/1on1/, "1on1 に戻る"], [/^log\/stats/, "数字に戻る"], [/^log\/rank/, "ランキングに戻る"], [/^log/, "記録に戻る"],
     [/^board/, "掲示板に戻る"], [/^news/, "運営連絡に戻る"], [/^events/, "予定に戻る"], [/^admin/, "管理者メニューに戻る"],
-    [/^me/, "マイページに戻る"], [/^home/, "ホームに戻る"],
+    [/^me/, "マイページに戻る"], [/^home/, "記録に戻る"],
   ];
   function backLink() {
     if (!detailBack) return "";

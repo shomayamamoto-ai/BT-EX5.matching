@@ -7,6 +7,7 @@
   const { h } = App;
 
   const TABS = [
+    { id: "home", label: "まとめ" },
     { id: "ref", label: "紹介" },
     { id: "miles", label: "マイル" },
     { id: "1on1", label: "1on1" },
@@ -18,10 +19,12 @@
     title: "記録",
     autoRefresh: true,
     async render(el, parts, params) {
-      const tab = TABS.some((t) => t.id === parts[0]) ? parts[0] : "ref";
+      const tab = TABS.some((t) => t.id === parts[0]) ? parts[0] : "home";
       el.append(App.segmented(TABS, tab, (id) => App.go(`log/${id}`)));
-      const body = h("div");
+      // まとめ(以前のホーム)は、ホームと同じ並び(パソコンは2列)で出す
+      const body = h("div", { class: tab === "home" ? "page-home" : "" });
       el.append(body);
+      if (tab === "home") await App.renderHome(body, parts.slice(1));
       if (tab === "ref") await renderRefs(body, params);
       if (tab === "miles") await renderMiles(body, params);
       if (tab === "1on1") await renderOnes(body, params);
@@ -323,7 +326,7 @@
     App.openSheet("紹介を記録しました", (b, close) => {
       App.append(b, [
         h("p", { class: "done-check", "aria-hidden": "true" }, "✓"),
-        h("p", { class: "app-lead ref-done-lead" }, `${r.toName}さんのホームに届きました。LINE などでもひと言送っておくと、つながりが早くなります。`),
+        h("p", { class: "app-lead ref-done-lead" }, `${r.toName}さんの「記録」に届きました。LINE などでもひと言送っておくと、つながりが早くなります。`),
         r.meeting ? h("dl", { class: "ref-card-body" }, meetingSummary(r.meeting)) : null,
         h("div", { class: "ref-done-list" },
           sendRow(`${r.toName}さんへ`, "紹介先のメンバー", refTextToMember(r)),

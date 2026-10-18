@@ -6,10 +6,18 @@
   "use strict";
   const { h } = App;
 
+  // ホームの画面はなくし、中身は「記録」の「まとめ」に出す(タイマーは「プレゼン」へ)。
+  // 以前のリンク(#home・#home/timer)は、それぞれの場所へ移す
   App.views.home = {
-    title: "ホーム",
-    autoRefresh: true,
+    title: "記録",
+    tab: "log",
     async render(el, parts) {
+      history.replaceState(null, "", parts && parts[0] === "timer" ? "#present/timer" : "#log/home");
+      await App.route();
+    },
+  };
+  App.renderHome = async function (el, parts) {
+    {
       const d = await App.api("getHome");
       if (!d) return;
       App.setBadges(d.badges);
@@ -107,7 +115,7 @@
             App.toast(mode === "done" ? "表示を消しました" : "7日後にまた知らせます");
           };
           box.append(
-            alertLink(App.profileHref(f.with, "home"),
+            alertLink(App.profileHref(f.with, "log/home"),
               `${f.withName}さんへの紹介が ${f.days} 日そのままです`, `${f.prospect || "紹介した方"}の件、ひと声かけましょう(LINE などの連絡先を開く)`),
             h("div", { class: "home-alert-acts" },
               h("button", { type: "button", class: "app-btn ghost small", onclick: () => mute("later") }, "声をかけた(7日後にまた)"),
@@ -177,19 +185,6 @@
         }).catch(() => {});
       }
 
-      // ---------- タイマー(プレゼンの練習・ポモドーロ。練習のシートと同じタイマー) ----------
-      if (App.timerWidget) {
-        const timerSec = h("section", { class: "app-section home-sec home-timer", id: "home-timer", "data-home": "timer" },
-          h("div", { class: "home-sec-head" },
-            h("h2", { class: "app-h2" }, "タイマー"),
-            h("a", { class: "home-sec-link", href: "#me/pitch" }, "プレゼンの原稿を書く")),
-          App.timerWidget({ compact: true }),
-          App.roundSheet ? h("button", { type: "button", class: "home-timer-round", onclick: () => App.roundSheet() }, App.glyph("clock"), "定例会のプレゼンを、出席者の順番で進行する →") : null);
-        main.append(timerSec);
-        // #home/timer(ホーム画面のアイコンの長押しなど)で開いたときは、タイマーまで動かす
-        if (parts && parts[0] === "timer") setTimeout(() => { if (timerSec.isConnected) timerSec.scrollIntoView({ behavior: "smooth", block: "start" }); }, 80);
-      }
-
       // ---------- 次の定例会 ----------
       const next = d.events[0];
       const days = next ? App.daysUntil(next.date, d.today) : -1;
@@ -239,7 +234,7 @@
         if (long) wants.classList.add("is-clamped");
         side.append(h("section", { class: "home-spot", "data-home": "spot" },
           h("p", { class: "home-spot-label" }, "今週の紹介チャレンジ"),
-          h("a", { class: "home-spot-head", href: App.profileHref(sp.id, "home") }, App.avatar(sp.name),
+          h("a", { class: "home-spot-head", href: App.profileHref(sp.id, "log/home") }, App.avatar(sp.name),
             h("span", null, h("b", null, `${sp.name}さん`), h("small", null, sp.company))),
           h("p", { class: "home-spot-q" }, "こんな人を紹介してほしい"),
           wants,
@@ -251,7 +246,7 @@
           sp.offer ? h("p", { class: "home-spot-offer" }, `紹介特典:${sp.offer}`) : null,
           h("div", { class: "app-btn-row" },
             h("a", { class: "app-btn primary small", href: `#log/ref?new&to=${encodeURIComponent(sp.id)}` }, "紹介を記録する"),
-            h("a", { class: "app-btn ghost small", href: App.profileHref(sp.id, "home") }, "プロフィールを見る"))));
+            h("a", { class: "app-btn ghost small", href: App.profileHref(sp.id, "log/home") }, "プロフィールを見る"))));
       }
 
       // ---------- 運営連絡(あるときだけ。新しい3件) ----------
@@ -301,14 +296,14 @@
         }).catch(() => {});
       }
 
-      // ---------- ホームの表示(出すもの・順番。この端末に覚える) ----------
+      // ---------- まとめの表示(出すもの・順番。この端末に覚える) ----------
       applyLayout(el);
-      el.append(h("button", { type: "button", class: "home-layout-btn", onclick: () => layoutSheet() }, "ホームの表示を変える(出すもの・順番)"));
-    },
+      el.append(h("button", { type: "button", class: "home-layout-btn", onclick: () => layoutSheet() }, "まとめの表示を変える(出すもの・順番)"));
+    }
   };
 
-  // ---------- ホームの表示を選ぶ ----------
-  // 同じ列(上・左・右)の中で並べかえる。消したものは「ホームの表示を変える」からいつでも戻せる
+  // ---------- まとめの表示を選ぶ ----------
+  // 同じ列(上・左・右)の中で並べかえる。消したものは「まとめの表示を変える」からいつでも戻せる
   const HOME_PARTS = [
     ["me", "今月のあなた(順位・数字・目標)", "top"],
     ["signal", "BT-EX5 シグナル(直近6か月の信号)", "top"],
@@ -351,7 +346,7 @@
     });
   }
   function layoutSheet() {
-    App.openSheet("ホームの表示を変える", (body, close) => {
+    App.openSheet("まとめの表示を変える", (body, close) => {
       const lay = loadLayout();
       let order = HOME_PARTS.map(([k]) => k).sort((a, b) => {
         const ia = lay.order.indexOf(a), ib = lay.order.indexOf(b);
@@ -382,10 +377,10 @@
       }
       draw();
       body.append(
-        h("p", { class: "app-lead" }, "ホームに出すものと順番を選べます。チェックを外したものは出しません(あとから戻せます)。この端末に覚えます。"),
+        h("p", { class: "app-lead" }, "まとめに出すものと順番を選べます。チェックを外したものは出しません(あとから戻せます)。この端末に覚えます。"),
         list,
         h("div", { class: "app-btn-row" },
-          h("button", { type: "button", class: "app-btn primary", onclick: () => { saveLayout({ order, hide: [...hide] }); close(); App.toast("ホームの表示を変えました"); App.route(); } }, "この表示にする"),
+          h("button", { type: "button", class: "app-btn primary", onclick: () => { saveLayout({ order, hide: [...hide] }); close(); App.toast("まとめの表示を変えました"); App.route(); } }, "この表示にする"),
           h("button", { type: "button", class: "app-btn ghost", onclick: () => { saveLayout({ order: HOME_PARTS.map(([k]) => k), hide: [] }); close(); App.toast("はじめの表示に戻しました"); App.route(); } }, "はじめに戻す")));
     }, { noFocus: true });
   }
@@ -448,7 +443,7 @@
         h("a", { class: "home-sec-link", href: "#log/1on1" }, "1on1 を見る")),
       h("p", { class: "home-onesug-lead" }, `まだ 1on1 をしていないメンバーが ${cand.length}名います。今週はこの方々はいかがですか?`),
       h("ul", { class: "app-list" }, pick.map((m) => h("li", { class: "home-onesug-row" },
-        h("a", { class: "app-row", href: App.profileHref(m.id, "home") },
+        h("a", { class: "app-row", href: App.profileHref(m.id, "log/home") },
           App.avatar(m.name),
           h("span", { class: "app-row-main" }, h("b", null, `${m.name}さん`), h("small", null, m.company || ""))),
         h("a", { class: "app-btn ghost small", href: `#log/1on1?new&with=${encodeURIComponent(m.id)}` }, "1on1 を予定")))));
