@@ -1427,3 +1427,6 @@ a.ref-btn { display: inline-flex; align-items: center; justify-content: center; 
 
 /* 名前のうしろの呼び名(2行目) */
 .ref-name .nm-nick { font-size: 0.82em; font-weight: 700; }
+
+/* 詳細の文は、本人が入れた改行をそのまま出す(事業内容のプランごとの段落など) */
+.md-sec > p { white-space: pre-line; }
