@@ -94,12 +94,12 @@
   function emit() {
     T.subs = T.subs.filter((s) => { if (s.root.isConnected) s.seen = true; return !s.seen || s.root.isConnected; });
     T.subs.forEach((s) => s.fn());
-    // どこにもタイマーが出ていない画面では、右上に小さく残りを出す(押すとプレゼンの画面のタイマーへ)
+    // どこにもタイマーが出ていない画面では、右上に小さく残りを出す(押すと練習の画面のタイマーへ)
     const shown = T.subs.some((s) => s.root.isConnected);
     const active = running() || paused();
     if (active && !shown) {
       if (!pill) {
-        pill = h("a", { class: "timer-pill", href: "#present/timer", "aria-label": "タイマー(プレゼンの画面で開く)" });
+        pill = h("a", { class: "timer-pill", href: "#me/pitch", "aria-label": "タイマー(練習の画面で開く)" });
         document.body.append(pill);
       }
       pill.textContent = `⏱ ${fmt(Math.max(0, Math.ceil(leftNow())))}${paused() ? " 停止中" : ""}`;
@@ -209,7 +209,7 @@
       const sayBtn = h("button", { type: "button", class: "app-btn ghost" }, "読み上げて聞く");
       const saved = h("small", { class: "pitch-saved" });
       body.append(
-        h("p", { class: "app-lead" }, "定例会の「プレゼンテーション」の原稿を書いて、時間を計って練習できます。原稿はあなただけが見られます。タイマーは 1分・5分・25分(ポモドーロ)なども選べ、続けて押すと足せます。「プレゼン」の画面にも同じタイマーがあります。"),
+        h("p", { class: "app-lead" }, "定例会の「プレゼンテーション」の原稿を書いて、時間を計って練習できます。原稿はあなただけが見られます。タイマーは 1分・5分・25分(ポモドーロ)なども選べ、続けて押すと足せます。「プレゼン」の画面では、大きなメーターのタイマー(ポモドーロも)が使えます。"),
         h("div", { class: "app-btn-row pitch-tools" }, App.btn("プロフィールからひな形を入れる", async () => {
           if (text.value.trim() && !(await App.confirm("いまの原稿を、ひな形で置きかえますか?", { ok: "置きかえる" }))) return;
           text.value = template(); update(); save();

@@ -14,13 +14,15 @@
 (function () {
   "use strict";
   const { h } = App;
-  const PER = [[30, "30秒"], [60, "1分"], [120, "2分"], [300, "5分"]];
+  // 時間(プレゼンの1人あたり・自分だけのタイマー)。25分はポモドーロ(25分集中+5分休憩 を4回)
+  const PER = [[30, "30秒"], [60, "1分"], [120, "2分"], [180, "3分"], [300, "5分"], [600, "10分"], [1500, "25分"]];
+  const POMODORO = 1500, POMO_BREAK = 300, POMO_ROUNDS = 4;
   // 0秒のあと、次の人へ移るまであける秒数(選べる範囲)
   const GAPS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
   // メーターの目盛り: 1分までは1目盛り=1秒、それより長いときは60目盛りに分ける(2分=2秒、5分=5秒)
   const meterUnit = (per) => (per <= 60 ? 1 : per / 60);
   // 目盛りの下の数字(残り時間)の間隔。数字が12個以下になる、切りのよい秒数
-  const labelStep = (per) => [5, 10, 15, 20, 30, 60, 120].find((v) => v % meterUnit(per) === 0 && per / v <= 12) || per;
+  const labelStep = (per) => [5, 10, 15, 20, 30, 60, 120, 150, 300, 600].find((v) => v % meterUnit(per) === 0 && per / v <= 12) || per;
   const store = {
     get(k, d) { try { const v = localStorage.getItem(`btex5-round-${k}`); return v === null ? d : v; } catch { return d; } },
     set(k, v) { try { localStorage.setItem(`btex5-round-${k}`, String(v)); } catch { /* noop */ } },
@@ -265,6 +267,7 @@
       const sec = order.length * per;
       total.textContent = order.length ? `${order.length}名 × ${PER.find(([v]) => v === per)[1]} = 約${Math.floor(sec / 60)}分${sec % 60 ? `${sec % 60}秒` : ""}` : "";
       goBtn.textContent = order.length ? `プレゼンをはじめる(${order.length}名)` : "出る人を選んでください";
+      soloBtn.textContent = per === POMODORO ? "ポモドーロをはじめる(25分集中+5分休憩 を4回・自分で使う)" : `${PER.find(([v]) => v === per)[1]}のタイマーをはじめる(自分で使う)`;
       goBtn.disabled = !order.length;
     }
 
@@ -273,7 +276,21 @@
         per = v; store.set("per", v);
         perRow.querySelectorAll(".pitch-len").forEach((b) => b.classList.toggle("is-on", b === e.currentTarget));
         draw();
-      } }, label)));
+      } }, label, v === POMODORO ? h("small", null, "ポモドーロ") : null)));
+    // 自分だけで使うタイマー(人を選ばずに、同じ大きなメーターの画面で)。25分はポモドーロ
+    const soloBtn = h("button", { type: "button", class: "app-btn ghost wide pr-solo", onclick: () => {
+      const label = PER.find(([v]) => v === per)[1];
+      if (per === POMODORO) {
+        const items = [];
+        for (let r = 1; r <= POMO_ROUNDS; r++) {
+          items.push({ key: `t:f${r}`, kind: "timer", name: "集中", sub: `ポモドーロ ${r} / ${POMO_ROUNDS} ・ 25分`, sec: POMODORO });
+          items.push({ key: `t:b${r}`, kind: "timer", name: "休憩", sub: r < POMO_ROUNDS ? "5分 ・ 体を伸ばして、目を休めましょう" : "5分 ・ おつかれさまでした", sec: POMO_BREAK, rest: true });
+        }
+        App.roundRun(items, per, auto ? gapSec : 0, "ポモドーロ", { solo: true });
+      } else {
+        App.roundRun([{ key: "t:1", kind: "timer", name: label, sub: "タイマー", sec: per }], per, 0, "タイマー", { solo: true });
+      }
+    } });
     const autoBox = h("input", { type: "checkbox", onchange: () => { auto = autoBox.checked; store.set("auto", auto ? "1" : "0"); } });
     autoBox.checked = auto;
     const gapSel = h("select", { class: "pr-gap", "aria-label": "次の人へ移るまでの秒数", onchange: () => { gapSec = Number(gapSel.value) || 5; store.set("gap", gapSec); } },
@@ -322,46 +339,51 @@
             App.btn("名前の順", () => { order = order.slice().sort((a, b) => byKey(a).name.localeCompare(byKey(b).name, "ja")); draw(); }, "ghost small"))),
         h("p", { class: "app-field-hint pr-drag-hint" }, "パソコンでは行をつかんで動かせます。スマホは ↑↓ で動かします。"),
         listEl, total),
-      h("section", { class: "app-section" },
-        h("p", { class: "round-label" }, "1人の時間"), perRow,
+      h("section", { class: "app-section", id: "present-timer" },
+        h("p", { class: "round-label" }, "時間(プレゼンの1人あたり・自分だけのタイマー)"), perRow,
+        soloBtn,
         h("div", { class: "pr-auto" },
-          h("label", { class: "pitch-sound" }, autoBox, h("span", null, "0秒になったら、自動で次の人へ")),
-          h("label", { class: "pr-gap-row" }, h("span", null, "次の人までの間"), gapSel)),
+          h("label", { class: "pitch-sound" }, autoBox, h("span", null, "0秒になったら、自動で次へ(次の人・ポモドーロの次)")),
+          h("label", { class: "pr-gap-row" }, h("span", null, "次までの間"), gapSel)),
         h("p", { class: "app-field-hint" }, "残り10秒で小さな音、0秒で鐘の音が鳴ります。キーボードでは スペース=止める・つづける、→=次へ、←=前へ、Esc=終わる。会場のスクリーンで画面いっぱいに映すときは、ブラウザの全画面(Mac は control+command+F、Windows は F11)を使ってください。")),
       h("div", { class: "pr-go-bar" }, goBtn));
-    // タイマー(プレゼンの練習・ポモドーロ。以前はホームにあったもの)
-    if (App.timerWidget) {
-      const timerSec = h("section", { class: "app-section home-sec home-timer", id: "present-timer" },
-        h("div", { class: "home-sec-head" },
-          h("h2", { class: "app-h2" }, "タイマー"),
-          h("a", { class: "home-sec-link", href: "#me/pitch" }, "プレゼンの原稿を書く")),
-        App.timerWidget({ compact: true }));
-      el.append(timerSec);
-      // #present/timer(画面の上に出るタイマーの表示や、ホーム画面のアイコンの長押し)で開いたときは、タイマーまで動かす
-      if (parts && parts[0] === "timer") setTimeout(() => { if (timerSec.isConnected) timerSec.scrollIntoView({ behavior: "smooth", block: "start" }); }, 120);
-    }
+    // #present/timer(タイマーのショートカットなど)で開いたときは、時間の選び方まで動かす
+    if (parts && parts[0] === "timer") setTimeout(() => { const t = el.querySelector("#present-timer"); if (t && t.isConnected) t.scrollIntoView({ behavior: "smooth", block: "start" }); }, 120);
     draw();
   }
 
   // ---------- 進行(画面いっぱい) ----------
   // gap: 0秒のあと次の人へ移るまでの秒数(0 なら自動で移らない)
-  App.roundRun = function (people, per, gap, title) {
+  App.roundRun = function (people, per0, gap, title, opts = {}) {
     App.timerSound.ready();
+    const solo = !!opts.solo; // 自分だけのタイマー(人の紹介を出さない)
+    const durOf = (p) => (p && p.sec) || per0;
+    let per = durOf(people[0]);
     let idx = 0, endAt = 0, left0 = per, timer = null, warned = false, gapUntil = 0, wake = null, done = false;
     // メーターは「残り時間」: 左から1目盛りずつが残りの1秒(長い時間は数秒)。時間がたつと右から消えていく。
     // 左の5秒は赤、その次の5秒はオレンジ(残りが少ないところが一目でわかる)
-    const unit = meterUnit(per), n = Math.round(per / unit);
-    const segs = Array.from({ length: n }, (_, i) => {
-      const upTo = (i + 1) * unit;
-      return h("i", { class: upTo <= Math.max(5, unit) ? "is-red" : upTo <= Math.max(10, unit * 2) ? "is-orange" : "" });
-    });
-    const step = labelStep(per);
+    // 時間がちがう項目(ポモドーロの集中25分・休憩5分)に移るときは、メーターを作り直す
+    let unit = 1, n = 0, segs = [], meterFor = 0;
     const scaleTxt = (v) => (v >= 60 ? (v % 60 ? `${Math.floor(v / 60)}:${two(v % 60)}` : `${v / 60}分`) : `${v}`);
-    const scale = h("div", { class: "pr-scale", "aria-hidden": "true" },
-      h("span", { style: "left:0%" }, "0"),
-      Array.from({ length: Math.floor(per / step) }, (_, k) => (k + 1) * step).map((v, k) => h("span", { class: k % 2 ? "" : "is-minor", style: `left:${(v / per) * 100}%` }, scaleTxt(v))));
-    const meter = h("div", { class: "pr-meter", style: `--n:${n}`, role: "progressbar", "aria-label": "残り時間", "aria-valuemin": "0", "aria-valuemax": String(per) }, segs);
+    const meter = h("div", { class: "pr-meter", role: "progressbar", "aria-label": "残り時間", "aria-valuemin": "0" });
+    const scale = h("div", { class: "pr-scale", "aria-hidden": "true" });
     const meterBox = h("div", { class: "pr-meter-box" }, meter, scale);
+    function buildMeter() {
+      if (meterFor === per) return;
+      meterFor = per;
+      unit = meterUnit(per); n = Math.round(per / unit);
+      segs = Array.from({ length: n }, (_, i) => {
+        const upTo = (i + 1) * unit;
+        return h("i", { class: upTo <= Math.max(5, unit) ? "is-red" : upTo <= Math.max(10, unit * 2) ? "is-orange" : "" });
+      });
+      meter.style.setProperty("--n", String(n));
+      meter.setAttribute("aria-valuemax", String(per));
+      meter.replaceChildren(...segs);
+      const step = labelStep(per);
+      scale.replaceChildren(h("span", { style: "left:0%" }, "0"),
+        ...Array.from({ length: Math.floor(per / step) }, (_, k) => (k + 1) * step).map((v, k) => h("span", { class: k % 2 ? "" : "is-minor", style: `left:${(v / per) * 100}%` }, scaleTxt(v))));
+    }
+    buildMeter();
     const secNum = h("b", { class: "pr-sec-num" });
     const secUnit = h("small", null, "秒");
     const secHead = h("small", { class: "pr-sec-head" }, "残り");
@@ -372,7 +394,7 @@
     const prevBtn = h("button", { type: "button", class: "round-btn", onclick: () => go(idx - 1) }, "◀ 前へ");
     const nextBtn = h("button", { type: "button", class: "round-btn", onclick: () => go(idx + 1) }, "次へ ▶");
     const endBtn = h("button", { type: "button", class: "round-btn round-end", onclick: () => finish(true) }, "終わる");
-    const box = h("div", { class: "pr-run is-entering", role: "dialog", "aria-label": "プレゼンの進行" },
+    const box = h("div", { class: `pr-run is-entering${solo ? " is-solo" : ""}`, role: "dialog", "aria-label": solo ? "タイマー" : "プレゼンの進行" },
       h("div", { class: "pr-top" }, h("p", { class: "pr-title" }, title || `${(PER.find(([v]) => v === per) || [0, ""])[1]}プレゼン`), count),
       slide,
       h("div", { class: "pr-meter-row" }, meterBox, sec),
@@ -382,16 +404,17 @@
     document.documentElement.append(box);
     // 残り秒数の欄は、いちばん幅を取る表示(「残り 8:88 秒」「次の人まで 88 秒」)に合わせて幅を決めておく。
     // はじめる・止める・次の人までの待ちで、数字やメーターの位置が動かないように
+    const gapLabel = solo ? "次まで" : "次の人まで";
     function fixSecWidth() {
       const keep = [secHead.textContent, secNum.textContent, box.classList.contains("is-gap")];
       sec.style.width = ""; secNum.style.minWidth = "";
       box.classList.remove("is-gap");
-      secHead.textContent = "残り"; secNum.textContent = per >= 60 ? "8:88" : "88";
+      secHead.textContent = "残り"; secNum.textContent = people.some((p) => durOf(p) >= 600) ? "88:88" : people.some((p) => durOf(p) >= 60) ? "8:88" : "88";
       const numW = secNum.getBoundingClientRect().width;
       secNum.style.minWidth = `${Math.ceil(numW)}px`;
       const wA = sec.getBoundingClientRect().width;
       box.classList.add("is-gap");
-      secHead.textContent = "次の人まで"; secNum.textContent = "88";
+      secHead.textContent = gapLabel; secNum.textContent = "88";
       const wB = sec.getBoundingClientRect().width;
       box.classList.toggle("is-gap", keep[2]);
       secHead.textContent = keep[0]; secNum.textContent = keep[1];
@@ -421,6 +444,15 @@
     function drawSlide() {
       const p = people[idx];
       const nexts = people.slice(idx + 1, idx + 4);
+      // 自分だけのタイマー: まん中に大きく「集中」「休憩」などと、次にくるもの
+      if (p.kind === "timer") {
+        box.classList.toggle("is-rest", !!p.rest);
+        App.fill(slide, h("div", { class: "pr-timer-slide" },
+          h("p", { class: "pr-timer-name" }, p.name),
+          p.sub ? h("p", { class: "pr-timer-sub" }, p.sub) : null,
+          nexts[0] ? h("p", { class: "pr-timer-next" }, `次は ${nexts[0].name}(${scaleTxt(durOf(nexts[0]))})`) : null));
+        return;
+      }
       App.fill(slide,
         h("div", { class: "pr-info" },
           h("p", { class: "pr-no", "aria-hidden": "true" }, two(idx + 1)),
@@ -451,7 +483,7 @@
       meter.setAttribute("aria-valuenow", String(Math.ceil(left)));
       const s = Math.ceil(left);
       // 「秒」は1分以上のとき見えなくするだけ(場所は残す。数字や文字が変わっても位置が動かないように)
-      if (gap) { secHead.textContent = "次の人まで"; secNum.textContent = String(Math.ceil((gapUntil - Date.now()) / 1000)); secUnit.style.visibility = "visible"; }
+      if (gap) { secHead.textContent = gapLabel; secNum.textContent = String(Math.ceil((gapUntil - Date.now()) / 1000)); secUnit.style.visibility = "visible"; }
       else { secHead.textContent = "残り"; secNum.textContent = fmt(s); secUnit.style.visibility = s >= 60 ? "hidden" : "visible"; }
       box.classList.toggle("is-last", !gap && left <= 10 && left > 5);
       box.classList.toggle("is-red", !gap && left <= 5 && left > 0);
@@ -486,7 +518,8 @@
     function go(i, autoStart) {
       halt(); gapUntil = 0;
       if (i >= people.length) { finish(false); return; }
-      idx = Math.max(0, i); left0 = per;
+      idx = Math.max(0, i); per = durOf(people[idx]); left0 = per;
+      buildMeter();
       drawSlide();
       slide.classList.remove("is-in"); void slide.offsetWidth; slide.classList.add("is-in");
       if (autoStart) start(); else draw();

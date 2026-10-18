@@ -1149,7 +1149,17 @@ body.tabs-right .app-to-top { right: calc(var(--dock-w) + 22px); }
 .pitch-round { margin-top: 12px; }
 .home-timer-round { display: block; width: 100%; margin-top: 12px; padding: 12px 14px; border-radius: 14px; border: 1.5px dashed rgba(168, 129, 62, 0.55); background: #fffaf0; color: var(--accent-dark); font-size: 13.5px; font-weight: 800; text-align: left; cursor: pointer; }
 .round-label { margin: 14px 2px 8px; font-size: 13px; font-weight: 800; color: var(--text-sub); }
-.round-per { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; }
+.round-per { grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)) !important; }
+.round-per .pitch-len { display: grid; justify-items: center; align-content: center; gap: 1px; }
+.round-per .pitch-len small { font-size: 10.5px; font-weight: 700; opacity: 0.8; }
+.pr-solo { margin-top: 10px; }
+/* 自分だけのタイマー(ポモドーロ): まん中に大きく */
+.pr-run.is-solo .pr-slide { display: flex; align-items: center; justify-content: center; }
+.pr-timer-slide { text-align: center; display: grid; gap: clamp(8px, 2svh, 18px); }
+.pr-timer-name { margin: 0; font-family: "Shippori Mincho", serif; font-size: clamp(56px, min(12vw, 18svh), 168px); font-weight: 700; line-height: 1.05; color: #fff3dc; }
+.pr-run.is-rest .pr-timer-name { color: #9fd3b0; }
+.pr-timer-sub { margin: 0; font-size: clamp(15px, min(2vw, 3svh), 26px); font-weight: 800; color: #f0b25a; }
+.pr-timer-next { margin: 0; font-size: clamp(13px, min(1.5vw, 2.4svh), 20px); color: #bfa883; }
 .round-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
 .round-head .app-btn-row { margin-top: 6px; }
 .round-list { list-style: none; margin: 8px 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; max-height: 44vh; overflow-y: auto; overflow-x: hidden; }
