@@ -1160,7 +1160,7 @@ body.tabs-right .app-to-top { right: calc(var(--dock-w) + 22px); }
 .pr-timer-clock { display: flex; justify-content: center; }
 .pr-timer-clock .lux-clock { --size: clamp(150px, min(38vw, 38svh), 480px); margin: calc(var(--size) * 0.1) 0; }
 /* ふつうのタイマーは時計だけを大きく */
-.pr-timer-slide.is-plain .lux-clock { --size: clamp(180px, min(46vw, 56svh), 620px); }
+.pr-timer-slide.is-plain .lux-clock { --size: clamp(180px, min(46vw, 50svh), 620px); }
 .pr-timer-slide:has(.pr-timer-clock) .pr-timer-name { font-size: clamp(30px, min(5vw, 6.5svh), 76px); }
 .pr-timer-slide:has(.pr-timer-clock) .pr-timer-sub { font-size: clamp(13px, min(1.6vw, 2.4svh), 22px); }
 .pr-timer-name { margin: 0; font-family: "Shippori Mincho", serif; font-size: clamp(56px, min(12vw, 18svh), 168px); font-weight: 700; line-height: 1.05; color: #fff3dc; }
@@ -2021,3 +2021,94 @@ button.home-welcome-check:active { transform: scale(0.94); }
 .pd-hang { display: grid; grid-template-columns: auto auto; justify-content: start; }
 .pd-hang-r { display: grid; }
 .pd-check-items li > span:last-child { min-width: 0; }
+
+/* =====================================================================
+   プレゼン画面の仕上げ(Apple Human Interface Guidelines・Material Design 3 にならう)
+   - アイコン: 24×24・線の太さ 1.75・丸い端。2つ目の層はうすい塗り(hierarchical)
+   - 操作: 押せる大きさは 44pt 以上。いま押すものは丸い下地(M3 のアクティブインジケーター)、
+     触れると 8%・押すと 12% の明るさを重ねる(M3 のステートレイヤー)
+   - 素材: 操作バー・タイムマネジメントは、うしろが透けるガラスの板(すりガラス+上のふちの光)
+   - 動き: 強調の動き(cubic-bezier(.2, 0, 0, 1))。動きを減らす設定では止める
+   ===================================================================== */
+.pr-run { --ease-em: cubic-bezier(0.2, 0, 0, 1); --glass-bg: linear-gradient(180deg, rgba(52, 40, 24, 0.62), rgba(20, 14, 9, 0.74)); --glass-edge: rgba(255, 241, 201, 0.16); }
+.pr-icon { width: 24px; height: 24px; display: block; overflow: visible; }
+.pr-icon .ic-line { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+.pr-icon .ic-line.is-heavy { stroke-width: 3; }
+.pr-icon .ic-sec { fill: currentColor; opacity: 0.22; stroke: none; }
+.pr-icon .ic-ring { fill: currentColor; fill-opacity: 0.16; stroke: currentColor; stroke-width: 1.75; vector-effect: non-scaling-stroke; }
+.pr-icon .ic-wave { opacity: 0.55; }
+
+/* 操作バー(ガラスの板) */
+.pr-dock { gap: 2px; padding: 6px; border-radius: 30px; border: 1px solid var(--glass-edge); background: var(--glass-bg);
+  -webkit-backdrop-filter: blur(24px) saturate(160%); backdrop-filter: blur(24px) saturate(160%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), inset 0 -1px 0 rgba(0, 0, 0, 0.35), 0 18px 50px rgba(0, 0, 0, 0.5), 0 2px 6px rgba(0, 0, 0, 0.3); }
+.pr-dock-btn { position: relative; min-width: 64px; min-height: 60px; gap: 4px; padding: 6px 4px; border-radius: 24px; color: #d6c4a0; transition: color 0.2s var(--ease-em); }
+.pr-dock-btn::before { content: ""; position: absolute; inset: 2px; border-radius: inherit; background: #fff3dc; opacity: 0; transition: opacity 0.15s var(--ease-em); pointer-events: none; }
+.pr-dock-btn:hover:not(:disabled)::before { opacity: 0.08; }
+.pr-dock-btn:active:not(:disabled)::before { opacity: 0.12; }
+.pr-dock-btn:hover:not(:disabled), .pr-dock-btn:active:not(:disabled) { background: none; color: #fff3dc; }
+.pr-dock-ind { display: grid; place-items: center; width: 56px; height: 32px; border-radius: 16px; transition: background 0.25s var(--ease-em), width 0.25s var(--ease-em); }
+.pr-dock-label { font-size: 12px; font-weight: 700; letter-spacing: 0.04em; line-height: 1.2; }
+.pr-dock-btn.is-main, .pr-dock-btn.is-main:hover:not(:disabled) { background: none; color: #f3d48d; }
+.pr-dock-btn.is-main .pr-dock-ind { background: linear-gradient(180deg, rgba(243, 212, 141, 0.32), rgba(201, 150, 63, 0.22)); box-shadow: inset 0 1px 0 rgba(255, 243, 210, 0.35), 0 0 0 1px rgba(226, 184, 102, 0.35); }
+.pr-dock-btn.is-end { color: #c9b28a; }
+.pr-dock-btn:disabled { opacity: 0.3; }
+.pr-dock-btn:focus-visible { outline: 2px solid #e2b866; outline-offset: -2px; }
+.pr-dock .pr-grip { width: 28px; border-radius: 20px; color: rgba(226, 184, 102, 0.5); }
+.pr-dock .pr-ask { color: #f3e6cc; font-weight: 700; }
+/* 左右のはしに寄せたときは縦に並べる */
+.pr-dock.is-vertical { grid-auto-flow: row; grid-auto-columns: auto; grid-template-columns: 76px; width: auto; padding: 6px; border-radius: 30px; }
+.pr-dock.is-vertical .pr-grip { width: auto; height: 26px; }
+.pr-dock.is-vertical .pr-grip svg { transform: rotate(90deg); }
+.pr-dock.is-vertical .pr-dock-btn { min-width: 0; min-height: 64px; }
+.pr-dock.is-vertical .pr-ask { padding: 6px 4px; font-size: 12px; white-space: normal; text-align: center; line-height: 1.4; }
+
+/* タイムマネジメント(ガラスの板・状態のチップは絵つき) */
+.pr-time { border-radius: 24px; border-color: var(--glass-edge); background: var(--glass-bg);
+  -webkit-backdrop-filter: blur(24px) saturate(160%); backdrop-filter: blur(24px) saturate(160%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 18px 48px rgba(0, 0, 0, 0.5), 0 0 0 4px var(--pt-glow); }
+.pt-status { gap: 6px; padding: 7px 14px 7px 10px; border-radius: 999px; transition: color 0.4s var(--ease-em), background 0.4s var(--ease-em), border-color 0.4s var(--ease-em); }
+.pt-ic .pr-icon { width: 20px; height: 20px; }
+.pr-time[data-state="late"] .pt-ic { animation: pt-pulse 1.2s ease-in-out infinite; }
+.pt-min { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 16px; color: #d9c8a6; }
+.pt-min .pr-icon { width: 20px; height: 20px; }
+.pr-time .pr-grip { color: rgba(226, 184, 102, 0.5); }
+@media (prefers-reduced-motion: reduce) { .pr-time[data-state="late"] .pt-ic { animation: none; } }
+
+/* 進行の場所の選択(Material 3 のアウトラインの選択欄) */
+.pr-jump { -webkit-appearance: none; appearance: none; padding: 7px 38px 7px 16px; border-radius: 12px; border: 1px solid rgba(226, 184, 102, 0.42); background: rgba(255, 255, 255, 0.04) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M7 9.5l5 5 5-5' fill='none' stroke='%23e2b866' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 12px center / 18px; transition: border-color 0.2s var(--ease-em), background-color 0.2s var(--ease-em); }
+.pr-jump:hover { border-color: rgba(226, 184, 102, 0.7); background-color: rgba(255, 255, 255, 0.07); }
+.pr-jump:focus-visible { outline: 2px solid #e2b866; outline-offset: 2px; }
+
+/* 挙手のマーク: 金の輪にガラスの円盤、線の手(2トーン)。うしろの光がゆっくり呼吸する */
+.pd-raise-mark { position: relative; width: clamp(84px, min(11vw, 17svh), 148px); height: clamp(84px, min(11vw, 17svh), 148px); border: 0; background: none; box-shadow: none; isolation: isolate; }
+.pd-raise-mark::before { content: ""; position: absolute; inset: 0; border-radius: 50%; padding: 1.5px; background: conic-gradient(from 210deg, #fff3c9, #e2b866 22%, #8a5f22 45%, #f3d48d 62%, #b8873f 80%, #fff3c9);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0); }
+.pd-raise-mark::after { content: ""; position: absolute; inset: 1.5px; z-index: -1; border-radius: 50%; background: radial-gradient(circle at 32% 26%, rgba(255, 246, 220, 0.24), rgba(226, 184, 102, 0.08) 45%, rgba(20, 14, 9, 0.85) 100%); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25), inset 0 -10px 24px rgba(0, 0, 0, 0.45); }
+.pd-raise-halo { position: absolute; inset: -18%; z-index: -2; border-radius: 50%; background: radial-gradient(circle, rgba(226, 184, 102, 0.28), rgba(226, 184, 102, 0) 65%); animation: pd-breathe 3.6s ease-in-out infinite; }
+@keyframes pd-breathe { 50% { opacity: 0.45; transform: scale(0.94); } }
+.pd-raise-mark .pr-icon.is-hand { position: absolute; inset: 0; margin: auto; width: 54%; height: 54%; color: #f3d48d; filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.45)); }
+.pd-raise-mark .pr-icon.is-hand .ic-line { stroke-width: 1.5; }
+.pd-raise .pd-display { word-break: keep-all; overflow-wrap: normal; }
+@media (prefers-reduced-motion: reduce) { .pd-raise-halo { animation: none; } }
+
+/* お役に立てます: 線のチェック(輪つき) */
+.pd-check { width: 1.4em; height: 1.4em; background: none; border-radius: 0; color: var(--pd-gold); display: grid; place-items: center; }
+.pd-check::after { content: none; }
+.pd-check .pr-icon { width: 100%; height: 100%; }
+/* 見出しは言葉のまとまりで改行し、まとまりが1行に入りきらないときだけ、その中で改行する */
+.pd .pd-display, .pd .pd-title { overflow-wrap: anywhere; }
+.pd-cover .pd-display, .pd-raise .pd-display { overflow-wrap: normal; }
+.pd-section.is-long-title .pd-display { font-size: clamp(24px, min(3.4vw, 6svh), 56px); }
+/* 線の太さはアイコンの大きさに合わせて変わる(SF Symbols と同じ)。大きな挙手のマークは少し細めの線に */
+.pr-icon .ic-line, .pr-icon .ic-ring { vector-effect: none; }
+.pd-raise-mark .pr-icon.is-hand { width: 58%; height: 58%; }
+.pd-raise-mark .pr-icon.is-hand .ic-line { stroke-width: 1.3; }
+/* 上の帯: 狭い画面では、題・進行の選択・プレゼンの番号を折り返して並べる(はみ出さない) */
+.pr-top { flex-wrap: wrap; row-gap: 6px; min-width: 0; }
+.pr-top .pr-title { flex: 1 1 auto; min-width: 0; }
+.pr-top .pr-jump { flex: 0 1 auto; min-width: 0; text-overflow: ellipsis; }
+@media (max-width: 560px) {
+  .pr-top .pr-count { font-size: 15px; letter-spacing: 0.06em; }
+  .pr-top .pr-count:empty { display: none; }
+}

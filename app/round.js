@@ -623,6 +623,48 @@
   // ---------- 動かせるパネル(操作バー・タイムマネジメント) ----------
   // つまみ(⠿)をつかんで動かす。場所はこの端末に覚える(画面の大きさに対する割合)。つまみを2回押すと元の場所
   const NS_SVG = "http://www.w3.org/2000/svg";
+  // ---------- アイコン(プレゼンの画面で使う線のアイコン) ----------
+  // Apple の SF Symbols・Material Symbols と同じ考え方でそろえる:
+  //   24×24 の枠・線の太さ 1.75・線の端と角は丸く。
+  //   「sec」は2つ目の層(うすい塗り。hierarchical)で、形に奥行きを出す
+  const LINE_ICONS = {
+    prev: { d: ["M14.5 5.5 8 12l6.5 6.5"] },
+    next: { d: ["M9.5 5.5 16 12l-6.5 6.5"] },
+    play: { d: ["M8.2 5.3v13.4a.9.9 0 0 0 1.37.77l10.7-6.7a.9.9 0 0 0 0-1.54L9.57 4.53a.9.9 0 0 0-1.37.77Z"], sec: ["M8.2 5.3v13.4a.9.9 0 0 0 1.37.77l10.7-6.7a.9.9 0 0 0 0-1.54L9.57 4.53a.9.9 0 0 0-1.37.77Z"] },
+    pause: { d: ["M8.25 5.5v13", "M15.75 5.5v13"], heavy: true },
+    again: { d: ["M4.75 12a7.25 7.25 0 1 0 2.2-5.2", "M4.6 4.4v3.9h3.9"] },
+    end: { d: ["M7.6 6h8.8A1.6 1.6 0 0 1 18 7.6v8.8a1.6 1.6 0 0 1-1.6 1.6H7.6A1.6 1.6 0 0 1 6 16.4V7.6A1.6 1.6 0 0 1 7.6 6Z"], sec: ["M7.6 6h8.8A1.6 1.6 0 0 1 18 7.6v8.8a1.6 1.6 0 0 1-1.6 1.6H7.6A1.6 1.6 0 0 1 6 16.4V7.6A1.6 1.6 0 0 1 7.6 6Z"] },
+    close: { d: ["M6.5 6.5l11 11", "M17.5 6.5l-11 11"] },
+    check: { d: ["M7.9 12.3l2.75 2.75 5.45-5.6"], ring: true },
+    ok: { d: ["M7.9 12.3l2.75 2.75 5.45-5.6"], ring: true },
+    late: { d: ["M12 7.6v5.1", "M12 16.3v.1"], ring: true },
+    early: { d: ["M4.5 16.5l5-5 3.2 3.2 6.3-6.3", "M14.4 8.4h4.6V13"] },
+    collapse: { d: ["M7 14.5 12 9.5l5 5"] },
+    expand: { d: ["M7 9.5l5 5 5-5"] },
+    // 挙手(SF Symbols の hand.raised のように、指を1本ずつ丸い線で)。右上の2本の弧は「手をあげる」動き
+    hand: {
+      d: [
+        "M7.6 12.2V7.1a1.3 1.3 0 0 1 2.6 0V11",
+        "M10.2 11V4.9a1.3 1.3 0 0 1 2.6 0V11",
+        "M12.8 11V5.9a1.3 1.3 0 0 1 2.6 0v5.6",
+        "M15.4 11.5V8.4a1.3 1.3 0 0 1 2.6 0v6.1a6.6 6.6 0 0 1-6.6 6.6h-.5a6.3 6.3 0 0 1-4.9-2.35l-2.6-3.3a1.35 1.35 0 0 1 2.05-1.75l1.95 1.9v-3.4",
+      ],
+      sec: ["M7.6 12.2V7.1a1.3 1.3 0 0 1 2.6 0V4.9a1.3 1.3 0 0 1 2.6 0v1a1.3 1.3 0 0 1 2.6 0v2.5a1.3 1.3 0 0 1 2.6 0v6.1a6.6 6.6 0 0 1-6.6 6.6h-.5a6.3 6.3 0 0 1-4.9-2.35l-2.6-3.3a1.35 1.35 0 0 1 2.05-1.75l1.95 1.9Z"],
+      wave: ["M19.4 3.3a4.6 4.6 0 0 1 2.1 3.3", "M18.1 1.2a7.2 7.2 0 0 1 3.3 1.7"],
+    },
+  };
+  function lineIcon(name, cls) {
+    const def = LINE_ICONS[name] || LINE_ICONS.next;
+    const svg = document.createElementNS(NS_SVG, "svg");
+    svg.setAttribute("viewBox", "0 0 24 24"); svg.setAttribute("aria-hidden", "true");
+    svg.setAttribute("class", `pr-icon${cls ? ` ${cls}` : ""}`);
+    const add = (d, c) => { const el = document.createElementNS(NS_SVG, "path"); el.setAttribute("d", d); el.setAttribute("class", c); svg.append(el); };
+    if (def.ring) { const c = document.createElementNS(NS_SVG, "circle"); c.setAttribute("cx", "12"); c.setAttribute("cy", "12"); c.setAttribute("r", "9.25"); c.setAttribute("class", "ic-ring"); svg.append(c); }
+    (def.sec || []).forEach((d) => add(d, "ic-sec"));
+    (def.d || []).forEach((d) => add(d, `ic-line${def.heavy ? " is-heavy" : ""}`));
+    (def.wave || []).forEach((d) => add(d, "ic-line ic-wave"));
+    return svg;
+  }
   function gripIcon() {
     const svg = document.createElementNS(NS_SVG, "svg");
     svg.setAttribute("viewBox", "0 0 12 18"); svg.setAttribute("aria-hidden", "true");
@@ -631,7 +673,8 @@
     });
     return svg;
   }
-  function floatable(el, key, host) {
+  // opt.sides: 左右のはしに寄せたら、縦に並べる(操作バー)
+  function floatable(el, key, host, opt = {}) {
     if (!el) return;
     const KEY = `btex5-float-${key}`;
     // 画面の幅・高さ(スクロールバーを除く)
@@ -647,11 +690,31 @@
       const y = Math.max(4, Math.min(vh() - r.height - 4, fy * vh()));
       el.style.left = `${Math.round(x)}px`; el.style.top = `${Math.round(y)}px`;
     }
+    // 左右のはし(縦に並べる)。side: "left" / "right" / ""
+    const EDGE = 96;
+    function setSide(side) {
+      el.classList.toggle("is-vertical", !!side);
+      el.classList.toggle("is-left", side === "left");
+      el.classList.toggle("is-right", side === "right");
+    }
+    function snapSide(side) {
+      const r = el.getBoundingClientRect();
+      if (side === "left") el.style.left = "8px";
+      if (side === "right") el.style.left = `${Math.round(vw() - r.width - 8)}px`;
+      const y = Math.max(4, Math.min(vh() - r.height - 4, r.top));
+      el.style.top = `${Math.round(y)}px`;
+    }
     function apply() {
       let pos = null;
       try { pos = JSON.parse(localStorage.getItem(KEY) || "null"); } catch { /* noop */ }
-      if (pos && typeof pos.x === "number") { el.classList.add("is-floating"); place(pos.x, pos.y); }
+      setSide(opt.sides && pos && pos.side ? pos.side : "");
+      if (pos && typeof pos.x === "number") { el.classList.add("is-floating"); place(pos.x, pos.y); if (opt.sides && pos.side) snapSide(pos.side); }
       else { el.classList.remove("is-floating"); el.style.left = ""; el.style.top = ""; }
+    }
+    function save() {
+      const r = el.getBoundingClientRect();
+      const side = el.classList.contains("is-left") ? "left" : el.classList.contains("is-right") ? "right" : "";
+      try { localStorage.setItem(KEY, JSON.stringify({ x: r.left / vw(), y: r.top / vh(), side })); } catch { /* noop */ }
     }
     let drag = null;
     grip.addEventListener("pointerdown", (e) => {
@@ -664,6 +727,12 @@
     grip.addEventListener("pointermove", (e) => {
       if (!drag) return;
       if (!drag.moved) { drag.moved = true; el.classList.add("is-floating", "is-dragging"); }
+      // 左右のはしへ持っていくと縦に並ぶ(つまみの位置はそのまま指の下に)
+      if (opt.sides) {
+        const side = e.clientX < EDGE ? "left" : e.clientX > vw() - EDGE ? "right" : "";
+        const was = el.classList.contains("is-left") ? "left" : el.classList.contains("is-right") ? "right" : "";
+        if (side !== was) { setSide(side); const g = grip.getBoundingClientRect(), r0 = el.getBoundingClientRect(); drag.dx = g.left - r0.left + g.width / 2; drag.dy = g.top - r0.top + g.height / 2; }
+      }
       const r = el.getBoundingClientRect();
       const x = Math.max(4, Math.min(vw() - r.width - 4, e.clientX - drag.dx));
       const y = Math.max(4, Math.min(vh() - r.height - 4, e.clientY - drag.dy));
@@ -673,8 +742,9 @@
       if (!drag) return;
       el.classList.remove("is-dragging");
       if (drag.moved) {
-        const r = el.getBoundingClientRect();
-        try { localStorage.setItem(KEY, JSON.stringify({ x: r.left / vw(), y: r.top / vh() })); } catch { /* noop */ }
+        if (el.classList.contains("is-left")) snapSide("left");
+        if (el.classList.contains("is-right")) snapSide("right");
+        save();
       }
       drag = null;
     };
@@ -689,8 +759,8 @@
       const r = el.getBoundingClientRect();
       el.classList.add("is-floating");
       place((r.left + d[0]) / vw(), (r.top + d[1]) / vh());
-      const r2 = el.getBoundingClientRect();
-      try { localStorage.setItem(KEY, JSON.stringify({ x: r2.left / vw(), y: r2.top / vh() })); } catch { /* noop */ }
+      if (opt.sides) { const r2 = el.getBoundingClientRect(); setSide(r2.left < 12 ? "left" : r2.right > vw() - 12 ? "right" : ""); }
+      save();
     });
     const onResize = () => apply();
     window.addEventListener("resize", onResize);
@@ -737,7 +807,9 @@
     const clock = h("p", { class: "pt-clock", "aria-live": "off" });
     const status = h("p", { class: "pt-status" });
     const statusText = h("span");
-    status.append(h("i", { class: "pt-dot", "aria-hidden": "true" }), statusText);
+    const statusIcon = h("span", { class: "pt-ic" });
+    status.append(statusIcon, statusText);
+    let lastState = "";
     const now2 = h("p", { class: "pt-row" });
     const endRow = h("p", { class: "pt-row" });
     const bar = h("div", { class: "pt-bar", "aria-hidden": "true" }, h("i", { class: "pt-bar-plan" }), h("i", { class: "pt-bar-now" }));
@@ -749,15 +821,20 @@
         start = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), Number(m[1]) - 9, Number(m[2]));
         tick();
       } });
-    const toggle = h("button", { type: "button", class: "pt-min", "aria-label": "小さくする", title: "小さくする",
-      onclick: () => { panel.classList.toggle("is-mini"); toggle.setAttribute("aria-label", panel.classList.contains("is-mini") ? "大きくする" : "小さくする"); } }, "－");
+    const setMini = (mini) => {
+      panel.classList.toggle("is-mini", mini);
+      const label = mini ? "大きくする" : "小さくする";
+      toggle.setAttribute("aria-label", label); toggle.title = label;
+      toggle.replaceChildren(lineIcon(mini ? "expand" : "collapse"));
+    };
+    const toggle = h("button", { type: "button", class: "pt-min", onclick: () => setMini(!panel.classList.contains("is-mini")) });
     const panel = h("section", { class: "pr-time", "aria-label": "タイムマネジメント" },
       h("div", { class: "pt-head" }, h("p", { class: "pt-label" }, "TIME MANAGEMENT"), toggle),
       clock, status,
       h("div", { class: "pt-more" }, now2, bar, endRow,
         h("label", { class: "pt-row pt-start-row" }, h("span", null, "開始"), startIn, h("span", null, `〜 ${Math.round(total / 60000)}分`))));
     // スマホなど狭い画面では、はじめは小さく(時刻とずれだけ)出す
-    if ((document.documentElement.clientWidth || innerWidth) <= 760) { panel.classList.add("is-mini"); toggle.setAttribute("aria-label", "大きくする"); }
+    setMini((document.documentElement.clientWidth || innerWidth) <= 760);
     host.append(panel);
     floatable(panel, "time", host);
 
@@ -770,6 +847,7 @@
       const lag = now < ps ? now - ps : now > pe ? now - pe : 0;
       const state = Math.abs(lag) < 10000 ? "ok" : lag > 0 ? "late" : "early";
       panel.dataset.state = state;
+      if (state !== lastState) { lastState = state; statusIcon.replaceChildren(lineIcon(state)); }
       statusText.textContent = state === "ok" ? "定刻どおり" : state === "late" ? `${ms2(lag)} 遅れ` : `${ms2(lag)} 早い`;
       const st = stepList.find((x) => x.no === items[i].stepNo);
       now2.replaceChildren(h("span", null, "いまの予定"), h("b", null, `${st ? `${two(st.no)} ${st.title}` : items[i].stepNo ? "おわり" : "オープニング"}  ${hm(ps)}〜${hm(pe)}`));
@@ -843,21 +921,9 @@
         h("span", { class: "pd-progress-page" }, `${two(idx + 1)} / ${two(people.length)}`));
     }
     // 下の操作バー(アプリの下のメニューと同じ形: 絵と文字のボタンを横に並べる)
-    const ICONS = {
-      prev: "M15.4 7.4 14 6l-6 6 6 6 1.4-1.4-4.6-4.6z",
-      next: "M8.6 16.6 10 18l6-6-6-6-1.4 1.4 4.6 4.6z",
-      play: "M8 5v14l11-7z",
-      pause: "M6 19h4V5H6zm8-14v14h4V5z",
-      again: "M12 5V1L7 6l5 5V7c3.3 0 6 2.7 6 6s-2.7 6-6 6-6-2.7-6-6H4c0 4.4 3.6 8 8 8s8-3.6 8-8-3.6-8-8-8z",
-      end: "M6 6h12v12H6z",
-      close: "M19 6.4 17.6 5 12 10.6 6.4 5 5 6.4 10.6 12 5 17.6 6.4 19 12 13.4 17.6 19 19 17.6 13.4 12z",
-    };
-    const NS = "http://www.w3.org/2000/svg";
+    // 絵は丸い下地(いま押すもの)の中に、その下に文字(Material 3 のナビゲーションバーと同じ形)
     function setBtn(btn, icon, label) {
-      const svg = document.createElementNS(NS, "svg");
-      svg.setAttribute("viewBox", "0 0 24 24"); svg.setAttribute("aria-hidden", "true");
-      const path = document.createElementNS(NS, "path"); path.setAttribute("d", ICONS[icon]); svg.append(path);
-      btn.replaceChildren(svg, h("span", null, label));
+      btn.replaceChildren(h("span", { class: "pr-dock-ind" }, lineIcon(icon)), h("span", { class: "pr-dock-label" }, label));
       return btn;
     }
     const dockBtn = (icon, label, cls, onclick) => setBtn(h("button", { type: "button", class: `pr-dock-btn${cls ? ` ${cls}` : ""}`, onclick }), icon, label);
@@ -876,7 +942,7 @@
     document.documentElement.append(box);
     // 下の操作バーは、つまみ(⠿)をつかんで好きな場所へ動かせる
     const dock = box.querySelector(".pr-dock");
-    floatable(dock, "dock", box);
+    floatable(dock, "dock", box, { sides: true });
     const dockGrip = dock.gripEl;
     // 定例会のスライドのときは、2時間の定例会のタイムマネジメント(動かせる)
     const timing = opts.deck && opts.timing ? timePanel(people, opts.timing, () => idx, box) : null;
@@ -983,7 +1049,7 @@
             h("h2", { class: "pd-display" }, ...lines(p.name)),
             h("span", { class: "pd-rule", "aria-hidden": "true" }));
         }
-        return h("div", { class: `pd pd-section${p.name.length > 12 ? " is-long-title" : ""}` },
+        return h("div", { class: `pd pd-section${p.name.length > 10 ? " is-long-title" : ""}` },
           h("div", { class: "pd-section-main" },
             h("p", { class: "pd-no", "aria-hidden": "true" }, two(p.no)),
             h("h2", { class: "pd-display" }, p.name),
@@ -1041,18 +1107,14 @@
       }
       if (p.type === "checks") {
         return frame("pd-checks",
-          h("ul", { class: "pd-check-items" }, (p.items || []).map((x, i) => h("li", nth(i), h("span", { class: "pd-check", "aria-hidden": "true" }), h("span", null, ...lines(x))))));
+          h("ul", { class: "pd-check-items" }, (p.items || []).map((x, i) => h("li", nth(i), h("span", { class: "pd-check", "aria-hidden": "true" }, lineIcon("check")), h("span", null, ...lines(x))))));
       }
       if (p.type === "raise") {
         // 挙手のお願い: 大きな手のマークと、何について発表するか
-        const hand = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-        hand.setAttribute("viewBox", "0 0 24 24"); hand.setAttribute("aria-hidden", "true");
-        const hp = document.createElementNS("http://www.w3.org/2000/svg", "path");
-        hp.setAttribute("d", "M12.5 2.5a1.5 1.5 0 0 1 1.5 1.5v6.2h.5V5a1.5 1.5 0 0 1 3 0v6.6h.4V7.6a1.5 1.5 0 0 1 3 0V15a7 7 0 0 1-7 7h-1.3a7 7 0 0 1-5.6-2.8l-3.6-4.9a1.6 1.6 0 0 1 2.4-2.1l2.2 2.1V5a1.5 1.5 0 0 1 3 0v5.2h.5V4a1.5 1.5 0 0 1 1.5-1.5Z");
-        hand.append(hp);
+        const hand = lineIcon("hand", "is-hand");
         return h("div", { class: "pd pd-hero pd-raise" },
           p.eyebrow ? h("p", { class: "pd-kicker" }, `${two(p.stepNo)}  ${p.eyebrow}`) : null,
-          h("span", { class: "pd-raise-mark" }, hand),
+          h("span", { class: "pd-raise-mark" }, h("span", { class: "pd-raise-halo", "aria-hidden": "true" }), hand),
           p.items && p.items.length ? h("ul", { class: "pd-raise-items" }, p.items.map((x, i) => h("li", nth(i), x))) : null,
           h("h2", { class: "pd-display" }, ...lines(p.text || "について、\n発表できる方は\n挙手をお願いします")),
           p.note ? h("p", { class: "pd-raise-note" }, ...rich(p.note)) : null);
