@@ -284,3 +284,7 @@ html.big-text body { zoom: 1.15; }
 
 /* 名前のうしろに呼び名が付いた人(例: 小林 末季 / こばねぇ)は、名前と呼び名をそれぞれ1行に(途中で折り返さない) */
 .nm-main, .nm-nick { display: inline-block; white-space: nowrap; }
+
+/* スクロールバーの分の幅を、どのページでもいつも空けておく(スクロールバーのあるページ・ないページで、
+   画面のまん中にそろえたメニューや見出しが左右に少しずれないように) */
+html { scrollbar-gutter: stable; }

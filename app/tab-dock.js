@@ -47,12 +47,8 @@ const TabDock = (function () {
       const top = Math.min(Math.max(minTop, st.along * h - r.height / 2), Math.max(minTop, h - r.height - 8));
       nav.style.transform = "none";
       nav.style.top = `${Math.round(top)}px`;
-    } else if (r.width < w - 24) {
-      // 上下は、画面より幅が狭いとき(パソコン)だけ横の位置を変える
-      const left = Math.min(Math.max(8, st.along * w - r.width / 2), Math.max(8, w - r.width - 8));
-      nav.style.transform = "none";
-      nav.style.left = `${Math.round(left)}px`;
     }
+    // 上下にくっつけたときは、どのページでも画面のまん中にそろえる(ページごとに少しずれないように)
   }
   function saved() { return load().side; }
 
