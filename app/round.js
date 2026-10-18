@@ -390,6 +390,15 @@
     try { if (document.fonts && document.fonts.ready) document.fonts.ready.then(fixSecWidth); } catch { /* noop */ }
     window.addEventListener("resize", fixSecWidth);
     document.documentElement.classList.add("round-open");
+    // 下のページがスクロールしないように、この画面の上のホイール・指の動きを止める
+    // (スクロールバーを消すとページの幅が変わって左右に動くので、overflow: hidden は使わない)
+    const stopScroll = (e) => {
+      const sl = e.target.closest && e.target.closest(".pr-slide");
+      if (sl && sl.scrollHeight > sl.clientHeight + 1) return; // スマホの縦画面で長い紹介文を読むときは動かせる
+      e.preventDefault();
+    };
+    box.addEventListener("wheel", stopScroll, { passive: false });
+    box.addEventListener("touchmove", stopScroll, { passive: false });
     try { if ("wakeLock" in navigator) navigator.wakeLock.request("screen").then((w) => { wake = w; }).catch(() => {}); } catch { /* noop */ }
     // ブラウザの「全画面」には切りかえない(切りかえのあいだに画面の大きさが変わって上下にブレる・
     // 閉じたあとに Safari で真っ白になる、の原因になるため)。この画面はブラウザの窓いっぱいに出し、ふわっと表示する。

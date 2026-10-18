@@ -1161,7 +1161,8 @@ body.tabs-right .app-to-top { right: calc(var(--dock-w) + 22px); }
 .round-add { width: 100%; padding: 10px 12px; border-radius: 12px; border: 1.5px solid var(--line-strong); background: #fff; font-size: 14px; }
 .round-total { margin: 10px 2px 0; font-size: 13px; font-weight: 800; color: var(--accent-dark); }
 .round-go { margin-top: 14px; }
-html.round-open, html.round-open body { overflow: hidden; }
+/* プレゼン中も下のページのスクロールバーは消さない(消すとページの幅が変わり、はじめる・閉じるときに左右に動くため)。
+   下のページがスクロールしないようにするのは app/round.js(ホイール・指の動きを止める) */
 .round-run { position: fixed; inset: 0; z-index: 210; display: flex; flex-direction: column; align-items: center; justify-content: space-between; gap: 12px;
   padding: calc(18px + env(safe-area-inset-top)) 16px calc(18px + env(safe-area-inset-bottom));
   background: radial-gradient(ellipse at 50% 35%, #2a1f16 0%, #0d0907 70%); color: #f6e7c4; text-align: center; }
