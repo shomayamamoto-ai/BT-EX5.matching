@@ -299,19 +299,30 @@
     function extraBox(kind, title, hint) {
       const nameIn = h("input", { type: "text", maxlength: "30", placeholder: kind === "guest" ? "お名前(例: 田中 太郎)" : "お名前", "aria-label": `${title}のお名前` });
       const coIn = h("input", { type: "text", maxlength: "60", placeholder: "会社・肩書き(なくてもよい)", "aria-label": `${title}の会社・肩書き` });
+      // ほかの BT-EX のメンバーは、BT-EX の番号と一覧から押して選ぶ(お名前を入れて探すこともできる)
+      const bx = kind === "other" && App.btexPicker ? App.btexPicker({ unit: 1, onUnit: (n) => { if (unitSel) unitSel.value = String(n); }, onChange: (v) => { if (v) add(); } }) : null;
       const add = () => {
-        const name = nameIn.value.trim();
-        if (!name) { nameIn.focus(); App.toast("お名前を入れてください", "error"); return; }
-        const x = { key: `${kind === "guest" ? "g" : "o"}:${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`, kind, name, company: coIn.value.trim(), sec: 30 };
+        const v = bx ? bx.getValue() : null;
+        const name = v ? v.name : nameIn.value.trim();
+        if (!name) { (bx || nameIn).focus && nameIn.focus(); App.toast("お名前を選ぶか、入れてください", "error"); return; }
+        if (extras.some((y) => y.kind === kind && y.name === name && (!v || y.unit === v.unit))) { App.toast(`${name}さんはもう入っています`); if (bx) bx.setUnit(v.unit); return; }
+        const x = { key: `${kind === "guest" ? "g" : "o"}:${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`, kind, name, company: v ? [`BT-EX${v.unit}`, coIn.value.trim()].filter(Boolean).join(" ・ ") : coIn.value.trim(), unit: v ? v.unit : 0, sec: 30 };
         extras.push(x); all.push(x); order.push(x.key); saveExtras();
-        nameIn.value = ""; coIn.value = ""; draw(); nameIn.focus();
+        nameIn.value = ""; coIn.value = ""; if (bx) { const u = v.unit; bx.setUnit(0); bx.setUnit(u); } draw();
       };
       nameIn.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); add(); } });
       coIn.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); add(); } });
       const listBox = h("ul", { class: "pr-extra-list" });
+      let unitSel = null;
+      if (bx) {
+        unitSel = h("select", { class: "pr-extra-unit", "aria-label": "BT-EX の番号", onchange: () => bx.setUnit(Number(unitSel.value)) },
+          Array.from({ length: 14 }, (_, i) => i + 1).filter((n) => n !== 5).map((n) => h("option", { value: String(n) }, `BT-EX${n}`)));
+        unitSel.value = "1";
+      }
       const box = h("div", { class: `pr-extra is-${kind}` },
         h("p", { class: "round-label" }, title, h("small", null, hint)),
-        h("div", { class: "pr-extra-add" }, nameIn, coIn, App.btn("＋ 足す", add, "ghost small")),
+        bx ? h("details", { class: "pr-extra-pick-box" }, h("summary", null, "＋ BT-EX の番号と一覧から選んで足す"), h("div", { class: "pr-extra-bx" }, unitSel, bx))
+          : h("div", { class: "pr-extra-add" }, nameIn, coIn, App.btn("＋ 足す", add, "ghost small")),
         listBox);
       box.drawList = () => {
         const mine = extras.filter((x) => x.kind === kind);
@@ -407,7 +418,7 @@
         const p = personOf(k, photos);
         if (p) return p;
         const x = byKey(k);
-        return x ? { key: k, kind: x.kind, name: x.name, catch: x.company, photo: "", area: "", wants: "", triggers: [], sec: x.sec || 0 } : null;
+        return x ? { key: k, kind: x.kind, name: x.name, catch: x.unit ? String(x.company || "").replace(/^BT-EX\d+( ・ )?/, "") : x.company, unit: x.unit || 0, photo: "", area: "", wants: "", triggers: [], sec: x.sec || 0 } : null;
       }).filter(Boolean);
       if (!people.length) return;
       App.roundRun(people, per, auto ? gapSec : 0, ev ? ev.title : "");
@@ -583,7 +594,7 @@
           h("p", { class: "pr-no", "aria-hidden": "true" }, two(idx + 1)),
           h("div", { class: "pr-body" },
             h("p", { class: "pr-teamname" },
-              h("span", null, p.kind === "visitor" ? "ビジター" : p.kind === "guest" ? "ゲスト" : p.kind === "other" ? "BT-EX メンバー" : p.team || ""),
+              h("span", null, p.kind === "visitor" ? "ビジター" : p.kind === "guest" ? "ゲスト" : p.kind === "other" ? (p.unit ? `BT-EX${p.unit} メンバー` : "BT-EX メンバー") : p.team || ""),
               p.role ? roleBadge(p.role) : null),
             nameEl(p.name, "h2", "pr-name", h("small", null, "さん")),
             p.catch ? h("p", { class: "pr-catch" }, p.catch) : null,

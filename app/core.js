@@ -520,6 +520,72 @@ const App = (function () {
     return wrap;
   }
 
+  // ---------- ほかの BT-EX のユニットの方を選ぶ(1on1・プレゼン) ----------
+  // ユニット(BT-EX1〜14、5 はこのアプリの名簿なので除く)の一覧から押して選ぶ。お名前を入れると、
+  // すべてのユニットから探す(選ぶとユニットも切りかわる)。一覧にいない方は、入れたお名前のまま使える。
+  // getValue() → { unit, name } か null / setUnit(n) / onChange(v)
+  function btexPicker(opt) {
+    opt = opt || {};
+    const UNITS = typeof BTEX_UNIT_MEMBERS !== "undefined" ? BTEX_UNIT_MEMBERS : {};
+    const norm = (x) => String(x || "").replace(/[\s　|｜()（）]/g, "").toLowerCase();
+    let unit = opt.unit && opt.unit !== 5 ? opt.unit : 0;
+    let picked = "";
+    const q = h("input", { type: "search", class: "bx-q", maxlength: "40", autocomplete: "off", placeholder: "お名前で探す(すべてのユニットから)", "aria-label": "お名前で探す" });
+    const list = h("ul", { class: "bx-list", role: "listbox", "aria-label": "お名前" });
+    const chosen = h("p", { class: "bx-chosen", "aria-live": "polite" });
+    const wrap = h("div", { class: "bx-picker" }, q, chosen, list);
+    const fire = () => { if (opt.onChange) opt.onChange(wrap.getValue()); };
+    function pick(u, name) {
+      picked = name;
+      if (u && u !== unit) { unit = u; if (opt.onUnit) opt.onUnit(u); }
+      q.value = "";
+      draw(); fire();
+    }
+    function row(u, name, tag) {
+      const on = picked === name && u === unit;
+      return h("li", null, h("button", { type: "button", class: `bx-item${on ? " is-on" : ""}`, role: "option", "aria-selected": on ? "true" : "false", onclick: () => pick(u, name) },
+        h("span", { class: "bx-name" }, name), tag ? h("span", { class: "bx-tag" }, `BT-EX${u}`) : null));
+    }
+    function draw() {
+      const words = norm(q.value);
+      App.fill(chosen, picked ? [h("span", null, "選んだ方:"), h("b", null, `${picked}さん`), unit ? h("span", { class: "bx-tag" }, `BT-EX${unit}`) : null,
+        h("button", { type: "button", class: "bx-clear", onclick: () => { picked = ""; draw(); fire(); } }, "選び直す")] : h("span", { class: "bx-hint" }, "下の一覧から押して選ぶか、お名前を入れてください"));
+      const rows = [];
+      if (words) {
+        // すべてのユニットから探す(いまのユニットの方を先に)
+        const hits = [];
+        Object.keys(UNITS).forEach((k) => (UNITS[k] || []).forEach((name) => { if (norm(name).includes(words)) hits.push([Number(k), name]); }));
+        hits.sort((a, b) => (b[0] === unit) - (a[0] === unit) || a[0] - b[0]);
+        hits.slice(0, 30).forEach(([u, name]) => rows.push(row(u, name, true)));
+        const typed = q.value.trim();
+        if (unit && !hits.some(([, name]) => norm(name) === words)) {
+          rows.push(h("li", null, h("button", { type: "button", class: "bx-item is-new", onclick: () => pick(unit, typed) },
+            h("span", { class: "bx-name" }, `「${typed}」さんとして入れる`), h("span", { class: "bx-tag" }, `BT-EX${unit}`))));
+        }
+        if (!rows.length) rows.push(h("li", { class: "bx-empty" }, "見つかりません。上で BT-EX の番号を選ぶと、入れたお名前のまま使えます"));
+      } else if (unit) {
+        const names = (UNITS[unit] || []).slice().sort((a, b) => a.localeCompare(b, "ja"));
+        names.forEach((name) => rows.push(row(unit, name, false)));
+        if (!names.length) rows.push(h("li", { class: "bx-empty" }, `BT-EX${unit} の一覧はまだありません。上でお名前を入れてください`));
+      } else {
+        rows.push(h("li", { class: "bx-empty" }, "BT-EX の番号を選ぶと、そのユニットの方の一覧が出ます"));
+      }
+      App.fill(list, rows);
+    }
+    q.addEventListener("input", draw);
+    q.addEventListener("keydown", (e) => {
+      if (e.key !== "Enter") return;
+      e.preventDefault();
+      const first = list.querySelector(".bx-item");
+      if (first) first.click();
+    });
+    wrap.getValue = () => (picked && unit ? { unit, name: picked } : null);
+    wrap.setUnit = (n) => { if (n !== unit) { unit = n; picked = ""; q.value = ""; draw(); fire(); } };
+    wrap.focusInput = () => q.focus();
+    draw();
+    return wrap;
+  }
+
   // ---------- 画面の切り替え ----------
   const views = {};
   const TABS = [
@@ -808,7 +874,7 @@ const App = (function () {
   }
 
   return {
-    profileHref, meetHowTo, downloadCsv,
+    profileHref, meetHowTo, downloadCsv, btexPicker,
     h, append, fill, confirm: confirmSheet, fmtStamp, fmtDate, fmtDateLong, fmtTime, yen, daysUntil, todayKey, chip, avatar, richText, toast, copyText, shareText,
     icon, glyph, qrImage, draft, clearDraft, fieldError, calendarButtons, googleCalUrl, icsFile, api, openSheet, doneSheet, field, btn, toggle, timeSelect, segmented, kpi, empty, section, memberPicker,
     AREA_LABELS, REF_STATUS, VISITOR_STATUS,

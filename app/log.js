@@ -652,30 +652,24 @@
   function oneForm(o, withId) {
     App.openSheet(o ? `${o.withName}さんとの 1on1` : "1on1 を予定・記録する", (body, close) => {
       const picker = o ? null : App.memberPicker({ value: withId && App.memberById(withId) ? withId : null, exclude: [App.session.memberId], label: "相手" });
-      // 相手のユニット: BT-EX5 はこのアプリの名簿から、ほかの BT-EX(1〜14)は一覧から選ぶか、お名前を入れる
-      const UNITS = typeof BTEX_UNIT_MEMBERS !== "undefined" ? BTEX_UNIT_MEMBERS : {};
+      // 相手のユニット: BT-EX5 はこのアプリの名簿から、ほかの BT-EX(1〜14)は一覧から押して選ぶか、お名前を入れる
       const unitSel = h("select", { class: "one-unit", "aria-label": "相手の BT-EX の番号" },
         Array.from({ length: 14 }, (_, i) => i + 1).map((n) => h("option", { value: String(n) }, n === 5 ? "BT-EX5(このアプリのメンバー)" : `BT-EX${n}`)));
       unitSel.value = "5";
-      const extSel = h("select", { class: "one-ext-name", "aria-label": "相手のお名前(一覧)" });
-      const extIn = h("input", { type: "text", maxlength: "40", placeholder: "お名前を入れる(例: 田中 太郎)", "aria-label": "相手のお名前" });
-      const extBox = h("div", { class: "one-ext", hidden: true }, extSel, extIn,
+      const bx = App.btexPicker({ unit: 0, onUnit: (n) => { unitSel.value = String(n); } });
+      const extBox = h("div", { class: "one-ext", hidden: true }, bx,
         h("p", { class: "app-field-hint" }, "ほかのユニットの方との 1on1 は、あなたの記録として数えます(相手のアプリには届きません)。"));
       const pickBox = h("div", { class: "one-pick" }, picker);
+      // 名簿のメンバーを選ぶ欄の上に、ほかのユニットの方を探すきっかけ
+      const toOther = h("button", { type: "button", class: "one-to-other", onclick: () => { unitSel.value = "1"; drawUnit(); bx.focusInput(); } }, "ほかの BT-EX の方と 1on1 をした →");
       const drawUnit = () => {
         const n = Number(unitSel.value);
         const other = n !== 5;
-        extBox.hidden = !other; pickBox.hidden = other;
-        if (!other) return;
-        const names = (UNITS[n] || []).slice().sort((a, b) => a.localeCompare(b, "ja"));
-        App.fill(extSel, h("option", { value: "" }, names.length ? `一覧から選ぶ(${names.length}名)` : "一覧はまだありません"),
-          names.map((x) => h("option", { value: x }, x)), h("option", { value: "__input" }, "一覧にいない方(お名前を入れる)"));
-        extSel.value = names.length ? "" : "__input";
-        extIn.hidden = extSel.value !== "__input";
+        extBox.hidden = !other; pickBox.hidden = other; toOther.hidden = other;
+        if (other) bx.setUnit(n);
       };
-      extSel.addEventListener("change", () => { extIn.hidden = extSel.value !== "__input"; if (!extIn.hidden) extIn.focus(); });
       unitSel.addEventListener("change", drawUnit);
-      const extName = () => (Number(unitSel.value) === 5 ? "" : extSel.value === "__input" || !extSel.value ? extIn.value.trim() : extSel.value);
+      const extName = () => { const v = bx.getValue(); return v ? v.name : ""; };
       const isExt = () => !o && Number(unitSel.value) !== 5;
       const today = App.todayKey();
       const date = h("input", { type: "date", value: o ? o.date : today, required: true });
@@ -768,11 +762,11 @@
       body.append(h("form", { class: "app-form", onsubmit: async (e) => {
         e.preventDefault();
         const payload = {
-          id: o ? o.id : "", withMemberId: o ? o.with : isExt() ? "" : picker.getValue(), ext: isExt() ? { unit: Number(unitSel.value), name: extName() } : null, date: date.value, time: time.value, duration: Number(duration.value),
+          id: o ? o.id : "", withMemberId: o ? o.with : isExt() ? "" : picker.getValue(), ext: isExt() ? { unit: (bx.getValue() || {}).unit || Number(unitSel.value), name: extName() } : null, date: date.value, time: time.value, duration: Number(duration.value),
           mode: mode.getValue(), place: place.value.trim(), meetUrl: meetUrl.value.trim(), status: status.getValue(),
           note: note.value, next: next.value.trim(), appUrl: App.siteUrl("#log/1on1"),
         };
-        if (isExt() && !payload.ext.name) { App.fieldError(extSel.value === "__input" ? extIn : extSel, "相手のお名前を選ぶか、入れてください。"); return; }
+        if (isExt() && !payload.ext.name) { App.fieldError(bx, "相手のお名前を選ぶか、入れてください。"); return; }
         if (!isExt() && !payload.withMemberId) { App.fieldError(picker, "相手を選んでください。"); return; }
         if (!payload.date) { App.fieldError(date, "日付を選んでください。"); return; }
         if (payload.status === "planned" && !(await confirmNoConflict(payload.date, payload.time, payload.duration, payload.id))) return;
@@ -785,7 +779,7 @@
           : d.calendar === "error" ? "保存しました(Google カレンダーには入れられませんでした)" : "保存しました");
         App.go("log/1on1");
       } },
-      o ? null : App.field("相手", h("div", { class: "one-who" }, unitSel, pickBox, extBox)),
+      o ? null : App.field("相手", h("div", { class: "one-who" }, unitSel, pickBox, toOther, extBox)),
       App.field("日付", h("div", null, date, quick)),
       h("div", { class: "app-grid2" }, App.field("開始時刻", time), App.field("時間", duration)), endNote,
       App.field("場所", h("div", null, mode, onsiteBox, meetBox)),
