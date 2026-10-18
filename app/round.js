@@ -1393,6 +1393,14 @@
       const el = slide.firstElementChild;
       if (!el || !el.classList.contains("pd")) return;
       el.style.transform = "";
+      // 大きな数字(約束・実績のタイル): 枠に入りきらないときは、その数字だけ小さくする(枠に触れない)
+      el.querySelectorAll(".pd-kpi b, .pd-stats b").forEach((b) => {
+        b.style.fontSize = "";
+        const box = b.parentElement;
+        const cs = getComputedStyle(box);
+        const room = box.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+        if (room > 0 && b.scrollWidth > room) b.style.fontSize = `${(parseFloat(getComputedStyle(b).fontSize) * (room / b.scrollWidth) * 0.96).toFixed(2)}px`;
+      });
       // カードの文: 1行が入りきらないときは、同じスライドのカードの文をそろって小さくする
       const texts = [...el.querySelectorAll(".pd-card-text, .pd-check-text")];
       texts.forEach((t) => { t.style.fontSize = ""; });
@@ -1473,7 +1481,8 @@
       pauseBtn.disabled = noTimer;
       if (noTimer) pauseBtn.setAttribute("aria-hidden", "true"); else pauseBtn.removeAttribute("aria-hidden");
       prevBtn.disabled = idx === 0;
-      setBtn(nextBtn, "next", idx === people.length - 1 ? "おわり" : "進む");
+      if (idx === people.length - 1 && opts.deck) setBtn(nextBtn, "close", "閉じる");
+      else setBtn(nextBtn, "next", idx === people.length - 1 ? "おわり" : "進む");
       if (isDeck(cur)) { box.classList.remove("is-last", "is-red", "is-end", "is-gap"); return; }
       const gap = gapUntil > Date.now();
       const left = gap ? 0 : Math.max(0, leftNow());
@@ -1546,6 +1555,8 @@
     }
     function finish(early, confirmed) {
       if (early && !confirmed) { askEnd(); return; }
+      // 定例会のスライドは「おつかれさまでした」を出さず、最後のスライドからそのまま閉じる
+      if (opts.deck) { halt(); gapUntil = 0; closeRun(); return; }
       halt(); gapUntil = 0; done = true;
       box.classList.remove("is-last", "is-red", "is-end", "is-gap");
       box.classList.add("is-done");

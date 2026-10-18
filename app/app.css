@@ -2326,3 +2326,6 @@ button.home-welcome-check:active { transform: scale(0.94); }
 .pd-tseg.is-op small { display: none; }
 .pd-stats { grid-template-columns: repeat(auto-fit, minmax(clamp(104px, 10.5vw, 160px), 1fr)); }
 .pd-stats b { font-size: clamp(18px, min(2.2vw, 3.8svh), 34px); }
+/* 大きな数字は枠の内側に収める(入りきらないときは fitDeck で小さくする) */
+.pd-kpi b, .pd-stats b { display: block; max-width: 100%; }
+.pd-kpi { min-width: 0; overflow: hidden; }
