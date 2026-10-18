@@ -1298,6 +1298,7 @@ html.round-open, html.round-open body { overflow: hidden; }
 .pr-run.is-gap .pr-sec-num { font-family: "Inter", sans-serif; font-size: clamp(28px, 3.6vw, 48px); color: #d9c08e; }
 .pr-ctrl { max-width: 760px; justify-self: center; }
 .pr-ctrl .round-btn { min-height: 46px; font-size: 14.5px; }
+.pr-ask { flex: 1 1 100%; margin: 0 0 2px; text-align: center; font-size: 15px; font-weight: 800; color: #f3dfb3; }
 .pr-done { grid-column: 1 / -1; text-align: center; }
 .pr-run.is-done .pr-meter-row { visibility: hidden; }
 @media (prefers-reduced-motion: reduce) { .pr-slide.is-in, .pr-run.is-end .pr-meter i.is-on { animation: none; } }

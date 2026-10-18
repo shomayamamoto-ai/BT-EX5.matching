@@ -493,10 +493,27 @@
       if (gapUntil) { halt(); gapUntil = 0; draw(); return; }
       if (running()) { left0 = Math.max(0.1, leftNow()); halt(); draw(); } else start();
     });
-    function finish(early) {
-      if (early && !confirm("進行を終わりますか?")) return;
+    // 途中で終わるときは、この画面の中で確かめる(全画面のときにブラウザの確認の窓を出すと、
+    // Safari では画面が真っ白のまま戻らないことがあるため)
+    let asking = null;
+    function askEnd() {
+      if (asking || done) return;
+      const ctrl = box.querySelector(".pr-ctrl");
+      const before = [...ctrl.childNodes];
+      const back = () => { asking = null; ctrl.replaceChildren(...before); pauseBtn.focus({ preventScroll: true }); };
+      asking = back;
+      App.fill(ctrl,
+        h("p", { class: "pr-ask" }, "進行を終わりますか?"),
+        h("button", { type: "button", class: "round-btn", onclick: back }, "つづける"),
+        h("button", { type: "button", class: "round-btn is-main", onclick: () => { asking = null; finish(false, true); } }, "終わる"));
+      ctrl.querySelector(".is-main").focus({ preventScroll: true });
+    }
+    function finish(early, confirmed) {
+      if (early && !confirmed) { askEnd(); return; }
       halt(); gapUntil = 0; done = true;
-      const said = early ? idx : people.length;
+      // おつかれさまの画面からは全画面をやめておく(閉じるときに全画面から戻る処理をしなくてよいように)
+      exitFull();
+      const said = early || confirmed ? idx : people.length;
       box.classList.remove("is-last", "is-red", "is-end", "is-gap");
       box.classList.add("is-done");
       App.fill(slide, h("div", { class: "pr-done" }, h("p", { class: "pr-name" }, "おつかれさまでした"), h("p", { class: "pr-catch" }, `${said}名の方が話しました`)));
@@ -511,11 +528,14 @@
       document.removeEventListener("keydown", onKey);
       halt();
       try { if (wake) wake.release(); } catch { /* noop */ }
+      // 閉じたら、プレゼンの準備の画面を読み込み直して出す(全画面から戻ったあと、Safari などで
+      // 画面が描き直されずに真っ白のまま残ることがあるため。選んだ人と順番はこの端末に残っている)
       const remove = () => {
         box.remove();
         document.documentElement.classList.remove("round-open");
-        // 念のため、いまの画面を描き直す(スクロールの止まりや表示の崩れを残さない)
-        try { window.scrollTo(0, 0); } catch { /* noop */ }
+        const back = /^#present/.test(location.hash) ? location.hash : "#present";
+        try { history.replaceState(null, "", `${location.pathname}${location.search}${back}`); } catch { /* noop */ }
+        setTimeout(() => { try { location.reload(); } catch { App.route(); } }, 60);
       };
       if (!fullEl()) { remove(); return; }
       let doneRemove = false;
@@ -531,7 +551,7 @@
       else if (e.key === "ArrowRight" && !done) go(idx + 1);
       else if (e.key === "ArrowLeft" && !done && idx > 0) go(idx - 1);
       else if ((e.key === "f" || e.key === "F") && !done) toggleFull();
-      else if (e.key === "Escape") { if (fullEl()) return; if (done) closeRun(); else finish(true); }
+      else if (e.key === "Escape") { if (fullEl()) return; if (done) closeRun(); else if (asking) asking(); else finish(true); }
     }
     document.addEventListener("keydown", onKey);
     drawSlide();
