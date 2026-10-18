@@ -49,7 +49,8 @@
     var refHeader = document.querySelector(".ref-header");
     var card = document.querySelector(".auth-card");
     if (appTop) {
-      appTop.insertBefore(box, appTop.querySelector(".op-movie-btn, .app-search-btn, .app-bell") || null);
+      // ベルの前に(早見表などのページと同じ並び: …ムービー → 文字の大きさ → ベル → 名前の丸)
+      appTop.insertBefore(box, appTop.querySelector(".app-bell") || null);
     } else if (refHeader) {
       // 右のまとまり(リンク・ベル・名前の丸)の中に入れる。ベルと名前の丸は、あとから右に足される
       var nav = refHeader.querySelector(".ref-header-nav") || refHeader;

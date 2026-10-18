@@ -71,3 +71,9 @@ html.big-text body { zoom: 1.15; }
   .app-tab span { font-size: 10.5px; letter-spacing: -0.03em; }
   .app-tabs .app-tab .app-badge { left: auto; right: 2px; }
 }
+
+/* 上の帯は、アプリと同じく画面の横いっぱいに使う(ロゴは左はし、ベル・名前の丸などは右はしにそろえる。
+   ページによって右上のボタンの位置が変わらないように) */
+.ref-header .ref-header-inner { max-width: none; padding-left: 16px; padding-right: 16px; }
+/* 右上のボタンどうしの間をアプリの上の帯(10px)とそろえる */
+@media (min-width: 561px) { .ref-header .ref-header-nav { gap: 10px; } .ref-header .ref-header-link { padding: 0 6px; } }

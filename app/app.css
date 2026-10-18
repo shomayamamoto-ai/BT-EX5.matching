@@ -1088,6 +1088,7 @@ body.tabs-right .app-to-top { right: calc(var(--dock-w) + 22px); }
   .app-top .op-movie-btn { width: 32px; height: 32px; padding: 0; justify-content: center; }
   .app-top .op-movie-btn span { display: none; }
   .app-top .app-title { visibility: hidden; }
+  .app-top { gap: 8px; } /* 右はしの名前の丸が、早見表などのページと同じ位置(右から16px)に収まるように */
 }
 /* 通知する内容 */
 .notify-kinds { display: grid; gap: 8px; margin: 4px 0 12px; }
