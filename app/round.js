@@ -1500,14 +1500,6 @@
       const el = slide.firstElementChild;
       if (!el || !el.classList.contains("pd")) return;
       el.style.transform = ""; el.style.transformOrigin = "";
-      // 大きな見出しの下の線は、見出しの文字の端から端まで(縮める前に測る)
-      el.querySelectorAll(".pd-rule").forEach((r) => {
-        const d = r.previousElementSibling;
-        if (!d) return;
-        const rg = document.createRange(); rg.selectNodeContents(d);
-        const w = rg.getBoundingClientRect().width;
-        r.style.width = w > 0 ? `${Math.round(w)}px` : "";
-      });
       // 大きな数字(約束・実績のタイル): 枠に入りきらないときは、その数字だけ小さくする(枠に触れない)
       el.querySelectorAll(".pd-kpi b, .pd-stats b").forEach((b) => {
         b.style.fontSize = "";
