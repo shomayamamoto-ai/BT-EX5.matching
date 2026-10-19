@@ -611,7 +611,7 @@ const App = (function () {
     { id: "news", label: "アップデート", icon: "M3 10v4a1 1 0 0 0 1 1h2l5 4V5L6 9H4a1 1 0 0 0-1 1Zm13.5 2A4.5 4.5 0 0 0 14 8v8a4.5 4.5 0 0 0 2.5-4ZM14 3.2v2.1a7 7 0 0 1 0 13.4v2.1a9 9 0 0 0 0-17.6Z" },
   ];
   // プレゼン(定例会の進行)のタブは、この人だけに出す
-  const PRESENT_OWNERS = ["yamamoto", "m22", "m02", "m16", "m08", "m14", "m09"]; // 山本 捷真・小林 末季(こばねぇ)・あまみや 七音・桜羽 李果・床島 良夫・三村 隆・大場 雅俊
+  const PRESENT_OWNERS = ["yamamoto", "m22", "m02", "m16", "m08", "m14", "m09", "m10", "m24", "m04"]; // 山本 捷真・小林 末季(こばねぇ)・あまみや 七音・桜羽 李果・床島 良夫・三村 隆・大場 雅俊・大枝 篤志・栁橋 雅也・吉澤 美和子
   const canPresent = () => !!(session && PRESENT_OWNERS.includes(session.memberId));
   let badges = {};
   let current = { view: "", parts: [], params: new URLSearchParams() };
