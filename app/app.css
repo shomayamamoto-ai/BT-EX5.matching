@@ -2361,3 +2361,12 @@ button.home-welcome-check:active { transform: scale(0.94); }
 .pr-order-group { list-style: none; margin: 10px 0 -2px; padding: 0 4px; display: flex; align-items: center; gap: 10px; font-size: 12.5px; font-weight: 900; letter-spacing: 0.04em; color: var(--accent-dark); }
 .pr-order-group:first-child { margin-top: 0; }
 .pr-order-group::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+/* 本日の流れ: 題はことばの切れ目でだけ折り返す(「ブレイクアウト/ルーム商談」)。時刻の列は同じ幅で左にそろえる */
+.pd-agenda-title { word-break: keep-all; overflow-wrap: anywhere; }
+.pd-agenda-slide .pd-agenda li { grid-template-columns: auto minmax(0, 1fr) clamp(96px, 10.5vw, 150px); }
+.pd-agenda-slide .pd-agenda-time { justify-content: flex-start; }
+/* 代表の紹介: 「現在」の文を指定の位置で改行するので、文の段を広めに */
+@media (min-width: 761px) and (min-aspect-ratio: 1/1) {
+  .pd-leader { grid-template-columns: minmax(0, 1.75fr) minmax(0, 1fr); }
+  .pd-leader-cols { grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); }
+}

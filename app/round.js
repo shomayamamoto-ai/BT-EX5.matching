@@ -1255,7 +1255,7 @@
       const agendaList = (compact) => h("ol", { class: `pd-agenda${compact ? " is-compact" : ""}` }, (p.steps || []).map((st, i) =>
         h("li", { class: st.no === p.stepNo && p.type !== "agenda" ? "is-now" : st.no < p.stepNo ? "is-done" : "", ...nth(i) },
           h("span", { class: "pd-agenda-no" }, two(st.no)),
-          h("span", { class: "pd-agenda-title" }, st.title),
+          h("span", { class: "pd-agenda-title" }, ...stepWords(st.title)),
           st.sub ? h("span", { class: "pd-agenda-sub" }, st.sub) : null)));
       if (p.type === "movie") {
         return h("div", { class: "pd pd-hero pd-movie" },
@@ -1293,7 +1293,7 @@
             h("ol", { class: "pd-agenda" }, (p.steps || []).map((st, i) =>
               h("li", nth(i),
                 h("span", { class: "pd-agenda-no" }, two(st.no)),
-                h("span", { class: "pd-agenda-title" }, st.title),
+                h("span", { class: "pd-agenda-title" }, ...stepWords(st.title)),
                 h("span", { class: "pd-agenda-time" },
                   startMin !== null && total ? h("b", null, clock(startMin + at[i].from)) : null,
                   at[i].min ? h("small", null, `${at[i].min}分`) : st.sub ? h("small", null, st.sub) : null))))));
@@ -1328,8 +1328,8 @@
               return h("li", nth(i), h("b", null, m[0].replace(/\s+/g, "")), h("small", null, rest));
             })) : null,
             h("div", { class: "pd-leader-cols" },
-              L.now && L.now.length ? h("div", { class: "pd-block" }, h("p", { class: "pd-h" }, "現在"), h("ul", null, L.now.map((x) => h("li", null, x)))) : null,
-              L.dreams && L.dreams.length ? h("div", { class: "pd-block" }, h("p", { class: "pd-h" }, "想い・夢"), h("ul", null, L.dreams.map((x) => h("li", null, x)))) : null)),
+              L.now && L.now.length ? h("div", { class: "pd-block" }, h("p", { class: "pd-h" }, "現在"), h("ul", null, L.now.map((x) => h("li", null, ...lines(x))))) : null,
+              L.dreams && L.dreams.length ? h("div", { class: "pd-block" }, h("p", { class: "pd-h" }, "想い・夢"), h("ul", null, L.dreams.map((x) => h("li", null, ...lines(x))))) : null)),
           face(p.photo, p.name, "pr-photo pd-photo"));
       }
       if (p.type === "about") {
@@ -1406,11 +1406,11 @@
           const [lx, ly] = [C[i][0] + [-62, 62, 0][i], C[i][1] + [-38, -38, 80][i]];
           svg.append(mk("text", { x: lx, y: ly, class: "vn-name", "text-anchor": "middle" }, name));
           svg.append(mk("text", { x: lx, y: ly + 34, class: "vn-count", "text-anchor": "middle" }, `${x.items.length}の強み`));
-          // 強みは省略せず最後まで。長いものは「、」(なければまん中)で2行に分ける
+          // 強みは省略せず最後まで。長いものは「、」「・」のあと(なければまん中)で2行に分ける
           let yy = ly + 62;
           (x.items || []).slice(0, 2).forEach((t) => {
             let parts = [t];
-            if (t.length > 9) { const c = t.indexOf("、"); const at = c > 0 && c < t.length - 1 ? c + 1 : Math.ceil(t.length / 2); parts = [t.slice(0, at), t.slice(at)]; }
+            if (t.length > 9) { const c = t.search(/[、・]/); const at = c > 0 && c < t.length - 1 ? c + 1 : Math.ceil(t.length / 2); parts = [t.slice(0, at), t.slice(at)]; }
             parts.forEach((part) => { svg.append(mk("text", { x: lx, y: yy, class: "vn-item", "text-anchor": "middle" }, part)); yy += 22; });
             yy += 4;
           });
@@ -1420,7 +1420,7 @@
         svg.append(mk("text", { x: 400, y: 272, class: "vn-center", "text-anchor": "middle" }, p.center || "BT-EX"));
         return frame("pd-vennslide", h("div", { class: "pd-venn-wrap" }, svg,
           h("p", { class: "pd-venn-note" },
-            h("span", { class: "pd-line" }, h("b", null, `${g.reduce((a, x) => a + x.items.length, 0)}の強み`), "を掛け合わせ、"),
+            h("span", { class: "pd-line" }, h("b", null, `${g.reduce((a, x) => a + x.items.length, 0)}の強み`), "を掛け合わせ"),
             h("span", { class: "pd-line" }, "事業主のビジネスと"),
             h("span", { class: "pd-line" }, "BT の拡大に相乗効果を生む"))));
       }
@@ -1452,14 +1452,14 @@
         h("img", { class: "pd-mark", src: "../assets/bt-ex5-mark-3d-512.png", alt: "" }),
         h("h2", { class: "pd-display" }, p.name),
         h("span", { class: "pd-rule", "aria-hidden": "true" }),
-        h("p", { class: "pd-kicker" }, "BT-EX5 ・ 突破から、拡張へ。"));
+        h("p", { class: "pd-kicker" }, "BT-EX5 ・ 突破から、拡張へ"));
     }
     // 横長の画面では、スライドが枠に収まらないときだけ全体を縮めて収める(スマホなどの縦長は下へ送れる)
     const tallScreen = window.matchMedia("(max-aspect-ratio: 1/1), (max-width: 760px)");
     function fitDeck() {
       const el = slide.firstElementChild;
       if (!el || !el.classList.contains("pd")) return;
-      el.style.transform = "";
+      el.style.transform = ""; el.style.transformOrigin = "";
       // 大きな数字(約束・実績のタイル): 枠に入りきらないときは、その数字だけ小さくする(枠に触れない)
       el.querySelectorAll(".pd-kpi b, .pd-stats b").forEach((b) => {
         b.style.fontSize = "";
@@ -1478,8 +1478,18 @@
       }, 1)), 1);
       if (ratio < 1) texts.forEach((t) => { t.style.fontSize = `${(parseFloat(getComputedStyle(t).fontSize) * ratio * 0.97).toFixed(2)}px`; });
       if (tallScreen.matches) return;
-      const need = el.scrollHeight, room = slide.clientHeight;
-      if (need > room && room > 0) el.style.transform = `scale(${Math.max(0.6, (room / need) * 0.97).toFixed(3)})`;
+      // 中身の上はし・下はし(段が枠の外へはみ出すこともあるので、段ごとに見る)を測り、
+      // 入りきらないときは縮めて、枠の上下のまん中に置く
+      const sr = slide.getBoundingClientRect(), er = el.getBoundingClientRect();
+      const rects = [er, ...[...el.children].map((c) => c.getBoundingClientRect())];
+      const top = Math.min(...rects.map((r) => r.top)), bottom = Math.max(...rects.map((r) => r.bottom), er.top + el.scrollHeight);
+      const need = bottom - top, room = slide.clientHeight;
+      if (need > room && room > 0) {
+        const k = Math.max(0.6, (room / need) * 0.97);
+        const dy = (sr.top + sr.bottom) / 2 - er.top - ((top + bottom) / 2 - er.top) * k;
+        el.style.transformOrigin = "50% 0";
+        el.style.transform = `translateY(${dy.toFixed(1)}px) scale(${k.toFixed(3)})`;
+      }
     }
     window.addEventListener("resize", fitDeck);
     try { if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitDeck); } catch { /* noop */ }
