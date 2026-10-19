@@ -2489,7 +2489,7 @@
   // ---------- 定例会のスライドの内容(日にち・スケジュール・規定・時間の目安など) ----------
   // 元の内容は referral/data.js の BTEX_DECK。ここには運営が書きかえたところだけを入れる。
   //   getDeckConfig(だれでも読める)/ saveDeckConfig(進行役だけ。config を空にすると元に戻す)
-  var DECK_OWNERS = ["yamamoto", "m22", "m02", "m16", "m08", "m14"]; // 山本 捷真・小林 末季(こばねぇ)・あまみや 七音・桜羽 李果・床島 良夫・三村 隆
+  var DECK_OWNERS = ["yamamoto", "m22", "m02", "m16", "m08", "m14", "m09"]; // 山本 捷真・小林 末季(こばねぇ)・あまみや 七音・桜羽 李果・床島 良夫・三村 隆・大場 雅俊
   var DECK_MAX = 60000; // 文字数
   BtexServerCore.registerModule({
     mutating: ["saveDeckConfig"],
