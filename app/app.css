@@ -2414,3 +2414,7 @@ button.home-welcome-check:active { transform: scale(0.94); }
 .app-rank li { display: grid; grid-template-columns: 3em minmax(0, 1fr); align-items: center; gap: 8px; font-size: 14px; font-weight: 700; line-height: 1.45; }
 .app-rank b { display: grid; place-items: center; height: 24px; border-radius: 8px; background: #f3e7cf; color: #7a5520; font-size: 12px; font-weight: 900; }
 .app-rank li.is-r1 b { background: linear-gradient(180deg, #e9c77d, #c9993f); color: #2b1d08; }
+/* 見出しの下線は、見出しの文字の端から端まで */
+.pd-frame .pd-title { width: fit-content; max-width: 100%; }
+.pd-frame .pd-title::after { width: 100%; }
+.pd-rule { max-width: 100%; background: var(--pd-gold); border-radius: 2px; }
