@@ -84,6 +84,7 @@
       lines.push(`「${talk}」のお話をされていたので、ぴったりだと思いご紹介します。`);
     }
     if (m.wants) lines.push(`${m.name}さんは「${m.wants}」とのつながりを求めています。`);
+    else if ((m.wantsRank || []).length) lines.push(`${m.name}さんは「${m.wantsRank[0]}」とのつながりを求めています。`);
     if (m.offer) lines.push(`BT-EX5のメンバーからの紹介特典:${m.offer}`);
     const range = [];
     if (m.face) range.push(`対面:${m.face}`);
@@ -273,7 +274,8 @@
         </div>
         <div class="ref-col ref-col-wants">
           <p class="ref-label">求める紹介</p>
-          <p class="ref-wants${m.wants ? clamp : " ref-muted"}">${m.wants ? escapeHtml(m.wants) : blank(m)}</p>
+          ${rankHtml(m)}
+          ${m.wants || !(m.wantsRank || []).length ? `<p class="ref-wants${m.wants ? clamp : " ref-muted"}">${m.wants ? escapeHtml(m.wants) : blank(m)}</p>` : ""}
           <div class="ref-triggers">${triggerHtml}</div>
         </div>
         <div class="ref-col ref-col-range${!m.face && (!m.online || m.online === "unknown") && m.id !== myMemberId ? " is-empty" : ""}">
@@ -348,6 +350,7 @@
       ${section("事業内容", text(m.business))}
       ${m.selfIntro ? `<details class="md-sec md-intro"><summary>自己紹介(紹介文に入る文章)</summary><p class="md-intro-text">${escapeHtml(m.selfIntro)}</p></details>` : ""}
       ${m.customers ? section("主なお客様", text(m.customers)) : ""}
+      ${(m.wantsRank || []).length ? section("欲しい紹介 ランキング", rankHtml(m)) : ""}
       ${section("求める紹介", text(m.wants))}
       ${m.triggers.length ? section("こんな話が出たら", `<div class="ref-triggers">${m.triggers.map((t) => `<span class="ref-trigger">「${escapeHtml(t)}」</span>`).join("")}</div>`) : ""}
       ${m.note ? section("補足", text(m.note)) : ""}
@@ -439,6 +442,11 @@
   }
     function bandOf(score) { return score >= 85 ? "とても合う" : score >= 70 ? "合う" : "参考に"; }
   function blank(m) { return m.id === myMemberId ? "まだ入力されていません" : "—"; }
+  // 欲しい紹介 ランキング(1位〜5位)
+  function rankHtml(m) {
+    const r = m.wantsRank || [];
+    return r.length ? `<ol class="ref-rank">${r.slice(0, 5).map((t, i) => `<li class="is-r${i + 1}"><b>${i + 1}位</b><span>${escapeHtml(t)}</span></li>`).join("")}</ol>` : "";
+  }
 
   function roleMark(id, compact) {
     const r = refRoleOf(id);

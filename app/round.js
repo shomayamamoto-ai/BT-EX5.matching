@@ -182,7 +182,7 @@
       return {
         key, kind: "member", memberId: id, name: m.name, photo: photos[id] || "",
         catch: m.company || m.category || "", team: m.team || "",
-        area: areaLine(m), wants: clip(m.wants, 240), triggers: (m.triggers || []).slice(0, 4),
+        area: areaLine(m), wants: clip(m.wants, 240), wantsRank: (m.wantsRank || []).slice(0, 5), triggers: (m.triggers || []).slice(0, 4),
         role: typeof refRoleOf === "function" ? refRoleOf(id) : null,
       };
     }
@@ -1576,7 +1576,10 @@
             p.catch ? h("p", { class: "pr-catch" }, p.catch) : null,
             h("dl", { class: "pr-rows" },
               p.area ? h("div", { class: "pr-row-area" }, h("dt", null, "活動範囲"), h("dd", null, p.area)) : null,
-              p.wants ? h("div", { class: "pr-row-wants" }, h("dt", null, "つながりたい人"), h("dd", null, p.wants)) : null,
+              // 欲しい紹介 ランキングがあるときは順位つきで(なければ「つながりたい人」の文)
+              p.wantsRank && p.wantsRank.length
+                ? h("div", { class: "pr-row-wants" }, h("dt", null, "欲しい紹介 ランキング"), h("dd", { class: "is-rank" }, h("ol", { class: "pr-rank" }, p.wantsRank.map((t, i) => h("li", { class: `is-r${i + 1}` }, h("b", null, `${i + 1}位`), h("span", null, t))))))
+                : p.wants ? h("div", { class: "pr-row-wants" }, h("dt", null, "つながりたい人"), h("dd", null, p.wants)) : null,
               p.triggers && p.triggers.length ? h("div", { class: "pr-row-tags" }, h("dt", null, "こんな話が出たら"), h("dd", { class: "pr-tags" }, p.triggers.map((t) => h("span", null, t)))) : null))),
         h("div", { class: "pr-side" },
           face(p.photo, p.name, "pr-photo"),

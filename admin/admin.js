@@ -154,7 +154,7 @@
 
   const EMPTY = {
     id: "", name: "", company: "", team: "", base: "未設定", category: UNCATEGORIZED,
-    business: "", customers: "", offer: "", selfIntro: "", note: "", wants: "", triggers: [], face: "", faceAreas: [], online: "unknown",
+    business: "", customers: "", offer: "", selfIntro: "", note: "", wants: "", wantsRank: [], triggers: [], face: "", faceAreas: [], online: "unknown",
     topics: [], targets: [], prospects: [], links: [],
   };
 
@@ -169,6 +169,7 @@
       form.elements[k].value = m[k];
     });
     form.elements.triggers.value = m.triggers.join("\n");
+    for (let i = 1; i <= 5; i++) form.elements[`wantsRank${i}`].value = (m.wantsRank || [])[i - 1] || "";
     LinksEditor.mount($("#fLinks"), m.links || []);
     ["faceAreas", "topics", "targets", "prospects"].forEach((k) => {
       form.querySelectorAll(`input[name="${k}"]`).forEach((cb) => { cb.checked = m[k].includes(cb.value); });
@@ -211,6 +212,7 @@
       selfIntro: v("selfIntro"),
       note: v("note"),
       wants: v("wants"),
+      wantsRank: [1, 2, 3, 4, 5].map((i) => v(`wantsRank${i}`)).filter(Boolean),
       triggers: form.elements.triggers.value.split(/\r?\n/).map((t) => t.replace(/^[「『]|[」』]$/g, "").trim()).filter(Boolean),
       face: v("face"),
       faceAreas: checked("faceAreas"),

@@ -1988,7 +1988,7 @@ const REF_SEED_ANNOUNCEMENTS = [
   {
     seedId: "2026-10-19-update-15",
     cat: "アップデート",
-    rev: 3,
+    rev: 4,
     at: Date.UTC(2026, 9, 18, 16, 0), // 2026/10/19 1:00(日本時間)
     title: "【アップデート】話す順番を「BT-EX5 → ほかの BT-EX → ゲスト」に固定しました",
     body: [
@@ -2016,6 +2016,7 @@ const REF_SEED_ANNOUNCEMENTS = [
       "・一般規定・出席規定・倫理規定を、それぞれ1枚のスライドにし、絵・番号・見出しのついたカードで見やすくしました(禁止のものは赤い印と「禁止」の札)。規定の文はそのままです。カードの見出しは「スライドの内容を編集」で変えられます。",
       "・主な3つの活動の「パターン1・2・3」を枠で囲んだ札にし、「:」を消しました。",
       "・代表の紹介の「「コスパ最高の事業支援 &/日本トップの資産形成スクール」の広報」を、必ず2行で出すようにしました。",
+      "・【新機能】「欲しい紹介 ランキング」:プロフィールの「求める紹介」の下で、欲しい紹介を1位〜5位まで登録できるようにしました。早見表・プロフィールの詳細・定例会の30秒プレゼンのスライド・紹介を記録する画面(紹介先を選ぶと出ます)に、順位つきで出ます。",
       "・倫理規定の「否定的な発言は控え」のあとの「、」を消しました。表紙の日時と、本日の流れの見出しの下の「13:00 〜 15:00(120分)」を出さないようにしました(時間配分の帯と各行の時刻はそのまま)。",
       "",
       "■ 前回",
@@ -2132,7 +2133,7 @@ var BtexServerCore = (function () {
 
   // 本人が編集できる項目(名前・所属チーム・ID は管理者のみ)
   var SELF_EDITABLE = [
-    "company", "base", "category", "business", "customers", "offer", "selfIntro", "note", "wants", "triggers",
+    "company", "base", "category", "business", "customers", "offer", "selfIntro", "note", "wants", "wantsRank", "triggers",
     "face", "faceAreas", "online", "topics", "targets", "prospects", "links",
     "strengths", "pitch", "ng", "goals", "personal",
   ];
@@ -2928,6 +2929,8 @@ var BtexServerCore = (function () {
         selfIntro: cleanStr(String(m.selfIntro || "").replace(/\r\n?/g, "\n"), 3000),
         note: cleanStr(m.note, 300),
         wants: cleanStr(m.wants, 400),
+        // 欲しい紹介の順位(1位〜5位。上から順に)
+        wantsRank: cleanList(m.wantsRank, null, 5),
         triggers: cleanList(m.triggers, null, 24).map(function (t) { return t.slice(0, 40); }),
         face: cleanStr(m.face, 60),
         faceAreas: cleanList(m.faceAreas, ["niigata", "tokyo"], 2),

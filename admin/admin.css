@@ -198,3 +198,11 @@
 .adm-checks label:has(input:checked) { background: var(--grad, #1a1410); border-color: rgba(201, 164, 92, 0.6); color: #f3e3bf; font-weight: 800; }
 .adm-checks label:has(input:checked)::before { content: "✓"; font-weight: 900; color: #ead39f; }
 .adm-checks label:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+/* 欲しい紹介 ランキング(1位〜5位) */
+.prof-rank-ttl { display: block; }
+.prof-rank-list { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 6px; }
+.prof-rank-list label { display: grid; grid-template-columns: 3.2em minmax(0, 1fr); align-items: center; gap: 8px; font-weight: 400; }
+.prof-rank-list b { display: grid; place-items: center; height: 32px; border-radius: 10px; background: #f3e7cf; color: #7a5520; font-size: 13px; font-weight: 900; }
+.prof-rank-list li:first-child b { background: linear-gradient(180deg, #e9c77d, #c9993f); color: #2b1d08; }
+.prof-rank-list input { min-width: 0; width: 100%; }
+.prof-rank-list b { height: auto; align-self: stretch; min-height: 32px; }

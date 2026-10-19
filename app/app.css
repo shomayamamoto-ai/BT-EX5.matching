@@ -2398,3 +2398,19 @@ button.home-welcome-check:active { transform: scale(0.94); }
 .pd-tag { display: inline-grid; place-items: center; padding: 0.15em 0.6em; border-radius: 8px; border: 1px solid rgba(226, 184, 102, 0.6); background: rgba(226, 184, 102, 0.12); color: var(--pd-gold); font-weight: 800; white-space: nowrap; }
 /* 代表の紹介: 改行を入れた文は、その行のまま */
 .pd-block .pd-line { display: block; white-space: nowrap; }
+/* 30秒プレゼン: 欲しい紹介 ランキング(1位〜5位) */
+.pr-rows dd.is-rank, .pr-rows .pr-row-wants dd.is-rank { display: block; -webkit-line-clamp: unset; overflow: visible; }
+.pr-rank { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.3em; }
+.pr-rank li { display: grid; grid-template-columns: 3.1em minmax(0, 1fr); align-items: center; gap: 0.6em; font-size: 0.86em; line-height: 1.35; }
+.pr-rank b { display: grid; place-items: center; height: 1.7em; border-radius: 0.5em; border: 1px solid rgba(226, 184, 102, 0.45); background: rgba(226, 184, 102, 0.12); color: var(--gold); font-size: 0.82em; font-weight: 900; }
+.pr-rank span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pr-rank li.is-r1 { font-size: 1em; font-weight: 800; color: #fff3dc; }
+.pr-rank li.is-r1 b { background: linear-gradient(180deg, #e9c77d, #c9993f); color: #2b1d08; border-color: transparent; }
+/* 紹介を記録: 紹介先の欲しい紹介 */
+.ref-want-box { margin: -4px 0 12px; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--line); background: #fffaf0; }
+.ref-want-box > p { margin: 0 0 6px; font-size: 12.5px; font-weight: 900; color: var(--accent-dark); }
+.ref-want-box .ref-want-text { margin: 0; font-size: 13.5px; font-weight: 400; color: var(--text); line-height: 1.6; }
+.app-rank { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.app-rank li { display: grid; grid-template-columns: 3em minmax(0, 1fr); align-items: center; gap: 8px; font-size: 14px; font-weight: 700; line-height: 1.45; }
+.app-rank b { display: grid; place-items: center; height: 24px; border-radius: 8px; background: #f3e7cf; color: #7a5520; font-size: 12px; font-weight: 900; }
+.app-rank li.is-r1 b { background: linear-gradient(180deg, #e9c77d, #c9993f); color: #2b1d08; }

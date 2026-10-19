@@ -7,7 +7,7 @@
   <meta name="robots" content="noindex">
   <title>名簿の管理 | BT-EX5</title>
   <style>html.guard-pending body { visibility: hidden; } html.guard-pending::after { content: "読み込み中…"; position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; font: 700 15px sans-serif; color: #8f8173; background: #f6f2ea; }</style>
-  <link rel="icon" type="image/svg+xml" href="../assets/bt-ex5-mark.svg?v=202610190559">
+  <link rel="icon" type="image/svg+xml" href="../assets/bt-ex5-mark.svg?v=202610190643">
   <link rel="manifest" href="../manifest.webmanifest">
   <link rel="apple-touch-icon" href="../assets/icon-180.png">
   <meta name="theme-color" content="#1a0f0c">
@@ -15,14 +15,14 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" onload="this.onload=null;this.rel='stylesheet'">
   <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Noto+Sans+JP:wght@400;500;700;900&display=swap"></noscript>
-  <link rel="stylesheet" href="../referral/referral.css?v=202610190559">
-  <link rel="stylesheet" href="admin.css?v=202610190559">
-  <link rel="stylesheet" href="../opening/intro.css?v=202610190559">
-  <link rel="stylesheet" href="../app/nav.css?v=202610190559">
-  <link rel="stylesheet" href="../app/tab-dock.css?v=202610190559">
-  <link rel="stylesheet" href="../assets/lux.css?v=202610190559">
-  <script src="../assets/ime-guard.js?v=202610190559"></script>
-  <script src="../assets/text-size.js?v=202610190559"></script>
+  <link rel="stylesheet" href="../referral/referral.css?v=202610190643">
+  <link rel="stylesheet" href="admin.css?v=202610190643">
+  <link rel="stylesheet" href="../opening/intro.css?v=202610190643">
+  <link rel="stylesheet" href="../app/nav.css?v=202610190643">
+  <link rel="stylesheet" href="../app/tab-dock.css?v=202610190643">
+  <link rel="stylesheet" href="../assets/lux.css?v=202610190643">
+  <script src="../assets/ime-guard.js?v=202610190643"></script>
+  <script src="../assets/text-size.js?v=202610190643"></script>
 </head>
 <body>
 
@@ -114,6 +114,15 @@
           <label class="adm-field">紹介特典(BT-EX5のメンバーから紹介されたお客様への特典)<textarea name="offer" rows="2" maxlength="120"></textarea></label>
           <label class="adm-field">補足(料金・返信の早さなど)<textarea name="note" rows="2" maxlength="300"></textarea></label>
           <label class="adm-field">求める紹介<textarea name="wants" rows="2" maxlength="400"></textarea></label>
+          <div class="adm-field prof-rank" id="admRank"><span class="prof-rank-ttl">欲しい紹介 ランキング(1位〜5位)</span><span class="prof-hint">いちばん欲しい紹介から順に、5つまで。早見表・プロフィール・定例会のスライド・紹介を記録する画面に順位つきで出ます。</span>
+          <ol class="prof-rank-list">
+            <li><label><b>1位</b><input type="text" name="wantsRank1" maxlength="60" placeholder="例: 飲食店の開業を考えている方"></label></li>
+            <li><label><b>2位</b><input type="text" name="wantsRank2" maxlength="60"></label></li>
+            <li><label><b>3位</b><input type="text" name="wantsRank3" maxlength="60"></label></li>
+            <li><label><b>4位</b><input type="text" name="wantsRank4" maxlength="60"></label></li>
+            <li><label><b>5位</b><input type="text" name="wantsRank5" maxlength="60"></label></li>
+          </ol>
+        </div>
           <label class="adm-field">自己紹介文(「紹介文をコピー」に入る本人の文章。空欄なら自動で作ります)<textarea name="selfIntro" rows="6" maxlength="3000"></textarea></label>
           <label class="adm-field">こんな話が出たら(1行に1つ)<textarea name="triggers" rows="3"></textarea></label>
         </fieldset>
@@ -163,17 +172,17 @@
 
   <div class="ref-toast" id="refToast" role="status" hidden></div>
 
-  <script src="../auth/server-core.js?v=202610190559"></script>
-  <script src="../auth/server-community.js?v=202610190559"></script>
-  <script src="../auth/mock-server.js?v=202610190559"></script>
-  <script src="../auth/api.js?v=202610190559"></script>
-  <script src="../auth/session.js?v=202610190559"></script>
-  <script src="../referral/data.js?v=202610190559"></script>
-  <script src="../referral/links-editor.js?v=202610190559"></script>
-  <script src="admin.js?v=202610190559"></script>
-  <script src="../opening/intro.js?v=202610190559"></script>
-  <script src="../app/tab-dock.js?v=202610190559"></script>
-  <script src="../assets/icons.js?v=202610190559"></script>
-  <script src="../app/nav.js?v=202610190559" data-tab="me"></script>
+  <script src="../auth/server-core.js?v=202610190643"></script>
+  <script src="../auth/server-community.js?v=202610190643"></script>
+  <script src="../auth/mock-server.js?v=202610190643"></script>
+  <script src="../auth/api.js?v=202610190643"></script>
+  <script src="../auth/session.js?v=202610190643"></script>
+  <script src="../referral/data.js?v=202610190643"></script>
+  <script src="../referral/links-editor.js?v=202610190643"></script>
+  <script src="admin.js?v=202610190643"></script>
+  <script src="../opening/intro.js?v=202610190643"></script>
+  <script src="../app/tab-dock.js?v=202610190643"></script>
+  <script src="../assets/icons.js?v=202610190643"></script>
+  <script src="../app/nav.js?v=202610190643" data-tab="me"></script>
 </body>
 </html>

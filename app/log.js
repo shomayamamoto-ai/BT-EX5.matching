@@ -377,7 +377,19 @@
   // memoText: 早見表の相談アシスタント・紹介診断から来たときの相談内容(入れ直さなくてよいように)
   function referralForm(toId, memoText) {
     App.openSheet("紹介を記録", (body, close) => {
-      const picker = App.memberPicker({ value: toId && App.memberById(toId) ? toId : null, exclude: [App.session.memberId], label: "紹介先のメンバー" });
+      // 紹介先を選ぶと、その方の「欲しい紹介 ランキング」(なければ求める紹介の文)を下に出す
+      const wantBox = h("div", { class: "ref-want-box", hidden: true, "aria-live": "polite" });
+      const drawWant = (id) => {
+        const m = id ? App.memberById(id) : null;
+        const r = (m && m.wantsRank) || [];
+        wantBox.hidden = !m || (!r.length && !m.wants);
+        if (wantBox.hidden) return;
+        App.fill(wantBox, h("p", null, `${m.name}さんの欲しい紹介`),
+          r.length ? h("ol", { class: "app-rank" }, r.slice(0, 5).map((t, i) => h("li", { class: `is-r${i + 1}` }, h("b", null, `${i + 1}位`), h("span", null, t))))
+            : h("p", { class: "ref-want-text" }, m.wants));
+      };
+      const picker = App.memberPicker({ value: toId && App.memberById(toId) ? toId : null, exclude: [App.session.memberId], label: "紹介先のメンバー", onchange: (ids) => drawWant(ids[0]) });
+      drawWant(picker.getValue());
       const prospect = App.draft("ref-prospect", h("input", { type: "text", maxlength: "60", placeholder: "例:株式会社〇〇 佐藤社長" }));
       const contact = App.draft("ref-contact", h("input", { type: "text", maxlength: "120", placeholder: "電話・メール・LINE など(任意)" }));
       const memo = h("textarea", { rows: "3", maxlength: "300", placeholder: "例:ホームページのリニューアルを検討中。来月までに話を聞きたい" });
@@ -411,6 +423,7 @@
         refDoneSheet(r);
       } },
       App.field("紹介先のメンバー", picker),
+      wantBox,
       App.field("紹介した方", prospect, "会社名・お名前"),
       App.field("連絡先", contact, "紹介先のメンバーとあなただけが見られます"),
       App.field("どんな相談か", memo),

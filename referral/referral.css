@@ -1437,3 +1437,12 @@ a.ref-btn { display: inline-flex; align-items: center; justify-content: center; 
 
 /* 詳細の文は、本人が入れた改行をそのまま出す(事業内容のプランごとの段落など) */
 .md-sec > p { white-space: pre-line; }
+/* 欲しい紹介 ランキング(1位〜5位) */
+.ref-rank { list-style: none; margin: 4px 0 10px; padding: 0; display: grid; gap: 4px; }
+.ref-rank li { display: grid; grid-template-columns: 3em minmax(0, 1fr); align-items: center; gap: 8px; font-size: 14px; font-weight: 700; line-height: 1.45; }
+.ref-rank b { display: grid; place-items: center; height: 24px; border-radius: 8px; background: #f3e7cf; color: #7a5520; font-size: 12px; font-weight: 900; }
+.ref-rank li.is-r1 { font-size: 15.5px; font-weight: 900; }
+.ref-rank li.is-r1 b { background: linear-gradient(180deg, #e9c77d, #c9993f); color: #2b1d08; }
+.ref-rank li.is-r2 b { background: #ecd9ae; }
+.ref-rank li.is-r3 b { background: #f0e1c0; }
+.md-sec .ref-rank li { font-size: 15px; }
