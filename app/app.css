@@ -2377,3 +2377,24 @@ button.home-welcome-check:active { transform: scale(0.94); }
 .pr-kana { margin: 0.2em 0 0; font-size: clamp(14px, min(1.8vw, 3svh), 26px); font-weight: 700; letter-spacing: 0.18em; color: #d9c08e; }
 .pr-extra-kana { margin-left: 0.6em; font-size: 12px; font-weight: 700; color: var(--text-light); }
 @media (min-width: 761px) { .pr-extra-add { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.3fr) auto; } }
+/* 規定・倫理規定: 絵・番号・見出しつきのカード(禁止は赤い印) */
+.pd-rule-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(10px, 1.4vw, 20px); }
+.pd-rules.is-cols-2 .pd-rule-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.pd-rule-card { display: grid; align-content: start; gap: clamp(6px, 1.1svh, 12px); padding: clamp(14px, 2svh, 24px) clamp(14px, 1.5vw, 24px); }
+.pd-rule-top { display: flex; align-items: center; gap: 10px; }
+.pd-rule-ic { display: grid; place-items: center; width: clamp(38px, 3.6vw, 54px); height: clamp(38px, 3.6vw, 54px); border-radius: 14px; border: 1px solid rgba(226, 184, 102, 0.45); background: linear-gradient(180deg, rgba(226, 184, 102, 0.22), rgba(226, 184, 102, 0.06)); color: var(--pd-gold); }
+.pd-rule-ic .pr-icon { width: 60%; height: 60%; }
+.pd-rule-card .pd-rule-no { margin-left: auto; font-family: var(--pd-serif); font-size: clamp(22px, min(2.6vw, 4.4svh), 40px); font-weight: 700; line-height: 1; color: var(--pd-gold); opacity: 0.9; }
+.pd-rule-tag { padding: 3px 10px; border-radius: 999px; background: rgba(224, 110, 92, 0.16); border: 1px solid rgba(224, 110, 92, 0.55); color: #f0a394; font-size: clamp(11px, 1vw, 14px); font-weight: 900; letter-spacing: 0.08em; }
+.pd-rule-card.is-ban .pd-rule-ic { border-color: rgba(224, 110, 92, 0.6); background: linear-gradient(180deg, rgba(224, 110, 92, 0.24), rgba(224, 110, 92, 0.06)); color: #f0a394; }
+.pd-rule-head { margin: 0; font-family: var(--pd-serif); font-size: clamp(16px, min(1.75vw, 3svh), 26px); font-weight: 700; line-height: 1.35; color: var(--pd-strong); }
+.pd-rule-text { margin: 0; font-size: clamp(12px, min(1.25vw, 2.1svh), 17px); line-height: 1.65; color: var(--pd-text); }
+.pd-rule-text em { font-style: normal; font-weight: 800; color: var(--pd-strong); background: linear-gradient(transparent 58%, rgba(226, 184, 102, 0.42) 58%); padding: 0 0.1em; }
+.pd-rules.is-cols-2 .pd-rule-head { font-size: clamp(18px, min(2vw, 3.4svh), 30px); }
+.pd-rules.is-cols-2 .pd-rule-text { font-size: clamp(13px, min(1.45vw, 2.4svh), 20px); }
+@media (max-width: 760px), (max-aspect-ratio: 1/1) { .pd-rule-grid, .pd-rules.is-cols-2 .pd-rule-grid { grid-template-columns: minmax(0, 1fr); } }
+/* 「パターン1」は枠で囲んだ札(「:」は出さない) */
+.pd-hang.is-tagged { align-items: center; column-gap: 0.6em; }
+.pd-tag { display: inline-grid; place-items: center; padding: 0.15em 0.6em; border-radius: 8px; border: 1px solid rgba(226, 184, 102, 0.6); background: rgba(226, 184, 102, 0.12); color: var(--pd-gold); font-weight: 800; white-space: nowrap; }
+/* 代表の紹介: 改行を入れた文は、その行のまま */
+.pd-block .pd-line { display: block; white-space: nowrap; }

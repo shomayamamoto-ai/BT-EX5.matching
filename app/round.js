@@ -670,9 +670,12 @@
       const R = D.rules;
       if (R) {
         deck("section", { no: 0, name: R.title, step: "BT-EXの規定" });
-        if (R.kpis && R.kpis.length) deck("kpis", { name: "数字で見る BT-EX の約束", step: "BT-EXの規定", items: R.kpis });
-        deck("rules", { name: "一般規定・出席規定", step: "BT-EXの規定", blocks: [["一般規定", R.general], ["出席規定", R.attendance]], note: R.note });
-        deck("rules", { name: "倫理規定", step: "BT-EXの規定", blocks: [["倫理規定", R.ethics]], single: true });
+        if (R.kpis && R.kpis.length) deck("kpis", { name: "BT-EX の約束", step: "BT-EXの規定", items: R.kpis });
+        // 規定は1つずつのスライドに、絵・番号・見出しつきのカードで出す(文はそのまま)
+        const H = R.heads || {}, I = R.icons || {};
+        deck("rules", { name: "一般規定", step: "BT-EXの規定", rows: R.general, heads: H.general, icons: I.general, cols: 3 });
+        deck("rules", { name: "出席規定", step: "BT-EXの規定", rows: R.attendance, heads: H.attendance, icons: I.attendance, cols: 2, note: R.note });
+        deck("rules", { name: "倫理規定", step: "BT-EXの規定", rows: R.ethics, heads: H.ethics, icons: I.ethics, cols: 3 });
       }
       if (D.schedule) {
         deck("schedule", { name: D.schedule.title, step: D.schedule.title, lead: D.schedule.lead, rows: D.schedule.rows, note: D.schedule.note });
@@ -783,6 +786,12 @@
     clock: { d: ["M12 3.75a8.25 8.25 0 1 0 0 16.5 8.25 8.25 0 0 0 0-16.5Z", "M12 7.75V12l2.75 1.75"] },
     spark: { d: ["M12 3.5l1.9 6.6 6.6 1.9-6.6 1.9L12 20.5l-1.9-6.6L3.5 12l6.6-1.9Z"], sec: ["M12 3.5l1.9 6.6 6.6 1.9-6.6 1.9L12 20.5l-1.9-6.6L3.5 12l6.6-1.9Z"] },
     expand: { d: ["M7 9.5l5 5 5-5"] },
+    idcard: { d: ["M5.75 5.75h12.5a2 2 0 0 1 2 2v8.5a2 2 0 0 1-2 2H5.75a2 2 0 0 1-2-2v-8.5a2 2 0 0 1 2-2Z", "M8.75 9.25a1.75 1.75 0 1 0 0 3.5 1.75 1.75 0 0 0 0-3.5Z", "M6.5 15.25c.5-1.1 1.3-1.6 2.25-1.6s1.75.5 2.25 1.6", "M13.5 10h4", "M13.5 13h3"], sec: ["M5.75 5.75h12.5a2 2 0 0 1 2 2v8.5a2 2 0 0 1-2 2H5.75a2 2 0 0 1-2-2v-8.5a2 2 0 0 1 2-2Z"] },
+    doc: { d: ["M7 3.75h6.5l4.5 4.5v10a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-12.5a2 2 0 0 1 2-2Z", "M13.5 3.75v4.5H18", "M8.5 12.5h7", "M8.5 15.5h5"], sec: ["M7 3.75h6.5l4.5 4.5v10a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-12.5a2 2 0 0 1 2-2Z"] },
+    ban: { d: ["M5.6 5.6l12.8 12.8"], ring: true },
+    bank: { d: ["M3.75 9.25 12 4.75l8.25 4.5Z", "M6 10v6.75", "M10 10v6.75", "M14 10v6.75", "M18 10v6.75", "M3.75 19.25h16.5"], sec: ["M3.75 9.25 12 4.75l8.25 4.5Z"] },
+    award: { d: ["M12 3.75a5.25 5.25 0 1 0 0 10.5 5.25 5.25 0 0 0 0-10.5Z", "M8.9 13.25 7.75 20.25 12 18.1l4.25 2.15-1.15-7"], sec: ["M12 3.75a5.25 5.25 0 1 0 0 10.5 5.25 5.25 0 0 0 0-10.5Z"] },
+    visitor: { d: ["M10 4.75a3.25 3.25 0 1 0 0 6.5 3.25 3.25 0 0 0 0-6.5Z", "M4.25 19.25v-.5a5.75 5.75 0 0 1 9.4-4.45", "M18 13.5v6", "M15 16.5h6"], sec: ["M10 4.75a3.25 3.25 0 1 0 0 6.5 3.25 3.25 0 0 0 0-6.5Z"] },
     // 挙手(SF Symbols の hand.raised のように、指を1本ずつ丸い線で)。右上の2本の弧は「手をあげる」動き
     hand: {
       d: [
@@ -1250,12 +1259,13 @@
       const rich = (t) => String(t).split(/《|》/).map((x, i) => (i % 2 ? h("em", null, x) : x));
       // カードの文: 改行のある文は1行ずつ(行の途中では折り返さない)。
       // 「パターン1:リアル定例会⏎& オンライン定例会」のように「:」で始まる文は、続きの行を「:」のあとにそろえる
+      // 「パターン1:」の「パターン1」は枠で囲んだ札にして、「:」は出さない
       const cardLines = (x) => {
         const t = String(x);
-        if (!t.includes("\n")) return [t];
-        const m = /^([^:：\n]{1,12}[:：])([\s\S]*)$/.exec(t);
+        const m = /^([^:：\n]{1,12})[:：]\s*([\s\S]*)$/.exec(t);
+        if (!m && !t.includes("\n")) return [t];
         const rows = (m ? m[2] : t).split("\n").map((r) => h("span", { class: "pd-line" }, r.trim()));
-        return m ? [h("span", { class: "pd-hang" }, h("span", { class: "pd-hang-l" }, m[1]), h("span", { class: "pd-hang-r" }, ...rows))] : rows;
+        return m ? [h("span", { class: "pd-hang is-tagged" }, h("span", { class: "pd-hang-l pd-tag" }, m[1]), h("span", { class: "pd-hang-r" }, ...rows))] : rows;
       };
       // 長いカタカナの言葉は、決めたところで改行する(「ブレイクアウト/ルーム商談」)
       const softBreaks = (t) => String(t).split(/(?=ルーム商談)/).flatMap((x, i) => (i ? [h("br"), x] : [x]));
@@ -1343,7 +1353,7 @@
               return h("li", nth(i), h("b", null, m[0].replace(/\s+/g, "")), h("small", null, rest));
             })) : null,
             h("div", { class: "pd-leader-cols" },
-              L.now && L.now.length ? h("div", { class: "pd-block" }, h("p", { class: "pd-h" }, "現在"), h("ul", null, L.now.map((x) => h("li", null, ...lines(x))))) : null,
+              L.now && L.now.length ? h("div", { class: "pd-block" }, h("p", { class: "pd-h" }, "現在"), h("ul", null, L.now.map((x) => h("li", null, ...(String(x).includes("\n") ? String(x).split("\n").map((r) => h("span", { class: "pd-line" }, r)) : [x]))))) : null,
               L.dreams && L.dreams.length ? h("div", { class: "pd-block" }, h("p", { class: "pd-h" }, "想い・夢"), h("ul", null, L.dreams.map((x) => h("li", null, ...lines(x))))) : null)),
           face(p.photo, p.name, "pr-photo pd-photo"));
       }
@@ -1456,10 +1466,20 @@
             h("ul", null, g.items.map((x) => h("li", null, x)))))));
       }
       if (p.type === "rules") {
-        return frame(`pd-rules${p.single ? " is-single" : ""}`,
-          h("div", { class: "pd-rule-cols" }, p.blocks.map(([head, rows], bi) => h("section", Object.assign({ class: "pd-card pd-rule-block" }, nth(bi)),
-            p.blocks.length > 1 ? h("p", { class: "pd-card-title" }, head) : null,
-            h("ol", null, rows.map((x, i) => h("li", null, h("span", { class: "pd-rule-no" }, NUMS[i]), h("span", null, ...String(x).split("\n").flatMap((t, k) => (k ? [h("br"), ...rich(t)] : rich(t)))))))))),
+        // 規定のカード: 絵(禁止は赤い印)・番号・見出し・文(改行と《 》の強調はそのまま)
+        const rows = p.rows || [];
+        return frame(`pd-rules is-cols-${p.cols || 3}`,
+          h("ol", { class: "pd-rule-grid" }, rows.map((x, i) => {
+            const ic = (p.icons || [])[i] || "check";
+            const head = (p.heads || [])[i] || "";
+            return h("li", Object.assign({ class: `pd-card pd-rule-card${ic === "ban" ? " is-ban" : ""}` }, nth(i)),
+              h("div", { class: "pd-rule-top" },
+                h("span", { class: "pd-rule-ic" }, lineIcon(ic)),
+                ic === "ban" ? h("span", { class: "pd-rule-tag" }, "禁止") : null,
+                h("span", { class: "pd-rule-no" }, two(i + 1))),
+              head ? h("p", { class: "pd-rule-head" }, head) : null,
+              h("p", { class: "pd-rule-text" }, ...String(x).split("\n").flatMap((t, k) => (k ? [h("br"), ...rich(t)] : rich(t)))));
+          })),
           p.note ? h("p", { class: "pd-note" }, `※ ${p.note}`) : null);
       }
       if (p.type === "schedule") {
@@ -1489,7 +1509,7 @@
         if (room > 0 && b.scrollWidth > room) b.style.fontSize = `${(parseFloat(getComputedStyle(b).fontSize) * (room / b.scrollWidth) * 0.96).toFixed(2)}px`;
       });
       // カードの文: 1行が入りきらないときは、同じスライドのカードの文をそろって小さくする
-      const texts = [...el.querySelectorAll(".pd-card-text, .pd-check-text")];
+      const texts = [...el.querySelectorAll(".pd-card-text, .pd-check-text, .pd-block ul")];
       texts.forEach((t) => { t.style.fontSize = ""; });
       // (行の左はしからカードの文の右はしまでを、使える幅とする。「パターン1:」の続きの行も同じ)
       const ratio = texts.reduce((r, t) => Math.min(r, [...t.querySelectorAll(".pd-line")].reduce((q, ln) => {
