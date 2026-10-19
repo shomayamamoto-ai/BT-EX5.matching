@@ -276,6 +276,11 @@ var BtexServerCore = (function () {
       revs.forEach(function (r) {
         if (db.seedRevisions.indexOf(r.rev) !== -1) return;
         (r.remove || []).forEach(function (id) { removeMember(db, id); });
+        // add: 初期名簿に新しく入った人を、既にある名簿にも足す(まだいないときだけ)
+        (r.add || []).forEach(function (id) {
+          var sm = seedMembers.filter(function (m) { return m.id === id; })[0];
+          if (sm && findIndex(db.referralMembers, function (m) { return m.id === id; }) < 0) db.referralMembers.push(clone(sm));
+        });
         r.ids.forEach(function (id) {
           var seedMember = seedMembers.filter(function (m) { return m.id === id; })[0];
           var index = findIndex(db.referralMembers, function (m) { return m.id === id; });

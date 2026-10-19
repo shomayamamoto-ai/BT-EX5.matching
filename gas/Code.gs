@@ -617,7 +617,6 @@ const REF_SEED_MEMBERS = [
       { type: "proposal", url: "materials/kanno-lymph.jpg", label: "節子式リンパケア ご案内(活動内容・プロフィール)", cover: "materials/kanno-lymph.jpg" },
     ],
   }),
-  rosterMember("m13", "佐藤 慎哉", "", "", "", []),
   Object.assign(rosterMember("m14", "三村 隆", "株式会社エイレム・Guild Master株式会社 代表取締役", "Team Bloom∞🌸", "", ["beauty", "reform", "food"]), {
     business: "美容、リフォーム、飲食、プラットフォーム。",
     customers: "法人・個人問わず",
@@ -738,6 +737,8 @@ const REF_SEED_MEMBERS = [
     targets: ["any"],
     prospects: ["owner", "staff", "individual"],
   }),
+  // 2026年10月、bt-ex.jp の BT-EX5 の名簿に新しく入った方(プロフィールはご本人が入れる)
+  rosterMember("m28", "長田 恵美子", "", "", "", []),
 ];
 
 // 名前のうしろに付いた呼び名(例:「小林 末季こばねぇ」の「こばねぇ」)を分ける。
@@ -1033,6 +1034,8 @@ const REF_SEED_REVISIONS = [
   { rev: "2026-10-kobane-retention", ids: ["m22"], fields: ["topics"], addTopics: ["retention"] },
   // 運営の依頼で、栁橋 雅也さんのお名前の漢字を直す(「柳」→「栁」)
   { rev: "2026-10-yanagibashi-name", ids: ["m24"], fields: ["name"], force: true },
+  // bt-ex.jp の BT-EX5 の名簿(26名)に合わせる: 長田 恵美子さんを足し、名簿にいない佐藤 慎哉さんを外す
+  { rev: "2026-10-roster-sync-1", ids: [], add: ["m28"], remove: ["m13"] },
 ];
 
 // 紹介に効く項目(重要な順)。足りない項目は管理者ページの「お願い文」と、
@@ -2032,6 +2035,7 @@ const REF_SEED_ANNOUNCEMENTS = [
       "・スライドの題の下線を、題の文字の端から端まで引くようにしました。",
       "・大場さん・一場さん・佐藤 志織さん・大藤さん・見上さん・柏木さん・松田さん・坂上さん・髙橋さんの顔写真を入れました(30秒プレゼンのスライドなどに出ます)。",
       "・栁橋 雅也さんのお名前の漢字を直しました(「柳」→「栁」)。",
+      "・BT-EX5 の名簿を bt-ex.jp の名簿(26名)に合わせました。長田 恵美子さんが加わり、佐藤 慎哉さんが名簿から外れました。",
       "・【新機能】「欲しい紹介 ランキング」:プロフィールの「求める紹介」の下で、欲しい紹介を1位〜5位まで登録できるようにしました。早見表・プロフィールの詳細・定例会の30秒プレゼンのスライド・紹介を記録する画面(紹介先を選ぶと出ます)に、順位つきで出ます。",
       "・倫理規定の「否定的な発言は控え」のあとの「、」を消しました。表紙の日時と、本日の流れの見出しの下の「13:00 〜 15:00(120分)」を出さないようにしました(時間配分の帯と各行の時刻はそのまま)。",
       "",
@@ -2355,6 +2359,11 @@ var BtexServerCore = (function () {
       revs.forEach(function (r) {
         if (db.seedRevisions.indexOf(r.rev) !== -1) return;
         (r.remove || []).forEach(function (id) { removeMember(db, id); });
+        // add: 初期名簿に新しく入った人を、既にある名簿にも足す(まだいないときだけ)
+        (r.add || []).forEach(function (id) {
+          var sm = seedMembers.filter(function (m) { return m.id === id; })[0];
+          if (sm && findIndex(db.referralMembers, function (m) { return m.id === id; }) < 0) db.referralMembers.push(clone(sm));
+        });
         r.ids.forEach(function (id) {
           var seedMember = seedMembers.filter(function (m) { return m.id === id; })[0];
           var index = findIndex(db.referralMembers, function (m) { return m.id === id; });
