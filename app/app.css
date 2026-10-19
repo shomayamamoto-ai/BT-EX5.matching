@@ -2370,3 +2370,10 @@ button.home-welcome-check:active { transform: scale(0.94); }
   .pd-leader { grid-template-columns: minmax(0, 1.75fr) minmax(0, 1fr); }
   .pd-leader-cols { grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); }
 }
+/* 挙手のお願いの注意書き: 「※」のあとに2行をそろえる */
+.pd-raise-note .pd-hang { justify-content: center; text-align: left; column-gap: 0.4em; }
+.pd-raise-note .pd-line { display: block; }
+/* ゲスト・ほかの BT-EX の方のフリガナ(スライドではお名前のすぐ下) */
+.pr-kana { margin: 0.2em 0 0; font-size: clamp(14px, min(1.8vw, 3svh), 26px); font-weight: 700; letter-spacing: 0.18em; color: #d9c08e; }
+.pr-extra-kana { margin-left: 0.6em; font-size: 12px; font-weight: 700; color: var(--text-light); }
+@media (min-width: 761px) { .pr-extra-add { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.3fr) auto; } }

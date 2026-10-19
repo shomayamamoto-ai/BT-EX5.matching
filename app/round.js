@@ -227,6 +227,15 @@
     const extraKey = `extras-${ev ? ev.id : "none"}`;
     let extras = (() => { try { const s = JSON.parse(store.get(extraKey, "[]")); return Array.isArray(s) ? s.filter((x) => x && x.key && x.name) : []; } catch { return []; } })();
     const saveExtras = () => store.set(extraKey, JSON.stringify(extras));
+    // 「加藤寛之(カトウヒロユキ)」のように、お名前のうしろのカッコにカタカナがあるときは、お名前とフリガナに分ける
+    const splitKana = (name) => {
+      const m = /^(.+?)\s*[(（]\s*([ァ-ヴー・\s　]+?)\s*[)）]\s*$/.exec(String(name || "").trim());
+      return m ? { name: m[1].trim(), kana: m[2].trim() } : { name: String(name || "").trim(), kana: "" };
+    };
+    if (extras.some((x) => !x.kana && splitKana(x.name).kana)) {
+      extras.forEach((x) => { if (!x.kana) { const k = splitKana(x.name); if (k.kana) { x.name = k.name; x.kana = k.kana; } } });
+      saveExtras();
+    }
     extras.forEach((x) => all.push(x));
     const byKey = (k) => all.find((x) => x.key === k);
     const saveKey = `order-${ev ? ev.id : "none"}`;
@@ -310,22 +319,26 @@
     function editExtra(x) {
       App.openSheet(x.kind === "guest" ? "ゲストを編集" : "ほかの BT-EX のメンバーを編集", (body, close) => {
         const nameIn = h("input", { type: "text", maxlength: "30", value: x.name, autocomplete: "off" });
+        const kanaIn = h("input", { type: "text", maxlength: "40", value: x.kana || "", placeholder: "例: タナカ タロウ", autocomplete: "off" });
         const coIn = h("input", { type: "text", maxlength: "60", value: extraCo(x), placeholder: "例: 株式会社〇〇 代表", autocomplete: "off" });
         const unitIn = x.kind === "other" ? h("select", null, Array.from({ length: 14 }, (_, i) => i + 1).filter((n) => n !== 5).map((n) => h("option", { value: String(n) }, `BT-EX${n}`))) : null;
         if (unitIn) unitIn.value = String(x.unit || 1);
         const save = () => {
-          const name = nameIn.value.trim();
+          const sp = splitKana(nameIn.value);
+          const name = sp.name;
           if (!name) { nameIn.focus(); App.toast("お名前を入れてください", "error"); return; }
           const unit = unitIn ? Number(unitIn.value) || 0 : 0;
           if (extras.some((y) => y.key !== x.key && y.kind === x.kind && y.name === name && (!unitIn || y.unit === unit))) { App.toast(`${name}さんはもう入っています`, "error"); return; }
           x.name = name;
+          x.kana = kanaIn.value.trim() || sp.kana;
           if (unitIn) { x.unit = unit; x.company = extraCompany(unit, coIn.value.trim()); } else x.company = coIn.value.trim();
           saveExtras(); close(); draw(); App.toast(`${name}さんを直しました`);
         };
-        [nameIn, coIn].forEach((el) => el.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); save(); } }));
+        [nameIn, kanaIn, coIn].forEach((el) => el.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); save(); } }));
         body.append(
           unitIn ? App.field("BT-EX の番号", unitIn) : "",
           App.field("お名前", nameIn),
+          App.field("フリガナ(カタカナ・なくてもよい。スライドのお名前の下に出ます)", kanaIn),
           App.field("会社・肩書き(なくてもよい)", coIn),
           App.btn("保存する", save, "primary wide"));
         setTimeout(() => nameIn.focus(), 50);
@@ -333,6 +346,7 @@
     }
     function extraBox(kind, title, hint) {
       const nameIn = h("input", { type: "text", maxlength: "30", placeholder: "例: 田中 太郎", autocomplete: "off" });
+      const kanaIn = h("input", { type: "text", maxlength: "40", placeholder: "例: タナカ タロウ", autocomplete: "off" });
       const coIn = h("input", { type: "text", maxlength: "60", placeholder: "例: 株式会社〇〇 代表", autocomplete: "off" });
       // ほかの BT-EX のメンバーは、BT-EX の番号と一覧から押して選ぶ(お名前を入れて探すこともできる)
       // 参加する方は一覧で色が付き、もう一度押すと外れる
@@ -350,16 +364,18 @@
       }) : null;
       const add = () => {
         const v = bx ? bx.getValue() : null;
-        const name = v ? v.name : nameIn.value.trim();
+        const sp = v ? { name: v.name, kana: "" } : splitKana(nameIn.value);
+        const name = sp.name;
         if (!name) { (bx || nameIn).focus && nameIn.focus(); App.toast("お名前を選ぶか、入れてください", "error"); return; }
         if (extras.some((y) => y.kind === kind && y.name === name && (!v || y.unit === v.unit))) { App.toast(`${name}さんはもう入っています`); if (bx) bx.setUnit(v.unit); return; }
-        const x = { key: `${kind === "guest" ? "g" : "o"}:${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`, kind, name, company: v ? extraCompany(v.unit, coIn.value.trim()) : coIn.value.trim(), unit: v ? v.unit : 0, sec: 30 };
+        const x = { key: `${kind === "guest" ? "g" : "o"}:${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`, kind, name, company: v ? extraCompany(v.unit, coIn.value.trim()) : coIn.value.trim(), kana: v ? "" : kanaIn.value.trim() || sp.kana, unit: v ? v.unit : 0, sec: 30 };
         extras.push(x); all.push(x); order.push(x.key); saveExtras();
-        nameIn.value = ""; coIn.value = ""; if (bx) { const u = v.unit; bx.setUnit(0); bx.setUnit(u); } draw();
+        nameIn.value = ""; kanaIn.value = ""; coIn.value = ""; if (bx) { const u = v.unit; bx.setUnit(0); bx.setUnit(u); } draw();
         if (!bx) { nameIn.focus(); App.toast(`${name}さんを足しました`); }
       };
       nameIn.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); add(); } });
       coIn.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); add(); } });
+      kanaIn.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); add(); } });
       const listBox = h("ul", { class: "pr-extra-list" });
       let unitSel = null;
       // BT-EX の番号は、押して選ぶボタンを並べる(いまの番号に色)。select は番号を覚えておくためだけに残す
@@ -397,6 +413,7 @@
         // ゲスト: 名前と会社をそれぞれ見出しつきの欄に、足すボタンは大きく
         body = h("div", { class: "pr-extra-add" },
           h("label", { class: "pr-extra-field" }, h("span", null, "お名前", h("em", null, "必須")), nameIn),
+          h("label", { class: "pr-extra-field" }, h("span", null, "フリガナ", h("em", { class: "is-opt" }, "なくてもよい")), kanaIn),
           h("label", { class: "pr-extra-field" }, h("span", null, "会社・肩書き", h("em", { class: "is-opt" }, "なくてもよい")), coIn),
           h("button", { type: "button", class: "app-btn primary pr-extra-addbtn", onclick: add }, App.glyph("plus"), "ゲストを足す"));
       }
@@ -414,7 +431,7 @@
           return h("li", { class: `pr-extra-item${n >= 0 ? " is-on" : ""}` },
             h("button", { type: "button", class: "pr-extra-pick", "aria-pressed": n >= 0 ? "true" : "false", onclick: () => { const i = order.indexOf(x.key); if (i >= 0) order.splice(i, 1); else order.push(x.key); draw(); } },
               h("span", { class: "pr-extra-no" }, n >= 0 ? String(n + 1) : "＋"),
-              h("span", { class: "pr-extra-name" }, h("b", null, x.name), x.company ? h("small", null, x.company) : null)),
+              h("span", { class: "pr-extra-name" }, h("b", null, x.name, x.kana ? h("span", { class: "pr-extra-kana" }, x.kana) : null), x.company ? h("small", null, x.company) : null)),
             h("label", { class: "pr-extra-time" }, h("span", null, "時間"), sel),
             h("button", { type: "button", class: "pr-extra-edit", "aria-label": `${x.name}さんを編集`, title: "編集", onclick: () => editExtra(x) }, App.glyph("post"), h("span", null, "編集")),
             h("button", { type: "button", class: "pr-extra-del", "aria-label": `${x.name}さんを消す`, onclick: () => {
@@ -512,7 +529,7 @@
         const p = personOf(k, photos);
         if (p) return p;
         const x = byKey(k);
-        return x ? { key: k, kind: x.kind, name: x.name, catch: x.unit ? String(x.company || "").replace(/^BT-EX\d+( ・ )?/, "") : x.company, unit: x.unit || 0, photo: "", area: "", wants: "", triggers: [], sec: x.sec || 0 } : null;
+        return x ? { key: k, kind: x.kind, name: x.name, kana: x.kana || "", catch: x.unit ? String(x.company || "").replace(/^BT-EX\d+( ・ )?/, "") : x.company, unit: x.unit || 0, photo: "", area: "", wants: "", triggers: [], sec: x.sec || 0 } : null;
       }).filter(Boolean);
       if (withDeck) {
         const D = App.deckData ? App.deckData(deckInfo.config) : {};
@@ -1271,7 +1288,6 @@
           // 「の」のあとでだけ折り返せるようにする(入りきらないときは「日本海側最大の/マーケット」と分かれる)
           h("h2", { class: "pd-display" }, ...String(p.name).trim().split(/[\s　]+/).flatMap((x, i) => [i ? h("br") : null, ...x.replace(/の/g, "の\u0000").split("\u0000").filter(Boolean).flatMap((t, j) => (j ? [h("wbr"), t] : [t]))]).filter(Boolean)),
           h("span", { class: "pd-rule", "aria-hidden": "true" }),
-          p.date ? h("p", { class: "pd-date" }, p.date) : null,
           p.notes && p.notes.length ? h("ul", { class: "pd-notes" }, p.notes.map((x) => h("li", null, x))) : null);
       }
       if (p.type === "agenda") {
@@ -1287,8 +1303,7 @@
           plan[0] ? h("span", { class: "pd-tseg is-op", style: `flex:${plan[0]}` }, h("small", null, "OP")) : null,
           (p.steps || []).map((st, i) => (plan[st.no] ? h("span", Object.assign({ class: "pd-tseg", style: `flex:${plan[st.no]};--i:${i}` }), h("b", null, two(st.no)), h("small", null, `${plan[st.no]}分`)) : null))) : null;
         return h("div", { class: "pd pd-frame pd-agenda-slide" },
-          h("header", { class: "pd-head" }, h("p", { class: "pd-eyebrow" }, "AGENDA"), h("h2", { class: "pd-title" }, p.name),
-            total ? h("p", { class: "pd-lead" }, startMin !== null ? `${clock(startMin)} 〜 ${clock(startMin + total)}(${total}分)` : `合計 ${total}分`) : null),
+          h("header", { class: "pd-head" }, h("p", { class: "pd-eyebrow" }, "AGENDA"), h("h2", { class: "pd-title" }, p.name)),
           h("div", { class: "pd-body" }, bar,
             h("ol", { class: "pd-agenda" }, (p.steps || []).map((st, i) =>
               h("li", nth(i),
@@ -1385,8 +1400,13 @@
           p.eyebrow ? h("p", { class: "pd-kicker" }, `${two(p.stepNo)}  ${p.eyebrow}`) : null,
           h("span", { class: "pd-raise-mark" }, h("span", { class: "pd-raise-halo", "aria-hidden": "true" }), hand),
           p.items && p.items.length ? h("ul", { class: "pd-raise-items" }, p.items.map((x, i) => h("li", nth(i), x))) : null,
-          h("h2", { class: "pd-display" }, ...lines(p.text || "について、\n発表できる方は\n挙手をお願いします")),
-          p.note ? h("p", { class: "pd-raise-note" }, ...rich(p.note)) : null);
+          h("h2", { class: "pd-display" }, ...lines(p.text || "について\n発表できる方は\n挙手をお願いします")),
+          // 注意書き: 改行(\n)はそのまま。「※」で始まるときは、続きの行を「※」のあとにそろえる
+          p.note ? h("p", { class: "pd-raise-note" }, ...(() => {
+            const m = /^※\s*([\s\S]*)$/.exec(p.note);
+            const rows = String(m ? m[1] : p.note).split("\n").map((t) => h("span", { class: "pd-line" }, ...rich(t.trim())));
+            return m ? [h("span", { class: "pd-hang" }, h("span", { class: "pd-hang-l" }, "※"), h("span", { class: "pd-hang-r" }, ...rows))] : rows;
+          })()) : null);
       }
       if (p.type === "venn") {
         // ベン図: 3つの円(LINK・BNI・守成クラブ)が重なるまん中が BT-EX。円の中に強みの数と代表的な強み
@@ -1532,6 +1552,7 @@
               h("span", null, p.kind === "visitor" ? "ビジター" : p.kind === "guest" ? "ゲスト" : p.kind === "other" ? (p.unit ? `BT-EX${p.unit} メンバー` : "BT-EX メンバー") : p.team || ""),
               p.role ? roleBadge(p.role) : null),
             nameEl(p.name, "h2", "pr-name", h("small", null, "さん"), !solo),
+            p.kana ? h("p", { class: "pr-kana" }, p.kana) : null,
             p.catch ? h("p", { class: "pr-catch" }, p.catch) : null,
             h("dl", { class: "pr-rows" },
               p.area ? h("div", { class: "pr-row-area" }, h("dt", null, "活動範囲"), h("dd", null, p.area)) : null,
