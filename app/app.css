@@ -2421,3 +2421,48 @@ button.home-welcome-check:active { transform: scale(0.94); }
 .pd-kpi { justify-items: stretch; }
 .pd-kpi b { justify-self: start; }
 .pd-kpi-rule { width: 100%; }
+/* ---------- タイムマネジメント(新しい形) ----------
+   開いたとき: 📍いまの部・状態の札・小さくするボタン / 理想(部の予定の時間)/ 現在 / いまのスライド / 部の進み具合
+   閉じたとき: 状態の札の1行だけ */
+.pr-time.is-v2 { --pt-c: #4fd08a; --pt-soft: rgba(79, 208, 138, 0.16); display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; grid-template-areas: "grip head badge tog" "body body body body"; align-items: start; gap: 8px 8px; width: 300px; padding: 12px 12px 14px; border-radius: 18px; background: rgba(16, 20, 30, 0.92); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 14px 40px rgba(0, 0, 0, 0.45); }
+.pr-time.is-v2[data-state="late"] { --pt-c: #ff6a5a; --pt-soft: rgba(255, 106, 90, 0.16); }
+.pr-time.is-v2[data-state="early"] { --pt-c: #5fd38d; --pt-soft: rgba(95, 211, 141, 0.14); }
+.pr-time.is-v2 .pr-grip { grid-area: grip; position: static; height: 24px; margin-top: 2px; }
+.pt2-head { grid-area: head; display: flex; align-items: flex-start; gap: 4px; min-width: 0; padding-top: 3px; }
+.pt2-pin { flex: none; color: #ff6a6a; }
+.pt2-pin .pr-icon { width: 17px; height: 17px; }
+.pt2-step { min-width: 0; font-size: 14px; font-weight: 800; line-height: 1.4; color: #f4f1ea; overflow-wrap: anywhere; }
+.pr-time.is-v2 .pt2-badge { grid-area: badge; margin: 0; display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 999px; border: 0; background: var(--pt-c); color: #0d1a12; font-size: 12.5px; font-weight: 900; white-space: nowrap; box-shadow: none; }
+.pr-time.is-v2[data-state="late"] .pt2-badge { color: #fff; }
+.pr-time.is-v2 .pt2-badge .pt-ic { display: none; }
+.pr-time.is-v2 .pt-min { grid-area: tog; width: 26px; height: 26px; border-radius: 8px; color: #b9bfcc; background: rgba(255, 255, 255, 0.06); }
+.pr-time.is-v2 .pt2-body { grid-area: body; display: grid; gap: 4px; margin: 2px 0 0; }
+.pt2-row { margin: 0; display: flex; align-items: baseline; gap: 8px; font-size: 22px; font-weight: 900; line-height: 1.25; color: var(--pt-c); font-variant-numeric: tabular-nums; }
+.pt2-row > span { font-size: 0.9em; }
+.pt2-row.is-now { color: #8fb8ff; font-size: 19px; }
+.pt2-sub { margin: 4px 0 2px; font-size: 13px; line-height: 1.5; color: #a9b0bf; overflow-wrap: anywhere; }
+.pt2-bar { height: 8px; border-radius: 8px; background: rgba(255, 255, 255, 0.08); overflow: hidden; margin-top: 6px; }
+.pt2-bar i { display: block; height: 100%; border-radius: 8px; background: linear-gradient(90deg, color-mix(in srgb, var(--pt-c) 55%, #2a6fdb), var(--pt-c)); transition: width 0.6s ease; }
+.pt2-foot-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+.pt2-foot { margin: 0; display: flex; align-items: baseline; gap: 5px; font-size: 11.5px; color: #8b93a3; }
+.pt2-foot b { color: #d6dae3; font-variant-numeric: tabular-nums; }
+.pr-time.is-v2[data-state="late"] .pt-eta { color: #ff8a7c; }
+.pt2-start { display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; color: #8b93a3; }
+.pr-time.is-v2 .pt-start { border-color: rgba(255, 255, 255, 0.16); background: rgba(255, 255, 255, 0.05); color: #d6dae3; }
+/* 閉じたとき: 状態の札の1行(「① 1時間19分23秒 遅れ」) */
+.pr-time.is-v2.is-mini { grid-template-columns: auto auto auto; grid-template-areas: "grip badge tog"; align-items: center; width: auto; padding: 5px 6px; gap: 6px; border-radius: 999px; }
+.pr-time.is-v2.is-mini .pt2-head, .pr-time.is-v2.is-mini .pt2-body { display: none; }
+.pr-time.is-v2.is-mini .pt2-badge { padding: 5px 12px 5px 9px; border: 1px solid color-mix(in srgb, var(--pt-c) 70%, transparent); background: var(--pt-soft); color: var(--pt-c); font-size: 13px; cursor: pointer; }
+.pr-time.is-v2.is-mini .pt2-badge .pt-ic { display: inline-grid; }
+.pr-time.is-v2.is-mini .pt2-badge .pr-icon { width: 15px; height: 15px; }
+.pr-time.is-v2.is-mini .pr-grip { margin-top: 0; }
+@media (max-width: 760px) { .pr-time.is-v2:not(.is-mini) { width: 250px; } .pt2-row { font-size: 19px; } .pt2-row.is-now { font-size: 16px; } }
+/* 部の名前と状態の札は同じ行。入りきらないときは札を下の行へ */
+.pr-time.is-v2 { grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: "grip head tog" "body body body"; }
+.pr-time.is-v2 .pt2-head { flex-wrap: wrap; align-items: center; gap: 6px 8px; }
+.pt2-title { flex: 1 1 9em; min-width: 0; display: flex; align-items: flex-start; gap: 4px; }
+.pr-time.is-v2 .pt2-badge { margin-left: auto; }
+.pr-time.is-v2.is-mini { grid-template-columns: auto auto auto; grid-template-areas: "grip head tog"; }
+.pr-time.is-v2.is-mini .pt2-head { display: flex; padding: 0; }
+.pr-time.is-v2.is-mini .pt2-title { display: none; }
+.pr-time.is-v2.is-mini .pt2-badge { margin-left: 0; }

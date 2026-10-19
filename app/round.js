@@ -786,6 +786,7 @@
     clock: { d: ["M12 3.75a8.25 8.25 0 1 0 0 16.5 8.25 8.25 0 0 0 0-16.5Z", "M12 7.75V12l2.75 1.75"] },
     spark: { d: ["M12 3.5l1.9 6.6 6.6 1.9-6.6 1.9L12 20.5l-1.9-6.6L3.5 12l6.6-1.9Z"], sec: ["M12 3.5l1.9 6.6 6.6 1.9-6.6 1.9L12 20.5l-1.9-6.6L3.5 12l6.6-1.9Z"] },
     expand: { d: ["M7 9.5l5 5 5-5"] },
+    pin: { d: ["M12 20.75s-6.25-5.55-6.25-10.75a6.25 6.25 0 0 1 12.5 0c0 5.2-6.25 10.75-6.25 10.75Z", "M12 7.75a2.25 2.25 0 1 0 0 4.5 2.25 2.25 0 0 0 0-4.5Z"], sec: ["M12 20.75s-6.25-5.55-6.25-10.75a6.25 6.25 0 0 1 12.5 0c0 5.2-6.25 10.75-6.25 10.75Z"] },
     idcard: { d: ["M5.75 5.75h12.5a2 2 0 0 1 2 2v8.5a2 2 0 0 1-2 2H5.75a2 2 0 0 1-2-2v-8.5a2 2 0 0 1 2-2Z", "M8.75 9.25a1.75 1.75 0 1 0 0 3.5 1.75 1.75 0 0 0 0-3.5Z", "M6.5 15.25c.5-1.1 1.3-1.6 2.25-1.6s1.75.5 2.25 1.6", "M13.5 10h4", "M13.5 13h3"], sec: ["M5.75 5.75h12.5a2 2 0 0 1 2 2v8.5a2 2 0 0 1-2 2H5.75a2 2 0 0 1-2-2v-8.5a2 2 0 0 1 2-2Z"] },
     doc: { d: ["M7 3.75h6.5l4.5 4.5v10a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-12.5a2 2 0 0 1 2-2Z", "M13.5 3.75v4.5H18", "M8.5 12.5h7", "M8.5 15.5h5"], sec: ["M7 3.75h6.5l4.5 4.5v10a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-12.5a2 2 0 0 1 2-2Z"] },
     ban: { d: ["M5.6 5.6l12.8 12.8"], ring: true },
@@ -1051,15 +1052,19 @@
     const jst = (ms) => new Date(ms + 9 * 3600000);
     const hm = (ms) => { const d = jst(ms); return `${d.getUTCHours()}:${pad(d.getUTCMinutes())}`; };
     const ms2 = (ms) => { const s = Math.round(Math.abs(ms) / 1000); return s >= 3600 ? `${Math.floor(s / 3600)}時間${Math.floor((s % 3600) / 60)}分${pad(s % 60)}秒` : `${Math.floor(s / 60)}分${pad(s % 60)}秒`; };
-    const clock = h("p", { class: "pt-clock", "aria-live": "off" });
-    const status = h("p", { class: "pt-status" });
+    // 開いたとき: 📍いまの部・状態の札 / 理想(いまの部の予定の時間)/ 現在の時刻 / いまのスライド / いまの部の進み具合
+    // 閉じたとき: 状態(オンタイム・◯分遅れ・◯分早い)の1行だけ
+    const stepName = h("b", { class: "pt2-step" });
+    const status = h("p", { class: "pt-status pt2-badge" });
     const statusText = h("span");
     const statusIcon = h("span", { class: "pt-ic" });
     status.append(statusIcon, statusText);
     let lastState = "";
-    const now2 = h("p", { class: "pt-row" });
-    const endRow = h("p", { class: "pt-row" });
-    const bar = h("div", { class: "pt-bar", "aria-hidden": "true" }, h("i", { class: "pt-bar-plan" }), h("i", { class: "pt-bar-now" }));
+    const ideal = h("b", { class: "pt2-ideal" });
+    const nowEl = h("b", { class: "pt2-now" });
+    const sub = h("p", { class: "pt2-sub" });
+    const bar = h("div", { class: "pt2-bar", "aria-hidden": "true" }, h("i"));
+    const endRow = h("p", { class: "pt2-foot" });
     const startIn = h("input", { type: "time", class: "pt-start", "aria-label": "開始時刻", value: hm(start).padStart(5, "0"),
       onchange: () => {
         const m = /^(\d{1,2}):(\d{2})$/.exec(startIn.value);
@@ -1075,12 +1080,17 @@
       toggle.replaceChildren(lineIcon(mini ? "expand" : "collapse"));
     };
     const toggle = h("button", { type: "button", class: "pt-min", onclick: () => setMini(!panel.classList.contains("is-mini")) });
-    // 小さくまとめる: 1行目に時刻と小さくするボタン、2行目にずれ、その下に予定の3行(小さくしたときは時刻とずれの1行だけ)
-    const panel = h("section", { class: "pr-time", "aria-label": "タイムマネジメント" },
-      clock, toggle, status,
-      h("div", { class: "pt-more" }, now2, bar, endRow,
-        h("label", { class: "pt-row pt-start-row" }, h("span", null, "開始"), startIn, h("span", null, `〜${Math.round(total / 60000)}分`))));
-    // スマホなど狭い画面では、はじめは小さく(時刻とずれだけ)出す
+    // 閉じているときは、状態の札を押しても開く
+    status.addEventListener("click", () => { if (panel.classList.contains("is-mini")) { setMini(false); window.dispatchEvent(new Event("resize")); } });
+    const panel = h("section", { class: "pr-time is-v2", "aria-label": "タイムマネジメント" },
+      h("div", { class: "pt2-head" }, h("span", { class: "pt2-title" }, h("span", { class: "pt2-pin" }, lineIcon("pin")), stepName), status), toggle,
+      h("div", { class: "pt-more pt2-body" },
+        h("p", { class: "pt2-row" }, h("span", null, "理想"), ideal),
+        h("p", { class: "pt2-row is-now" }, h("span", null, "現在"), nowEl),
+        sub, bar,
+        h("div", { class: "pt2-foot-row" }, endRow,
+          h("label", { class: "pt2-start" }, h("span", null, "開始"), startIn))));
+    // スマホなど狭い画面では、はじめは小さく(状態だけ)出す
     setMini((document.documentElement.clientWidth || innerWidth) <= 760);
     host.append(panel);
     // はじめの場所(広い画面): 左はし、メーターのすぐ上
@@ -1088,23 +1098,34 @@
     // 小さく・大きくしたときも、下のはしの位置をそろえる
     toggle.addEventListener("click", () => window.dispatchEvent(new Event("resize")));
 
+    // 部(流れの番号)ごとの予定の時間: その部の最初の項目の始まり 〜 最後の項目の終わり
+    const stepSpan = (i) => {
+      const k = stepOf(items[i]);
+      let f = i, l = i;
+      while (f > 0 && stepOf(items[f - 1]) === k) f--;
+      while (l < items.length - 1 && stepOf(items[l + 1]) === k) l++;
+      return [start + offs[f], start + offs[l] + dur[l]];
+    };
     function tick() {
       const now = Date.now();
       const d = jst(now);
-      clock.textContent = `${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}:${pad(d.getUTCSeconds())}`;
       const i = Math.min(items.length - 1, Math.max(0, getIdx()));
       const ps = start + offs[i], pe = ps + dur[i];
       const lag = now < ps ? now - ps : now > pe ? now - pe : 0;
       const state = Math.abs(lag) < 10000 ? "ok" : lag > 0 ? "late" : "early";
       panel.dataset.state = state;
       if (state !== lastState) { lastState = state; statusIcon.replaceChildren(lineIcon(state)); }
-      statusText.textContent = state === "ok" ? "定刻どおり" : state === "late" ? `${ms2(lag)} 遅れ` : `${ms2(lag)} 早い`;
+      statusText.textContent = state === "ok" ? "オンタイム" : state === "late" ? `${ms2(lag)} 遅れ` : `${ms2(lag)} 早い`;
       const st = stepList.find((x) => x.no === items[i].stepNo);
-      now2.replaceChildren(h("span", { class: "pt-now-label" }, "いま"), h("b", { class: "pt-now-name" }, st ? `${two(st.no)} ${st.title}` : items[i].stepNo ? "おわり" : "オープニング"), h("span", { class: "pt-now-time" }, `${hm(ps)}〜${hm(pe)}`));
-      endRow.replaceChildren(h("span", null, "終了"), h("b", null, `${hm(start + total)}`), h("span", { class: "pt-sep" }, "見込み"), h("b", { class: "pt-eta" }, hm(start + total + lag)));
-      const span = total || 1;
-      bar.firstChild.style.width = `${Math.max(0, Math.min(100, ((ps - start) / span) * 100))}%`;
-      bar.lastChild.style.left = `${Math.max(0, Math.min(100, ((now - start) / span) * 100))}%`;
+      stepName.textContent = st ? `${two(st.no)} ${String(st.title).replace(/\s*[(（]?\s*\d+\s*分(?:\s*[×xX✕]\s*\d+\s*回?)?\s*[)）]?\s*$/, "")}` : items[i].stepNo ? "おわり" : "オープニング";
+      const [ss, se] = stepSpan(i);
+      ideal.textContent = `${hm(ss)}〜${hm(se)}`;
+      nowEl.textContent = `${d.getUTCHours()}:${pad(d.getUTCMinutes())}`;
+      const it = items[i];
+      sub.textContent = it.kind === "deck" ? String(it.name || "").replace(/\n/g, " ") : it.kind === "timer" ? it.name || "" : it.name ? `${it.name}さん` : "";
+      sub.hidden = !sub.textContent;
+      bar.firstChild.style.width = `${Math.max(0, Math.min(100, ((now - ss) / Math.max(1, se - ss)) * 100))}%`;
+      endRow.replaceChildren(h("span", null, "終了"), h("b", null, hm(start + total)), h("span", null, "見込み"), h("b", { class: "pt-eta" }, hm(start + total + lag)));
     }
     tick();
     const timer = setInterval(tick, 250);
