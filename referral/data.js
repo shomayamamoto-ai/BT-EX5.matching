@@ -909,7 +909,7 @@ const REF_MEMBER_PHOTOS = {
   m04: "assets/members/m04.jpg", // 吉澤 美和子
   m05: "assets/members/m05.jpg", // 大藤 誠
   m08: "assets/members/m08.jpg", // 床島 良夫
-  m09: "assets/members/m09.jpg", // 大場 雅俊
+  m09: "assets/members/m09-2.jpg", // 大場 雅俊(画質を上げたもの)
   m10: "assets/members/m10.jpg", // 大枝 篤志
   m11: "assets/members/m11.jpg", // 品川 瑞樹
   m12: "assets/members/m12.jpg", // 菅野 節子
