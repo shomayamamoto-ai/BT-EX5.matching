@@ -2417,3 +2417,7 @@ button.home-welcome-check:active { transform: scale(0.94); }
 /* スライドの題の下線は、題の文字の端から端まで(表紙・区切り・最後の大きな見出しの線は短いまま) */
 .pd-frame .pd-title { width: fit-content; max-width: 100%; }
 .pd-frame .pd-title::after { width: 100%; }
+/* BT-EX の約束: 数字の下の線は、カードの中の端から端まで */
+.pd-kpi { justify-items: stretch; }
+.pd-kpi b { justify-self: start; }
+.pd-kpi-rule { width: 100%; }
