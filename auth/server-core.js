@@ -70,7 +70,7 @@ var BtexServerCore = (function () {
 
   // 本人が編集できる項目(名前・所属チーム・ID は管理者のみ)
   var SELF_EDITABLE = [
-    "company", "base", "category", "business", "customers", "offer", "selfIntro", "note", "wants", "wantsRank", "triggers",
+    "kana", "company", "base", "category", "business", "customers", "offer", "selfIntro", "note", "wants", "wantsRank", "triggers",
     "face", "faceAreas", "online", "topics", "targets", "prospects", "links",
     "strengths", "pitch", "ng", "goals", "personal",
   ];
@@ -861,6 +861,7 @@ var BtexServerCore = (function () {
       return {
         id: id,
         name: cleanStr(m.name, 40),
+        kana: cleanStr(m.kana, 40),
         company: cleanStr(m.company, 80),
         team: cleanStr(m.team, 40),
         base: !bases || bases.indexOf(base) !== -1 ? base || "未設定" : "未設定",

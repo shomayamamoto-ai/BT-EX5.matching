@@ -1446,3 +1446,6 @@ a.ref-btn { display: inline-flex; align-items: center; justify-content: center; 
 .ref-rank li.is-r2 b { background: #ecd9ae; }
 .ref-rank li.is-r3 b { background: #f0e1c0; }
 .md-sec .ref-rank li { font-size: 15px; }
+/* フリガナ */
+.ref-kana { margin: -2px 0 4px; font-size: 11px; letter-spacing: 0.12em; color: var(--text-light); }
+.md-kana { margin: -4px 0 6px; font-size: 12px; letter-spacing: 0.14em; color: var(--text-light); }

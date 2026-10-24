@@ -154,7 +154,7 @@
 
   const EMPTY = {
     id: "", name: "", company: "", team: "", base: "未設定", category: UNCATEGORIZED,
-    business: "", customers: "", offer: "", selfIntro: "", note: "", wants: "", wantsRank: [], triggers: [], face: "", faceAreas: [], online: "unknown",
+    kana: "", business: "", customers: "", offer: "", selfIntro: "", note: "", wants: "", wantsRank: [], triggers: [], face: "", faceAreas: [], online: "unknown",
     topics: [], targets: [], prospects: [], links: [],
   };
 
@@ -165,7 +165,7 @@
     const m = Object.assign({}, EMPTY, member || {});
     editingTopics = (member && member.topics) || [];
     $("#editorTitle").textContent = member ? `${m.name}さんを編集` : "メンバーを追加";
-    ["id", "name", "company", "team", "category", "base", "business", "customers", "offer", "selfIntro", "note", "wants", "face", "online"].forEach((k) => {
+    ["id", "name", "kana", "company", "team", "category", "base", "business", "customers", "offer", "selfIntro", "note", "wants", "face", "online"].forEach((k) => {
       form.elements[k].value = m[k];
     });
     form.elements.triggers.value = m.triggers.join("\n");
@@ -203,6 +203,7 @@
       id: v("id"),
       name: v("name"),
       company: v("company"),
+      kana: v("kana"),
       team: v("team"),
       category: v("category"),
       base: v("base"),

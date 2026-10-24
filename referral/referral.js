@@ -246,7 +246,7 @@
         <div class="ref-col ref-col-member">
           <div class="ref-card-head">
             <div>
-              <h3 class="ref-name"><button type="button" class="ref-name-btn" data-detail="${m.id}">${nameHtml(m.name)}</button></h3>
+              <h3 class="ref-name"><button type="button" class="ref-name-btn" data-detail="${m.id}">${nameHtml(m.name)}</button></h3>${m.kana ? `<p class="ref-kana">${escapeHtml(m.kana)}</p>` : ""}
               ${roleMark(m.id)}
               <p class="ref-company">${escapeHtml(m.company)}</p>
             </div>
@@ -329,6 +329,7 @@
       <header class="md-head${memberPhoto(m.id) ? " has-photo" : ""}">
         ${memberPhoto(m.id) ? `<img class="md-photo" src="${escapeHtml(memberPhoto(m.id))}" alt="" width="96" height="128" loading="lazy">` : ""}
         <h2 class="md-name" id="detailTitle">${escapeHtml(m.name)}</h2>
+        ${m.kana ? `<p class="md-kana">${escapeHtml(m.kana)}</p>` : ""}
         ${roleMark(m.id)}
         <p class="md-company">${escapeHtml(m.company || "")}</p>
         <div class="ref-tags">

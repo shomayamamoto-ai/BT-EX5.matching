@@ -180,7 +180,7 @@
       const m = App.memberById(id);
       if (!m) return null;
       return {
-        key, kind: "member", memberId: id, name: m.name, photo: photos[id] || "",
+        key, kind: "member", memberId: id, name: m.name, kana: m.kana || "", photo: photos[id] || "",
         catch: m.company || m.category || "", team: m.team || "",
         area: areaLine(m), wants: clip(m.wants, 240), wantsRank: (m.wantsRank || []).slice(0, 5), triggers: (m.triggers || []).slice(0, 4),
         role: typeof refRoleOf === "function" ? refRoleOf(id) : null,
