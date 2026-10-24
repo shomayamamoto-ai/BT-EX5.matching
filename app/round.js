@@ -524,6 +524,19 @@
     let withDeck = store.get("deck", "1") === "1";
     const deckBox = h("input", { type: "checkbox", onchange: () => { withDeck = deckBox.checked; store.set("deck", withDeck ? "1" : "0"); draw(); } });
     deckBox.checked = withDeck;
+    // 商談(ブレイクアウトルーム商談)の1回の時間と回数。はじめは 7分×4回(この端末に覚える)
+    const BO0 = (App.deckData ? App.deckData(deckInfo.config).breakout : null) || { min: 7, times: 4 };
+    const boMin = h("select", { class: "pr-bo-min", "aria-label": "商談の1回の時間(分)", onchange: () => store.set("bo-min", boMin.value) },
+      Array.from({ length: 20 }, (_, i) => i + 1).map((v) => h("option", { value: String(v) }, `${v}分`)));
+    const boTimes = h("select", { class: "pr-bo-times", "aria-label": "商談の回数", onchange: () => store.set("bo-times", boTimes.value) },
+      Array.from({ length: 6 }, (_, i) => i + 1).map((v) => h("option", { value: String(v) }, `${v}回`)));
+    boMin.value = String(store.get("bo-min", BO0.min) || 7);
+    boTimes.value = String(store.get("bo-times", BO0.times) || 4);
+    // 出席コード(定例会ごと。この端末に覚える)。終わりの挨拶の「出席コード」のスライドに大きく出す
+    const codeKey = `attcode-${ev ? ev.id : "none"}`;
+    const codeIn = h("input", { type: "text", class: "pr-code-in", inputmode: "numeric", maxlength: "8", placeholder: "例: 1506", autocomplete: "off", "aria-label": "出席コード",
+      oninput: () => { codeIn.value = codeIn.value.replace(/[^0-9０-９]/g, "").replace(/[０-９]/g, (d) => String.fromCharCode(d.charCodeAt(0) - 0xfee0)); store.set(codeKey, codeIn.value); } });
+    codeIn.value = store.get(codeKey, "") || "";
     goBtn.addEventListener("click", () => {
       const people = order.map((k) => {
         const p = personOf(k, photos);
@@ -533,7 +546,7 @@
       }).filter(Boolean);
       if (withDeck) {
         const D = App.deckData ? App.deckData(deckInfo.config) : {};
-        App.roundRun(buildDeck(ev, people, photos, upcoming, deckInfo.config), per, auto ? gapSec : 0, ev ? ev.title : "BT-EX5 定例会",
+        App.roundRun(buildDeck(ev, people, photos, upcoming, deckInfo.config, { bo: { min: Number(boMin.value) || 7, times: Number(boTimes.value) || 4 }, code: codeIn.value }), per, auto ? gapSec : 0, ev ? ev.title : "BT-EX5 定例会",
           { deck: true, timing: { plan: eventPlan(ev, D.timeplan), start: eventStartMs(ev), per, gap: auto ? gapSec : 0 } });
         return;
       }
@@ -588,6 +601,9 @@
           h("label", { class: "pitch-sound" }, autoBox, h("span", null, "0秒になったら、自動で次の人へ")),
           h("label", { class: "pr-gap-row" }, h("span", null, "次の人までの間"), gapSel)),
         h("label", { class: "pitch-sound pr-deck-opt" }, deckBox, h("span", null, h("b", null, "定例会のスライドも入れる"), h("small", null, "オープニングムービー → はじめの挨拶 → BT-EXの理念 → … → 終わりの挨拶(定例会の進行表の順)。プレゼンは「1分プレゼンテーション」のところに入ります"))),
+        h("div", { class: "pr-deck-more" },
+          h("label", { class: "pr-deck-field" }, h("span", null, "ブレイクアウトルーム商談(テーブル商談)"), h("span", { class: "pr-bo" }, boMin, h("b", null, "×"), boTimes)),
+          h("label", { class: "pr-deck-field" }, h("span", null, "出席コード(4桁)"), codeIn, h("small", null, "終わりの挨拶の「出席コード」のスライドに大きく出ます"))),
         deckInfo.canEdit && App.deckEditor ? h("div", { class: "app-btn-row pr-deck-edit" },
           App.btn("スライドの内容・時間の目安を編集", () => App.deckEditor(deckInfo.config, deckSteps(ev), (cfg) => { deckInfo.config = cfg; }), "ghost small")) : null,
         h("p", { class: "app-field-hint" }, "残り10秒で小さな音、0秒で鐘の音が鳴ります。キーボードでは スペース=止める・つづける、→=次へ、←=前へ、Esc=終わる。会場のスクリーンで画面いっぱいに映すときは、ブラウザの全画面(Mac は control+command+F、Windows は F11)を使ってください。"),
@@ -644,7 +660,9 @@
   }
   // 「11月14日(土)」
   const mdw = (key) => { const [y, m, d] = String(key).split("-").map(Number); return y ? `${m}月${d}日(${"日月火水木金土"[new Date(y, m - 1, d).getDay()]})` : String(key); };
-  function buildDeck(ev, people, photos, upcoming, cfg) {
+  // more: { bo: {min, times}(商談の時間と回数), code(出席コード) }
+  function buildDeck(ev, people, photos, upcoming, cfg, more) {
+    more = more || {};
     // 運営が編集した内容(cfg)を、元の内容(BTEX_DECK)の上に重ねる
     const D = App.deckData ? App.deckData(cfg) : (typeof BTEX_DECK !== "undefined" ? BTEX_DECK : {});
     const agenda = String((ev && ev.agenda) || (typeof REF_SEED_AGENDA !== "undefined" ? REF_SEED_AGENDA : "")).split(/\n/).map((x) => x.trim()).filter(Boolean);
@@ -652,10 +670,12 @@
     const notes = agenda.filter((x) => !NUMS.includes(x[0])).map((x) => x.replace(/^[★☆・*]\s*/, ""));
     const items = [];
     const deck = (type, extra) => items.push(Object.assign({ key: `d:${items.length}`, kind: "deck", type, name: "" }, extra));
+    // いちばんはじめ: BT-EX でよく使う言葉(はじまる前に映しておける)
+    if (D.glossary && (D.glossary.items || []).length) deck("glossary", { name: D.glossary.title, step: "用語説明", items: D.glossary.items });
     deck("movie", { name: "オープニングムービー", step: "オープニング" });
     deck("cover", { name: (ev && ev.title) || "BT-EX5 定例会", step: "定例会", date: ev ? `${App.fmtDateLong ? App.fmtDateLong(ev.date) : ev.date}${ev.start ? ` ${ev.start}〜${ev.end || ""}` : ""}` : "", notes });
     let pres = false, extra = false, rulesDone = false, raiseDone = false;
-    // ⑤商談のあとの「このような人のお役に立てます」「それぞれの強み」。商談のタイマーは、これらを説明してから
+    // 「このような人のお役に立てます」「3つの強み」「それぞれの強み」は、②理念のスケジュールのあとに
     const extras = (label) => {
       extra = true;
       if (D.fits) deck("checks", { name: D.fits.title, step: label, items: D.fits.items });
@@ -673,9 +693,9 @@
         if (R.kpis && R.kpis.length) deck("kpis", { name: "BT-EX の約束", step: "BT-EXの規定", items: R.kpis });
         // 規定は1つずつのスライドに、絵・番号・見出しつきのカードで出す(文はそのまま)
         const H = R.heads || {}, I = R.icons || {};
-        deck("rules", { name: "一般規定", step: "BT-EXの規定", rows: R.general, heads: H.general, icons: I.general, cols: 3 });
-        deck("rules", { name: "出席規定", step: "BT-EXの規定", rows: R.attendance, heads: H.attendance, icons: I.attendance, cols: 2, note: R.note });
-        deck("rules", { name: "倫理規定", step: "BT-EXの規定", rows: R.ethics, heads: H.ethics, icons: I.ethics, cols: 3 });
+        deck("rules", { name: "一般規定", step: "BT-EXの規定", rows: R.general, heads: H.general, icons: I.general, cols: 3, carousel: true });
+        deck("rules", { name: "出席規定", step: "BT-EXの規定", rows: R.attendance, heads: H.attendance, icons: I.attendance, cols: 2, note: R.note, carousel: true });
+        deck("rules", { name: "倫理規定", step: "BT-EXの規定", rows: R.ethics, heads: H.ethics, icons: I.ethics, cols: 3, carousel: true });
       }
       if (D.schedule) {
         deck("schedule", { name: D.schedule.title, step: D.schedule.title, lead: D.schedule.lead, rows: D.schedule.rows, note: D.schedule.note });
@@ -684,17 +704,22 @@
         if (next.length) deck("schedule", { name: D.schedule.title, step: D.schedule.title, lead: "次回以降のスケジュール", rows: next.map((e) => [mdw(e.date), e.start ? `${e.start}-${e.end || ""}` : ""]) });
       }
     };
-    // ⑥LINKのビジネス実績紹介のあとに「挙手をお願いします」の2ページ(1on1・リファーラル・招待ビジター → ありがとうマイル)
+    // ⑥LINKのビジネス実績紹介: 入会申し込みフォーム → 挙手のお願い(1on1・リファーラル・招待ビジター → ありがとうマイル → LINK内での実績紹介)
     const raises = (label) => {
       raiseDone = true;
+      if (D.joinForm) deck("joinform", Object.assign({ step: label }, D.joinForm, { name: D.joinForm.title }));
       (D.raise || []).forEach((r) => deck("raise", Object.assign({ step: label }, r, { name: r.title })));
     };
     // 見出しの後ろの時間(「15分×2」「(15分×2回)」「5分」)は、見出しの下の小さな行に分ける
     const TIME = /\s*[（(]?\s*(\d+)\s*分(?:\s*[×xX✕]\s*(\d+)\s*回?)?\s*[)）]?\s*$/;
+    // 商談の時間と回数: プレゼンをはじめる前に選んだ値(なければ進行表の値)
+    const boOf = (st, tm) => (more.bo && /商談/.test(st.title) && tm && tm[2]
+      ? [more.bo.min, more.bo.times] : [Number(tm[1]), Math.min(6, Number(tm[2] || 1))]);
+    const subOf = (st, tm) => { if (!tm) return ""; if (!tm[2]) return `${tm[1]}分`; const [m, t] = boOf(st, tm); return `${m}分 × ${t}回`; };
     steps.forEach((st, i) => {
       const label = `${st.no}. ${st.title}`;
       const tm = TIME.exec(st.title);
-      deck("section", { no: st.no, name: tm ? st.title.replace(TIME, "") : st.title, sub: tm ? `${tm[1]}分${tm[2] ? ` × ${tm[2]}回` : ""}` : "", step: label });
+      deck("section", { no: st.no, name: tm ? st.title.replace(TIME, "") : st.title, sub: subOf(st, tm), step: label });
       if (i === 0 && /あいさつ|挨拶/.test(st.title) && D.leader) {
         const m = App.memberById(D.leader.memberId);
         if (m) deck("leader", { name: m.name, step: label, photo: (photos && photos[m.id]) || "", leader: D.leader });
@@ -706,22 +731,23 @@
         const withIcon = (arr, icons) => arr.map((x, i) => Object.assign(x, { icon: (icons || [])[i] || "" }));
         if (D.purposes) deck("list", { name: `${D.name || "BT-EX"}の目的`, step: label, layout: "quad", lead: "BT-EX が目指す4つのこと", items: withIcon(D.purposes.map((x) => ({ title: x })), D.purposeIcons) });
         if (D.feature) deck("feature", { name: D.feature.title, step: label, lines: D.feature.lines });
-        if (D.benefits) deck("list", { name: `${D.name || "BT-EX"}の仕組みとベネフィット`, step: label, layout: "grid", lead: "9つの仕組みが、ビジネスを加速させる", items: withIcon(D.benefits.map((x) => (typeof x === "string" ? { title: x } : { title: x.head, lines: [x.text] })), D.benefitIcons) });
+        if (D.benefits) deck("list", { name: `${D.name || "BT-EX"}の仕組みとベネフィット`, step: label, layout: "grid", carousel: true, lead: "9つの仕組みが、ビジネスを加速させる", items: withIcon(D.benefits.map((x) => (typeof x === "string" ? { title: x } : { title: x.head, lines: [x.text] })), D.benefitIcons) });
         if (D.activities) deck("list", { name: `${D.name || "BT-EX"}の主な3つの活動`, step: label, layout: "trio", items: withIcon(D.activities.map((x) => Object.assign({}, x)), D.activityIcons) });
         rulesAndSchedule();
+        if (!extra) extras(label);
       }
       if (/プレゼン/.test(st.title) && !pres) {
         pres = true;
         people.forEach((p) => items.push(Object.assign({}, p, { step: label })));
       }
-      if (/商談/.test(st.title) && !extra) extras(label);
+      // 商談: 区切りのスライドで「休憩しませんか?」を出す
+      if (/商談/.test(st.title)) { const sec = items[items.length - 1]; if (sec && sec.type === "section") sec.breakAsk = true; }
       // 「エデュケーションコーナー 5分」のように時間だけが書いてあるときは、その時間のタイマー
       if (tm && !tm[2]) items.push({ key: `d:t${items.length}`, kind: "timer", name: st.title.replace(TIME, ""), sub: `${tm[1]}分`, sec: Number(tm[1]) * 60, step: label });
       if (tm && tm[2]) {
-        const min = Number(tm[1]), times = Math.min(6, Number(tm[2]));
+        const [min, times] = boOf(st, tm);
         const base = st.title.replace(TIME, "");
-        // 商談の前に規定などのスライドが入るので、タイマーへは進行の選択からすぐ飛べるようにする
-        for (let k = 1; k <= times; k++) items.push({ key: `d:t${items.length}`, kind: "timer", name: `${base} ${k}回目`, sub: `${min}分`, sec: min * 60, step: extra ? `${label}(タイマー)` : label });
+        for (let k = 1; k <= times; k++) items.push({ key: `d:t${items.length}`, kind: "timer", name: `${base} ${k}回目`, sub: `${min}分`, sec: min * 60, step: label });
       }
       if (/実績/.test(st.title) && !raiseDone) raises(label);
     });
@@ -734,11 +760,20 @@
     if (!extra) extras("BT-EXについて");
     if (!rulesDone) rulesAndSchedule();
     if (!raiseDone) raises("発表");
+    // 終わりの挨拶: 入会への3ステップ → アンケート(BT-EX メンバー / ビジター) → 出席コード → おわり
+    const endLabel = steps.length ? `${steps[steps.length - 1].no}. ${steps[steps.length - 1].title}` : "おわり";
+    if (D.joinSteps) deck("joinsteps", { name: D.joinSteps.title, step: endLabel, cards: D.joinSteps.steps || [] });
+    if (D.survey) {
+      const url = (k) => { try { return new URL(`../survey/?k=${k}${ev ? `&e=${encodeURIComponent(ev.id)}` : ""}`, location.href).href; } catch { return ""; } };
+      deck("survey", { name: D.survey.title, step: endLabel, lead: D.survey.lead, urls: [["BT-EX メンバーの方", url("member")], ["ビジターの方", url("visitor")]] });
+    }
+    if (D.attend) deck("attend", Object.assign({ step: endLabel }, D.attend, { name: D.attend.title, msg: D.attend.lead, lead: "", code: more.code || "" }));
     deck("closing", { name: "本日もありがとうございました", step: "おわり" });
     // 表紙のあとに「本日の流れ」。どのスライドにも、流れの何番目かと流れの一覧を持たせる
     // (左上の小見出し・区切りのスライドの一覧・下の進行バーに使う)
-    const stepList = steps.map((st) => { const tm = TIME.exec(st.title); return { no: st.no, title: tm ? st.title.replace(TIME, "") : st.title, sub: tm ? `${tm[1]}分${tm[2] ? ` × ${tm[2]}回` : ""}` : "" }; });
-    if (stepList.length) items.splice(2, 0, { key: "d:agenda", kind: "deck", type: "agenda", name: "本日の流れ", step: "定例会", plan: eventPlan(ev, D.timeplan), start: (ev && ev.start) || "", end: (ev && ev.end) || "" });
+    const stepList = steps.map((st) => { const tm = TIME.exec(st.title); return { no: st.no, title: tm ? st.title.replace(TIME, "") : st.title, sub: subOf(st, tm) }; });
+    const coverAt = items.findIndex((x) => x.type === "cover");
+    if (stepList.length) items.splice(coverAt + 1, 0, { key: "d:agenda", kind: "deck", type: "agenda", name: "本日の流れ", step: "定例会", plan: eventPlan(ev, D.timeplan), start: (ev && ev.start) || "", end: (ev && ev.end) || "" });
     let cur = 0;
     items.forEach((it) => {
       if (it.kind === "deck" && it.type === "section" && it.no) cur = it.no;
@@ -1129,7 +1164,7 @@
     }
     tick();
     const timer = setInterval(tick, 250);
-    return { stop() { clearInterval(timer); panel.remove(); } };
+    return { el: panel, stop() { clearInterval(timer); panel.remove(); } };
   }
 
   // ---------- 進行(画面いっぱい) ----------
@@ -1183,7 +1218,7 @@
     // 定例会のスライドの下の進行バー: 流れの1〜7のどこにいるかと、ページ数
     const deckSteps = opts.deck ? ((people.find((p) => p.steps) || {}).steps || []) : [];
     // 進行バーの名前を、ことばの切れ目で折り返す(「エデュケーション/コーナー」「ブレイクアウト/ルーム商談」)
-    const STEP_BREAK = /(エデュケーション|ブレイクアウト|ビジネス|1分|の)/;
+    const STEP_BREAK = /(エデュケーション|ブレイクアウト|商談|ビジネス|1分|の)/;
     const stepWords = (title) => String(title || "").split(STEP_BREAK).filter(Boolean)
       .flatMap((part, i, a) => (STEP_BREAK.test(part) && i < a.length - 1 ? [part, h("wbr")] : [part]));
     const progress = opts.deck ? h("div", { class: "pd-progress", "aria-hidden": "true" }) : null;
@@ -1209,9 +1244,23 @@
     }
     const dockBtn = (icon, label, cls, onclick) => setBtn(h("button", { type: "button", class: `pr-dock-btn${cls ? ` ${cls}` : ""}`, onclick }), icon, label);
     const pauseBtn = dockBtn("play", "はじめる", "is-main");
-    const prevBtn = dockBtn("prev", "戻る", "", () => go(idx - 1));
+    // スライドの中のカード(カルーセル)
+    const carNow = () => { const el = slide.querySelector(".pd-car"); return el && el.car; };
+    function backward() {
+      if (breakLayer) { closeBreak(); return; }
+      const c = carNow();
+      if (c && c.i > 0) { c.show(c.i - 1); return; }
+      if (idx > 0) go(idx - 1, false, true);
+    }
+    function forward(keepRunning) {
+      if (breakLayer) { closeBreak(); return; }
+      const c = carNow();
+      if (c && c.i < c.n - 1) { c.show(c.i + 1); return; }
+      go(idx + 1, keepRunning && idx + 1 < people.length && !isDeck(people[idx + 1]));
+    }
+    const prevBtn = dockBtn("prev", "戻る", "", () => backward());
     // 時間の途中で話し終わったとき: 計っている最中に「進む」を押すと、次の人の時間もそのまま始まる
-    const nextBtn = dockBtn("next", "進む", "", () => { const keep = running() || gapUntil > 0; go(idx + 1, keep && idx + 1 < people.length && !isDeck(people[idx + 1])); });
+    const nextBtn = dockBtn("next", "進む", "", () => forward(running() || gapUntil > 0));
     const endBtn = dockBtn("end", "終了", "is-end", () => finish(true));
     const box = h("div", { class: `pr-run is-entering${solo ? " is-solo" : ""}`, role: "dialog", "aria-label": solo ? "タイマー" : "プレゼンの進行" },
       h("div", { class: "pr-top" }, h("p", { class: "pr-title" }, title || `${(PER.find(([v]) => v === per) || [0, ""])[1]}プレゼン`), jump, count),
@@ -1233,7 +1282,9 @@
     // はじめる・止める・次の人までの待ちで、数字やメーターの位置が動かないように
     const gapLabel = solo ? "次まで" : "次の人まで";
     // 自分だけのタイマーは、まん中に「予定」の画面と同じアナログ時計(いまの時刻)を出す。項目が変わっても同じ時計を使う
-    const soloClock = (solo || people.some((p) => p.kind === "timer")) && App.luxClock ? App.luxClock() : null;
+    const soloClock = solo && App.luxClock ? App.luxClock() : null;
+    // 定例会のタイマー(エデュケーションコーナー・商談): 残り時間を画面いっぱいに大きく(Zoom のピン留めでも読める)
+    const bigTime = h("p", { class: "pr-big-time", "aria-live": "off" });
     function fixSecWidth() {
       const keep = [secHead.textContent, secNum.textContent, box.classList.contains("is-gap")];
       sec.style.width = ""; secNum.style.minWidth = "";
@@ -1289,9 +1340,42 @@
         return m ? [h("span", { class: "pd-hang is-tagged" }, h("span", { class: "pd-hang-l pd-tag" }, m[1]), h("span", { class: "pd-hang-r" }, ...rows))] : rows;
       };
       // 長いカタカナの言葉は、決めたところで改行する(「ブレイクアウト/ルーム商談」)
-      const softBreaks = (t) => String(t).split(/(?=ルーム商談)/).flatMap((x, i) => (i ? [h("br"), x] : [x]));
+      const softBreaks = (t) => String(t).split(/(?=ルーム商談|[（(]テーブル)/).flatMap((x, i) => (i ? [h("br"), x] : [x]));
       // カードなどを順に浮かび上がらせる(--i は順番)
       const nth = (i) => ({ style: `--i:${i}` });
+      // カードの多いスライド: カードを1ページくらいの大きさにして、スライドの中で1枚ずつ送る
+      // (左右の矢印・下の点・指でなぞる。「進む」「戻る」も、まずカードを送る)
+      const carousel = (cards) => {
+        const n = cards.length;
+        let cur = 0;
+        const track = h("div", { class: "pd-car-track" }, cards.map((c) => h("div", { class: "pd-car-cell" }, c)));
+        const dots = h("div", { class: "pd-car-dots", role: "tablist" }, cards.map((_, i) => h("button", { type: "button", role: "tab", "aria-label": `${i + 1}枚目`, onclick: () => show(i) }, String(i + 1))));
+        const prevB = h("button", { type: "button", class: "pd-car-btn is-prev", "aria-label": "前のカード", onclick: () => show(cur - 1) }, lineIcon("prev"));
+        const nextB = h("button", { type: "button", class: "pd-car-btn is-next", "aria-label": "次のカード", onclick: () => show(cur + 1) }, lineIcon("next"));
+        const count = h("span", { class: "pd-car-count" });
+        const mark = () => {
+          [...dots.children].forEach((d, i) => { d.classList.toggle("is-on", i === cur); d.setAttribute("aria-selected", i === cur ? "true" : "false"); });
+          count.textContent = `${cur + 1} / ${n}`;
+          prevB.disabled = cur === 0; nextB.disabled = cur === n - 1;
+        };
+        // ボタンで送っている途中(なめらかに動いているあいだ)は、動きの途中の位置で番号を戻さない
+        let lockUntil = 0;
+        function show(i, instant) {
+          cur = Math.max(0, Math.min(n - 1, i));
+          lockUntil = instant ? 0 : Date.now() + 700;
+          track.scrollTo({ left: cur * track.clientWidth, behavior: instant ? "auto" : "smooth" });
+          mark();
+        }
+        track.addEventListener("scroll", () => {
+          if (Date.now() < lockUntil) return;
+          const i = Math.round(track.scrollLeft / Math.max(1, track.clientWidth));
+          if (i !== cur && i >= 0 && i < n) { cur = i; mark(); }
+        }, { passive: true });
+        const el = h("div", { class: "pd-car" }, h("div", { class: "pd-car-stage" }, prevB, track, nextB), h("div", { class: "pd-car-foot" }, dots, count));
+        el.car = { n, get i() { return cur; }, show };
+        mark();
+        return el;
+      };
       // 中身のスライドの共通の形: 左上に「02 BT-EXの理念」の小見出し、題、(あれば)要点の一文、中身
       const frame = (cls, ...body) => h("div", { class: `pd pd-frame ${cls}` },
         h("header", { class: "pd-head" },
@@ -1409,6 +1493,12 @@
             return ends.length === 2 ? routeMap(ends[0], ends[1], x) : h("p", { class: "pd-big" }, x);
           }));
       }
+      if (p.type === "list" && p.carousel) {
+        return frame("pd-list is-carousel", carousel((p.items || []).map((it, i) => h("article", { class: "pd-card pd-big-card" },
+          h("div", { class: "pd-big-top" }, it.icon ? h("span", { class: "pd-big-ic" }, lineIcon(it.icon)) : null, h("span", { class: "pd-big-no" }, two(i + 1))),
+          h("p", { class: "pd-big-head" }, ...lines(it.title)),
+          (it.lines || []).map((x) => h("p", { class: "pd-big-text" }, ...lines(x)))))));
+      }
       if (p.type === "list") {
         const layout = p.layout || "rows";
         return frame(`pd-list is-${layout}`,
@@ -1486,6 +1576,16 @@
             h("p", { class: "pd-card-title" }, g.name),
             h("ul", null, g.items.map((x) => h("li", null, x)))))));
       }
+      if (p.type === "rules" && p.carousel) {
+        const rows = p.rows || [];
+        return frame("pd-rules is-carousel", carousel(rows.map((x, i) => {
+          const ic = (p.icons || [])[i] || "check";
+          return h("article", { class: `pd-card pd-big-card${ic === "ban" ? " is-ban" : ""}` },
+            h("div", { class: "pd-big-top" }, h("span", { class: "pd-big-ic" }, lineIcon(ic)), ic === "ban" ? h("span", { class: "pd-rule-tag" }, "禁止") : null, h("span", { class: "pd-big-no" }, two(i + 1))),
+            (p.heads || [])[i] ? h("p", { class: "pd-big-head" }, p.heads[i]) : null,
+            h("p", { class: "pd-big-text" }, ...String(x).split("\n").flatMap((t, k) => (k ? [h("br"), ...rich(t)] : rich(t)))));
+        })), p.note ? h("p", { class: "pd-note" }, `※ ${p.note}`) : null);
+      }
       if (p.type === "rules") {
         // 規定のカード: 絵(禁止は赤い印)・番号・見出し・文(改行と《 》の強調はそのまま)
         const rows = p.rows || [];
@@ -1502,6 +1602,47 @@
               h("p", { class: "pd-rule-text" }, ...String(x).split("\n").flatMap((t, k) => (k ? [h("br"), ...rich(t)] : rich(t)))));
           })),
           p.note ? h("p", { class: "pd-note" }, `※ ${p.note}`) : null);
+      }
+      if (p.type === "glossary") {
+        // BT-EX でよく使う言葉
+        return frame("pd-glossary", h("dl", { class: "pd-gloss" }, (p.items || []).map((x, i) => h("div", Object.assign({ class: "pd-gloss-item" }, nth(i)),
+          h("dt", null, x.head), h("dd", null, ...lines(x.text || ""))))));
+      }
+      if (p.type === "joinform") {
+        // 入会申し込みフォーム: QR コード(URL が入っているとき)
+        return h("div", { class: "pd pd-hero pd-joinform" },
+          p.eyebrow ? h("p", { class: "pd-kicker" }, `${two(p.stepNo)}  ${p.eyebrow}`) : null,
+          h("h2", { class: "pd-display" }, ...lines(p.name)),
+          p.lead ? h("p", { class: "pd-join-lead" }, ...lines(p.lead)) : null,
+          p.url ? h("div", { class: "pd-qr" }, App.qrImage ? App.qrImage(p.url, p.name) : null) : h("p", { class: "pd-join-empty" }, "フォームの URL は「スライドの内容を編集」で入れられます"),
+          p.url && p.note ? h("p", { class: "pd-join-note" }, p.note) : null);
+      }
+      if (p.type === "joinsteps") {
+        // 入会への3ステップ: Step のカードを矢印でつなぐ
+        return frame("pd-joinsteps", h("ol", { class: "pd-steps" }, (p.cards || []).flatMap((st, i) => [
+          i ? h("li", { class: "pd-step-arrow", "aria-hidden": "true" }, lineIcon("next")) : null,
+          h("li", Object.assign({ class: "pd-step-card" }, nth(i)), h("span", { class: "pd-step-no" }, `Step${i + 1}`), h("b", null, ...lines(st.head || "")), st.text ? h("small", null, ...lines(st.text)) : null),
+        ]).filter(Boolean)));
+      }
+      if (p.type === "survey") {
+        // アンケート: BT-EX メンバーの方・ビジターの方で分けた QR コード
+        return frame("pd-survey",
+          h("div", { class: "pd-survey-cards" }, (p.urls || []).map(([label, url], i) => h("div", Object.assign({ class: "pd-card pd-survey-card" }, nth(i)),
+            h("p", { class: "pd-survey-who" }, label), url && App.qrImage ? App.qrImage(url, `${label}のアンケート`) : null))));
+      }
+      if (p.type === "attend") {
+        // 出席コード: 4桁のコードを大きく。やり方の動画をとなりに
+        const code = String(p.code || "").replace(/\D/g, "").slice(0, 8);
+        const digits = (code || "----").split("");
+        return frame("pd-attend",
+          h("div", { class: "pd-attend-row" },
+            h("div", { class: "pd-attend-main" },
+              h("p", { class: "pd-attend-lead" }, ...lines(p.msg || "")),
+              h("div", { class: `pd-attend-code${code ? "" : " is-empty"}`, "aria-label": code ? `出席コード ${code.split("").join(" ")}` : "出席コード(未設定)" }, digits.map((d) => h("span", null, d === "-" ? "" : d))),
+              p.note ? h("p", { class: "pd-note" }, `※ ${p.note}`) : null),
+            p.video ? h("figure", { class: "pd-attend-video" },
+              (() => { const v = h("video", { src: `../${p.video}`, poster: `../${String(p.video).replace(/\.mp4$/, ".jpg")}`, autoplay: true, muted: true, loop: true, playsinline: true, preload: "auto", "aria-label": "出席コードの入れ方の動画" }); v.muted = true; return v; })(),
+              h("figcaption", null, "入れ方がわからない方はこちら")) : null));
       }
       if (p.type === "schedule") {
         return frame("pd-schedule",
@@ -1567,12 +1708,20 @@
       const nexts = people.slice(idx + 1).filter(isPerson).slice(0, 3);
       box.classList.toggle("is-deck", isDeck(p));
       box.classList.toggle("is-timer", p.kind === "timer");
-      ["movie", "cover", "agenda", "section", "leader", "about", "vision", "list", "feature", "checks", "strengths", "venn", "kpis", "rules", "schedule", "raise", "closing"].forEach((t) => box.classList.toggle(`is-d-${t}`, isDeck(p) && p.type === t));
+      ["movie", "cover", "agenda", "section", "leader", "about", "vision", "list", "feature", "checks", "strengths", "venn", "kpis", "rules", "schedule", "raise", "closing", "glossary", "joinform", "joinsteps", "survey", "attend"].forEach((t) => box.classList.toggle(`is-d-${t}`, isDeck(p) && p.type === t));
       drawProgress();
       if (isDeck(p)) { App.fill(slide, deckSlide(p)); fitDeck(); return; }
       // スライドの間は残り時間の欄が隠れていて幅を測れないので、出たときに測りなおす
       if (!sec.style.width || parseFloat(sec.style.width) < 20) fixSecWidth();
       // 自分だけのタイマー: まん中に大きく「集中」「休憩」などと、次にくるもの
+      if (p.kind === "timer" && opts.deck) {
+        box.classList.remove("is-rest");
+        App.fill(slide, h("div", { class: "pr-timer-slide is-big" },
+          p.name ? h("p", { class: "pr-timer-name" }, p.name) : null,
+          bigTime,
+          p.sub && /回目/.test(p.name || "") ? h("p", { class: "pr-timer-sub" }, `1回 ${p.sub}`) : null));
+        return;
+      }
       if (p.kind === "timer") {
         box.classList.toggle("is-rest", !!p.rest);
         App.fill(slide, h("div", { class: `pr-timer-slide${p.name ? "" : " is-plain"}` },
@@ -1635,6 +1784,7 @@
       // 「秒」は1分以上のとき見えなくするだけ(場所は残す。数字や文字が変わっても位置が動かないように)
       if (gap) { secHead.textContent = gapLabel; secNum.textContent = String(Math.ceil((gapUntil - Date.now()) / 1000)); secUnit.style.visibility = "visible"; }
       else { secHead.textContent = "残り"; secNum.textContent = fmt(s); secUnit.style.visibility = s >= 60 ? "hidden" : "visible"; }
+      if (opts.deck && cur.kind === "timer") bigTime.textContent = s >= 60 ? fmt(s) : `0:${String(s).padStart(2, "0")}`;
       box.classList.toggle("is-last", !gap && left <= 10 && left > 5);
       box.classList.toggle("is-red", !gap && left <= 5 && left > 0);
       box.classList.toggle("is-end", !gap && left <= 0);
@@ -1667,14 +1817,67 @@
       }
       draw();
     }
-    function go(i, autoStart) {
+    // back: 戻ってきたとき(カードは最後の1枚から見せる)
+    function go(i, autoStart, back) {
       halt(); gapUntil = 0;
+      closeBreak();
       if (i >= people.length) { finish(false); return; }
+      const from = idx;
       idx = Math.max(0, i); per = durOf(people[idx]) || per; left0 = per;
       buildMeter();
       drawSlide();
       slide.classList.remove("is-in"); void slide.offsetWidth; slide.classList.add("is-in");
+      const c = carNow();
+      if (c && back) requestAnimationFrame(() => c.show(c.n - 1, true));
       if (autoStart) start(); else draw();
+      const p = people[idx];
+      // 先へ進んで来たとき: オープニングムービーは流す。商談の区切りでは「休憩しませんか?」
+      if (idx > from && isDeck(p) && p.type === "movie" && from >= 0) playMovie();
+      if (idx > from && isDeck(p) && p.breakAsk && !breakAsked) { breakAsked = true; askBreak(); }
+    }
+    // ---------- 休憩のおさそい(商談の区切りのスライドに入ったとき) ----------
+    // 「休む」を押すと1分の休憩の画面。「進む」(または画面のボタン)ですぐに終えられる
+    let breakLayer = null, breakTimer = null, breakAsked = false;
+    function closeBreak() {
+      clearInterval(breakTimer); breakTimer = null;
+      if (breakLayer) { const el = breakLayer; breakLayer = null; el.classList.add("is-out"); setTimeout(() => el.remove(), 220); }
+    }
+    function askBreak() {
+      closeBreak();
+      breakLayer = h("div", { class: "pr-break", role: "dialog", "aria-modal": "true", "aria-label": "休憩のおさそい" },
+        h("div", { class: "pr-break-card" },
+          h("div", { class: "pr-break-cup", "aria-hidden": "true" }, h("i"), h("i"), h("i"), h("span", { class: "pr-break-mug" })),
+          h("p", { class: "pr-break-kicker" }, "ちょっと待って!"),
+          h("h2", { class: "pr-break-title" }, "休憩しませんか?"),
+          h("p", { class: "pr-break-text" }, "ここから商談がはじまります。", h("br"), "お水を飲んだり、体を伸ばしたりして、ひと息つきましょう"),
+          h("div", { class: "pr-break-btns" },
+            h("button", { type: "button", class: "pr-break-btn is-main", onclick: startBreak }, "休む(1分)"),
+            h("button", { type: "button", class: "pr-break-btn", onclick: closeBreak }, "このまま続ける"))));
+      box.append(breakLayer);
+      breakLayer.querySelector(".is-main").focus({ preventScroll: true });
+    }
+    function startBreak() {
+      if (!breakLayer) return;
+      const TOTAL = 60, until = Date.now() + TOTAL * 1000;
+      const TIPS = ["お水を一杯どうぞ", "肩をゆっくり回してみましょう", "深呼吸を3回", "次の商談で話したいことを1つ決めておきましょう", "まもなく商談がはじまります"];
+      const num = h("b", { class: "pr-break-num" });
+      const bar = h("i");
+      const tip = h("p", { class: "pr-break-tip" });
+      App.fill(breakLayer, h("div", { class: "pr-break-load" },
+        h("div", { class: "pr-break-dots", "aria-hidden": "true" }, h("i"), h("i"), h("i")),
+        h("p", { class: "pr-break-now" }, "休憩中"), num,
+        h("div", { class: "pr-break-bar", "aria-hidden": "true" }, bar), tip,
+        h("button", { type: "button", class: "pr-break-btn is-main", onclick: closeBreak }, "休憩を終えて進む"),
+        h("p", { class: "pr-break-hint" }, "下の「進む」でも、すぐに再開できます")));
+      const upd = () => {
+        const left = Math.max(0, Math.ceil((until - Date.now()) / 1000));
+        num.textContent = `0:${String(left).padStart(2, "0")}`;
+        bar.style.width = `${((TOTAL - left) / TOTAL) * 100}%`;
+        tip.textContent = TIPS[Math.min(TIPS.length - 1, Math.floor(((TOTAL - left) / TOTAL) * TIPS.length))];
+        if (left <= 0) { try { App.timerSound.end(); } catch { /* noop */ } closeBreak(); }
+      };
+      upd();
+      breakTimer = setInterval(upd, 250);
     }
     pauseBtn.addEventListener("click", () => {
       if (gapUntil) { halt(); gapUntil = 0; draw(); return; }
@@ -1734,16 +1937,41 @@
     function onKey(e) {
       if (e.target.closest && e.target.closest("input, textarea, select")) return;
       if (document.querySelector(".op-intro")) return; // オープニングムービーを流しているあいだはムービーの操作
-      if (e.key === " ") { e.preventDefault(); if (!done) { if (isDeck(people[idx])) go(idx + 1); else pauseBtn.click(); } }
-      else if (e.key === "ArrowRight" && !done) go(idx + 1);
+      if (e.key === " ") { e.preventDefault(); if (!done) { if (isDeck(people[idx]) || breakLayer) forward(); else pauseBtn.click(); } }
+      else if (e.key === "ArrowRight" && !done) forward();
       else if (e.key === "ArrowLeft" && done) reopen();
-      else if (e.key === "ArrowLeft" && !done && idx > 0) go(idx - 1);
-      else if (e.key === "Escape") { if (done) closeRun(); else if (asking) asking(); else finish(true); }
+      else if (e.key === "ArrowLeft" && !done) backward();
+      else if (e.key === "Escape") { if (breakLayer) closeBreak(); else if (done) closeRun(); else if (asking) asking(); else finish(true); }
     }
     document.addEventListener("keydown", onKey);
     drawSlide();
     draw();
     pauseBtn.focus({ preventScroll: true });
     if (isDeck(people[0]) && people[0].type === "movie") { nextBtn.focus({ preventScroll: true }); playMovie(); }
+    // タイムマネジメント・操作バーが、スライドの文字に重ならないように(広い画面で左右のはしにあるとき、スライドの中身をよける)
+    const avoidTimer = opts.deck ? setInterval(avoidFloaters, 400) : 0;
+    function avoidFloaters() {
+      if (closed) { clearInterval(avoidTimer); return; }
+      const wide = (document.documentElement.clientWidth || innerWidth) > 760 && innerWidth > innerHeight;
+      let padL = 0, padR = 0;
+      if (wide) {
+        const sr = slide.getBoundingClientRect();
+        [timing && timing.el, dock].forEach((el) => {
+          if (!el || !el.isConnected) return;
+          const r = el.getBoundingClientRect();
+          if (!r.width || r.bottom < sr.top || r.top > sr.bottom) return;
+          if (r.left - sr.left < sr.width * 0.3) padL = Math.max(padL, r.right - sr.left + 14);
+          else if (sr.right - r.right < sr.width * 0.3) padR = Math.max(padR, sr.right - r.left + 14);
+        });
+        padL = Math.min(padL, sr.width * 0.32); padR = Math.min(padR, sr.width * 0.32);
+      }
+      const key = `${Math.round(padL)}|${Math.round(padR)}`;
+      if (slide.dataset.avoid === key) return;
+      slide.dataset.avoid = key;
+      slide.style.paddingLeft = padL ? `${Math.round(padL)}px` : "";
+      slide.style.paddingRight = padR ? `${Math.round(padR)}px` : "";
+      if (isDeck(people[idx])) fitDeck();
+    }
+    if (opts.deck) avoidFloaters();
   };
 })();

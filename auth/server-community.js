@@ -124,6 +124,15 @@
           db.events.forEach(function (ev) { if (ev.seed && REF_SEED_AGENDA_PREV.indexOf(ev.agenda) !== -1) ev.agenda = REF_SEED_AGENDA; });
           changed = true;
         }
+        // ⑤を「ブレイクアウトルーム商談(テーブル商談) 7分×4」にする(2026年10月。運営の依頼で、すべての定例会)
+        if (db.eventSeeds && db.eventSeeds.indexOf("agenda-breakout-7x4") === -1) {
+          db.eventSeeds.push("agenda-breakout-7x4");
+          db.events.forEach(function (ev) {
+            if (typeof ev.agenda !== "string") return;
+            ev.agenda = ev.agenda.replace(/^(⑤\s*)ブレイクアウトルーム商談\s*(?:[(（]テーブル商談[)）])?\s*\d+\s*分\s*[×xX✕]\s*\d+\s*回?\s*$/m, "$1ブレイクアウトルーム商談（テーブル商談） 7分×4");
+          });
+          changed = true;
+        }
         // 入っていない値がつながって保存された「null」「nullnull」などの文字を、一度だけ消す
         // (ログイン・通知の登録・鍵などは触らない)
         if (!Array.isArray(db.cleanups)) { db.cleanups = []; changed = true; }
