@@ -528,6 +528,12 @@ const App = (function () {
     opt = opt || {};
     const UNITS = typeof BTEX_UNIT_MEMBERS !== "undefined" ? BTEX_UNIT_MEMBERS : {};
     const norm = (x) => String(x || "").replace(/[\s　|｜()（）]/g, "").toLowerCase();
+    // フリガナと仕事(BTEX_UNIT_PROFILES)。ひらがなで入れてもカタカナのフリガナで探せる
+    const PROF = typeof BTEX_UNIT_PROFILES !== "undefined" ? BTEX_UNIT_PROFILES : {};
+    const profMap = {};
+    Object.keys(PROF).forEach((u) => Object.keys(PROF[u]).forEach((name) => { profMap[`${u}:${norm(name)}`] = PROF[u][name]; }));
+    const profOf = (u, name) => profMap[`${u}:${norm(name)}`] || null;
+    const kata = (x) => norm(x).replace(/[ぁ-ゖ]/g, (c) => String.fromCharCode(c.charCodeAt(0) + 0x60));
     let unit = opt.unit && opt.unit !== 5 ? opt.unit : 0;
     let picked = "";
     // 複数を選ぶとき(opt.selected が選んだ方の一覧を返す): 選んだ方には色と ✓ が付き、もう一度押すと外す(opt.onRemove)
@@ -535,7 +541,7 @@ const App = (function () {
     const isSel = (u, name) => (multi ? opt.selected().some((x) => x.unit === u && x.name === name) : picked === name && u === unit);
     // 日本語の変換中(変換の確定・取り消しの Enter / Shift+Enter)は、選ばない
     let composing = false, compEndAt = 0;
-    const q = h("input", { type: "text", inputmode: "search", class: "bx-q", maxlength: "40", autocomplete: "off", autocorrect: "off", spellcheck: "false", placeholder: "お名前で探す(すべてのユニットから)", "aria-label": "お名前で探す" });
+    const q = h("input", { type: "text", inputmode: "search", class: "bx-q", maxlength: "40", autocomplete: "off", autocorrect: "off", spellcheck: "false", placeholder: "お名前・フリガナで探す(すべてのユニットから)", "aria-label": "お名前・フリガナで探す" });
     const list = h("ul", { class: "bx-list", role: "listbox", "aria-label": "お名前" });
     const chosen = h("p", { class: "bx-chosen", "aria-live": "polite" });
     const wrap = h("div", { class: "bx-picker" }, q, chosen, list);
@@ -551,7 +557,8 @@ const App = (function () {
       const on = isSel(u, name);
       return h("li", null, h("button", { type: "button", class: `bx-item${on ? " is-on" : ""}`, role: "option", "aria-selected": on ? "true" : "false", title: on && multi ? "もう一度押すと外します" : null, onclick: () => pick(u, name) },
         on && multi ? h("span", { class: "bx-check", "aria-hidden": "true" }, "✓") : null,
-        h("span", { class: "bx-name" }, name), tag ? h("span", { class: "bx-tag" }, `BT-EX${u}`) : null));
+        h("span", { class: "bx-name" }, name, (() => { const pf = profOf(u, name); return pf && (pf[1] || pf[0]) ? h("small", { class: "bx-cat" }, pf[1] || pf[0]) : null; })()),
+        tag ? h("span", { class: "bx-tag" }, `BT-EX${u}`) : null));
     }
     function draw() {
       const words = norm(q.value);
@@ -563,7 +570,11 @@ const App = (function () {
       if (words) {
         // すべてのユニットから探す(いまのユニットの方を先に)
         const hits = [];
-        Object.keys(UNITS).forEach((k) => (UNITS[k] || []).forEach((name) => { if (norm(name).includes(words)) hits.push([Number(k), name]); }));
+        const kq = kata(q.value);
+        Object.keys(UNITS).forEach((k) => (UNITS[k] || []).forEach((name) => {
+          const pf = profOf(k, name);
+          if (norm(name).includes(words) || (pf && pf[0] && kata(pf[0]).includes(kq))) hits.push([Number(k), name]);
+        }));
         hits.sort((a, b) => (b[0] === unit) - (a[0] === unit) || a[0] - b[0]);
         hits.slice(0, 30).forEach(([u, name]) => rows.push(row(u, name, true)));
         const typed = q.value.trim();
@@ -595,6 +606,7 @@ const App = (function () {
     wrap.getValue = () => (picked && unit ? { unit, name: picked } : null);
     wrap.setUnit = (n) => { if (n !== unit) { unit = n; picked = ""; q.value = ""; draw(); fire(); } };
     wrap.focusInput = () => q.focus();
+    wrap.profileOf = (u, name) => profOf(u, name);
     wrap.refresh = () => draw();
     draw();
     return wrap;

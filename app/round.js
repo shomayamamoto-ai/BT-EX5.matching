@@ -368,7 +368,7 @@
         const name = sp.name;
         if (!name) { (bx || nameIn).focus && nameIn.focus(); App.toast("お名前を選ぶか、入れてください", "error"); return; }
         if (extras.some((y) => y.kind === kind && y.name === name && (!v || y.unit === v.unit))) { App.toast(`${name}さんはもう入っています`); if (bx) bx.setUnit(v.unit); return; }
-        const x = { key: `${kind === "guest" ? "g" : "o"}:${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`, kind, name, company: v ? extraCompany(v.unit, coIn.value.trim()) : coIn.value.trim(), kana: v ? "" : kanaIn.value.trim() || sp.kana, unit: v ? v.unit : 0, sec: 30 };
+        const x = { key: `${kind === "guest" ? "g" : "o"}:${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`, kind, name, company: v ? extraCompany(v.unit, coIn.value.trim() || ((bx.profileOf && bx.profileOf(v.unit, v.name)) || [])[1] || "") : coIn.value.trim(), kana: v ? ((bx.profileOf && bx.profileOf(v.unit, v.name)) || [])[0] || "" : kanaIn.value.trim() || sp.kana, unit: v ? v.unit : 0, sec: 30 };
         extras.push(x); all.push(x); order.push(x.key); saveExtras();
         nameIn.value = ""; kanaIn.value = ""; coIn.value = ""; if (bx) { const u = v.unit; bx.setUnit(0); bx.setUnit(u); } draw();
         if (!bx) { nameIn.focus(); App.toast(`${name}さんを足しました`); }
