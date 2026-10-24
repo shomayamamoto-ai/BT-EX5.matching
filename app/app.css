@@ -2590,3 +2590,28 @@ button.home-welcome-check:active { transform: scale(0.94); }
 /* 休憩の画面の上にも操作バーを出す(「進む」で休憩を終えられるように) */
 .pr-run .pr-dock { z-index: 40; }
 .pd-joinform .pd-display { font-size: clamp(30px, min(4.4vw, 7.6svh), 70px); }
+/* アンケートの結果 */
+.sv-res { display: grid; gap: 14px; }
+.sv-res-tools { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; }
+.sv-res-date { min-height: 40px; padding: 6px 30px 6px 12px; border-radius: 10px; border: 1.5px solid var(--line-strong); background: #fff; font: inherit; font-size: 14px; font-weight: 700; }
+.sv-res-kpis { grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); }
+.sv-res-sec { padding: 14px; border-radius: 14px; border: 1px solid var(--line); background: #fff; }
+.sv-res-sec h3 { margin: 0 0 10px; font-size: 14.5px; font-weight: 900; }
+.sv-res-sec.is-improve { border-color: #e7c9a0; background: #fffaf0; }
+.sv-bars { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.sv-bars li { display: grid; grid-template-columns: minmax(0, 10em) minmax(0, 1fr) auto; align-items: center; gap: 10px; font-size: 13px; }
+.sv-bar-label { overflow-wrap: anywhere; color: var(--text); font-weight: 700; }
+.sv-bar-track { height: 12px; border-radius: 6px; background: #f1e9db; overflow: hidden; }
+.sv-bar-track i { display: block; height: 100%; min-width: 2px; border-radius: 4px; background: #b8873f; }
+.sv-bar-num { font-size: 12.5px; color: var(--text-sub); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.sv-res-quotes { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.sv-res-quotes li { padding: 10px 12px; border-radius: 10px; background: #faf6ee; font-size: 13.5px; line-height: 1.6; }
+.sv-res-quotes small { display: block; margin-top: 4px; font-size: 11.5px; color: var(--text-light); }
+.sv-res-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.sv-res-list summary { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; padding: 10px 12px; border-radius: 10px; background: #faf6ee; cursor: pointer; font-size: 13.5px; }
+.sv-res-list summary em { font-style: normal; font-weight: 800; color: #7a5520; }
+.sv-res-list summary small { margin-left: auto; color: var(--text-light); }
+.sv-res-list dl { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 12px; margin: 10px 4px; font-size: 13px; }
+.sv-res-list dt { color: var(--text-light); font-weight: 700; }
+.sv-res-list dd { margin: 0; overflow-wrap: anywhere; white-space: pre-wrap; }
+@media (max-width: 520px) { .sv-bars li { grid-template-columns: minmax(0, 1fr) auto; } .sv-bar-track { grid-column: 1 / -1; grid-row: 2; } }

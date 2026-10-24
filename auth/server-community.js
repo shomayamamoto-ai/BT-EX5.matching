@@ -2551,4 +2551,83 @@
       return { migrate: migrate, actions: { getDeckConfig: getDeckConfig, saveDeckConfig: saveDeckConfig } };
     },
   });
+  // ============================================
+  // 定例会のアンケート(BT-EX メンバー向け・ビジター向け)
+  //   submitSurvey(公開・ログイン不要)/ listSurveys・adminDeleteSurvey(プレゼンの進行役・管理者)
+  //   同じ定例会の日・同じメールアドレス・同じ種類の回答は、あとの回答で上書きする
+  // ============================================
+  var SURVEY_SCORES = ["とても感じた", "感じた", "どちらともいえない", "あまり感じなかった", "感じなかった"];
+  var SURVEY_INTEREST = ["ぜひ入会したい", "詳しく話を聞きたい", "今は考えていない"];
+  var SURVEY_MAX = 3000; // 保存しておく回答の数
+  var SURVEY_DAY_MAX = 600; // 1日に受け付ける回答の数(いたずら対策)
+  BtexServerCore.registerModule({
+    mutating: ["submitSurvey", "adminDeleteSurvey"],
+    create: function (c) {
+      function canRead(db, token) {
+        var a = c.authSession(db, token);
+        if (!a) return c.fail("SESSION_INVALID");
+        if (!a.isAdmin && DECK_OWNERS.indexOf(a.user.memberId) === -1) return c.fail("FORBIDDEN_ADMIN");
+        return null;
+      }
+      function submitSurvey(body) {
+        var db = c.ensureDb();
+        if (!Array.isArray(db.surveys)) db.surveys = [];
+        if (c.cleanStr(body.website, 10)) return c.ok({}); // 見えない欄に入っているのは機械の送信
+        var kind = body.kind === "visitor" ? "visitor" : "member";
+        var day = new Date(c.nowMs() + 9 * 3600000).toISOString().slice(0, 10);
+        if (!db.surveyGuard || db.surveyGuard.day !== day) db.surveyGuard = { day: day, count: 0 };
+        if (db.surveyGuard.count >= SURVEY_DAY_MAX) return c.fail("INVALID_REQUEST", "ただいま回答を受け付けられません。時間をおいてお試しください。");
+        var date = /^\d{4}-\d{2}-\d{2}$/.test(String(body.date || "")) ? String(body.date) : "";
+        var last = c.cleanStr(body.last, 30), first = c.cleanStr(body.first, 30);
+        var email = c.cleanStr(body.email, 120);
+        var score = SURVEY_SCORES.indexOf(String(body.score || ""));
+        var reason = c.cleanStr(body.reason, 800), comment = c.cleanStr(body.comment, 1200);
+        var program = c.cleanStr(body.program, 80);
+        if (!date || !last || !first || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || score < 0 || !program || !reason || !comment) {
+          return c.fail("INVALID_REQUEST", "必須の項目を入れてください。");
+        }
+        var r = {
+          kind: kind, eventId: c.cleanStr(body.eventId, 40), date: date, last: last, first: first, email: email,
+          score: score, program: program, reason: reason, comment: comment,
+        };
+        if (kind === "member") {
+          r.unit = c.cleanStr(body.unit, 12); r.lineage = c.cleanStr(body.lineage, 60); r.job = c.cleanStr(body.job, 80);
+          r.upcre = c.cleanStr(body.upcre, 40); r.adopt = c.cleanStr(body.adopt, 800);
+          if (!r.unit || !r.lineage || !r.job || !r.upcre) return c.fail("INVALID_REQUEST", "必須の項目を入れてください。");
+        } else {
+          r.job = c.cleanStr(body.job, 80); r.inviter = c.cleanStr(body.inviter, 40); r.link = ["yes", "no"].indexOf(body.link) !== -1 ? body.link : "";
+          r.interest = SURVEY_INTEREST.indexOf(String(body.interest || "")) !== -1 ? String(body.interest) : "";
+          if (!r.job || !r.inviter || !r.interest) return c.fail("INVALID_REQUEST", "必須の項目を入れてください。");
+        }
+        var same = c.find(db.surveys, function (x) { return x.kind === kind && x.date === date && x.email.toLowerCase() === email.toLowerCase(); });
+        if (same) { Object.assign(same, r, { updatedAt: c.nowMs() }); }
+        else {
+          r.id = "sv_" + c.randomHex(6); r.at = c.nowMs();
+          db.surveys.push(r);
+          if (db.surveys.length > SURVEY_MAX) db.surveys.splice(0, db.surveys.length - SURVEY_MAX);
+        }
+        db.surveyGuard.count += 1;
+        c.saveDb(db);
+        return c.ok({ updated: !!same });
+      }
+      function listSurveys(body) {
+        var db = c.ensureDb();
+        var e = canRead(db, body.sessionToken);
+        if (e) return e;
+        var list = (db.surveys || []).slice().sort(function (a, b) { return (b.at || 0) - (a.at || 0); });
+        return c.ok({ items: list, scores: SURVEY_SCORES, interests: SURVEY_INTEREST });
+      }
+      function adminDeleteSurvey(body) {
+        var db = c.ensureDb();
+        var e = canRead(db, body.sessionToken);
+        if (e) return e;
+        var before = (db.surveys || []).length;
+        db.surveys = (db.surveys || []).filter(function (x) { return x.id !== body.id; });
+        if (db.surveys.length === before) return c.fail("NOT_FOUND");
+        c.saveDb(db);
+        return c.ok({});
+      }
+      return { actions: { submitSurvey: submitSurvey, listSurveys: listSurveys, adminDeleteSurvey: adminDeleteSurvey } };
+    },
+  });
 })();

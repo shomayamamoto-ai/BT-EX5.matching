@@ -604,8 +604,9 @@
         h("div", { class: "pr-deck-more" },
           h("label", { class: "pr-deck-field" }, h("span", null, "ブレイクアウトルーム商談(テーブル商談)"), h("span", { class: "pr-bo" }, boMin, h("b", null, "×"), boTimes)),
           h("label", { class: "pr-deck-field" }, h("span", null, "出席コード(4桁)"), codeIn, h("small", null, "終わりの挨拶の「出席コード」のスライドに大きく出ます"))),
-        deckInfo.canEdit && App.deckEditor ? h("div", { class: "app-btn-row pr-deck-edit" },
-          App.btn("スライドの内容・時間の目安を編集", () => App.deckEditor(deckInfo.config, deckSteps(ev), (cfg) => { deckInfo.config = cfg; }), "ghost small")) : null,
+        h("div", { class: "app-btn-row pr-deck-edit" },
+          deckInfo.canEdit && App.deckEditor ? App.btn("スライドの内容・時間の目安を編集", () => App.deckEditor(deckInfo.config, deckSteps(ev), (cfg) => { deckInfo.config = cfg; }), "ghost small") : null,
+          App.surveyResults ? App.btn("アンケートの結果", () => App.surveyResults(), "ghost small") : null),
         h("p", { class: "app-field-hint" }, "残り10秒で小さな音、0秒で鐘の音が鳴ります。キーボードでは スペース=止める・つづける、→=次へ、←=前へ、Esc=終わる。会場のスクリーンで画面いっぱいに映すときは、ブラウザの全画面(Mac は control+command+F、Windows は F11)を使ってください。"),
         h("div", { class: "pr-go-bar" }, goBtn)),
       // ---------- 2. 自分で使うタイマー ----------

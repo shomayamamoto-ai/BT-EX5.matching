@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="referrer" content="no-referrer">
+  <meta name="robots" content="noindex">
+  <title>定例会のアンケート | BT-EX5</title>
+  <link rel="icon" type="image/svg+xml" href="../assets/bt-ex5-mark.svg?v=202610242348">
+  <meta name="theme-color" content="#1a0f0c">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Noto+Sans+JP:wght@400;700;900&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Noto+Sans+JP:wght@400;700;900&display=swap"></noscript>
+  <link rel="stylesheet" href="../auth/auth.css?v=202610242348">
+  <link rel="stylesheet" href="../visit/visit.css?v=202610242348">
+  <link rel="stylesheet" href="survey.css?v=202610242348">
+  <link rel="stylesheet" href="../assets/lux.css?v=202610242348">
+  <script src="../assets/ime-guard.js?v=202610242348"></script>
+  <script src="../assets/text-size.js?v=202610242348"></script>
+</head>
+<body>
+  <main class="auth-main">
+    <div class="auth-card visit-card sv-card">
+      <div class="auth-logo">
+        <img class="brand-mark" src="../assets/bt-ex5-mark-3d-80.png?v=202610242344" alt="" width="40" height="40">
+        <span class="brand-word"><span class="brand-name">BT-<em>EX5</em></span><span class="brand-sub">新潟・東京 紹介者制コミュニティ</span></span>
+      </div>
+      <h1 id="sv-title">定例会のアンケート</h1>
+      <div class="sv-kind" role="tablist" aria-label="回答する方">
+        <button type="button" role="tab" data-kind="member" id="sv-k-member">BT-EX メンバーの方</button>
+        <button type="button" role="tab" data-kind="visitor" id="sv-k-visitor">ビジターの方</button>
+      </div>
+      <p class="sv-lead" id="sv-lead"></p>
+
+      <form id="sv-form" novalidate>
+        <div class="auth-field"><label for="sv-date">定例会参加日 <span class="visit-req">必須</span></label><input type="date" id="sv-date" required></div>
+        <div class="sv-row">
+          <div class="auth-field"><label for="sv-last">姓 <span class="visit-req">必須</span></label><input type="text" id="sv-last" maxlength="30" autocomplete="family-name" required></div>
+          <div class="auth-field"><label for="sv-first">名 <span class="visit-req">必須</span></label><input type="text" id="sv-first" maxlength="30" autocomplete="given-name" required></div>
+        </div>
+        <div class="auth-field"><label for="sv-email">メールアドレス <span class="visit-req">必須</span></label><input type="email" id="sv-email" maxlength="120" autocomplete="email" required></div>
+
+        <div data-for="member">
+          <div class="auth-field"><label for="sv-unit">所属ユニット <span class="visit-req">必須</span></label><select id="sv-unit"></select></div>
+          <div class="auth-field"><label for="sv-lineage">B.T.内系列名(LINK会員のみ回答) <span class="visit-req">必須</span></label><input type="text" id="sv-lineage" maxlength="60" placeholder="LINK会員でない方は「なし」"></div>
+          <div class="auth-field"><label for="sv-job-m">職業 <span class="visit-req">必須</span></label><input type="text" id="sv-job-m" maxlength="80"></div>
+          <div class="auth-field"><label for="sv-upcre">アップクリエ氏名(サポートしてくれているメンバーの氏名) <span class="visit-req">必須</span></label><input type="text" id="sv-upcre" maxlength="40"></div>
+        </div>
+        <div data-for="visitor" hidden>
+          <div class="auth-field"><label for="sv-job-v">会社名・職業 <span class="visit-req">必須</span></label><input type="text" id="sv-job-v" maxlength="80" autocomplete="organization"></div>
+          <div class="auth-field"><label for="sv-inviter">招待してくれたメンバーのお名前 <span class="visit-req">必須</span></label><input type="text" id="sv-inviter" maxlength="40"></div>
+          <fieldset class="sv-choice"><legend>LINK の会員ですか?</legend>
+            <label><input type="radio" name="sv-link" value="yes"> はい</label>
+            <label><input type="radio" name="sv-link" value="no"> いいえ</label>
+          </fieldset>
+        </div>
+
+        <div class="auth-field"><label for="sv-score" id="sv-score-label">BT-EXの仕組みや定例会は、自身やチームメンバーのビジネスを加速させる可能性を感じましたか? <span class="visit-req">必須</span></label><select id="sv-score"></select></div>
+        <div class="auth-field"><label for="sv-program">特に良かったプログラムはなんですか? <span class="visit-req">必須</span></label><select id="sv-program"></select>
+          <input type="text" id="sv-program-other" maxlength="80" placeholder="その他の内容" hidden></div>
+        <div data-for="member" class="auth-field"><label for="sv-adopt">自ユニットに取り入れたいこと</label><textarea id="sv-adopt" rows="2" maxlength="800"></textarea></div>
+        <div data-for="visitor" class="auth-field" hidden><label for="sv-interest">BT-EX5 への入会に興味はありますか? <span class="visit-req">必須</span></label><select id="sv-interest"></select></div>
+        <div class="auth-field"><label for="sv-reason">上記の回答をした理由を教えてください。 <span class="visit-req">必須</span></label><textarea id="sv-reason" rows="3" maxlength="800"></textarea></div>
+        <div class="auth-field"><label for="sv-comment">本日のBT-EX5の定例会に関して、ご感想・ご質問・ご提案などありましたらご記入ください。 <span class="visit-req">必須</span></label><textarea id="sv-comment" rows="4" maxlength="1200"></textarea></div>
+        <input type="text" id="sv-website" class="sv-hp" tabindex="-1" autocomplete="off" aria-hidden="true">
+        <p class="visit-note">ご回答は BT-EX5 の運営だけが見て、定例会をよくするために使います(<a href="../terms/#privacy" target="_blank" rel="noopener">個人情報の取り扱い</a>)。</p>
+        <button type="submit" class="auth-submit" id="sv-submit">送信</button>
+      </form>
+      <div id="sv-done" class="visit-done" hidden>
+        <b>ご回答ありがとうございました</b>
+        <p>いただいた声は、次の定例会づくりに活かします。</p>
+        <button type="button" class="auth-text-btn" id="sv-again">回答を直す</button>
+      </div>
+      <div id="sv-message" class="auth-message" role="alert"></div>
+    </div>
+  </main>
+  <footer class="auth-footer">
+    <p><a href="../terms/#privacy" target="_blank" rel="noopener">個人情報の取り扱い</a></p>
+    <p class="site-copy">© 2026 BT-EX5</p>
+  </footer>
+  <script src="../referral/data.js?v=202610242348"></script>
+  <script src="../auth/server-core.js?v=202610242348"></script>
+  <script src="../auth/server-community.js?v=202610242348"></script>
+  <script src="../auth/mock-server.js?v=202610242348"></script>
+  <script src="../auth/api.js?v=202610242348"></script>
+  <script src="survey.js?v=202610242348"></script>
+</body>
+</html>
