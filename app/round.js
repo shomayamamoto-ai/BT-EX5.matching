@@ -41,6 +41,8 @@
     get(k, d) { try { const v = localStorage.getItem(`btex5-round-${k}`); return v === null ? d : v; } catch { return d; } },
     set(k, v) { try { localStorage.setItem(`btex5-round-${k}`, String(v)); } catch { /* noop */ } },
   };
+  // 文字が変わったときだけ書きかえる(1秒に何回も同じ文字を書くと、そのたびに画面の計算が走って重くなるため)
+  const setText = (el, v) => { const t = String(v); if (el.textContent !== t) el.textContent = t; };
   const fmt = (sec) => (sec >= 60 ? `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, "0")}` : String(sec));
   const two = (n) => String(n).padStart(2, "0");
   const shuffle = (a) => { const x = a.slice(); for (let i = x.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [x[i], x[j]] = [x[j], x[i]]; } return x; };
@@ -160,9 +162,14 @@
     const path = document.createElementNS(NS, "path"); path.setAttribute("d", ROLE_PATHS[r.kind] || ROLE_PATHS.role); svg.append(path);
     return h("span", { class: `pr-role is-${r.kind}` }, svg, r.role);
   }
+  // 小さく出す顔写真(一覧の丸・自分の写真)は、運営が用意した写真なら小さい版(thumbs/)を使う(読み込みを軽く)
+  const SMALL_FACE = /^(pr-card-face|pr-row-face|pr-me-face)$/;
+  const thumbOf = (url) => String(url).replace(/assets\/members\/([^/?#]+\.jpg)/, "assets/members/thumbs/$1");
   function face(url, name, cls) {
     return url
-      ? h("img", { class: cls, src: url, alt: "", loading: "lazy", decoding: "async" })
+      ? h("img", { class: cls, src: SMALL_FACE.test(cls) ? thumbOf(url) : url, alt: "", loading: "lazy", decoding: "async",
+        // 小さい版がまだないとき(あとから足した写真)は、元の写真を出す
+        onerror: (e) => { if (e.target.getAttribute("src") !== url) e.target.src = url; } })
       : h("span", { class: `${cls} is-initial`, "aria-hidden": "true" }, String(name || "?").replace(/\s/g, "").slice(0, 1));
   }
 
@@ -671,8 +678,10 @@
     const notes = agenda.filter((x) => !NUMS.includes(x[0])).map((x) => x.replace(/^[★☆・*]\s*/, ""));
     const items = [];
     const deck = (type, extra) => items.push(Object.assign({ key: `d:${items.length}`, kind: "deck", type, name: "" }, extra));
-    // いちばんはじめ: BT-EX でよく使う言葉(はじまる前に映しておける)
-    if (D.glossary && (D.glossary.items || []).length) deck("glossary", { name: D.glossary.title, step: "用語説明", items: D.glossary.items });
+    // BT-EX でよく使う言葉: 進行表の「用語説明」のところ(はじめの挨拶のあと)。進行表にないときは、いちばんはじめ
+    const hasGloss = D.glossary && (D.glossary.items || []).length;
+    let glossDone = false;
+    const glossary = (label) => { glossDone = true; deck("glossary", { name: D.glossary.title, step: label, items: D.glossary.items }); };
     deck("movie", { name: "オープニングムービー", step: "オープニング" });
     deck("cover", { name: (ev && ev.title) || "BT-EX5 定例会", step: "定例会", date: ev ? `${App.fmtDateLong ? App.fmtDateLong(ev.date) : ev.date}${ev.start ? ` ${ev.start}〜${ev.end || ""}` : ""}` : "", notes });
     let pres = false, extra = false, rulesDone = false, raiseDone = false;
@@ -725,6 +734,7 @@
         const m = App.memberById(D.leader.memberId);
         if (m) deck("leader", { name: m.name, step: label, photo: (photos && photos[m.id]) || "", leader: D.leader });
       }
+      if (/用語/.test(st.title) && hasGloss && !glossDone) glossary(label);
       if (/理念/.test(st.title) && D.about) {
         deck("about", { name: `${D.name || "BT-EX"}とは`, step: label, paras: D.about, formula: D.formula, center: D.name || "BT-EX" });
         deck("vision", { name: D.name || "BT-EX", step: label, en: D.en, philosophy: D.philosophy, vision: D.vision });
@@ -761,6 +771,7 @@
     if (!extra) extras("BT-EXについて");
     if (!rulesDone) rulesAndSchedule();
     if (!raiseDone) raises("発表");
+    if (hasGloss && !glossDone) { glossary("用語説明"); items.unshift(items.pop()); }
     // 終わりの挨拶: 入会への3ステップ → アンケート(BT-EX メンバー / ビジター) → 出席コード → おわり
     const endLabel = steps.length ? `${steps[steps.length - 1].no}. ${steps[steps.length - 1].title}` : "おわり";
     if (D.joinSteps) deck("joinsteps", { name: D.joinSteps.title, step: endLabel, cards: D.joinSteps.steps || [] });
@@ -1151,17 +1162,23 @@
       const state = Math.abs(lag) < 10000 ? "ok" : lag > 0 ? "late" : "early";
       panel.dataset.state = state;
       if (state !== lastState) { lastState = state; statusIcon.replaceChildren(lineIcon(state)); }
-      statusText.textContent = state === "ok" ? "オンタイム" : state === "late" ? `${ms2(lag)} 遅れ` : `${ms2(lag)} 早い`;
+      setText(statusText, state === "ok" ? "オンタイム" : state === "late" ? `${ms2(lag)} 遅れ` : `${ms2(lag)} 早い`);
       const st = stepList.find((x) => x.no === items[i].stepNo);
-      stepName.textContent = st ? `${two(st.no)} ${String(st.title).replace(/\s*[(（]?\s*\d+\s*分(?:\s*[×xX✕]\s*\d+\s*回?)?\s*[)）]?\s*$/, "")}` : items[i].stepNo ? "おわり" : "オープニング";
+      setText(stepName, st ? `${two(st.no)} ${String(st.title).replace(/\s*[(（]?\s*\d+\s*分(?:\s*[×xX✕]\s*\d+\s*回?)?\s*[)）]?\s*$/, "")}` : items[i].stepNo ? "おわり" : "オープニング");
       const [ss, se] = stepSpan(i);
-      ideal.textContent = `${hm(ss)}〜${hm(se)}`;
-      nowEl.textContent = `${d.getUTCHours()}:${pad(d.getUTCMinutes())}`;
+      setText(ideal, `${hm(ss)}〜${hm(se)}`);
+      setText(nowEl, `${d.getUTCHours()}:${pad(d.getUTCMinutes())}`);
       const it = items[i];
-      sub.textContent = it.kind === "deck" ? String(it.name || "").replace(/\n/g, " ") : it.kind === "timer" ? it.name || "" : it.name ? `${it.name}さん` : "";
+      setText(sub, it.kind === "deck" ? String(it.name || "").replace(/\n/g, " ") : it.kind === "timer" ? it.name || "" : it.name ? `${it.name}さん` : "");
       sub.hidden = !sub.textContent;
-      bar.firstChild.style.width = `${Math.max(0, Math.min(100, ((now - ss) / Math.max(1, se - ss)) * 100))}%`;
-      endRow.replaceChildren(h("span", null, "終了"), h("b", null, hm(start + total)), h("span", null, "見込み"), h("b", { class: "pt-eta" }, hm(start + total + lag)));
+      const w = `${Math.max(0, Math.min(100, ((now - ss) / Math.max(1, se - ss)) * 100)).toFixed(1)}%`;
+      if (bar.firstChild.style.width !== w) bar.firstChild.style.width = w;
+      // 終了・見込みは、時刻が変わったときだけ作り直す
+      const endKey = `${hm(start + total)}|${hm(start + total + lag)}`;
+      if (endRow.dataset.key !== endKey) {
+        endRow.dataset.key = endKey;
+        endRow.replaceChildren(h("span", null, "終了"), h("b", null, hm(start + total)), h("span", null, "見込み"), h("b", { class: "pt-eta" }, hm(start + total + lag)));
+      }
     }
     tick();
     const timer = setInterval(tick, 250);
@@ -1765,8 +1782,8 @@
       if (done) return;
       const cur = people[idx];
       const pi = persons.indexOf(cur);
-      count.textContent = opts.deck ? (pi >= 0 ? `プレゼン ${two(pi + 1)} / ${two(persons.length)}` : "") : `${two(idx + 1)} / ${two(people.length)}`;
-      if (jump) { let j = -1; jump.querySelectorAll("option").forEach((o) => { if (Number(o.value) <= idx) j = Number(o.value); }); jump.value = String(j); }
+      setText(count, opts.deck ? (pi >= 0 ? `プレゼン ${two(pi + 1)} / ${two(persons.length)}` : "") : `${two(idx + 1)} / ${two(people.length)}`);
+      if (jump) { let j = -1; jump.querySelectorAll("option").forEach((o) => { if (Number(o.value) <= idx) j = Number(o.value); }); if (jump.value !== String(j)) jump.value = String(j); }
       // スライドの間は「はじめる」を見えなくするだけ(場所は残す。「進む」などの位置が動かないように)
       const noTimer = isDeck(cur);
       pauseBtn.classList.toggle("is-slot", noTimer);
@@ -1780,12 +1797,12 @@
       const left = gap ? 0 : Math.max(0, leftNow());
       const on = Math.min(n, Math.ceil(left / unit - 1e-6));
       segs.forEach((s, i) => s.classList.toggle("is-on", i < on));
-      meter.setAttribute("aria-valuenow", String(Math.ceil(left)));
+      if (meter.getAttribute("aria-valuenow") !== String(Math.ceil(left))) meter.setAttribute("aria-valuenow", String(Math.ceil(left)));
       const s = Math.ceil(left);
       // 「秒」は1分以上のとき見えなくするだけ(場所は残す。数字や文字が変わっても位置が動かないように)
-      if (gap) { secHead.textContent = gapLabel; secNum.textContent = String(Math.ceil((gapUntil - Date.now()) / 1000)); secUnit.style.visibility = "visible"; }
-      else { secHead.textContent = "残り"; secNum.textContent = fmt(s); secUnit.style.visibility = s >= 60 ? "hidden" : "visible"; }
-      if (opts.deck && cur.kind === "timer") bigTime.textContent = s >= 60 ? fmt(s) : `0:${String(s).padStart(2, "0")}`;
+      if (gap) { setText(secHead, gapLabel); setText(secNum, Math.ceil((gapUntil - Date.now()) / 1000)); secUnit.style.visibility = "visible"; }
+      else { setText(secHead, "残り"); setText(secNum, fmt(s)); secUnit.style.visibility = s >= 60 ? "hidden" : "visible"; }
+      if (opts.deck && cur.kind === "timer") setText(bigTime, s >= 60 ? fmt(s) : `0:${String(s).padStart(2, "0")}`);
       box.classList.toggle("is-last", !gap && left <= 10 && left > 5);
       box.classList.toggle("is-red", !gap && left <= 5 && left > 0);
       box.classList.toggle("is-end", !gap && left <= 0);
@@ -1950,7 +1967,7 @@
     pauseBtn.focus({ preventScroll: true });
     if (isDeck(people[0]) && people[0].type === "movie") { nextBtn.focus({ preventScroll: true }); playMovie(); }
     // タイムマネジメント・操作バーが、スライドの文字に重ならないように(広い画面で左右のはしにあるとき、スライドの中身をよける)
-    const avoidTimer = opts.deck ? setInterval(avoidFloaters, 400) : 0;
+    const avoidTimer = opts.deck ? setInterval(avoidFloaters, 800) : 0;
     function avoidFloaters() {
       if (closed) { clearInterval(avoidTimer); return; }
       const wide = (document.documentElement.clientWidth || innerWidth) > 760 && innerWidth > innerHeight;

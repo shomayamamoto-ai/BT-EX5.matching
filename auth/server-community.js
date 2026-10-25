@@ -129,7 +129,28 @@
           db.eventSeeds.push("agenda-breakout-7x4");
           db.events.forEach(function (ev) {
             if (typeof ev.agenda !== "string") return;
-            ev.agenda = ev.agenda.replace(/^(⑤\s*)ブレイクアウトルーム商談\s*(?:[(（]テーブル商談[)）])?\s*\d+\s*分\s*[×xX✕]\s*\d+\s*回?\s*$/m, "$1ブレイクアウトルーム商談（テーブル商談） 7分×4");
+            ev.agenda = ev.agenda.replace(/^([①-⑳]\s*)ブレイクアウトルーム商談\s*(?:[(（]テーブル商談[)）])?\s*\d+\s*分\s*[×xX✕]\s*\d+\s*回?\s*$/m, "$1ブレイクアウトルーム商談（テーブル商談） 7分×4");
+          });
+          changed = true;
+        }
+        // はじめの挨拶のあとに「②用語説明」を入れ、そのあとの番号を1つずつ送る(2026年10月。運営の依頼で、すべての定例会)
+        if (db.eventSeeds && db.eventSeeds.indexOf("agenda-glossary") === -1) {
+          db.eventSeeds.push("agenda-glossary");
+          var CIRC = "①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳";
+          db.events.forEach(function (ev) {
+            if (typeof ev.agenda !== "string" || /用語説明/.test(ev.agenda)) return;
+            var lines = ev.agenda.split("\n");
+            var at = -1;
+            lines.forEach(function (l, i) { if (at < 0 && /^①/.test(l.trim()) && /挨拶|あいさつ/.test(l)) at = i; });
+            if (at < 0) return;
+            var out = [];
+            lines.forEach(function (l, i) {
+              var t = l.trim(), n = CIRC.indexOf(t.charAt(0));
+              if (i > at && n >= 1 && n < CIRC.length - 1) l = l.replace(t.charAt(0), CIRC.charAt(n + 1));
+              out.push(l);
+              if (i === at) out.push("②用語説明");
+            });
+            ev.agenda = out.join("\n");
           });
           changed = true;
         }
@@ -2534,11 +2555,11 @@
         c.saveDb(x.db);
         return c.ok({ config: raw ? JSON.parse(raw) : null, at: x.db.deckConfigAt });
       }
-      // 運営が時間の目安を決め直したとき(2026年10月: 商談10分×3回)、前に保存した時間の目安を一度だけ外す
+      // 運営が時間の目安を決め直したとき(2026年10月: 商談7分×4回・用語説明を足した)、前に保存した時間の目安を一度だけ外す
       function migrate(db) {
         if (!db.cleanups) db.cleanups = [];
-        if (db.cleanups.indexOf("deck-timeplan-2") !== -1) return false;
-        db.cleanups.push("deck-timeplan-2");
+        if (db.cleanups.indexOf("deck-timeplan-3") !== -1) return false;
+        db.cleanups.push("deck-timeplan-3");
         var cfg = readCfg(db);
         if (cfg && "timeplan" in cfg) {
           delete cfg.timeplan;

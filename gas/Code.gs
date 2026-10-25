@@ -1152,8 +1152,8 @@ const BTEX_DECK = {
     ],
   },
   // 時間の目安(分)。2時間の定例会のタイムマネジメントに使う(0: オープニング、1〜: 流れの番号)
-  // オープニング1分・挨拶5分・理念20分・エデュケーション(5分+α1分)6分・1分プレゼン32分・商談(7分×4回+α8分)36分・実績紹介15分・終わりの挨拶5分 = 120分
-  timeplan: [1, 5, 20, 6, 32, 36, 15, 5],
+  // オープニング1分・挨拶5分・用語説明2分・理念18分・エデュケーション(5分+α1分)6分・1分プレゼン32分・商談(7分×4回+α8分)36分・実績紹介15分・終わりの挨拶5分 = 120分
+  timeplan: [1, 5, 2, 18, 6, 32, 36, 15, 5],
   // スケジュール(次回以降の日程は、予定に入っている定例会から出す)
   schedule: {
     title: "BT-EX5 スケジュール",
@@ -1309,12 +1309,17 @@ const REF_SEED_REVISIONS = [
 // 参加リンク(Zoom など)はここに置かない(このファイルは誰でも読めるため)。オンラインの回は Google Meet を作る
 // 当日の流れは BT-EX の指針(オンライン定例会)の順。①②③⑥⑦は BT-EX 共通、④⑤はユニットごとに変えてよい
 // ⑤は今後の対面の定例会もふくめて「ブレイクアウトルーム商談(テーブル商談)」。時間と回数は、プレゼンをはじめる前の画面でも選べる
+// ②は BT-EX でよく使う言葉の説明(はじめの挨拶のあと)
 const REF_SEED_AGENDA = [
-  "①はじめの挨拶", "②BT-EXの理念", "③エデュケーションコーナー 5分", "④1分プレゼンテーション",
-  "⑤ブレイクアウトルーム商談（テーブル商談） 7分×4", "⑥LINKのビジネス実績紹介", "⑦終わりの挨拶",
+  "①はじめの挨拶", "②用語説明", "③BT-EXの理念", "④エデュケーションコーナー 5分", "⑤1分プレゼンテーション",
+  "⑥ブレイクアウトルーム商談（テーブル商談） 7分×4", "⑦LINKのビジネス実績紹介", "⑧終わりの挨拶",
 ].join("\n");
 // 以前の流れ(運営が書きかえていない定例会だけ、上の流れに置きかえる)
 const REF_SEED_AGENDA_PREV = [
+  [
+    "①はじめの挨拶", "②BT-EXの理念", "③エデュケーションコーナー 5分", "④1分プレゼンテーション",
+    "⑤ブレイクアウトルーム商談（テーブル商談） 7分×4", "⑥LINKのビジネス実績紹介", "⑦終わりの挨拶",
+  ].join("\n"),
   [
     "①はじめの挨拶", "②BT-EXの理念", "③エデュケーションコーナー 5分", "④1分プレゼンテーション",
     "⑤ブレイクアウトルーム商談 10分×3", "⑥LINKのビジネス実績紹介", "⑦終わりの挨拶",
@@ -3719,7 +3724,28 @@ var BtexServerCore = (function () {
           db.eventSeeds.push("agenda-breakout-7x4");
           db.events.forEach(function (ev) {
             if (typeof ev.agenda !== "string") return;
-            ev.agenda = ev.agenda.replace(/^(⑤\s*)ブレイクアウトルーム商談\s*(?:[(（]テーブル商談[)）])?\s*\d+\s*分\s*[×xX✕]\s*\d+\s*回?\s*$/m, "$1ブレイクアウトルーム商談（テーブル商談） 7分×4");
+            ev.agenda = ev.agenda.replace(/^([①-⑳]\s*)ブレイクアウトルーム商談\s*(?:[(（]テーブル商談[)）])?\s*\d+\s*分\s*[×xX✕]\s*\d+\s*回?\s*$/m, "$1ブレイクアウトルーム商談（テーブル商談） 7分×4");
+          });
+          changed = true;
+        }
+        // はじめの挨拶のあとに「②用語説明」を入れ、そのあとの番号を1つずつ送る(2026年10月。運営の依頼で、すべての定例会)
+        if (db.eventSeeds && db.eventSeeds.indexOf("agenda-glossary") === -1) {
+          db.eventSeeds.push("agenda-glossary");
+          var CIRC = "①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳";
+          db.events.forEach(function (ev) {
+            if (typeof ev.agenda !== "string" || /用語説明/.test(ev.agenda)) return;
+            var lines = ev.agenda.split("\n");
+            var at = -1;
+            lines.forEach(function (l, i) { if (at < 0 && /^①/.test(l.trim()) && /挨拶|あいさつ/.test(l)) at = i; });
+            if (at < 0) return;
+            var out = [];
+            lines.forEach(function (l, i) {
+              var t = l.trim(), n = CIRC.indexOf(t.charAt(0));
+              if (i > at && n >= 1 && n < CIRC.length - 1) l = l.replace(t.charAt(0), CIRC.charAt(n + 1));
+              out.push(l);
+              if (i === at) out.push("②用語説明");
+            });
+            ev.agenda = out.join("\n");
           });
           changed = true;
         }
@@ -6124,11 +6150,11 @@ var BtexServerCore = (function () {
         c.saveDb(x.db);
         return c.ok({ config: raw ? JSON.parse(raw) : null, at: x.db.deckConfigAt });
       }
-      // 運営が時間の目安を決め直したとき(2026年10月: 商談10分×3回)、前に保存した時間の目安を一度だけ外す
+      // 運営が時間の目安を決め直したとき(2026年10月: 商談7分×4回・用語説明を足した)、前に保存した時間の目安を一度だけ外す
       function migrate(db) {
         if (!db.cleanups) db.cleanups = [];
-        if (db.cleanups.indexOf("deck-timeplan-2") !== -1) return false;
-        db.cleanups.push("deck-timeplan-2");
+        if (db.cleanups.indexOf("deck-timeplan-3") !== -1) return false;
+        db.cleanups.push("deck-timeplan-3");
         var cfg = readCfg(db);
         if (cfg && "timeplan" in cfg) {
           delete cfg.timeplan;

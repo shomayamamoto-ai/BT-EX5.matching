@@ -327,7 +327,7 @@
     const range = [m.face ? `対面:${m.face}` : "", m.online && m.online !== "unknown" ? `オンライン:${ONLINE_LABELS[m.online]}` : ""].filter(Boolean).join(" / ");
     return `
       <header class="md-head${memberPhoto(m.id) ? " has-photo" : ""}">
-        ${memberPhoto(m.id) ? `<img class="md-photo" src="${escapeHtml(memberPhoto(m.id))}" alt="" width="96" height="128" loading="lazy">` : ""}
+        ${memberPhoto(m.id) ? `<img class="md-photo" src="${escapeHtml(memberPhoto(m.id).replace("assets/members/", "assets/members/thumbs/"))}" alt="" width="96" height="128" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='${escapeHtml(memberPhoto(m.id))}'">` : ""}
         <h2 class="md-name" id="detailTitle">${escapeHtml(m.name)}</h2>
         ${m.kana ? `<p class="md-kana">${escapeHtml(m.kana)}</p>` : ""}
         ${roleMark(m.id)}
