@@ -1733,7 +1733,8 @@ button.home-welcome-check:active { transform: scale(0.94); }
 .pd-mark { width: clamp(64px, min(9vw, 14svh), 132px); height: auto; filter: drop-shadow(0 10px 30px rgba(0, 0, 0, 0.5)); }
 .pd-h { margin: 0; font-size: clamp(12px, min(1.3vw, 2.1svh), 17px); font-weight: 900; letter-spacing: 0.24em; color: var(--pd-gold); }
 .pd-big { margin: 0; font-family: var(--pd-serif); font-size: clamp(20px, min(3vw, 4.6svh), 44px); font-weight: 700; line-height: 1.4; color: var(--pd-strong); }
-.pd-note { margin: clamp(10px, 2.2svh, 22px) 0 0; font-size: clamp(11.5px, min(1.25vw, 2.1svh), 16px); color: var(--pd-muted); text-align: right; }
+/* 注意書き(※)は暗い背景でも読めるように、明るいクリームの太字にする(運営の依頼) */
+.pd-note { margin: clamp(10px, 2.2svh, 22px) 0 0; font-size: clamp(12.5px, min(1.4vw, 2.3svh), 18px); font-weight: 700; color: var(--pd-strong); text-align: right; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6); }
 .pd-note.is-center { text-align: left; font-size: clamp(13px, min(1.6vw, 2.6svh), 21px); }
 
 /* 中身のスライドの枠: 左上に小見出し → 題 → 要点の一文 → 中身 */
@@ -1780,7 +1781,7 @@ button.home-welcome-check:active { transform: scale(0.94); }
 .pd-play { flex: none; min-width: 200px; }
 .pd-cover .pd-display { font-size: clamp(28px, min(5vw, 8svh), 78px); word-break: keep-all; overflow-wrap: normal; }
 .pd-date { margin: 0; font-size: clamp(15px, min(2vw, 3.2svh), 28px); font-weight: 800; color: var(--pd-gold); letter-spacing: 0.08em; }
-.pd-notes { list-style: none; margin: 0; padding: 0; color: var(--pd-muted); font-size: clamp(12px, min(1.4vw, 2.2svh), 18px); }
+.pd-notes { list-style: none; margin: 0; padding: 0; color: var(--pd-text); font-size: clamp(12px, min(1.4vw, 2.2svh), 18px); }
 .pd-subsection .pd-display { font-size: clamp(26px, min(4.2vw, 7svh), 66px); }
 
 /* 本日の流れ・区切りのスライドの流れの一覧 */
