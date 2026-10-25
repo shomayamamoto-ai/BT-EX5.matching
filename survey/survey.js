@@ -59,7 +59,6 @@
       if (!d.unit) return fail("sv-unit", "所属ユニットを選んでください。");
       if (!d.lineage) return fail("sv-lineage", "B.T.内系列名を入れてください(LINK会員でない方は「なし」)。");
       if (!d.job) return fail("sv-job-m", "職業を入れてください。");
-      if (!d.upcre) return fail("sv-upcre", "アップクリエ氏名を入れてください。");
     } else {
       const link = document.querySelector('input[name="sv-link"]:checked');
       Object.assign(d, { job: val("sv-job-v"), inviter: val("sv-inviter"), link: link ? link.value : "", interest: val("sv-interest") });

@@ -2804,7 +2804,8 @@
         if (kind === "member") {
           r.unit = c.cleanStr(body.unit, 12); r.lineage = c.cleanStr(body.lineage, 60); r.job = c.cleanStr(body.job, 80);
           r.upcre = c.cleanStr(body.upcre, 40); r.adopt = c.cleanStr(body.adopt, 800);
-          if (!r.unit || !r.lineage || !r.job || !r.upcre) return c.fail("INVALID_REQUEST", "必須の項目を入れてください。");
+          // アップクリエ氏名は任意(運営の依頼)
+          if (!r.unit || !r.lineage || !r.job) return c.fail("INVALID_REQUEST", "必須の項目を入れてください。");
         } else {
           r.job = c.cleanStr(body.job, 80); r.inviter = c.cleanStr(body.inviter, 40); r.link = ["yes", "no"].indexOf(body.link) !== -1 ? body.link : "";
           r.interest = SURVEY_INTEREST.indexOf(String(body.interest || "")) !== -1 ? String(body.interest) : "";

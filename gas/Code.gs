@@ -2571,7 +2571,7 @@ const REF_SEED_ANNOUNCEMENTS = [
   {
     seedId: "2026-10-25-update-16",
     cat: "アップデート",
-    rev: 38,
+    rev: 39,
     at: Date.UTC(2026, 9, 25, 4, 0), // 2026/10/25 13:00(日本時間)
     title: "【アップデート】紹介診断に「相手がこう言っていたら」・アンケート・運営タブ など",
     body: [
@@ -2618,6 +2618,7 @@ const REF_SEED_ANNOUNCEMENTS = [
       "・定例会を作る・編集する画面の名前を、定例会は「日本海側最大のマーケット 新潟⇔東京」がはじめから入るようにし、特別会は回の数字だけを入れる形(「第 1 回BT-EXフェス」)にしました。",
       "・予定の「＋ 定例会の日程を追加」を、色のついた押しやすいボタンにしました。",
       "・プレゼンの「ほかの BT-EX」のユニットの人数の合計を、BT-EX5 も入れた全ユニットの合計(306名)だけにしました。",
+      "・定例会アンケート(メンバー用)の「アップクリエ氏名」を必須から外しました。iPhone で「定例会参加日」の欄が枠からはみ出していたのを直しました。",
       "・メンバーのカードのチーム名で、名前に「Team」が入っているときは前の「チーム」を付けないようにしました(「チーム Team Bloom∞🌸」→「Team Bloom∞🌸」)。",
       "・エデュケーションコーナーの資料を、上の帯と下のタイマー・操作バーの間に収まる大きさにしました(資料の下のはしまで見えます)。",
       "・操作バーの「終了」を押したときの「進行を終わりますか?」を、「つづける」「終わる」のボタンの上に出すようにしました。",
@@ -6741,7 +6742,8 @@ var BtexServerCore = (function () {
         if (kind === "member") {
           r.unit = c.cleanStr(body.unit, 12); r.lineage = c.cleanStr(body.lineage, 60); r.job = c.cleanStr(body.job, 80);
           r.upcre = c.cleanStr(body.upcre, 40); r.adopt = c.cleanStr(body.adopt, 800);
-          if (!r.unit || !r.lineage || !r.job || !r.upcre) return c.fail("INVALID_REQUEST", "必須の項目を入れてください。");
+          // アップクリエ氏名は任意(運営の依頼)
+          if (!r.unit || !r.lineage || !r.job) return c.fail("INVALID_REQUEST", "必須の項目を入れてください。");
         } else {
           r.job = c.cleanStr(body.job, 80); r.inviter = c.cleanStr(body.inviter, 40); r.link = ["yes", "no"].indexOf(body.link) !== -1 ? body.link : "";
           r.interest = SURVEY_INTEREST.indexOf(String(body.interest || "")) !== -1 ? String(body.interest) : "";

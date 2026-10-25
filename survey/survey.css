@@ -13,3 +13,6 @@
 .sv-choice legend { width: 100%; font-size: 14px; font-weight: 700; margin-bottom: 6px; }
 .sv-choice label { display: inline-flex; align-items: center; gap: 6px; font-size: 15px; }
 .sv-hp { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
+/* iPhone の日付の欄が枠からはみ出さないように(Safari の日付の欄は、そのままだと中身の幅で広がる) */
+#sv-form input[type="date"] { -webkit-appearance: none; appearance: none; display: block; box-sizing: border-box; min-width: 0; max-width: 100%; text-align: left; }
+#sv-form input[type="date"]::-webkit-date-and-time-value { text-align: left; }
