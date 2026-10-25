@@ -3,7 +3,7 @@
 // 定例会の「プレゼンテーション」を、顔写真と紹介つきの大きな画面で順番に進める。
 // ・準備(#present): 定例会を選ぶ → 出る人を押して選ぶ(押した順が話す順番)→ 並べかえ(つかんで動かす・↑↓・シャッフル)
 //   → 1人の時間(30秒・1分・2分・5分。はじめは1分)・次の人までの間(1〜10秒)→「プレゼンをはじめる」
-// ・進行(画面いっぱい): 番号・名前・肩書き・活動範囲・つながりたい人・こんな話が出たら・顔写真・次の人、
+// ・進行(画面いっぱい): 番号・名前・肩書き・つながりたい人・こんな話が出たら・顔写真・次の人、
 //   下に残り時間のメーター(1分までは1目盛り=1秒。左の5秒が赤、次の5秒がオレンジ。目盛りの下に残り秒数の数字)と残り秒数。
 //   残り10秒と 0秒で音(鐘)。「自動で次へ」なら 0秒のあと、選んだ秒数(はじめは5秒)で次の人へ。
 //   キー操作: スペース=止める・つづける、→=次へ、←=前へ、Esc=終わる(会場のスクリーンや Meet の画面共有で映す想定)
@@ -1949,14 +1949,28 @@
     try { if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitDeck); } catch { /* noop */ }
     // 「こんな話が出たら」は、スライドの下(メーター)に重ならない範囲で、入るだけ出す(入らない分は後ろから省く)
     function fitTags() {
+      // 肩書きが長くて入りきらないときは、肩書きの文字を少し小さくして最後まで出す
+      const cat = slide.querySelector(".pr-catch");
+      if (cat) {
+        cat.style.fontSize = "";
+        for (let n = 0; n < 6 && cat.scrollHeight > cat.clientHeight + 1; n++) {
+          cat.style.fontSize = `${(parseFloat(getComputedStyle(cat).fontSize) * 0.93).toFixed(2)}px`;
+        }
+      }
       const tags = slide.querySelector(".pr-tags");
       if (!tags) return;
       const spans = [...tags.children];
+      const row = tags.closest(".pr-row-tags");
+      if (row) row.hidden = false;
       spans.forEach((s) => s.classList.remove("is-cut"));
+      // 縦長の画面(スマホ)はスライドを下へ送って読めるので、高さでは省かず6つまで
+      if (tallScreen.matches) { spans.forEach((s, i) => s.classList.toggle("is-cut", i >= 6)); return; }
       const sr = slide.getBoundingClientRect();
       if (!sr.height || !tags.getBoundingClientRect().height) return;
       const limit = sr.bottom - (parseFloat(getComputedStyle(slide).paddingBottom) || 0) - 4;
       for (let i = spans.length - 1; i > 0 && tags.getBoundingClientRect().bottom > limit; i--) spans[i].classList.add("is-cut");
+      // 1つも入らないときは、欄ごと出さない
+      if (row) row.hidden = tags.getBoundingClientRect().bottom > limit;
     }
     window.addEventListener("resize", fitTags);
     try { if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitTags); } catch { /* noop */ }
@@ -2030,9 +2044,9 @@
             nameEl(p.name, "h2", "pr-name", h("small", null, "さん"), !solo),
             // フリガナは BT-EX5 のメンバーだけ(ほかの BT-EX・ゲスト・ビジターの方は出さない)
             p.kana && p.kind === "member" ? h("p", { class: "pr-kana" }, p.kana) : null,
+            // 肩書きは最後まで出す(活動範囲の欄はなくした。運営の依頼)
             p.catch ? h("p", { class: "pr-catch" }, p.catch) : null,
             h("dl", { class: "pr-rows" },
-              p.area ? h("div", { class: "pr-row-area" }, h("dt", null, "活動範囲"), h("dd", null, p.area)) : null,
               // 欲しい紹介 ランキングがあるときは順位つきで(なければ「つながりたい人」の文)
               p.wantsRank && p.wantsRank.length
                 ? h("div", { class: "pr-row-wants" }, h("dt", null, "欲しい紹介 ランキング"), h("dd", { class: "is-rank" }, h("ol", { class: "pr-rank" }, p.wantsRank.map((t, i) => h("li", { class: `is-r${i + 1}` }, h("b", null, `${i + 1}位`), h("span", null, t))))))
@@ -2164,7 +2178,7 @@
         h("div", { class: "pr-hack-wins" }, wins),
         h("div", { class: "pr-hack-card" },
           h("p", { class: "pr-hack-kicker" }, "⚠ WARNING ⚠"),
-          h("h2", { class: "pr-hack-title", "data-text": "休憩をスキップできません" }, "休憩をスキップできません"),
+          h("h2", { class: "pr-hack-title", "data-text": "休憩をスキップ\nできません" }, "休憩をスキップ\nできません"),
           h("p", { class: "pr-hack-text" }, "体と頭を守るため、休憩を強制的に実行します。", h("br"), "下のボタンを押してください"),
           h("button", { type: "button", class: "pr-break-btn is-main pr-hack-btn", onclick: startBreak }, "休む(1分)")));
       breakLayer.querySelector(".pr-hack-btn").focus({ preventScroll: true });
