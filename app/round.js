@@ -662,7 +662,16 @@
         h("div", { class: "app-btn-row pr-deck-edit" },
           deckInfo.canEdit && App.deckEditor ? App.btn("スライドの内容・時間の目安を編集", () => App.deckEditor(deckInfo.config, deckSteps(ev), (cfg) => { deckInfo.config = cfg; }), "ghost small") : null,
           eduInfo.canEdit && App.eduEditor ? App.btn(`エデュケーションの資料を入れかえる(いま: ${(eduInfo.info && eduInfo.info.title) || ((App.deckData ? App.deckData(deckInfo.config) : {}).education || {}).title || "なし"})`, () => App.eduEditor(eduInfo.info, (info) => { eduInfo.info = info; App.route(); }), "ghost small") : null,
-          App.surveyResults ? App.btn("アンケートの結果", () => App.surveyResults(), "ghost small") : null),
+          // アンケートの結果は、いちばん目立つボタンに(グラフの絵・新しい回答の数つき)
+          App.surveyResults ? (() => {
+            const b = h("button", { type: "button", class: "pr-survey-btn", onclick: () => App.surveyResults() },
+            h("span", { class: "pr-survey-ic", "aria-hidden": "true" }),
+            h("span", { class: "pr-survey-txt" }, h("b", null, "アンケートの結果を見る"), h("small", null, "集計・グラフ・改善点のまとめ")),
+            h("span", { class: "pr-survey-go", "aria-hidden": "true" }, "›"));
+            // 棒グラフの絵(線のアイコン)
+            b.querySelector(".pr-survey-ic").innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16"/><path d="M7 16v-5"/><path d="M12 16V6"/><path d="M17 16v-8"/></svg>';
+            return b;
+          })() : null),
         h("p", { class: "app-field-hint" }, "残り10秒で小さな音、0秒で鐘の音が鳴ります。キーボードでは スペース=止める・つづける、→=次へ、←=前へ、Esc=終わる。会場のスクリーンで画面いっぱいに映すときは、ブラウザの全画面(Mac は control+command+F、Windows は F11)を使ってください。"),
         h("div", { class: "pr-go-bar" }, goBtn)),
       // ---------- 2. 自分で使うタイマー ----------
