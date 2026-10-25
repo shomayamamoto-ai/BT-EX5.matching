@@ -1503,3 +1503,15 @@ a.ref-btn { display: inline-flex; align-items: center; justify-content: center; 
 /* フリガナ */
 .ref-kana { margin: -2px 0 4px; font-size: 11px; letter-spacing: 0.12em; color: var(--text-light); }
 .md-kana { margin: -4px 0 6px; font-size: 12px; letter-spacing: 0.14em; color: var(--text-light); }
+
+/* 詳細: ホームページ・SNS の札(丸い絵と名前。押すとそのページが開く) */
+.md-sns-row { display: flex; flex-wrap: wrap; gap: 10px; }
+.md-sns { display: inline-flex; align-items: center; gap: 10px; min-height: 48px; padding: 6px 18px 6px 7px; border-radius: 999px; border: 1px solid var(--line); background: #fff; color: var(--text); font-size: 15px; font-weight: 700; text-decoration: none; transition: border-color 0.15s, box-shadow 0.15s, transform 0.1s; }
+.md-sns:hover, .md-sns:focus-visible { border-color: var(--accent); box-shadow: 0 4px 12px rgba(60, 42, 20, 0.1); outline: none; }
+.md-sns:active { transform: scale(0.98); }
+.md-sns-ic { width: 34px; height: 34px; flex: none; }
+.md-sns.is-sasaeai .md-sns-ic circle:first-child { stroke: #d9dde3; stroke-width: 1; }
+/* 自分の詳細: 自分の情報を編集するページへ */
+.md-self-edit { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 4px 0 14px; }
+.md-self-edit a { text-decoration: none; }
+.md-self-edit small { flex-basis: 100%; font-size: 12.5px; color: var(--text-light); }

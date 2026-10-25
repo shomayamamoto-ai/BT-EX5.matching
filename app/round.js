@@ -163,7 +163,9 @@
     return h("span", { class: `pr-role is-${r.kind}` }, svg, r.role);
   }
   // 小さく出す顔写真(一覧の丸・自分の写真)は、運営が用意した写真なら小さい版(thumbs/)を使う(読み込みを軽く)
-  const SMALL_FACE = /^(pr-card-face|pr-row-face|pr-me-face)$/;
+  const SMALL_FACE = /^(pr-card-face|pr-row-face|pr-me-face|pd-staff-face)$/;
+  // 本日の運営メンバーの役(はじめの挨拶のあとのスライド)
+  const STAFF_ROLES = [["facilitator", "ファシリテーター"], ["education", "エデュケーション"], ["system", "本システム・スライド"], ["breakout", "ブレイクアウトルーム"]];
   const thumbOf = (url) => String(url).replace(/assets\/members\/([^/?#]+\.jpg)/, "assets/members/thumbs/$1");
   function face(url, name, cls) {
     return url
@@ -393,9 +395,16 @@
       const unitRow = bx ? h("div", { class: "pr-unit-row", role: "radiogroup", "aria-label": "BT-EX の番号" }) : null;
       function drawUnits(cur) {
         if (!unitRow) return;
-        App.fill(unitRow, Array.from({ length: 14 }, (_, i) => i + 1).filter((n) => n !== 5).map((n) =>
+        // 番号の下に人数(bt-ex.jp のメンバー一覧の人数)。最後に合計
+        const COUNTS = typeof BTEX_UNIT_COUNTS !== "undefined" ? BTEX_UNIT_COUNTS : {};
+        const nums = Array.from({ length: 14 }, (_, i) => i + 1).filter((n) => n !== 5);
+        const total = nums.reduce((a, n) => a + (COUNTS[n] || 0), 0);
+        App.fill(unitRow, ...nums.map((n) =>
           h("button", { type: "button", class: `pr-unit-chip${n === cur ? " is-on" : ""}`, role: "radio", "aria-checked": n === cur ? "true" : "false", dataset: { unit: String(n) },
-            onclick: () => { unitSel.value = String(n); bx.setUnit(n); drawUnits(n); } }, h("small", null, "BT-EX"), h("b", null, String(n)))));
+            "aria-label": `BT-EX${n}(${COUNTS[n] || 0}名)`,
+            onclick: () => { unitSel.value = String(n); bx.setUnit(n); drawUnits(n); } }, h("small", null, "BT-EX"), h("b", null, String(n)), h("small", { class: "pr-unit-n" }, `${COUNTS[n] || 0}名`))),
+          h("p", { class: "pr-unit-total" }, h("span", null, "合計"), h("b", null, `${total}名`),
+            typeof BTEX_ALL_UNITS_TOTAL !== "undefined" ? h("small", null, `BT-EX5(${COUNTS[5] || 0}名)を入れた全ユニットは ${BTEX_ALL_UNITS_TOTAL}名(2つのユニットに入っている方は1名と数えます)`) : null));
       }
       if (bx) {
         unitSel = h("select", { class: "pr-extra-unit", hidden: true, "aria-hidden": "true", tabindex: "-1", onchange: () => { bx.setUnit(Number(unitSel.value)); drawUnits(Number(unitSel.value)); } },
@@ -548,6 +557,33 @@
     const codeIn = h("input", { type: "text", class: "pr-code-in", inputmode: "numeric", maxlength: "8", placeholder: "例: 1506", autocomplete: "off", "aria-label": "出席コード",
       oninput: () => { codeIn.value = codeIn.value.replace(/[^0-9０-９]/g, "").replace(/[０-９]/g, (d) => String.fromCharCode(d.charCodeAt(0) - 0xfee0)); store.set(codeKey, codeIn.value); } });
     codeIn.value = store.get(codeKey, "") || "";
+    // 本日の運営メンバー(はじめの挨拶のあとのスライド)。プレゼンを使える人から、役ごとに押して選ぶ(もう一度押すと外す)。
+    // 定例会ごとにこの端末に覚える(はじめて開く定例会は、前の定例会の選び方から)
+    const staffKey = `staff-${ev ? ev.id : "none"}`;
+    let staff = (() => {
+      try { const v = JSON.parse(store.get(staffKey, "") || store.get("staff-last", "") || "null"); if (v && typeof v === "object") return v; } catch { /* noop */ }
+      return {};
+    })();
+    const owners = (App.presentOwners ? App.presentOwners() : []).map((id) => App.memberById(id)).filter(Boolean);
+    const staffBox = h("div", { class: "pr-staff" });
+    function drawStaff() {
+      App.fill(staffBox, STAFF_ROLES.map(([key, label]) => {
+        const sel = new Set(staff[key] || []);
+        return h("div", { class: "pr-staff-row" },
+          h("span", { class: "pr-staff-role" }, label),
+          h("div", { class: "pr-staff-chips", role: "group", "aria-label": `${label}の担当` }, owners.map((m) =>
+            h("button", { type: "button", class: `pr-staff-chip${sel.has(m.id) ? " is-on" : ""}`, "aria-pressed": sel.has(m.id) ? "true" : "false",
+              onclick: () => {
+                const list = (staff[key] || []).filter((x) => x !== m.id);
+                if (!sel.has(m.id)) list.push(m.id);
+                staff = Object.assign({}, staff, { [key]: list });
+                const raw = JSON.stringify(staff);
+                store.set(staffKey, raw); store.set("staff-last", raw);
+                drawStaff();
+              } }, sel.has(m.id) ? "✓ " : "", m.name))));
+      }));
+    }
+    drawStaff();
     goBtn.addEventListener("click", () => {
       const people = order.map((k) => {
         const p = personOf(k, photos);
@@ -557,7 +593,7 @@
       }).filter(Boolean);
       if (withDeck) {
         const D = App.deckData ? App.deckData(deckInfo.config) : {};
-        App.roundRun(buildDeck(ev, people, photos, upcoming, deckInfo.config, { edu: eduInfo.info, bo: { min: Number(boMin.value) || 7, times: Number(boTimes.value) || 4 }, code: codeIn.value }), per, auto ? gapSec : 0, ev ? ev.title : "BT-EX5 定例会",
+        App.roundRun(buildDeck(ev, people, photos, upcoming, deckInfo.config, { edu: eduInfo.info, bo: { min: Number(boMin.value) || 7, times: Number(boTimes.value) || 4 }, code: codeIn.value, staff }), per, auto ? gapSec : 0, ev ? ev.title : "BT-EX5 定例会",
           { deck: true, timing: { plan: eventPlan(ev, D.timeplan), start: eventStartMs(ev), per, gap: auto ? gapSec : 0 } });
         return;
       }
@@ -614,7 +650,8 @@
         h("label", { class: "pitch-sound pr-deck-opt" }, deckBox, h("span", null, h("b", null, "定例会のスライドも入れる"), h("small", null, "オープニングムービー → はじめの挨拶 → BT-EXの理念 → … → 終わりの挨拶(定例会の進行表の順)。プレゼンは「1分プレゼンテーション」のところに入ります"))),
         h("div", { class: "pr-deck-more" },
           h("label", { class: "pr-deck-field" }, h("span", null, "ブレイクアウトルーム商談(テーブル商談)"), h("span", { class: "pr-bo" }, boMin, h("b", null, "×"), boTimes)),
-          h("label", { class: "pr-deck-field" }, h("span", null, "出席コード(4桁)"), codeIn, h("small", null, "終わりの挨拶の「出席コード」のスライドに大きく出ます"))),
+          h("label", { class: "pr-deck-field" }, h("span", null, "出席コード(4桁)"), codeIn, h("small", null, "終わりの挨拶の「出席コード」のスライドに大きく出ます")),
+          h("div", { class: "pr-deck-field is-staff" }, h("span", null, "本日の運営メンバー"), h("small", null, "はじめの挨拶のあとのスライドに出ます。役ごとに、担当の方を押して選んでください(もう一度押すと外します。複数選べます)"), staffBox)),
         h("div", { class: "app-btn-row pr-deck-edit" },
           deckInfo.canEdit && App.deckEditor ? App.btn("スライドの内容・時間の目安を編集", () => App.deckEditor(deckInfo.config, deckSteps(ev), (cfg) => { deckInfo.config = cfg; }), "ghost small") : null,
           eduInfo.canEdit && App.eduEditor ? App.btn(`エデュケーションの資料を入れかえる(いま: ${(eduInfo.info && eduInfo.info.title) || ((App.deckData ? App.deckData(deckInfo.config) : {}).education || {}).title || "なし"})`, () => App.eduEditor(eduInfo.info, (info) => { eduInfo.info = info; App.route(); }), "ghost small") : null,
@@ -722,7 +759,6 @@
     // ⑥LINKのビジネス実績紹介: 入会申し込みフォーム → 挙手のお願い(1on1・リファーラル・招待ビジター → ありがとうマイル → LINK内での実績紹介)
     const raises = (label) => {
       raiseDone = true;
-      if (D.joinForm) deck("joinform", Object.assign({ step: label }, D.joinForm, { name: D.joinForm.title }));
       (D.raise || []).forEach((r) => deck("raise", Object.assign({ step: label }, r, { name: r.title })));
     };
     // 見出しの後ろの時間(「15分×2」「(15分×2回)」「5分」)は、見出しの下の小さな行に分ける
@@ -739,6 +775,11 @@
       const label = `${st.no}. ${st.title}`;
       const tm = TIME.exec(st.title);
       deck("section", { no: st.no, name: tm ? st.title.replace(TIME, "") : st.title, sub: subOf(st, tm), step: label });
+      // はじめの挨拶の次: 本日の運営メンバー(開始前に選んだ方)
+      if (i === 0 && /あいさつ|挨拶/.test(st.title)) {
+        const st0 = more.staff || {};
+        deck("staff", { name: "本日の運営メンバー", step: label, roles: STAFF_ROLES.map(([key, role]) => ({ role, people: (st0[key] || []).map((id) => App.memberById(id)).filter(Boolean).map((m) => ({ name: m.name, photo: (photos && photos[m.id]) || "" })) })) });
+      }
       if (i === 0 && /あいさつ|挨拶/.test(st.title) && D.leader) {
         const m = App.memberById(D.leader.memberId);
         if (m) deck("leader", { name: m.name, step: label, photo: (photos && photos[m.id]) || "", leader: D.leader });
@@ -784,6 +825,8 @@
     // 終わりの挨拶: 入会への3ステップ → アンケート(BT-EX メンバー / ビジター) → 出席コード → おわり
     const endLabel = steps.length ? `${steps[steps.length - 1].no}. ${steps[steps.length - 1].title}` : "おわり";
     if (D.joinSteps) deck("joinsteps", { name: D.joinSteps.title, step: endLabel, cards: D.joinSteps.steps || [] });
+    // 入会申し込みフォームは、入会への3ステップのすぐあと(運営の依頼)
+    if (D.joinForm) deck("joinform", Object.assign({ step: endLabel }, D.joinForm, { name: D.joinForm.title }));
     if (D.survey) {
       const url = (k) => { try { return new URL(`../survey/?k=${k}${ev ? `&e=${encodeURIComponent(ev.id)}` : ""}`, location.href).href; } catch { return ""; } };
       deck("survey", { name: D.survey.title, step: endLabel, lead: D.survey.lead, urls: [["BT-EX メンバーの方", url("member")], ["ビジターの方", url("visitor")]] });
@@ -1722,6 +1765,13 @@
           p.url ? h("div", { class: "pd-qr" }, App.qrImage ? App.qrImage(p.url, p.name) : null) : null,
           p.url && p.note ? h("p", { class: "pd-join-note" }, p.note) : null);
       }
+      if (p.type === "staff") {
+        // 本日の運営メンバー: 役ごとのカードに、担当の方の顔写真とお名前
+        return frame("pd-staff", h("ul", { class: "pd-staff-grid" }, (p.roles || []).map((r, i) => h("li", Object.assign({ class: "pd-staff-card" }, nth(i)),
+          h("p", { class: "pd-staff-role" }, r.role),
+          r.people.length ? h("div", { class: "pd-staff-people" }, r.people.map((x) => h("span", { class: "pd-staff-person" }, face(x.photo, x.name, "pd-staff-face"), h("b", null, x.name))))
+            : h("p", { class: "pd-staff-none" }, "—")))));
+      }
       if (p.type === "joinsteps") {
         // 入会への3ステップ: Step のカードを矢印でつなぐ
         return frame("pd-joinsteps", h("ol", { class: "pd-steps" }, (p.cards || []).flatMap((st, i) => [
@@ -1745,7 +1795,7 @@
               h("p", { class: "pd-attend-lead" }, ...lines(p.msg || "")),
               h("div", { class: `pd-attend-code${code ? "" : " is-empty"}`, "aria-label": code ? `出席コード ${code.split("").join(" ")}` : "出席コード(未設定)" }, digits.map((d) => h("span", null, d === "-" ? "" : d))),
               p.note ? h("p", { class: "pd-note" }, `※ ${p.note}`) : null),
-            p.video ? h("figure", { class: "pd-attend-video", title: "押すと大きくなります", onclick: (e) => { const f = e.currentTarget; f.classList.toggle("is-zoom"); f.closest(".pd").classList.toggle("is-video-zoom", f.classList.contains("is-zoom")); } },
+            p.video ? h("figure", { class: "pd-attend-video", title: "押すと大きくなります", onclick: (e) => attendZoom(e.currentTarget) },
               (() => { const v = h("video", { src: `../${p.video}`, poster: `../${String(p.video).replace(/\.mp4$/, ".jpg")}`, autoplay: true, muted: true, loop: true, playsinline: true, preload: "auto", "aria-label": "出席コードの入れ方の動画" }); v.muted = true; return v; })(),
               h("figcaption", null, "入れ方がわからない方はこちら(押すと大きくなります)")) : null));
       }
@@ -1760,6 +1810,31 @@
         h("h2", { class: "pd-display" }, p.name),
         h("span", { class: "pd-rule", "aria-hidden": "true" }),
         h("p", { class: "pd-kicker" }, "BT-EX5 ・ 突破から、拡張へ"));
+    }
+    // 出席コードのやり方の動画: 押すと画面いっぱい(全画面)に。もう一度押すか Esc で元に戻る
+    function attendZoom(f) {
+      const on = !f.classList.contains("is-zoom");
+      const set = (v) => {
+        f.classList.toggle("is-zoom", v);
+        const pd = f.closest(".pd"); if (pd) pd.classList.toggle("is-video-zoom", v);
+        const cap = f.querySelector("figcaption"); if (cap) cap.textContent = v ? "押すと元の大きさに戻ります" : "入れ方がわからない方はこちら(押すと大きくなります)";
+      };
+      const fsEl = document.fullscreenElement || document.webkitFullscreenElement;
+      if (on) {
+        set(true);
+        const req = f.requestFullscreen || f.webkitRequestFullscreen;
+        if (req && !fsEl) {
+          try {
+            const pr = req.call(f);
+            const off = () => { if (!(document.fullscreenElement || document.webkitFullscreenElement)) { set(false); document.removeEventListener("fullscreenchange", off); document.removeEventListener("webkitfullscreenchange", off); } };
+            document.addEventListener("fullscreenchange", off); document.addEventListener("webkitfullscreenchange", off);
+            if (pr && pr.catch) pr.catch(() => {});
+          } catch { /* 全画面にできない端末は、画面いっぱいの表示だけ */ }
+        }
+      } else {
+        set(false);
+        if (fsEl) { const ex = document.exitFullscreen || document.webkitExitFullscreen; try { const pr = ex.call(document); if (pr && pr.catch) pr.catch(() => {}); } catch { /* noop */ } }
+      }
     }
     // 横長の画面では、スライドが枠に収まらないときだけ全体を縮めて収める(スマホなどの縦長は下へ送れる)
     const tallScreen = window.matchMedia("(max-aspect-ratio: 1/1), (max-width: 760px)");
@@ -1838,7 +1913,7 @@
       const nexts = people.slice(idx + 1).filter(isPerson).slice(0, 3);
       box.classList.toggle("is-deck", isDeck(p));
       box.classList.toggle("is-timer", p.kind === "timer");
-      ["movie", "cover", "agenda", "section", "leader", "about", "vision", "list", "feature", "checks", "strengths", "venn", "kpis", "rules", "schedule", "raise", "closing", "glossary", "joinform", "joinsteps", "survey", "attend"].forEach((t) => box.classList.toggle(`is-d-${t}`, isDeck(p) && p.type === t));
+      ["movie", "cover", "agenda", "section", "leader", "about", "vision", "list", "feature", "checks", "strengths", "venn", "kpis", "rules", "schedule", "raise", "closing", "glossary", "joinform", "joinsteps", "survey", "attend", "staff"].forEach((t) => box.classList.toggle(`is-d-${t}`, isDeck(p) && p.type === t));
       box.classList.remove("is-edu");
       // スライドとプレゼンで操作バーの幅が変わる(スライドでは「はじめる」の場所をつめる)ので、置き直す
       if (box.dataset.kindWas !== String(isDeck(p))) { box.dataset.kindWas = String(isDeck(p)); if (box.classList.contains("dock-home")) requestAnimationFrame(() => window.dispatchEvent(new Event("resize"))); }

@@ -862,7 +862,7 @@ var BtexServerCore = (function () {
         id: id,
         name: cleanStr(m.name, 40),
         kana: cleanStr(m.kana, 40),
-        company: cleanStr(m.company, 80),
+        company: cleanStr(m.company, 200),
         team: cleanStr(m.team, 40),
         base: !bases || bases.indexOf(base) !== -1 ? base || "未設定" : "未設定",
         category: !categories || categories.indexOf(category) !== -1 ? category : categories[categories.length - 1],

@@ -557,7 +557,7 @@ const App = (function () {
       const on = isSel(u, name);
       return h("li", null, h("button", { type: "button", class: `bx-item${on ? " is-on" : ""}`, role: "option", "aria-selected": on ? "true" : "false", title: on && multi ? "もう一度押すと外します" : null, onclick: () => pick(u, name) },
         on && multi ? h("span", { class: "bx-check", "aria-hidden": "true" }, "✓") : null,
-        h("span", { class: "bx-name" }, name, (() => { const pf = profOf(u, name); return pf && (pf[1] || pf[0]) ? h("small", { class: "bx-cat" }, pf[1] || pf[0]) : null; })()),
+        h("span", { class: "bx-name" }, name, (() => { const pf = profOf(u, name); return pf && (pf[1] || pf[0]) ? h("small", { class: "bx-cat" }, pf[1] || pf[0], pf[2] ? h("span", { class: "bx-team" }, pf[2]) : null) : null; })()),
         tag ? h("span", { class: "bx-tag" }, `BT-EX${u}`) : null));
     }
     function draw() {
@@ -932,6 +932,8 @@ const App = (function () {
     get current() { return current; },
     isAdmin: () => !!(session && session.user && session.user.isAdmin),
     canPresent,
+    // プレゼン(定例会の進行)を使える人(運営メンバー)
+    presentOwners: () => PRESENT_OWNERS.slice(),
     badgeCount: (k) => badges[k] || 0,
     siteUrl: (path) => new URL(path, location.href).href,
   };

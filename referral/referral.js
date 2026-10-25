@@ -308,10 +308,24 @@
     return `<button type="button" class="ref-link-badges" data-detail="${m.id}" aria-label="${escapeHtml(m.name)}さんの資料・リンクを見る">${kinds.map((k) => `<span class="ref-link-badge ${k}">${names[k]}</span>`).join("")}</button>`;
   }
 
-  function linkButton(l) {
-    const t = linkType(l.type);
-    const text = l.label || t.label;
-    return `<a class="md-link ${t.kind} is-${escapeHtml(l.type)}" href="${escapeHtml(linkHref(l.url))}" target="_blank" rel="noopener noreferrer"><span class="md-link-type">${escapeHtml(t.label)}</span><span class="md-link-text">${escapeHtml(text)}</span><span class="md-link-go" aria-hidden="true">↗</span></a>`;
+  // ホームページ・SNS は、丸い絵と名前の札(押すとそのページが開く)
+  const SNS_ICON = {
+    website: ["#6b7280", '<circle cx="12" cy="12" r="8.2" fill="none" stroke="#fff" stroke-width="1.7"/><path d="M3.8 12h16.4M12 3.8c2.4 2.3 3.6 5 3.6 8.2s-1.2 5.9-3.6 8.2c-2.4-2.3-3.6-5-3.6-8.2s1.2-5.9 3.6-8.2Z" fill="none" stroke="#fff" stroke-width="1.5"/>'],
+    instagram: ["#e1306c", '<rect x="5" y="5" width="14" height="14" rx="4.2" fill="none" stroke="#fff" stroke-width="1.8"/><circle cx="12" cy="12" r="3.3" fill="none" stroke="#fff" stroke-width="1.8"/><circle cx="16.2" cy="7.9" r="1.1" fill="#fff"/>'],
+    facebook: ["#1877f2", '<path d="M13.3 20v-6.6h2.2l.4-2.6h-2.6V9.2c0-.8.3-1.3 1.4-1.3h1.3V5.6a17 17 0 0 0-2-.1c-2 0-3.3 1.2-3.3 3.4v1.9H8.5v2.6h2.2V20Z" fill="#fff"/>'],
+    line: ["#06c755", '<path d="M12 5.2c-4.4 0-7.9 2.8-7.9 6.3 0 3.1 2.8 5.7 6.6 6.2.3.1.6.3.5.8l-.2 1c0 .3.2.6.6.4 2.6-1.2 6.9-4 8.1-6.6.5-.9.7-1.7.7-2.6 0-3.5-3.5-6.3-7.9-6.3Z" fill="#fff"/><path d="M7.3 10v3.1h1.8M10.2 10v3.1M11.9 13.1V10l2.1 3.1V10M17.1 10h-1.8v3.1h1.8M15.3 11.5h1.6" fill="none" stroke="#06c755" stroke-width=".9" stroke-linecap="round" stroke-linejoin="round"/>'],
+    x: ["#111", '<path d="M6 5.5h3.6l3 4.2 3.5-4.2H18l-4.6 5.5 5.1 7.5h-3.6l-3.3-4.7-3.9 4.7H5.8l5-6Z" fill="#fff"/>'],
+    youtube: ["#ff0000", '<path d="M10 9v6l5.2-3Z" fill="#fff"/>'],
+    tiktok: ["#111", '<path d="M13.4 5h2.3c.2 1.6 1.4 2.9 3 3v2.3a5.4 5.4 0 0 1-3-.9v4.6a4.3 4.3 0 1 1-4.3-4.3h.3v2.4a1.9 1.9 0 1 0 1.7 1.9Z" fill="#fff"/>'],
+    linkedin: ["#0a66c2", '<path d="M7 10h2.3v7H7Zm1.2-3.6a1.3 1.3 0 1 1 0 2.6 1.3 1.3 0 0 1 0-2.6ZM10.8 10H13v1c.4-.7 1.2-1.2 2.4-1.2 2.3 0 2.7 1.5 2.7 3.5V17h-2.3v-3.3c0-.9 0-1.9-1.2-1.9s-1.4.9-1.4 1.9V17h-2.3Z" fill="#fff"/>'],
+    sasaeai: ["#eef0f3", '<path d="M8.5 10.5 12 7l3.5 3.5" fill="none" stroke="#2fa36b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M8.5 13.5 12 17l3.5-3.5" fill="none" stroke="#e0566b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'],
+    other: ["#6b7280", '<path d="M10.6 13.4a3 3 0 0 0 4.2 0l2.4-2.4a3 3 0 0 0-4.2-4.2l-.9.9M13.4 10.6a3 3 0 0 0-4.2 0L6.8 13a3 3 0 0 0 4.2 4.2l.9-.9" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/>'],
+  };
+  const SNS_LABEL = { website: "Webサイト", x: "X", blog: "ブログ", other: "リンク" };
+  function snsPill(l) {
+    const [bg, art] = SNS_ICON[l.type] || SNS_ICON.other;
+    const name = SNS_LABEL[l.type] && !(l.type === "other" && l.label) ? SNS_LABEL[l.type] : l.type === "other" || l.type === "blog" ? l.label || linkType(l.type).label : linkType(l.type).label;
+    return `<a class="md-sns is-${escapeHtml(l.type)}" href="${escapeHtml(linkHref(l.url))}" target="_blank" rel="noopener noreferrer" title="${escapeHtml(l.label || linkType(l.type).label)}"><svg viewBox="0 0 24 24" aria-hidden="true" class="md-sns-ic"><circle cx="12" cy="12" r="12" fill="${bg}"/>${art}</svg><span>${escapeHtml(name)}</span></a>`;
   }
 
   // 運営が用意した顔写真(サイトの一番上からの場所)。早見表のページからは ../ をつける
@@ -345,9 +359,8 @@
           ${l.cover ? `<img src="${escapeHtml(linkHref(l.cover))}" alt="" loading="lazy" width="960" height="540">` : ""}
           <span class="md-material-bar"><span>${escapeHtml(l.label || linkType(l.type).label)}</span><span class="md-material-open">開く ↗</span></span>
         </a>`).join("")) : ""}
-      ${webs.length ? section("ホームページ・リンク", `<div class="md-links">${webs.map(linkButton).join("")}</div>`) : ""}
-      ${contacts.length ? section("連絡先・SNS", `<div class="md-links">${contacts.map(linkButton).join("")}</div>`) : ""}
-      ${!links.length && m.id === myMemberId ? `<p class="md-nolinks">資料・リンクはまだ登録されていません(プロフィールで追加できます)。</p>` : ""}
+      ${webs.length || contacts.length ? section("SNS・リンク", `<div class="md-sns-row">${[...webs.filter((l) => l.type === "website"), ...contacts, ...webs.filter((l) => l.type !== "website")].map(snsPill).join("")}</div>`) : ""}
+      ${m.id === myMemberId ? `<p class="md-self-edit"><a class="ref-btn is-main" href="../profile/">自分の情報を編集する</a><a class="ref-btn ghost" href="../profile/#pfLinks">ホームページ・SNS を追加・変更</a>${links.length ? "" : `<small>資料・リンクはまだ登録されていません。</small>`}</p>` : ""}
       ${m.offer ? `<section class="md-sec md-offer"><h3>BT-EX5 メンバーからの紹介特典</h3><p>${escapeHtml(m.offer)}</p></section>` : ""}
       ${section("事業内容", text(m.business))}
       ${m.selfIntro ? `<details class="md-sec md-intro"><summary>自己紹介(紹介文に入る文章)</summary><p class="md-intro-text">${escapeHtml(m.selfIntro)}</p></details>` : ""}

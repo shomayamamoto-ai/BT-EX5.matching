@@ -674,7 +674,7 @@
       const picker = o ? null : App.memberPicker({ value: withId && App.memberById(withId) ? withId : null, exclude: [App.session.memberId], label: "相手" });
       // 相手のユニット: BT-EX5 はこのアプリの名簿から、ほかの BT-EX(1〜14)は一覧から押して選ぶか、お名前を入れる
       const unitSel = h("select", { class: "one-unit", "aria-label": "相手の BT-EX の番号" },
-        Array.from({ length: 14 }, (_, i) => i + 1).map((n) => h("option", { value: String(n) }, n === 5 ? "BT-EX5(このアプリのメンバー)" : `BT-EX${n}`)));
+        Array.from({ length: 14 }, (_, i) => i + 1).map((n) => h("option", { value: String(n) }, n === 5 ? "BT-EX5(このアプリのメンバー)" : `BT-EX${n}${typeof BTEX_UNIT_COUNTS !== "undefined" ? `(${BTEX_UNIT_COUNTS[n] || 0}名)` : ""}`)));
       unitSel.value = "5";
       const bx = App.btexPicker({ unit: 0, onUnit: (n) => { unitSel.value = String(n); } });
       const extBox = h("div", { class: "one-ext", hidden: true }, bx,

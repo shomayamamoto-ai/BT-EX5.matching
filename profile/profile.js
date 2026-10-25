@@ -194,6 +194,8 @@
     saved = snapshot();
     renderProgress();
     document.documentElement.classList.remove("guard-pending");
+    // 「ホームページ・SNS を追加・変更」(#pfLinks)などから来たときは、その欄へ
+    if (/^#pf\w+$/.test(location.hash)) { const t = document.querySelector(location.hash); if (t) requestAnimationFrame(() => t.scrollIntoView({ block: "start" })); }
     if (me && typeof ProfileTransfer !== "undefined") {
       // お試し版: この端末で保存した内容を運営に送れるようにする
       $("#profSend").hidden = AuthApi.isShared();
