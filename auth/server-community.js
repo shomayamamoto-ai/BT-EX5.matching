@@ -2728,6 +2728,22 @@
           }
           changed = true;
         }
+        // 代表の紹介の改行(2026年10月)。前に保存した文が同じ文なら、指定の位置で改行する
+        if (db.cleanups.indexOf("deck-leader-breaks-1") === -1) {
+          db.cleanups.push("deck-leader-breaks-1");
+          var cfg7 = readCfg(db);
+          if (cfg7) {
+            var LEADER_BREAKS = ["4ヶ月で\n1万人フォロワー達成", "5000人の事業者コミュニティ\nの代表", "お互いを応援し合える\n勝たせ合える環境をつくる"];
+            var brk = function (v) {
+              if (typeof v === "string") { LEADER_BREAKS.forEach(function (t) { if (v !== t && flatText(v) === flatText(t)) v = t; }); return v; }
+              if (Array.isArray(v)) return v.map(brk);
+              if (v && typeof v === "object") { Object.keys(v).forEach(function (k) { v[k] = brk(v[k]); }); return v; }
+              return v;
+            };
+            writeCfg(db, brk(cfg7));
+          }
+          changed = true;
+        }
         // アンケートの説明(2026年10月): 「本日の定例会の…」を「本日のBT-EX5の定例会の…」に。前に保存した説明が元の文のままなら書きかえる
         if (db.cleanups.indexOf("deck-survey-lead-1") === -1) {
           db.cleanups.push("deck-survey-lead-1");

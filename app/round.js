@@ -1519,7 +1519,9 @@
         h("header", { class: "pd-head" },
           p.eyebrow ? h("p", { class: "pd-eyebrow" }, h("span", { class: "pd-eyebrow-no" }, two(p.stepNo)), p.eyebrow) : null,
           h("h2", { class: `pd-title${String(p.name).length > 18 ? " is-long" : ""}` }, p.name),
-          lead ? h("p", { class: "pd-lead" }, lead) : null),
+          lead ? h("p", { class: "pd-lead" }, lead)
+            // カードを1枚ずつ送るスライドは、要点の行がなくても同じ高さをあけて、カードの位置をそろえる
+            : /\bis-carousel\b/.test(cls) ? h("p", { class: "pd-lead is-blank", "aria-hidden": "true" }, "\u00a0") : null),
         h("div", { class: "pd-body" }, ...body));
       const frame = (cls, ...body) => frameL(cls, p.lead, ...body);
       // 流れの一覧(本日の流れ・区切りのスライド)。いまの所を光らせ、終わった所は控えめに
@@ -1594,8 +1596,9 @@
             L.achievements && L.achievements.length ? h("ul", { class: "pd-stats" }, L.achievements.map((x, i) => {
               const m = /\d[\d,.]*\s*(?:万|千)?\s*(?:人|件)(?:以上)?/.exec(String(x));
               if (!m) return h("li", nth(i), h("small", null, x));
-              const rest = String(x).replace(m[0], "").replace(/^[\sの]+|[\s]+$/g, "").replace(/\s{2,}/g, " ");
-              return h("li", nth(i), h("b", null, m[0].replace(/\s+/g, "")), h("small", null, rest));
+              // 説明の改行(「4ヶ月で↵フォロワー達成」)はそのまま
+              const rest = String(x).replace(m[0], "").replace(/^[\sの]+|[\s]+$/g, "").replace(/[ \t]{2,}/g, " ").replace(/[ \t]*\n[ \t]*/g, "\n");
+              return h("li", nth(i), h("b", null, m[0].replace(/\s+/g, "")), h("small", null, ...lines(rest)));
             })) : null,
             h("div", { class: "pd-leader-cols" },
               L.now && L.now.length ? h("div", { class: "pd-block" }, h("p", { class: "pd-h" }, "現在"), h("ul", null, L.now.map((x) => h("li", null, ...(String(x).includes("\n") ? String(x).split("\n").map((r) => h("span", { class: "pd-line" }, r)) : [x]))))) : null,
@@ -1712,13 +1715,16 @@
       }
       if (p.type === "rules" && p.carousel) {
         const rows = p.rows || [];
-        return frame("pd-rules is-carousel", carousel(rows.map((x, i) => {
+        const car = carousel(rows.map((x, i) => {
           const ic = (p.icons || [])[i] || "check";
           return h("article", { class: `pd-card pd-big-card${ic === "ban" ? " is-ban" : ""}` },
             h("div", { class: "pd-big-top" }, h("span", { class: "pd-big-ic" }, lineIcon(ic)), ic === "ban" ? h("span", { class: "pd-rule-tag" }, "禁止") : null, h("span", { class: "pd-big-no" }, two(i + 1))),
             (p.heads || [])[i] ? h("p", { class: "pd-big-head" }, ...wavy(p.heads[i])) : null,
             h("p", { class: "pd-big-text" }, ...String(x).split("\n").flatMap((t, k) => (k ? [h("br"), ...rich(t)] : rich(t)))));
-        })), p.note ? h("p", { class: "pd-note" }, `※ ${p.note}`) : null);
+        }));
+        // 注意書きは、カードの下の番号の列に並べる(カードの位置をほかのスライドとそろえるため)
+        if (p.note) car.querySelector(".pd-car-foot").append(h("p", { class: "pd-note pd-car-note" }, `※ ${p.note}`));
+        return frame("pd-rules is-carousel", car);
       }
       if (p.type === "rules") {
         // 規定のカード: 絵(禁止は赤い印)・番号・見出し・文(改行と《 》の強調はそのまま)
@@ -1870,6 +1876,35 @@
       }, 1)), 1);
       if (ratio < 1) texts.forEach((t) => { t.style.fontSize = `${(parseFloat(getComputedStyle(t).fontSize) * ratio * 0.97).toFixed(2)}px`; });
       if (tallScreen.matches) return;
+      // カードを1枚ずつ送るスライド: どのスライドでもカードを同じ大きさ・同じ位置にする。
+      // カードの高さは画面に入る高さで固定し、文が入りきらないカードは(全体を縮めずに)そのカードの文字を小さくする
+      if (body && el.classList.contains("is-carousel")) {
+        const stage = body.querySelector(".pd-car-stage"), foot = body.querySelector(".pd-car-foot");
+        const cards = [...body.querySelectorAll(".pd-big-card")];
+        if (stage && cards.length) {
+          const padB = parseFloat(getComputedStyle(slide).paddingBottom) || 0;
+          // 番号の列の高さ(注意書きのあるスライドも、ないスライドと同じに数える。カードの高さがスライドでちがわないように)
+          const dots = foot && foot.querySelector(".pd-car-dots");
+          const footH = dots ? dots.getBoundingClientRect().height + (parseFloat(getComputedStyle(body.querySelector(".pd-car")).rowGap) || 0) : 0;
+          const room = slide.getBoundingClientRect().bottom - padB - stage.getBoundingClientRect().top - footH - 10;
+          const cap = Math.min(520, Math.max(220, innerHeight * 0.46));
+          el.style.setProperty("--big-h", `${Math.round(Math.max(160, Math.min(cap, room)))}px`);
+          // 文が入りきらないカードだけ、そのカードの文字を小さくする(ほかのカードの文字はそのまま)
+          cards.forEach((c) => {
+            const fonts = [...c.querySelectorAll(".pd-big-head, .pd-big-text")];
+            fonts.forEach((f) => { f.style.fontSize = ""; });
+            // まずは絵と番号を小さく、すき間をつめる(文字はなるべく大きいまま)
+            c.classList.remove("is-tight");
+            if (c.scrollHeight > c.clientHeight) c.classList.add("is-tight");
+            for (let pass = 0; pass < 6; pass++) {
+              const k = c.clientHeight / Math.max(1, c.scrollHeight);
+              if (k >= 1) break;
+              fonts.forEach((f) => { f.style.fontSize = `${(parseFloat(getComputedStyle(f).fontSize) * Math.max(0.6, k) * 0.95).toFixed(2)}px`; });
+            }
+          });
+        }
+        return;
+      }
       // 中身の上はし・下はし(段が枠の外へはみ出すこともあるので、段ごとに見る)を測り、
       // 入りきらないときは縮めて、枠の上下のまん中に置く
       const sr = slide.getBoundingClientRect(), er = el.getBoundingClientRect();

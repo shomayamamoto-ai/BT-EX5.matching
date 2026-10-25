@@ -2492,7 +2492,18 @@ button.home-welcome-check:active { transform: scale(0.94); }
 .pd-big-head { margin: 0; font-family: var(--pd-serif); font-size: clamp(26px, min(3.6vw, 6.4svh), 58px); font-weight: 700; line-height: 1.3; color: var(--pd-strong); }
 .pd-big-text { margin: 0; font-size: clamp(17px, min(2.1vw, 3.8svh), 34px); font-weight: 700; line-height: 1.7; color: var(--pd-text); }
 .pd-big-text em { font-style: normal; font-weight: 900; color: var(--pd-strong); background: linear-gradient(transparent 58%, rgba(226, 184, 102, 0.42) 58%); padding: 0 0.1em; }
-@media (max-width: 760px), (max-aspect-ratio: 1/1) { .pd-car-btn { display: none; } .pd-car-stage { grid-template-columns: minmax(0, 1fr); } .pd-big-card { min-height: 0; } }
+/* カードを1枚ずつ送るスライド: カードはどのスライドでも同じ幅・同じ高さ(高さは app/round.js の fitDeck が画面に合わせて決める) */
+.pd-frame.is-carousel .pd-big-card { width: min(100%, 940px); height: var(--big-h, clamp(220px, 46svh, 520px)); min-height: 0; overflow: hidden; box-sizing: border-box; }
+.pd-lead.is-blank { visibility: hidden; }
+/* 文の長いカード: 絵と番号を小さく、すき間をつめて、文字をなるべく大きいまま入れる */
+.pd-big-card.is-tight { gap: clamp(6px, 1.2svh, 14px); padding-top: clamp(14px, 2.4svh, 30px); padding-bottom: clamp(14px, 2.4svh, 30px); }
+.pd-big-card.is-tight .pd-big-ic { width: clamp(40px, 3.8vw, 60px); height: clamp(40px, 3.8vw, 60px); border-radius: 14px; }
+.pd-big-card.is-tight .pd-big-no { font-size: clamp(30px, min(3.4vw, 6svh), 60px); }
+.pd-big-card.is-tight .pd-big-text { line-height: 1.55; }
+/* 規定の注意書き: カードの下の番号の列に並べる */
+.pd-car-foot { flex-wrap: wrap; }
+.pd-car-note { margin: 0 0 0 clamp(8px, 1.6vw, 24px); text-align: left; }
+@media (max-width: 760px), (max-aspect-ratio: 1/1) { .pd-car-btn { display: none; } .pd-car-stage { grid-template-columns: minmax(0, 1fr); } .pd-big-card { min-height: 0; } .pd-frame.is-carousel .pd-big-card { height: auto; } .pd-lead.is-blank { display: none; } .pd-car-note { margin: 4px 0 0; flex-basis: 100%; text-align: center; } }
 
 /* 用語説明 */
 .pd-gloss { margin: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(8px, 1.2vw, 16px); }
