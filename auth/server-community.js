@@ -2689,6 +2689,22 @@
           else if (cfg3 && cfg3.joinSteps && isOld(cfg3.joinSteps.steps)) { delete cfg3.joinSteps.steps; writeCfg(db, cfg3); }
           changed = true;
         }
+        // 用語説明のビジター(2026年10月): 「＊BT-EXフェスは何度でも参加可能」を足す。前に保存した説明が元の文のままなら書きかえる
+        if (db.cleanups.indexOf("deck-visitor-fes-1") === -1) {
+          db.cleanups.push("deck-visitor-fes-1");
+          var cfg5 = readCfg(db);
+          if (cfg5) {
+            var OLD_V = "見学で定例会に参加する方\n(同じ方の参加は2回まで)", NEW_V = OLD_V + "\n＊BT-EXフェスは何度でも参加可能";
+            var addFes = function (v) {
+              if (typeof v === "string") return flatText(v) === flatText(OLD_V) ? NEW_V : v;
+              if (Array.isArray(v)) return v.map(addFes);
+              if (v && typeof v === "object") { Object.keys(v).forEach(function (k) { v[k] = addFes(v[k]); }); return v; }
+              return v;
+            };
+            writeCfg(db, addFes(cfg5));
+          }
+          changed = true;
+        }
         // アンケートの説明(2026年10月): 「本日の定例会の…」を「本日のBT-EX5の定例会の…」に。前に保存した説明が元の文のままなら書きかえる
         if (db.cleanups.indexOf("deck-survey-lead-1") === -1) {
           db.cleanups.push("deck-survey-lead-1");
