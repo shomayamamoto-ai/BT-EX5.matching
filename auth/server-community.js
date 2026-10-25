@@ -2619,6 +2619,7 @@
         ["ビジターと1on1をする際は、その招待者を通す、または情報を共有すること\nメンバーと招待者はその責任において(アポの確認や規定の遵守など)ビジターをフォローまたは対応すること", "ビジターと1on1をする際は、その招待者を通す\nまたは情報を共有すること\nメンバーと招待者はその責任において\n(アポの確認や規定の遵守など)ビジターを\nフォローまたは対応すること"],
         ["一つひとつの関わりを大切に、信頼が積み重なる関係を育てていきます", "一つひとつの関わりを大切に、\n信頼が積み重なる関係を育てていきます"],
         ["自分の仕事に誇りを持ち、プロとしての責任を大切に行動します", "自分の仕事に誇りを持ち、\nプロとしての責任を大切に行動します"],
+        ["公の場やチャットにおいても、メンバーやグループへの否定的な発言は控え\n互いを尊重するコミュニケーションを大切にします", "公の場やチャットにおいても\nメンバーやグループへの否定的な発言は控え\n互いを尊重するコミュニケーションを大切にします"],
       ];
       function breakTexts(v) {
         if (typeof v === "string") { TEXT_BREAKS.forEach(function (p) { if (v === p[0]) v = p[1]; }); return v; }
@@ -2636,8 +2637,8 @@
           if (cfg && "timeplan" in cfg) { delete cfg.timeplan; writeCfg(db, cfg); }
           changed = true;
         }
-        if (db.cleanups.indexOf("deck-text-breaks-1") === -1) {
-          db.cleanups.push("deck-text-breaks-1");
+        if (db.cleanups.indexOf("deck-text-breaks-2") === -1) {
+          db.cleanups.push("deck-text-breaks-2");
           var cfg2 = readCfg(db);
           if (cfg2) writeCfg(db, breakTexts(cfg2));
           changed = true;
