@@ -167,6 +167,10 @@
     el.append(list, none);
     draw();
     if (params.has("new")) postForm(d.cats, filter);
+    // ほかのメンバーの新しい投稿・コメント・いいねを、開いたままでも自動で出す
+    App.liveWatch(el, () => App.api("listBoard", { markSeen: false }, { quiet: true }),
+      (x) => x.items.map((p) => `${p.id}:${p.comments.length}:${p.likes}:${p.body.length}`).join("|"),
+      "掲示板を更新しました");
     // LINE などから開いたとき(#board?post=…): その投稿まで動かして、少し光らせる
     const target = params.get("post");
     if (target) {

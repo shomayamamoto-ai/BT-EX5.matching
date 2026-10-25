@@ -730,6 +730,51 @@ const App = (function () {
     main.replaceChildren(el);
   }
 
+  // 開いている画面を、見ている場所(スクロール)のまま描き直す(ほかの人の投稿・予定が届いたとき)
+  async function softRefresh() {
+    const view = current.view, key = current.parts.join("/");
+    if (!views[view]) return;
+    const main = document.getElementById("appView");
+    const y = window.scrollY;
+    const el = h("div", { class: `app-page page-${view}` });
+    let result;
+    try { result = await views[view].render(el, current.parts, current.params); } catch (err) { console.error(err); return; }
+    if (current.view !== view || current.parts.join("/") !== key) return;
+    if (cleanup) { try { cleanup(); } catch { /* noop */ } }
+    cleanup = typeof result === "function" ? result : null;
+    main.replaceChildren(el);
+    window.scrollTo({ top: y, behavior: "instant" });
+    refreshBadges();
+  }
+  // ほかの人の新しい投稿・予定を、開いている画面に自動で出す(共有サーバーのときだけ)
+  //   fetch: 最新を取る関数 / sig: 中身の「しるし」(変わったら描き直す)/ label: お知らせの文
+  //   入力中・シートを開いているあいだ・画面が裏にあるあいだは待つ
+  function liveWatch(el, fetch, sig, label) {
+    if (typeof AuthApi === "undefined" || !AuthApi.isShared()) return;
+    let last = null, busy = false, shown = false;
+    const tick = async () => {
+      // 画面に出る前(描いている途中)は待つ。出たあとで画面から外れたら止める
+      if (!el.isConnected) { if (shown) clearInterval(timer); return; }
+      shown = true;
+      if (busy || document.hidden) return;
+      busy = true;
+      try {
+        const d = await fetch();
+        if (!d || !el.isConnected) return;
+        const now = sig(d);
+        if (last === null) { last = now; return; }
+        if (now === last) return;
+        const typing = document.activeElement && /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName);
+        if (sheetStack.length || typing || document.querySelector(".pr-run")) return; // 入力が終わってから(次の確認で)出す
+        last = now;
+        await softRefresh();
+        if (label) toast(label);
+      } finally { busy = false; }
+    };
+    const timer = setInterval(tick, 15000);
+    setTimeout(tick, 1500);
+  }
+
   function renderTabs() {
     const nav = document.getElementById("appTabs");
     const tabs = TABS.filter((t) => (t.id !== "present" && t.id !== "ops") || canPresent());
@@ -954,6 +999,7 @@ const App = (function () {
 
   return {
     profileHref, meetHowTo, downloadCsv, btexPicker,
+    liveWatch, softRefresh,
     h, append, fill, confirm: confirmSheet, fmtStamp, fmtDate, fmtDateLong, fmtTime, yen, daysUntil, todayKey, chip, avatar, richText, toast, copyText, shareText,
     icon, glyph, qrImage, draft, clearDraft, fieldError, calendarButtons, googleCalUrl, icsFile, api, openSheet, doneSheet, field, btn, toggle, timeSelect, segmented, kpi, empty, section, memberPicker,
     AREA_LABELS, REF_STATUS, VISITOR_STATUS,

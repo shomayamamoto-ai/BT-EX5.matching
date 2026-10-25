@@ -26,6 +26,10 @@
       const todoP = App.renderHome ? App.renderHome(todoTop, [], new Set(["todo"])) : null;
       const d = await App.api("listEvents");
       if (!d) return;
+      // ほかの運営が予定を足した・変えた、出欠が変わったときに、開いたままでも自動で出す
+      App.liveWatch(el, () => App.api("listEvents", {}, { quiet: true }),
+        (x) => x.events.map((e) => [e.id, e.date, e.start, e.end, e.title, e.kind, e.place, e.yesCount, e.myRsvp].join(",")).join("|"),
+        "予定を更新しました");
       if (todoP) await todoP;
       eventMeta = { calendar: d.calendar };
       const upcoming = d.events.filter((e) => !e.past);
