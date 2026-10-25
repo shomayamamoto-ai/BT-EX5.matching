@@ -72,7 +72,7 @@
               : h("p", { class: "app-field-hint" }, "いまのところ、低い評価の回答はありません。")) : null,
           h("section", { class: "sv-res-sec" }, h("h3", null, `回答の一覧(${n}件)`),
             n ? h("ul", { class: "sv-res-list" }, list.map((x) => h("li", null,
-              h("details", null,
+              h("details", { dataset: { id: x.id } },
                 h("summary", null, h("b", null, `${x.last} ${x.first}`), h("span", null, kind === "member" ? x.unit : x.job), h("em", null, scores[x.score]), h("small", null, x.date)),
                 h("dl", null,
                   ...(kind === "member"
@@ -85,9 +85,31 @@
                 }, "ghost small"))))) : App.empty("まだ回答がありません。定例会の終わりの「定例会のアンケート」の\nスライドの QR コードから答えてもらえます。")));
       }
       draw();
+      // 開いているあいだは、新しい回答が届いたらすぐに出す(5秒ごとに確かめる。変わったときだけ描き直す)
+      const sig = (items) => `${items.length}|${items.reduce((m, x) => Math.max(m, x.updatedAt || x.at || 0), 0)}`;
+      const live = h("p", { class: "sv-res-live" }, h("i", { "aria-hidden": "true" }), h("span", null, "回答が届くと自動で更新します"));
+      let last = sig(all), busy = false;
+      const timer = setInterval(async () => {
+        if (!box.isConnected) { clearInterval(timer); return; }
+        if (busy || document.hidden) return;
+        busy = true;
+        const r = await App.api("listSurveys", {}, { quiet: true });
+        busy = false;
+        if (!r || !box.isConnected) return;
+        const items = r.items || [];
+        const now = sig(items);
+        if (now === last) return;
+        const added = items.length - all.length;
+        last = now; all = items;
+        // 開いていた回答の詳しい中身は、描き直したあとも開いたままにする
+        const open = new Set([...box.querySelectorAll("details[open]")].map((d) => d.dataset.id));
+        draw();
+        box.querySelectorAll("details").forEach((d) => { if (open.has(d.dataset.id)) d.open = true; });
+        if (added > 0) App.toast(`新しい回答が${added}件届きました`);
+      }, 5000);
       // 共有サーバーにつながっていない間は、回答は答えた人のスマホの中にしか残らない(ここには届かない)
       const notShared = typeof AuthApi !== "undefined" && !AuthApi.isShared();
-      body.append(h("p", { class: "app-lead sv-res-lead" }, "定例会の終わりに QR コードから答えてもらったアンケートです。\nBT-EX メンバーとビジターで分けて集計します。"),
+      body.append(h("p", { class: "app-lead sv-res-lead" }, "定例会の終わりに QR コードから答えてもらったアンケートです。\nBT-EX メンバーとビジターで分けて集計します。"), live,
         notShared ? h("p", { class: "sv-res-warn tone-warn" }, "いまは共有サーバーにつながっていないため、ほかの方のスマホで答えたアンケートはここに届きません(この端末で答えたものだけが出ます)。共有サーバー(Google Apps Script)の URL を設定すると、全員の回答がここに集まります。") : null, box);
     });
   };
