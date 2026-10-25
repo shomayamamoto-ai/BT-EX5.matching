@@ -2139,9 +2139,11 @@
     }
     // ---------- 休憩のおさそい(商談の区切りのスライドに入ったとき) ----------
     // 「休む」を押すと1分の休憩の画面。「進む」(または画面のボタン)ですぐに終えられる
-    let breakLayer = null, breakTimer = null, breakAsked = false, breakForced = false;
+    let breakLayer = null, breakTimer = null, breakAsked = false, breakForced = false, breakAsking = false;
     function closeBreak() {
       if (breakForced) { nudgeBreak(); return; }
+      // 「休憩しませんか?」のあいだに「進む」「戻る」・Esc などを押したら、閉じずに警告の画面にする(進めません)
+      if (breakAsking) { forceBreak("next"); return; }
       clearInterval(breakTimer); breakTimer = null;
       if (breakLayer) { const el = breakLayer; breakLayer = null; el.classList.add("is-out"); setTimeout(() => el.remove(), 220); }
     }
@@ -2157,15 +2159,17 @@
             h("button", { type: "button", class: "pr-break-btn is-main", onclick: startBreak }, "休む(1分)"),
             h("button", { type: "button", class: "pr-break-btn", onclick: forceBreak }, "このまま続ける"))));
       box.append(breakLayer);
+      breakAsking = true;
       breakLayer.querySelector(".is-main").focus({ preventScroll: true });
     }
     // 「このまま続ける」を押したとき: ウイルスに入られたような画面で覆い、「休む」しか押せないようにする
     // (この間は「進む」「戻る」・Esc では閉じず、カードをゆらすだけ)
-    function forceBreak() {
+    function forceBreak(via) {
       if (!breakLayer) return;
+      breakAsking = false;
       breakForced = true;
       box.classList.add("is-break-forced"); // 下の操作バーも隠して、「休む」だけにする
-      const ALERTS = ["休憩不足を検知しました", "集中力が低下しています", "水分が足りていません", "肩こりが進行中です", "「このまま続ける」は無効です", "休憩プロトコルを起動します", "深呼吸が必要です", "ERROR: 休憩をスキップできません"];
+      const ALERTS = ["休憩不足を検知しました", "集中力が低下しています", "水分が足りていません", "肩こりが進行中です", via === "next" ? "「進む」では進めません" : "「このまま続ける」は無効です", "休憩プロトコルを起動します", "深呼吸が必要です", "ERROR: 休憩をスキップできません"];
       // 警告の窓の場所(画面の割合)。順番に開いていく
       const SPOTS = [[6, 10], [58, 6], [14, 62], [64, 58], [36, 18], [4, 38], [70, 32], [40, 70]];
       const wins = ALERTS.map((t, i) => h("div", { class: "pr-hack-win", style: `left:${SPOTS[i][0]}%;top:${SPOTS[i][1]}%;animation-delay:${(i * 0.12).toFixed(2)}s`, "aria-hidden": "true" },
@@ -2193,6 +2197,7 @@
     }
     function startBreak() {
       if (!breakLayer) return;
+      breakAsking = false;
       breakForced = false;
       box.classList.remove("is-break-forced");
       breakLayer.classList.remove("is-hacked");
