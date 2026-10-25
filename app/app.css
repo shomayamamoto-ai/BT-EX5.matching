@@ -2698,15 +2698,18 @@ button.home-welcome-check:active { transform: scale(0.94); }
 /* ---------- エデュケーションコーナーの資料: 画面いっぱいに出し、タイマーは下のほうに重ねる ---------- */
 /* 上の帯(タイムマネジメント・進行の場所)はそのまま。資料はそのすぐ下から画面の下まで */
 .pr-run.is-edu .pr-top .pr-title { visibility: hidden; }
-/* 資料は画面の上のはしから下のはしまで。上の帯(タイムマネジメント・進行の場所)は、下のタイマーと同じように資料の上に重ねる */
+/* 資料は上の帯(タイムマネジメント・進行の場所)と下のタイマー・操作バーの間に収める(資料のはしが隠れないように。間は少し小さくなる) */
 .pr-run.is-edu .pr-top { position: fixed; top: 0; left: 0; right: 0; z-index: 2; padding: clamp(10px, 2svh, 22px) clamp(16px, 4.5vw, 64px) 22px;
   background: linear-gradient(to bottom, rgba(8, 6, 4, 0.82), rgba(8, 6, 4, 0.5) 60%, rgba(8, 6, 4, 0)); pointer-events: none; }
 .pr-run.is-edu .pr-top > * { pointer-events: auto; }
 @media (max-width: 1200px) { .pr-run.is-edu.dock-home .pr-top { padding-left: 16px; padding-right: 16px; } }
-.pr-run.is-edu .pr-slide { position: fixed; inset: 0; z-index: 1; padding: 0 !important; display: block; overflow: hidden; background: #0b0805; }
+.pr-run.is-edu .pr-slide { position: fixed; inset: var(--edu-t, 0px) 0 var(--edu-b, 0px); z-index: 1; padding: 0 !important; display: block; overflow: hidden; background: #0b0805; }
+.pr-run.is-edu { background: #0b0805; }
 .pr-run.is-edu .pd-edu { width: 100%; height: 100%; display: block; }
 .pr-run.is-edu .pd-edu-title { display: none; }
 .pr-run.is-edu .pd-car, .pr-run.is-edu .pd-car-stage, .pr-run.is-edu .pd-car-track, .pr-run.is-edu .pd-car-cell { height: 100%; }
+/* 資料の高さを画面の高さに合わせる(グリッドのままだと画像の高さで広がり、下のはしが切れる) */
+.pr-run.is-edu .pd-car { display: block; }
 .pr-run.is-edu .pd-car-stage { display: block; position: relative; }
 .pr-run.is-edu .pd-car-track { border-radius: 0; }
 .pr-run.is-edu .pd-edu-page { height: 100%; align-items: center; }
@@ -2950,3 +2953,7 @@ button.home-welcome-check:active { transform: scale(0.94); }
 /* 特別会(BT-EXフェスなど): 金の枠と「特別会」の札 */
 .ev-card.is-special { border-color: #d9b36a; background: linear-gradient(160deg, #fffaf0, #ffffff 55%); box-shadow: 0 8px 24px rgba(168, 129, 62, 0.16); }
 .ev-kind { display: inline-block; margin: 0 0 4px; padding: 2px 10px; border-radius: 999px; background: linear-gradient(100deg, #a8813e, #c9a45c); color: #fff; font-size: 11.5px; font-weight: 800; letter-spacing: 0.12em; }
+/* 「進行を終わりますか?」は、「つづける」「終わる」のボタンの上の段に出す(つまみ ⠿ は左に2段ぶん) */
+.pr-dock.is-asking:not(.is-vertical) { grid-auto-flow: row; grid-template-columns: auto minmax(0, 1fr) minmax(0, 1fr); grid-auto-columns: auto; }
+.pr-dock.is-asking:not(.is-vertical) .pr-grip { grid-row: 1 / span 2; grid-column: 1; }
+.pr-dock.is-asking:not(.is-vertical) .pr-ask { grid-row: 1; grid-column: 2 / -1; padding: 6px 8px 2px; text-align: center; white-space: normal; }

@@ -1940,6 +1940,7 @@
         App.fill(slide, h("div", { class: "pd-edu" },
           h("p", { class: "pd-edu-title" }, h("span", null, p.name), h("b", null, p.material.title)),
           makeCarousel(imgs)));
+        requestAnimationFrame(eduInsets);
         return;
       }
       if (p.kind === "timer" && opts.deck) {
@@ -2118,12 +2119,18 @@
       if (asking || done) return;
       const ctrl = box.querySelector(".pr-ctrl");
       const before = [...ctrl.childNodes];
-      const back = () => { asking = null; ctrl.replaceChildren(...before); pauseBtn.focus({ preventScroll: true }); };
+      const topWas = ctrl.style.top;
+      const back = () => { asking = null; ctrl.classList.remove("is-asking"); ctrl.style.top = topWas; ctrl.replaceChildren(...before); pauseBtn.focus({ preventScroll: true }); };
       asking = back;
+      // 「進行を終わりますか?」は、「つづける」「終わる」の上に出す
+      ctrl.classList.add("is-asking");
       App.fill(ctrl, dockGrip,
         h("p", { class: "pr-ask" }, "進行を終わりますか?"),
         dockBtn("play", "つづける", "", back),
-        dockBtn("end", "終わる", "is-main", () => { asking = null; finish(false, true); }));
+        dockBtn("end", "終わる", "is-main", () => { asking = null; ctrl.classList.remove("is-asking"); finish(false, true); }));
+      // 上の段がふえた分、画面の下からはみ出すときは上へずらす(「つづける」で元の場所に戻す)
+      const over = ctrl.getBoundingClientRect().bottom - (innerHeight - 8);
+      if (over > 0 && topWas) ctrl.style.top = `${Math.max(8, parseFloat(topWas) - over)}px`;
       ctrl.querySelector(".is-main").focus({ preventScroll: true });
     }
     function finish(early, confirmed) {
@@ -2200,6 +2207,24 @@
       slide.style.paddingLeft = padL ? `${Math.round(padL)}px` : "";
       slide.style.paddingRight = padR ? `${Math.round(padR)}px` : "";
       if (isDeck(people[idx])) fitDeck();
+      if (box.classList.contains("is-edu")) eduInsets();
+    }
+    // エデュケーションコーナーの資料: 上の帯(タイムマネジメントなど)と下のタイマー・操作バーの間に収める(資料の下のはしまで見えるように)
+    function eduInsets() {
+      const vh = innerHeight;
+      let top = 0, bottom = vh;
+      const rect = (el) => (el && el.isConnected && el.offsetParent !== null ? el.getBoundingClientRect() : null);
+      [timing && timing.el, ...box.querySelectorAll(".pr-top > *")].forEach((el) => {
+        const r = rect(el);
+        if (r && r.height && getComputedStyle(el).visibility !== "hidden" && r.top < vh * 0.25) top = Math.max(top, r.bottom);
+      });
+      [meterBox, sec, dock].forEach((el) => {
+        const r = rect(el);
+        if (r && r.height && r.bottom > vh * 0.75) bottom = Math.min(bottom, r.top);
+      });
+      const t = `${Math.round(top ? top + 8 : 0)}px`, b = `${Math.round(bottom < vh ? vh - bottom + 8 : 0)}px`;
+      if (box.style.getPropertyValue("--edu-t") !== t) box.style.setProperty("--edu-t", t);
+      if (box.style.getPropertyValue("--edu-b") !== b) box.style.setProperty("--edu-b", b);
     }
     if (opts.deck) avoidFloaters();
   };
