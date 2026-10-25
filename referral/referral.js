@@ -44,6 +44,7 @@
     if (scores && answers.consult) return { need: answers.consult.groups.map((g) => g.label).join("、"), methods: [] };
     const need = needOf();
     if (!scores || !need) return null;
+    if (need.id === "say") return { need: need.label, methods: [] };
     const methods = need.methods
       ? (answers.anyTopic ? [] : [...answers.methods].sort((a, b) => a - b).map((i) => need.methods[i].label))
       : [...answers.topics].map((t) => labelOf(TOPICS, t));
@@ -650,14 +651,30 @@
   // ---------- 紹介診断 ----------
   const UNKNOWN = { id: "unknown", label: "わからない" };
   const STEPS = [
-    { key: "need", q: "紹介したい相手は、何に困っていますか?", hint: "いちばん近いものを1つ選んで「次へ」を押してください(「何をしたいか」で選んでもOKです)", options: REF_NEEDS },
+    { key: "need", q: "紹介したい相手は、何に困っていますか?", hint: "相手が言っていた言葉か、いちばん近い困りごとを1つ選んで「次へ」を押してください(「何をしたいか」で選んでもOKです)", options: REF_NEEDS },
     { key: "topics", q: "どんな方法がよさそうですか?", hint: "当てはまるものをすべて選んで「次へ」を押してください。分からなければ「まだ分からない」でOKです", options: TOPICS, multi: true },
-    { key: "who", q: "相手はどんな方ですか?", hint: "1つ選んで「結果を見る」を押してください。わからなければ「わからない」でOKです", options: [...PROSPECTS, UNKNOWN] },
+    { key: "who", q: "相手はどんな方ですか?", hint: "青い丸を左右に動かして選び、「結果を見る」を押してください。わからなければ「わからない」でOKです", options: [...REF_WHO_SCALE, UNKNOWN] },
   ];
   // 業種・エリア・会い方の質問はなくした(運営の依頼)。点数では「わからない・どこでも」として扱う
   const SKIPPED = { industry: "unknown", area: "any", meeting: "any" };
 
-  const needOf = () => REF_NEEDS.find((n) => n.id === answers.need) || null;
+  // 「相手がこう言っていたら」の言葉(REF_SAY_PHRASES)。key は「まとまりの番号-言葉の番号」
+  const sayOf = (key) => {
+    const [g, i] = String(key || "").split("-").map(Number);
+    const grp = REF_SAY_PHRASES[g];
+    return grp && grp.items[i] ? grp.items[i] : null;
+  };
+  // 言葉を選んだときは、その言葉だけを方法にした困りごととして扱う(「方法」の質問はとばす)
+  const needOf = () => {
+    if (answers.need === "say") {
+      const p = sayOf(answers.say);
+      return p ? { id: "say", label: `「${p.label}」`, methods: [{ label: p.label, topics: p.topics }] } : null;
+    }
+    return REF_NEEDS.find((n) => n.id === answers.need) || null;
+  };
+  const whoLabel = (id) => labelOf(REF_WHO_SCALE, id) || labelOf(PROSPECTS, id);
+  // 前後の質問へ。言葉を選んだときは「方法」の質問をとばす
+  const stepAfter = (n, dir) => (STEPS[n + dir] && STEPS[n + dir].key === "topics" && answers.need === "say" ? n + dir * 2 : n + dir);
   const byGenreList = () => { const n = needOf(); return !n || !n.methods; };
 
   function isAnswered(st) {
@@ -690,8 +707,15 @@
       return `<button type="button" class="diag-option" data-opt="${o.id}" aria-pressed="${on}">${escapeHtml(o.label)}</button>`;
     };
     if (st.key === "need") {
-      // 困りごと: 説明つきのカードで並べる
-      $("#diagOptions").innerHTML = `<div class="diag-needs">${REF_NEEDS.map((n) => `
+      // 相手が口にしそうな言葉(そのまま選べる)と、困りごとの種類(説明つきのカード)
+      const say = REF_SAY_PHRASES.map((g, gi) => `<p class="diag-group-label">${escapeHtml(g.group)}</p>
+        <div class="diag-say-list">${g.items.map((p, i) => {
+          const n = memberCount(p.topics);
+          return `<button type="button" class="diag-option diag-say-opt${n ? "" : " is-empty"}" data-opt="say:${gi}-${i}" aria-pressed="${answers.need === "say" && answers.say === `${gi}-${i}`}">「${escapeHtml(p.label)}」<span class="diag-method-count">${n}名</span></button>`;
+        }).join("")}</div>`).join("");
+      $("#diagOptions").innerHTML = `<div class="diag-say"><p class="diag-say-title">相手がこう言っていたら</p>${say}</div>
+        <p class="diag-say-or">または、困りごとの種類から選ぶ</p>
+        <div class="diag-needs">${REF_NEEDS.map((n) => `
         <button type="button" class="diag-option diag-need" data-opt="${n.id}" aria-pressed="${answers.need === n.id}">
           <b>${escapeHtml(n.label)}</b><small>${escapeHtml(n.desc)}</small>
         </button>`).join("")}</div>`;
@@ -706,6 +730,15 @@
         <button type="button" class="diag-option diag-method diag-any" data-opt="any" aria-pressed="${answers.anyTopic}">
           <b>まだ分からない(おまかせ)</b><small>上のどれでも対応できる人を探します</small>
         </button></div>`;
+    } else if (st.key === "who") {
+      // 相手のタイプ: 青い丸を左右に動かして選ぶ目盛り。目盛りの言葉を押しても選べる
+      const idx = REF_WHO_SCALE.findIndex((x) => x.id === answers.who);
+      $("#diagOptions").innerHTML = `<div class="diag-scale${idx < 0 ? " is-unset" : ""}" style="--n:${REF_WHO_SCALE.length}">
+          <input type="range" id="diagWho" class="diag-scale-range" min="0" max="${REF_WHO_SCALE.length - 1}" step="1" value="${idx < 0 ? Math.floor(REF_WHO_SCALE.length / 2) : idx}" aria-label="相手のタイプ" aria-valuetext="${escapeHtml(idx < 0 ? "未選択" : REF_WHO_SCALE[idx].label)}">
+          <div class="diag-scale-labels">${REF_WHO_SCALE.map((x, i) => `<button type="button" class="diag-scale-label" data-who="${i}" aria-pressed="${i === idx}">${(x.wrap || x.label).split("/").map((t) => `<span>${escapeHtml(t)}</span>`).join("")}</button>`).join("")}</div>
+        </div>
+        <p class="diag-scale-now" aria-live="polite">${idx >= 0 ? `いま:<b>${escapeHtml(REF_WHO_SCALE[idx].label)}</b>` : answers.who === "unknown" ? "「わからない」を選んでいます" : "丸を左右に動かして選んでください"}</p>
+        <button type="button" class="diag-option diag-scale-unknown" data-opt="unknown" aria-pressed="${answers.who === "unknown"}">わからない</button>`;
     } else if (genreList) {
       // ジャンルはまとまりごとに見出しをつけて並べる
       $("#diagOptions").innerHTML = TOPIC_GROUPS
@@ -754,6 +787,7 @@
   function startDiagnosis() {
     answers.topics = new Set();
     answers.need = null;
+    answers.say = null;
     answers.methods = new Set();
     answers.anyTopic = false;
     answers.topicGroups = [];
@@ -782,15 +816,15 @@
     const need = needOf();
     const summary = answers.consult ? [
       ...answers.consult.groups.map((g) => g.label),
-      answers.who === "unknown" ? null : labelOf(PROSPECTS, answers.who),
+      answers.who === "unknown" ? null : whoLabel(answers.who),
       answers.industry === "unknown" ? null : labelOf(INDUSTRIES, answers.industry),
       labelOf(AREAS, answers.area),
     ].filter(Boolean) : [
       need && need.methods ? need.label : null,
-      ...(need && need.methods
+      ...(need && need.id === "say" ? [] : need && need.methods
         ? (answers.anyTopic ? ["方法はおまかせ"] : [...answers.methods].sort((a, b) => a - b).map((i) => need.methods[i].label))
         : [...answers.topics].map((t) => labelOf(TOPICS, t))),
-      answers.who === "unknown" ? null : labelOf(PROSPECTS, answers.who),
+      answers.who === "unknown" ? null : whoLabel(answers.who),
       answers.industry === "unknown" ? null : labelOf(INDUSTRIES, answers.industry),
       answers.area === "any" ? null : labelOf(AREAS, answers.area),
       answers.meeting === "any" ? null : labelOf(MEETINGS, answers.meeting),
@@ -990,7 +1024,7 @@
       Object.assign(answers, saved, { methods: new Set(saved.methods || []), topics: new Set(saved.topics || []) });
       if (answers.consult) return true; // 相談アシスタントの結果
       Object.assign(answers, SKIPPED); // なくした質問(業種・エリア・会い方)の前の答えは使わない
-      if (!REF_NEEDS.some((n) => n.id === answers.need)) return false;
+      if (answers.need === "say" ? !sayOf(answers.say) : !REF_NEEDS.some((n) => n.id === answers.need)) return false;
       syncTopics();
       return true;
     } catch { return false; }
@@ -1051,8 +1085,23 @@
       renderStep();
       return;
     }
+    if (st.key === "need" && id.startsWith("say:")) {
+      // 相手の言葉: その言葉のジャンルとキーワードで探す(「方法」の質問はとばす)
+      const p = sayOf(id.slice(4));
+      if (!p) return;
+      answers.need = "say";
+      answers.say = id.slice(4);
+      answers.methods = new Set([0]);
+      answers.anyTopic = false;
+      syncTopics();
+      $("#diagKeyword").value = p.keyword || "";
+      renderStep();
+      return;
+    }
     if (st.key === "need" && answers.need !== id) {
-      // 困りごとを変えたら、選んでいた方法はリセット
+      // 困りごとを変えたら、選んでいた方法はリセット(言葉で入ったキーワードも消す)
+      if (answers.need === "say") $("#diagKeyword").value = "";
+      answers.say = null;
       answers.need = id;
       answers.methods = new Set();
       answers.anyTopic = false;
@@ -1202,11 +1251,34 @@
     const ok = await copyText(topIntroText(lastRanked.slice(0, 3)));
     toast(ok ? "上位の候補をまとめてコピーしました" : "コピーできませんでした");
   });
-  $("#diagBack").addEventListener("click", () => { if (step > 0) goStep(step - 1); });
+  $("#diagBack").addEventListener("click", () => { if (step > 0) goStep(stepAfter(step, -1)); });
   $("#diagNext").addEventListener("click", () => {
     if (!isAnswered(STEPS[step])) return;
     if (step === STEPS.length - 1) showResults();
-    else goStep(step + 1);
+    else goStep(stepAfter(step, 1));
+  });
+  // 相手のタイプの目盛り: 動かしている間は画面を作り直さずに、選んだものだけ書きかえる(つまみが離れないように)
+  function setWho(i) {
+    const x = REF_WHO_SCALE[i];
+    if (!x) return;
+    answers.who = x.id;
+    const range = $("#diagWho");
+    if (range) { range.value = String(i); range.setAttribute("aria-valuetext", x.label); }
+    const box = range && range.closest(".diag-scale");
+    if (box) box.classList.remove("is-unset");
+    document.querySelectorAll(".diag-scale-label").forEach((b) => b.setAttribute("aria-pressed", String(Number(b.dataset.who) === i)));
+    const unknownBtn = document.querySelector(".diag-scale-unknown");
+    if (unknownBtn) unknownBtn.setAttribute("aria-pressed", "false");
+    const now = document.querySelector(".diag-scale-now");
+    if (now) now.innerHTML = `いま:<b>${escapeHtml(x.label)}</b>`;
+    $("#diagNext").disabled = false;
+  }
+  ["input", "change", "click"].forEach((type) => document.addEventListener(type, (e) => {
+    if (e.target && e.target.id === "diagWho") setWho(Number(e.target.value));
+  }));
+  document.addEventListener("click", (e) => {
+    const b = e.target.closest && e.target.closest("[data-who]");
+    if (b) setWho(Number(b.dataset.who));
   });
   $("#diagSortList").addEventListener("click", () => {
     closeDiag();

@@ -1211,6 +1211,60 @@ a.site-maker:hover span { text-decoration: underline; color: var(--accent-dark);
 .diag-any { border-style: dashed !important; }
 @media (min-width: 640px) { .diag-any { grid-column: 1 / -1; } }
 
+/* 紹介診断: 相手が口にしそうな言葉(そのまま選ぶ) */
+.diag-say { width: 100%; padding: 12px 12px 4px; border-radius: 16px; background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.14); }
+.diag-say-title { margin: 0 0 2px; font-size: 15px; font-weight: 900; color: #fff; }
+.diag-say .diag-group-label { margin: 10px 0 6px; font-size: 12px; font-weight: 800; color: #fbb783; letter-spacing: 0.08em; }
+.diag-say-list { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
+.diag-option.diag-say-opt { font-size: 13.5px; padding: 8px 12px; display: inline-flex; align-items: center; gap: 6px; text-align: left; line-height: 1.4; }
+.diag-say-opt .diag-method-count { position: static; transform: none; font-size: 11px; opacity: 0.8; white-space: nowrap; flex-shrink: 0; }
+.diag-say-opt.is-empty { opacity: 0.55; }
+.diag-say-or { width: 100%; margin: 6px 0 0; font-size: 13px; font-weight: 800; color: #e6cdbd; }
+
+/* 紹介診断: 相手のタイプの目盛り(青い丸を左右に動かす) */
+.diag-scale { --thumb: 30px; --blue: #2f7cf6; width: 100%; padding: 10px 0 4px; }
+.diag-scale-range {
+  -webkit-appearance: none;
+  appearance: none;
+  display: block;
+  width: calc(100% - 100% / var(--n) + var(--thumb));
+  margin: 0 calc(50% / var(--n) - var(--thumb) / 2);
+  height: var(--thumb);
+  background: transparent;
+  cursor: pointer;
+  touch-action: pan-y;
+}
+.diag-scale-range::-webkit-slider-runnable-track { height: 6px; border-radius: 3px; background: rgba(255, 255, 255, 0.28); }
+.diag-scale-range::-moz-range-track { height: 6px; border-radius: 3px; background: rgba(255, 255, 255, 0.28); }
+.diag-scale-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: var(--thumb); height: var(--thumb); margin-top: calc(3px - var(--thumb) / 2);
+  border-radius: 50%; background: var(--blue); border: 3px solid #fff;
+  box-shadow: 0 2px 10px rgba(47, 124, 246, 0.55);
+  transition: transform 0.12s;
+}
+.diag-scale-range::-moz-range-thumb {
+  width: var(--thumb); height: var(--thumb); box-sizing: border-box;
+  border-radius: 50%; background: var(--blue); border: 3px solid #fff;
+  box-shadow: 0 2px 10px rgba(47, 124, 246, 0.55);
+}
+.diag-scale-range:active::-webkit-slider-thumb { transform: scale(1.12); }
+.diag-scale-range:focus-visible { outline: 2px solid #fff; outline-offset: 4px; border-radius: 999px; }
+/* まだ選んでいないときは、丸を薄くして「動かしてください」と分かるように */
+.diag-scale.is-unset .diag-scale-range::-webkit-slider-thumb { background: rgba(47, 124, 246, 0.45); box-shadow: none; }
+.diag-scale.is-unset .diag-scale-range::-moz-range-thumb { background: rgba(47, 124, 246, 0.45); box-shadow: none; }
+.diag-scale-labels { display: grid; grid-template-columns: repeat(var(--n), 1fr); margin-top: 6px; }
+.diag-scale-label {
+  border: none; background: none; color: #e6cdbd; font: inherit; font-size: 12.5px; font-weight: 700;
+  line-height: 1.35; padding: 4px 2px; cursor: pointer; text-align: center; word-break: keep-all; overflow-wrap: anywhere;
+}
+.diag-scale-label span { display: inline-block; white-space: nowrap; }
+.diag-scale-label[aria-pressed="true"] { color: #fff; font-weight: 900; }
+.diag-scale-label[aria-pressed="true"] span { text-decoration: underline; text-decoration-color: var(--blue); text-decoration-thickness: 3px; text-underline-offset: 4px; }
+.diag-scale-now { width: 100%; margin: 8px 0 4px; font-size: 14px; color: #f0dccf; text-align: center; }
+.diag-scale-now b { color: #fff; font-size: 16px; }
+.diag-scale-unknown { margin: 4px auto 0; }
+
 /* 紹介診断: 「戻る/次へ」は画面の下に固定して、いつでも押せるようにする */
 .diag-dialog .diag { overflow: clip; }
 .diag-dialog #diagWizard .diag-nav {

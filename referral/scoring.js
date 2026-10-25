@@ -61,9 +61,12 @@ const RefScoring = (function () {
       s += 11;
     }
 
-    if (a.who === "unknown" || !m.prospects.length) {
+    // 目盛り(REF_WHO_SCALE)で選んだときは、その目盛りに当たる相手のタイプのどれかが合えばよい
+    const scale = typeof REF_WHO_SCALE === "undefined" ? null : REF_WHO_SCALE.find((x) => x.id === a.who);
+    const whoList = scale ? scale.prospects : [a.who];
+    if (a.who === "unknown" || !a.who || !m.prospects.length) {
       s += 6;
-    } else if (m.prospects.includes(a.who)) {
+    } else if (whoList.some((w) => m.prospects.includes(w))) {
       s += 10;
     }
 
