@@ -2978,6 +2978,10 @@ button.home-welcome-check:active { transform: scale(0.94); }
 .pd-staff-face { width: clamp(40px, min(4.4vw, 7.4svh), 72px); height: clamp(40px, min(4.4vw, 7.4svh), 72px); border-radius: 50%; object-fit: cover; object-position: 50% 20%; border: 2px solid var(--pd-gold-soft); flex: none; }
 .pd-staff-face.is-initial { display: grid; place-items: center; background: rgba(226, 184, 102, 0.16); color: var(--pd-gold); font-family: var(--pd-serif); font-size: clamp(18px, 2vw, 30px); font-weight: 700; }
 .pd-staff-none { margin: 0; font-size: clamp(20px, 2.4vw, 34px); color: var(--pd-muted); }
+/* 担当が決まっている役(本システム): 2列ぶんの幅で、ほかの役の下に別に出す */
+.pd-staff-card.is-fixed { grid-column: 1 / -1; border-color: var(--pd-gold-soft); background: linear-gradient(170deg, rgba(226, 184, 102, 0.14), rgba(226, 184, 102, 0.03)); }
+.pr-staff-chip.is-fixed { cursor: default; }
+.pr-staff-fixed { align-self: center; font-size: 12px; font-weight: 700; color: var(--text-sub); }
 @media (max-width: 760px), (max-aspect-ratio: 1/1) { .pd-staff-grid { grid-template-columns: minmax(0, 1fr); } }
 @media (prefers-reduced-motion: reduce) { .pd-staff-card { animation: none; } }
 

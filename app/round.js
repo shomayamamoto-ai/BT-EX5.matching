@@ -165,7 +165,8 @@
   // 小さく出す顔写真(一覧の丸・自分の写真)は、運営が用意した写真なら小さい版(thumbs/)を使う(読み込みを軽く)
   const SMALL_FACE = /^(pr-card-face|pr-row-face|pr-me-face|pd-staff-face)$/;
   // 本日の運営メンバーの役(はじめの挨拶のあとのスライド)
-  const STAFF_ROLES = [["facilitator", "ファシリテーター"], ["education", "エデュケーション"], ["system", "スライド"], ["breakout", "ブレイクアウトルーム"]];
+  // 3つ目があるのは担当が決まっている役(選べない)。本システム(スライド含む)は山本 捷真が作ったので固定
+  const STAFF_ROLES = [["facilitator", "ファシリテーター"], ["education", "エデュケーション"], ["system", "スライド"], ["breakout", "ブレイクアウトルーム"], ["builder", "本システム（スライド含む）", ["yamamoto"]]];
   const thumbOf = (url) => String(url).replace(/assets\/members\/([^/?#]+\.jpg)/, "assets/members/thumbs/$1");
   function face(url, name, cls) {
     return url
@@ -567,7 +568,13 @@
     const owners = (App.presentOwners ? App.presentOwners() : []).map((id) => App.memberById(id)).filter(Boolean);
     const staffBox = h("div", { class: "pr-staff" });
     function drawStaff() {
-      App.fill(staffBox, STAFF_ROLES.map(([key, label]) => {
+      App.fill(staffBox, STAFF_ROLES.map(([key, label, fixed]) => {
+        if (fixed) {
+          return h("div", { class: "pr-staff-row" },
+            h("span", { class: "pr-staff-role" }, label),
+            h("div", { class: "pr-staff-chips" }, fixed.map((id) => App.memberById(id)).filter(Boolean).map((m) => h("span", { class: "pr-staff-chip is-on is-fixed" }, m.name)),
+              h("small", { class: "pr-staff-fixed" }, "固定")));
+        }
         const sel = new Set(staff[key] || []);
         return h("div", { class: "pr-staff-row" },
           h("span", { class: "pr-staff-role" }, label),
@@ -778,7 +785,7 @@
       // はじめの挨拶の次: 本日の運営メンバー(開始前に選んだ方)
       if (i === 0 && /あいさつ|挨拶/.test(st.title)) {
         const st0 = more.staff || {};
-        deck("staff", { name: "本日の運営メンバー", step: label, roles: STAFF_ROLES.map(([key, role]) => ({ role, people: (st0[key] || []).map((id) => App.memberById(id)).filter(Boolean).map((m) => ({ name: m.name, photo: (photos && photos[m.id]) || "" })) })) });
+        deck("staff", { name: "本日の運営メンバー", step: label, roles: STAFF_ROLES.map(([key, role, fixed]) => ({ role, fixed: !!fixed, people: (fixed || st0[key] || []).map((id) => App.memberById(id)).filter(Boolean).map((m) => ({ name: m.name, photo: (photos && photos[m.id]) || "" })) })) });
       }
       if (i === 0 && /あいさつ|挨拶/.test(st.title) && D.leader) {
         const m = App.memberById(D.leader.memberId);
@@ -1761,7 +1768,7 @@
       }
       if (p.type === "staff") {
         // 本日の運営メンバー: 役ごとのカードに、担当の方の顔写真とお名前
-        return frame("pd-staff", h("ul", { class: "pd-staff-grid" }, (p.roles || []).map((r, i) => h("li", Object.assign({ class: "pd-staff-card" }, nth(i)),
+        return frame("pd-staff", h("ul", { class: "pd-staff-grid" }, (p.roles || []).map((r, i) => h("li", Object.assign({ class: `pd-staff-card${r.fixed ? " is-fixed" : ""}` }, nth(i)),
           h("p", { class: "pd-staff-role" }, r.role),
           r.people.length ? h("div", { class: "pd-staff-people" }, r.people.map((x) => h("span", { class: "pd-staff-person" }, face(x.photo, x.name, "pd-staff-face"), h("b", null, x.name))))
             : h("p", { class: "pd-staff-none" }, "—")))));
@@ -1882,12 +1889,21 @@
       }
       const rects = [er, ...[...el.children].map((c) => c.getBoundingClientRect())];
       const top = Math.min(...rects.map((r) => r.top)), bottom = Math.max(...rects.map((r) => r.bottom), er.top + el.scrollHeight);
+      // 代表の紹介: 左上を動かさずに、文の最後の行までスライドの下の余白の手前に収める(文が長いと下が切れていたため)
+      if (el.classList.contains("pd-leader")) {
+        const deep = Math.max(bottom, ...[...el.querySelectorAll("li, p")].map((x) => x.getBoundingClientRect().bottom));
+        const limit = sr.bottom - (parseFloat(getComputedStyle(slide).paddingBottom) || 0);
+        if (deep > limit && limit > top) {
+          const k = Math.max(0.55, ((limit - top) / (deep - top)) * 0.98);
+          el.style.transformOrigin = "0 0"; el.style.transform = `scale(${k.toFixed(3)})`;
+        }
+        return;
+      }
       const need = bottom - top, room = slide.clientHeight - (el.classList.contains("pd-frame") ? Math.max(0, er.top - sr.top) : 0);
       if (need > room && room > 0) {
         const k = Math.max(0.6, (room / need) * 0.97);
         // 題のあるスライド(pd-frame)は上にそろえる(スライドを送っても題の位置が動かないように)。ほかは上下のまん中
         // 代表の紹介は左上を動かさずに縮める(小見出しの位置を、ほかのスライドとそろえる)
-        if (el.classList.contains("pd-leader")) { el.style.transformOrigin = "0 0"; el.style.transform = `scale(${k.toFixed(3)})`; return; }
         const dy = el.classList.contains("pd-frame") ? Math.max(sr.top - er.top, (er.top - top) * k)
           : (sr.top + sr.bottom) / 2 - er.top - ((top + bottom) / 2 - er.top) * k;
         el.style.transformOrigin = "50% 0";
