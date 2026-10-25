@@ -870,6 +870,9 @@ const App = (function () {
     // QR などで開いたリンク(#events?checkin=… など)を、ログインをはさんでも失わないようにする
     const PENDING = "btex5-app-pending-hash";
     try { if (location.hash.length > 1) sessionStorage.setItem(PENDING, location.hash); } catch { /* noop */ }
+    // 名簿は、ログインの確認と同時に取りに行く(順番に待たない)
+    const MEMBERS_CACHE = "btex5-members-cache";
+    const membersP = AuthApi.listReferralMembers(AuthSession.getToken());
     const data = await AuthSession.guardPage({ next: "home" });
     if (!data) return;
     try {
@@ -879,8 +882,22 @@ const App = (function () {
     } catch { /* noop */ }
     session = data;
     try { sessionStorage.setItem("btex5-my-name", data.displayName || ""); sessionStorage.setItem("btex5-present", canPresent() ? "1" : "0"); } catch { /* noop */ }
-    const res = await AuthApi.listReferralMembers(AuthSession.getToken());
-    members = res.success ? res.data.members : [];
+    // 前回の名簿があればそれですぐ開き、新しい名簿は届きしだい入れかえる(届くまで待たない)
+    let cachedMembers = null;
+    try { cachedMembers = JSON.parse(localStorage.getItem(MEMBERS_CACHE) || "null"); } catch { /* noop */ }
+    const takeMembers = (res) => {
+      if (!res.success) return false;
+      members = res.data.members;
+      try { localStorage.setItem(MEMBERS_CACHE, JSON.stringify(members)); } catch { /* noop */ }
+      return true;
+    };
+    if (Array.isArray(cachedMembers) && cachedMembers.length) {
+      members = cachedMembers;
+      membersP.then(takeMembers);
+    } else {
+      const res = await membersP;
+      if (!takeMembers(res)) members = [];
+    }
     document.getElementById("appMe").replaceChildren(avatar(data.displayName));
     // 共有サーバーに切り替えたあと: この端末に残っているお試し版のプロフィールを送るか聞く
     if (typeof ProfileTransfer !== "undefined") ProfileTransfer.offerUpload(data, memberById(data.memberId));
@@ -952,8 +969,9 @@ const App = (function () {
       if (typeof v.autoRefresh === "function" && !v.autoRefresh(current.parts)) return;
       route();
     });
-    await route();
+    // 画面の枠(上の帯・下のメニュー)はすぐ出し、中身は読み込みながら(薄いひな形を出して)表示する
     document.documentElement.classList.remove("guard-pending");
+    await route();
   }
 
   // Excel で文字化けしない CSV(先頭に BOM)。数式として読まれないよう = + - @ で始まる値は ' を付ける。

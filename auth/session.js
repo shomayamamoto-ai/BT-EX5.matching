@@ -76,6 +76,8 @@ const AuthSession = (function () {
       localStorage.removeItem(SESSION_KEY);
       sessionStorage.removeItem("btex5-my-name");
       sessionStorage.removeItem("btex5-badges");
+      localStorage.removeItem(VERIFY_CACHE);
+      localStorage.removeItem("btex5-members-cache");
     } catch {
       /* noop */
     }
@@ -85,6 +87,24 @@ const AuthSession = (function () {
   // トークンなし/無効 → トークン破棄のうえ ?next=<画面名> 付きでログインへ。
   // 元URLのパス・クエリ・ハッシュは引き継がない。
   // 有効ならサーバーが返した user を resolve する(表示は都度この結果を正とする §5.3)
+  // すぐ開くための控え: 前回サーバーが「有効」と答えた結果(名前・管理者かどうか・期限)を、トークンの「しるし」と一緒に置いておく。
+  // 次に開いたときはこれで先に画面を出し、サーバーの確認は裏で行う(無効なら、その時点でログインへ)。
+  // パスワード・メールアドレスは入っていない。期限の判断は、これまでどおりサーバーだけが行う
+  const VERIFY_CACHE = "btex5-verify-cache";
+  const VERIFY_TTL = 12 * 3600 * 1000;
+  function tokenMark(t) { let x = 2166136261; for (let i = 0; i < t.length; i++) { x ^= t.charCodeAt(i); x = Math.imul(x, 16777619); } return (x >>> 0).toString(36) + t.length; }
+  function readVerify(token) {
+    try {
+      const c = JSON.parse(localStorage.getItem(VERIFY_CACHE) || "null");
+      if (!c || c.k !== tokenMark(token) || Date.now() - c.at > VERIFY_TTL) return null;
+      if (!c.data || (c.data.expiresAt && new Date(c.data.expiresAt).getTime() < Date.now())) return null;
+      return c.data;
+    } catch { return null; }
+  }
+  function writeVerify(token, data) {
+    try { localStorage.setItem(VERIFY_CACHE, JSON.stringify({ k: tokenMark(token), at: Date.now(), data })); } catch { /* noop */ }
+  }
+
   async function guardPage(options) {
     const next = safeNextName(options && options.next);
     // loginPath: 呼び出しページからログインページへの相対パス(既定 ../login/)
@@ -94,6 +114,15 @@ const AuthSession = (function () {
     if (!token) {
       location.replace(loginUrl);
       return null;
+    }
+    // 前回の確認結果があれば、それですぐ開く(サーバーの確認は裏で。無効ならログインへ)
+    const cached = readVerify(token);
+    if (cached) {
+      AuthApi.verifySession(token).then((r) => {
+        if (r.success) writeVerify(token, r.data);
+        else if (r.error && r.error.code === "SESSION_INVALID") { clearToken(); location.replace(loginUrl); }
+      });
+      return cached;
     }
     const result = await AuthApi.verifySession(token);
     if (!result.success) {
@@ -107,6 +136,7 @@ const AuthSession = (function () {
       }
       return null;
     }
+    writeVerify(token, result.data);
     return result.data;
   }
 
