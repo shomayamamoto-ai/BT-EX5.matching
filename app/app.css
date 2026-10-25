@@ -3068,6 +3068,5 @@ button.home-welcome-check:active { transform: scale(0.94); }
 .pr-survey-txt small { font-size: 11.5px; font-weight: 700; color: #d8c49c; }
 .pr-survey-go { font-size: 24px; line-height: 1; color: #e2b866; margin-left: 4px; }
 @media (max-width: 560px) { .pr-survey-btn { width: 100%; margin-bottom: 6px; } .pr-survey-go { margin-left: auto; } }
-/* 定例会の編集: いつもの定例会は日時だけ変えられることの案内 */
-.ev-fixed-note { margin: 0 0 10px; padding: 10px 12px; border-radius: 12px; background: #f6efe2; font-size: 12.5px; font-weight: 700; line-height: 1.6; color: var(--text-sub); }
-.ev-fixed-note[hidden] { display: none; }
+/* 定例会を作るとき: ひな形と同じ時間を薄く出す(選び直すとふつうの濃さ) */
+.app-form select.is-example { color: #a89a88; }

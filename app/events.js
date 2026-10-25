@@ -160,17 +160,22 @@
       syncFes();
       const fesBox = h("div", { class: "ev-fes-name" }, h("span", null, "第"), fesNo, h("span", null, "回BT-EXフェス"));
       const titleBox = h("div", null, f.title, fesBox, fesPreview);
-      // いつもの定例会は、日付と時間だけを変えられる(ほかの項目は、いつもの内容のまま。運営の依頼)。特別会はすべて入れられる
-      const fixedParts = [];
-      const fixedOnly = (el) => { fixedParts.push(el); el.hidden = kind ? kind.getValue() !== "special" : !(ev && ev.kind === "special"); return el; };
-      const fixedNote = h("p", { class: "ev-fixed-note" }, "いつもの定例会は、日付と時間だけを変えられます(名前・開催方法・参加費・当日の流れ・ご案内などは、いつもの内容のままです)。");
       // 特別会の入れ方の例(今回の第一回BT-EXフェス)。いつもの定例会の中身が入っていたら空にして、例を薄く出す
       const FES = (typeof REF_SEED_EVENTS !== "undefined" ? REF_SEED_EVENTS : []).find((x) => x.kind === "special") || null;
       const fromRegular = !(ev && ev.kind === "special");
-      let exampleSet = false;
+      let exampleSet = false, saved = null;
+      // 定例会に戻したときは、いつもの定例会の中身に戻す
+      const hideExample = () => {
+        if (!exampleSet || !saved) return;
+        exampleSet = false;
+        saved.forEach(([el, v, ph]) => { if (!el.value) el.value = v; el.placeholder = ph; });
+        how.setValue && how.setValue(saved.how); onlineBox.hidden = saved.how !== "online"; venueBox.hidden = saved.how !== "venue"; areaSel.value = saved.area;
+      };
       const showExample = () => {
         if (exampleSet || !FES || !fromRegular) return;
         exampleSet = true;
+        saved = [f.fee, f.place, f.agenda, f.body, capacity].map((el) => [el, el.value, el.placeholder]);
+        saved.how = how.getValue(); saved.area = areaSel.value;
         fesNo.placeholder = String(Number(fesNumber(FES.title)) + 1 || 2);
         [[f.fee, FES.fee], [f.place, FES.place], [f.agenda, "(例)\n14:00 受付\n14:30 開始・はじめの挨拶\n…\n16:30 終了"], [f.body, `(例)\n${FES.body}`], [capacity, FES.capacity ? `例:${FES.capacity}` : ""]].forEach(([el, ex]) => {
           el.value = "";
@@ -181,9 +186,7 @@
       };
       const syncKind = (v) => {
         const sp = v === "special";
-        if (sp) showExample();
-        fixedParts.forEach((el) => { el.hidden = !sp; });
-        fixedNote.hidden = sp;
+        if (sp) showExample(); else hideExample();
         f.title.hidden = sp; fesBox.hidden = !sp; fesPreview.hidden = !sp;
         f.title.required = !sp;
         // いつもの定例会に戻したとき、名前が空ならいつもの名前を入れる
@@ -194,6 +197,8 @@
       const doors = App.timeSelect(ev ? ev.doors || "" : "", { label: "受付", none: "なし" });
       const capacity = h("input", { type: "number", min: "0", max: "999", inputmode: "numeric", value: ev && ev.capacity ? String(ev.capacity) : "", placeholder: "例:144(なしは空)" });
       const end = App.timeSelect(base ? base.end : "21:00", { label: "終了" });
+      // 新しく作るとき: 時間はひな形(いつもの定例会)と同じものを薄く出しておく(変えたらふつうの濃さに)
+      if (!ev) [start, end].forEach((sel) => { sel.classList.add("is-example"); sel.addEventListener("change", () => sel.classList.remove("is-example")); });
 
       // 開催方法: オンライン(Google Meet)か会場
       const meetUrl = h("input", { type: "url", maxlength: "200", placeholder: "https://meet.google.com/…", value: ev && ev.meetUrl ? ev.meetUrl : "" });
@@ -232,11 +237,21 @@
       };
       if (ev && ev.deadline) { dlKind.value = "custom"; dlDate.value = ev.deadline.slice(0, 10); dlTime.value = ev.deadline.slice(11); }
       else if (!ev && tpl && tpl.deadline) {
-        const diff = App.daysUntil(tpl.deadline.slice(0, 10), tpl.date);
-        const key = `${-diff}|${tpl.deadline.slice(11)}`;
-        dlKind.value = [...dlKind.options].some((o) => o.value === key) ? key : "";
+        // ひな形の回と同じ「◯日前の◯時まで」を選んでおく(選択肢になければ足す)
+        const day = (k) => Date.UTC(Number(k.slice(0, 4)), Number(k.slice(5, 7)) - 1, Number(k.slice(8, 10))) / 86400000;
+        const off = Math.round(day(tpl.deadline.slice(0, 10)) - day(tpl.date));
+        const t = tpl.deadline.slice(11);
+        const key = `${off}|${t}`;
+        if (![...dlKind.options].some((o) => o.value === key)) {
+          const when = off === 0 ? "当日" : off === -1 ? "前日" : `${-off}日前`;
+          dlKind.insertBefore(h("option", { value: key }, `${when} ${t} まで(いつもと同じ)`), dlKind.querySelector('option[value="custom"]'));
+        }
+        dlKind.value = key;
       }
       const syncDl = () => { dlCustom.hidden = dlKind.value !== "custom"; };
+      // 締切を自分で変えたか(変えていなければ、いつもの定例会はもとの回と同じ「◯日前の◯時」にそろえる)
+      let dlTouched = false;
+      [dlKind, dlDate, dlTime].forEach((el) => el.addEventListener("change", () => { dlTouched = true; }));
       dlKind.addEventListener("change", syncDl);
       syncDl();
       // いつもの定例会の締切: もとの回と同じ「◯日前の◯時」にそろえる(日付を変えたら締切も動く)
@@ -307,13 +322,13 @@
         e.preventDefault();
         const special = kind.getValue() === "special";
         if (special && !(Number(fesNo.value) >= 1)) { err.textContent = "特別会は、何回目かを数字で入れてください。"; fesNo.focus(); return; }
-        const title = special ? fesTitle(Number(fesNo.value)) : (base && base.kind !== "special" && base.title) || REGULAR_TITLE;
+        const title = special ? fesTitle(Number(fesNo.value)) : f.title.value.trim();
         if (!title || !f.date.value) { err.textContent = "名前と日付を入れてください。"; return; }
         const online = how.getValue() === "online";
         const payload = {
           id: ev ? ev.id : "", title, date: f.date.value, start: start.value, end: end.value,
           area: online ? "online" : areaSel.value, place: online ? "" : f.place.value.trim(), fee: f.fee.value.trim(), url: f.url.value.trim(),
-          agenda: f.agenda.value, body: f.body.value, deadline: special ? deadline() : regularDeadline(), meet: online, meetUrl: meetUrl.value.trim(),
+          agenda: f.agenda.value, body: f.body.value, deadline: !special && !dlTouched ? regularDeadline() : deadline(), meet: online, meetUrl: meetUrl.value.trim(),
           party: hasParty.getValue() === "yes" ? { enabled: true, place: partyPlace.value.trim(), fee: partyFee.value.trim(), time: partyTime.value } : { enabled: false },
           kind: kind.getValue(), doors: doors.value, capacity: Number(capacity.value) || 0,
         };
@@ -326,18 +341,17 @@
         App.route();
       } },
       App.field("種類", kind),
-      fixedNote,
-      fixedOnly(App.field("名前", titleBox)),
+      App.field("名前", titleBox),
       App.field("日付", f.date),
       h("div", { class: "app-grid2" }, App.field("開始", start), App.field("終了", end)),
-      fixedOnly(h("div", { class: "app-grid2" }, App.field("受付(任意)", doors), App.field("定員(任意)", capacity))),
-      fixedOnly(App.field("開催方法", h("div", null, how, onlineBox, venueBox))),
-      fixedOnly(App.field("申込締切", h("div", null, dlKind, dlCustom), "締切を過ぎると、メンバーは出欠を変えられません(管理者は変えられます)")),
-      fixedOnly(App.field("参加費", f.fee)),
-      fixedOnly(App.field("当日の流れ", f.agenda)),
-      fixedOnly(App.field("ご案内", f.body)),
-      fixedOnly(App.field("懇親会", h("div", null, hasParty, partyBox))),
-      fixedOnly(App.field("案内ページ(任意)", f.url)),
+      h("div", { class: "app-grid2" }, App.field("受付(任意)", doors), App.field("定員(任意)", capacity)),
+      App.field("開催方法", h("div", null, how, onlineBox, venueBox)),
+      App.field("申込締切", h("div", null, dlKind, dlCustom), "締切を過ぎると、メンバーは出欠を変えられません(管理者は変えられます)"),
+      App.field("参加費", f.fee),
+      App.field("当日の流れ", f.agenda),
+      App.field("ご案内", f.body),
+      App.field("懇親会", h("div", null, hasParty, partyBox)),
+      App.field("案内ページ(任意)", f.url),
       ev ? null : h("div", { class: "app-grid2" }, App.field("繰り返し", repeat), App.field("回数", times)),
       ev ? null : preview,
       err, save,
@@ -350,8 +364,10 @@
   }
   // 新しい定例会: いちばん新しい「いつもの定例会」の中身(当日の流れ・ご案内など)を読みこんで、ひな形にする
   async function newEvent(events) {
+    // ひな形は、これからのいちばん近い「いつもの定例会」(なければ、いちばん新しい回)
+    const today = App.todayKey ? App.todayKey() : new Date().toISOString().slice(0, 10);
     const reg = (events || []).filter((e) => e.kind !== "special");
-    const last = reg[reg.length - 1] || (events || [])[events.length - 1];
+    const last = reg.find((e) => e.date >= today) || reg[reg.length - 1] || (events || [])[events.length - 1];
     let tpl = last || null;
     if (last) { const d = await App.api("getEvent", { id: last.id }, { quiet: true }); if (d && d.event) tpl = d.event; }
     eventForm(null, tpl);
