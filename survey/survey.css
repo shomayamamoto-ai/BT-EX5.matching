@@ -3,7 +3,7 @@
 .sv-kind { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 4px; margin: 0 0 12px; border-radius: 14px; background: #efe6d6; }
 .sv-kind button { min-height: 42px; border: 0; border-radius: 10px; background: transparent; font: inherit; font-size: 14px; font-weight: 800; color: #6b5a44; cursor: pointer; }
 .sv-kind button[aria-selected="true"] { background: #1a1410; color: #f6e7c4; box-shadow: 0 4px 12px rgba(18, 12, 8, 0.18); }
-.sv-lead { font-size: 13.5px; color: #5c5045; margin: 0 0 14px; }
+.sv-lead { font-size: 13.5px; color: #5c5045; margin: 0 0 14px; white-space: pre-line; }
 .sv-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 #sv-form select, #sv-form input[type="date"] { width: 100%; min-height: 46px; border: 1.5px solid #d6c6aa; border-radius: 12px; padding: 8px 12px; font: inherit; font-size: 16px; background: #fff; }
 #sv-form textarea { width: 100%; border: 1.5px solid #d6c6aa; border-radius: 12px; padding: 10px 12px; font: inherit; font-size: 16px; resize: vertical; }

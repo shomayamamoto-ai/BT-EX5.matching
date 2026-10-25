@@ -6,17 +6,17 @@
   <meta name="referrer" content="no-referrer">
   <meta name="robots" content="noindex">
   <title>定例会のアンケート | BT-EX5</title>
-  <link rel="icon" type="image/svg+xml" href="../assets/bt-ex5-mark.svg?v=202610251228">
+  <link rel="icon" type="image/svg+xml" href="../assets/bt-ex5-mark.svg?v=202610251414">
   <meta name="theme-color" content="#1a0f0c">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Noto+Sans+JP:wght@400;700;900&display=swap" onload="this.onload=null;this.rel='stylesheet'">
   <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Noto+Sans+JP:wght@400;700;900&display=swap"></noscript>
-  <link rel="stylesheet" href="../auth/auth.css?v=202610251228">
-  <link rel="stylesheet" href="../visit/visit.css?v=202610251228">
-  <link rel="stylesheet" href="survey.css?v=202610251228">
-  <link rel="stylesheet" href="../assets/lux.css?v=202610251228">
-  <script src="../assets/ime-guard.js?v=202610251228"></script>
-  <script src="../assets/text-size.js?v=202610251228"></script>
+  <link rel="stylesheet" href="../auth/auth.css?v=202610251414">
+  <link rel="stylesheet" href="../visit/visit.css?v=202610251414">
+  <link rel="stylesheet" href="survey.css?v=202610251414">
+  <link rel="stylesheet" href="../assets/lux.css?v=202610251414">
+  <script src="../assets/ime-guard.js?v=202610251414"></script>
+  <script src="../assets/text-size.js?v=202610251414"></script>
 </head>
 <body>
   <main class="auth-main">
@@ -49,8 +49,8 @@
         <div data-for="visitor" hidden>
           <div class="auth-field"><label for="sv-job-v">会社名・職業 <span class="visit-req">必須</span></label><input type="text" id="sv-job-v" maxlength="80" autocomplete="organization"></div>
           <div class="auth-field"><label for="sv-inviter">招待してくれたメンバーのお名前 <span class="visit-req">必須</span></label><input type="text" id="sv-inviter" maxlength="40"></div>
-          <fieldset class="sv-choice"><legend>LINK の会員ですか?</legend>
-            <label><input type="radio" name="sv-link" value="yes"> はい</label>
+          <fieldset class="sv-choice"><legend>貴方はLINKの会員ですか？ <span class="visit-req">必須</span></legend>
+            <label><input type="radio" name="sv-link" value="yes" id="sv-link-yes"> はい</label>
             <label><input type="radio" name="sv-link" value="no"> いいえ</label>
           </fieldset>
         </div>
@@ -68,21 +68,20 @@
       </form>
       <div id="sv-done" class="visit-done" hidden>
         <b>ご回答ありがとうございました</b>
-        <p>いただいた声は、次の定例会づくりに活かします。</p>
+        <p>いただいた声は<br>次の定例会づくりに活かします</p>
         <button type="button" class="auth-text-btn" id="sv-again">回答を直す</button>
       </div>
       <div id="sv-message" class="auth-message" role="alert"></div>
     </div>
   </main>
   <footer class="auth-footer">
-    <p><a href="../terms/#privacy" target="_blank" rel="noopener">個人情報の取り扱い</a></p>
     <p class="site-copy">© 2026 BT-EX5</p>
   </footer>
-  <script src="../referral/data.js?v=202610251228"></script>
-  <script src="../auth/server-core.js?v=202610251228"></script>
-  <script src="../auth/server-community.js?v=202610251228"></script>
-  <script src="../auth/mock-server.js?v=202610251228"></script>
-  <script src="../auth/api.js?v=202610251228"></script>
-  <script src="survey.js?v=202610251228"></script>
+  <script src="../referral/data.js?v=202610251414"></script>
+  <script src="../auth/server-core.js?v=202610251414"></script>
+  <script src="../auth/server-community.js?v=202610251414"></script>
+  <script src="../auth/mock-server.js?v=202610251414"></script>
+  <script src="../auth/api.js?v=202610251414"></script>
+  <script src="survey.js?v=202610251414"></script>
 </body>
 </html>

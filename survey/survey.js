@@ -29,8 +29,8 @@
     document.querySelectorAll(".sv-kind button").forEach((b) => b.setAttribute("aria-selected", b.dataset.kind === k ? "true" : "false"));
     document.querySelectorAll("[data-for]").forEach((el) => { el.hidden = el.dataset.for !== k; });
     $("sv-lead").textContent = k === "visitor"
-      ? "本日はご参加ありがとうございました。今後の定例会づくりのため、ご感想をお聞かせください(2〜3分)。"
-      : "(BT-EXメンバー向け)本日の定例会の事後アンケートです。ご協力をお願いします(2〜3分)。";
+      ? "本日はご参加ありがとうございました\n今後の定例会づくりのため\nご感想をお聞かせください(2〜3分)"
+      : "(BT-EXメンバー向け)\n本日の定例会の事後アンケートです\nご協力をお願いします(2〜3分)";
     $("sv-score-label").firstChild.textContent = k === "visitor"
       ? "BT-EXの仕組みや定例会は、ご自身のビジネスを加速させる可能性を感じましたか? "
       : "BT-EXの仕組みや定例会は、自身やチームメンバーのビジネスを加速させる可能性を感じましたか? ";
@@ -64,6 +64,7 @@
       Object.assign(d, { job: val("sv-job-v"), inviter: val("sv-inviter"), link: link ? link.value : "", interest: val("sv-interest") });
       if (!d.job) return fail("sv-job-v", "会社名・職業を入れてください。");
       if (!d.inviter) return fail("sv-inviter", "招待してくれたメンバーのお名前を入れてください。");
+      if (!d.link) return fail("sv-link-yes", "LINK の会員かどうかを選んでください。");
     }
     if (!d.score) return fail("sv-score", "可能性を感じたかを選んでください。");
     if (!val("sv-program") || (val("sv-program") === "その他" && !val("sv-program-other"))) return fail("sv-program", "特に良かったプログラムを選んでください。");

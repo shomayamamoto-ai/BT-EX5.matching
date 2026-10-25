@@ -2571,7 +2571,7 @@ const REF_SEED_ANNOUNCEMENTS = [
   {
     seedId: "2026-10-25-update-16",
     cat: "アップデート",
-    rev: 43,
+    rev: 44,
     at: Date.UTC(2026, 9, 25, 4, 0), // 2026/10/25 13:00(日本時間)
     title: "【アップデート】紹介診断に「相手がこう言っていたら」・アンケート・運営タブ など",
     body: [
@@ -2621,6 +2621,9 @@ const REF_SEED_ANNOUNCEMENTS = [
       "・定例会アンケート(メンバー用)の「アップクリエ氏名」を必須から外しました。iPhone で「定例会参加日」の欄が枠からはみ出していたのを直しました。アンケートの下の「(個人情報の取り扱い)」の表記をなくしました。",
       "・「休憩しませんか?」の画面で「進む」(→・Esc なども)を押したときも、進まずに警告の画面(「「進む」では進めません」)になるようにしました。",
       "・「アンケートの結果」を開いているあいだは、新しい回答が届くと数秒で自動で反映されるようにしました(「新しい回答が◯件届きました」とお知らせします。全員の回答を集めるには共有サーバーの設定が必要です)。",
+      "・「アンケートの結果」に「改善点のまとめ(自動)」を足しました。良かった点・改善点・声の多いテーマ(理由や感想の言葉から)・要望と提案を自動でまとめ、コピーや保存(.txt)ができます。",
+      "・アンケートの画面の説明文と「ご回答ありがとうございました」の文を、指定の位置で改行しました。画面の下の「個人情報の取り扱い」をなくしました。",
+      "・ビジター用アンケートの質問を「貴方はLINKの会員ですか？」にし、必須にしました。",
       "・メンバーのカードのチーム名で、名前に「Team」が入っているときは前の「チーム」を付けないようにしました(「チーム Team Bloom∞🌸」→「Team Bloom∞🌸」)。",
       "・エデュケーションコーナーの資料を、上の帯と下のタイマー・操作バーの間に収まる大きさにしました(資料の下のはしまで見えます)。",
       "・操作バーの「終了」を押したときの「進行を終わりますか?」を、「つづける」「終わる」のボタンの上に出すようにしました。",
@@ -6749,7 +6752,8 @@ var BtexServerCore = (function () {
         } else {
           r.job = c.cleanStr(body.job, 80); r.inviter = c.cleanStr(body.inviter, 40); r.link = ["yes", "no"].indexOf(body.link) !== -1 ? body.link : "";
           r.interest = SURVEY_INTEREST.indexOf(String(body.interest || "")) !== -1 ? String(body.interest) : "";
-          if (!r.job || !r.inviter || !r.interest) return c.fail("INVALID_REQUEST", "必須の項目を入れてください。");
+          // LINK の会員かどうか(はい・いいえ)も必須
+          if (!r.job || !r.inviter || !r.interest || !r.link) return c.fail("INVALID_REQUEST", "必須の項目を入れてください。");
         }
         var same = c.find(db.surveys, function (x) { return x.kind === kind && x.date === date && x.email.toLowerCase() === email.toLowerCase(); });
         if (same) { Object.assign(same, r, { updatedAt: c.nowMs() }); }

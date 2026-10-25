@@ -2809,7 +2809,8 @@
         } else {
           r.job = c.cleanStr(body.job, 80); r.inviter = c.cleanStr(body.inviter, 40); r.link = ["yes", "no"].indexOf(body.link) !== -1 ? body.link : "";
           r.interest = SURVEY_INTEREST.indexOf(String(body.interest || "")) !== -1 ? String(body.interest) : "";
-          if (!r.job || !r.inviter || !r.interest) return c.fail("INVALID_REQUEST", "必須の項目を入れてください。");
+          // LINK の会員かどうか(はい・いいえ)も必須
+          if (!r.job || !r.inviter || !r.interest || !r.link) return c.fail("INVALID_REQUEST", "必須の項目を入れてください。");
         }
         var same = c.find(db.surveys, function (x) { return x.kind === kind && x.date === date && x.email.toLowerCase() === email.toLowerCase(); });
         if (same) { Object.assign(same, r, { updatedAt: c.nowMs() }); }
