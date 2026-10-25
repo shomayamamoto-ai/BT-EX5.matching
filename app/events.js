@@ -281,41 +281,6 @@
       partyBox.hidden = hasParty.getValue() !== "yes";
 
       const err = h("p", { class: "app-error", role: "alert" });
-      // 繰り返し(新しく作るときだけ): 毎月同じ週の同じ曜日 / 毎週 / 隔週
-      const repeat = h("select", null,
-        h("option", { value: "" }, "繰り返さない"),
-        h("option", { value: "monthly" }, "毎月(同じ週の同じ曜日)"),
-        h("option", { value: "weekly" }, "毎週"),
-        h("option", { value: "biweekly" }, "隔週"));
-      const times = h("select", null, [2, 3, 4, 6, 8, 10, 12].map((n) => h("option", { value: String(n) }, `${n}回分`)));
-      times.value = "6";
-      const preview = h("p", { class: "app-field-hint" });
-      const repeatDates = () => {
-        if (!repeat.value || !f.date.value) return [];
-        const [y, m, dd] = f.date.value.split("-").map(Number);
-        const first = new Date(y, m - 1, dd);
-        const nth = Math.ceil(dd / 7);
-        const out = [];
-        for (let i = 0; i < Number(times.value); i++) {
-          let d;
-          if (repeat.value === "monthly") {
-            // その月の「第 n ○曜日」。第5週がない月は最後の○曜日
-            const mb = new Date(y, m - 1 + i, 1);
-            const shift = (first.getDay() - mb.getDay() + 7) % 7;
-            d = new Date(mb.getFullYear(), mb.getMonth(), 1 + shift + (nth - 1) * 7);
-            if (d.getMonth() !== mb.getMonth()) d.setDate(d.getDate() - 7);
-          } else {
-            d = new Date(y, m - 1, dd + i * (repeat.value === "weekly" ? 7 : 14));
-          }
-          out.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`);
-        }
-        return out;
-      };
-      const drawPreview = () => {
-        const ds = repeatDates();
-        preview.textContent = ds.length ? `作る日:${ds.map((x) => App.fmtDate(x)).join("、")}` : "";
-      };
-      [repeat, times, f.date].forEach((x) => x.addEventListener("change", drawPreview));
 
       const save = h("button", { type: "submit", class: "app-btn primary wide" }, "保存する");
       body.append(h("form", { class: "app-form", onsubmit: async (e) => {
@@ -333,7 +298,7 @@
           kind: kind.getValue(), doors: doors.value, capacity: Number(capacity.value) || 0,
         };
         save.disabled = true;
-        const d = await App.api("adminSaveEvent", { event: payload, dates: ev ? [] : repeatDates() });
+        const d = await App.api("adminSaveEvent", { event: payload, dates: [] });
         save.disabled = false;
         if (!d) return;
         close();
@@ -352,8 +317,6 @@
       App.field("ご案内", f.body),
       App.field("懇親会", h("div", null, hasParty, partyBox)),
       App.field("案内ページ(任意)", f.url),
-      ev ? null : h("div", { class: "app-grid2" }, App.field("繰り返し", repeat), App.field("回数", times)),
-      ev ? null : preview,
       err, save,
       // 編集のときは、この回を消せる(管理者・運営メンバー)
       ev ? h("div", { class: "app-btn-row ev-del-row" }, App.btn("この定例会を削除", async () => {
