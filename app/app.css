@@ -2847,3 +2847,8 @@ button.home-welcome-check:active { transform: scale(0.94); }
 @keyframes pd-gloss-fade { from { opacity: 0; } to { opacity: 1; } }
 @keyframes pd-gloss-pop { from { opacity: 0; transform: translateY(14px) scale(0.94); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { .pd-gloss-pop, .pd-gloss-card { animation: none; } }
+
+/* BT-EX の約束: 2×2 で大きく。数字は欄の下にそろえる(小さくした数字も、下の線がほかのカードと同じ位置) */
+.pd-kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); width: min(100%, 1100px); }
+.pd-kpi b { display: flex; align-items: flex-end; font-size: clamp(30px, min(4.8vw, 7.4svh), 80px); }
+.pd-kpi small { font-size: clamp(13px, min(1.6vw, 2.6svh), 22px); }

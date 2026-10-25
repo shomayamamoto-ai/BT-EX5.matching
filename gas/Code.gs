@@ -1113,7 +1113,7 @@ const BTEX_DECK = {
       "定例会中、交流会中の商品の売り込み、他社MLM・宗教・政治団体への勧誘を禁ずる",
       "不正または違法な事業者の入会を禁ずる",
       "金融商品においては、金融庁登録番号を\n取得している業者に限る",
-      "ビジターと1on1をする際は、その招待者を通す、または情報を共有すること\nメンバーと招待者はその責任において(アポの確認や規定の遵守など)ビジターをフォローまたは対応すること",
+      "ビジターと1on1をする際は、その招待者を通す\nまたは情報を共有すること\nメンバーと招待者はその責任において\n(アポの確認や規定の遵守など)ビジターを\nフォローまたは対応すること",
     ],
     attendance: [
       "所属ユニットの出席は月1回以上\n月2回のうち1回は他ユニットの\n出席もカウントとする",
@@ -1138,9 +1138,9 @@ const BTEX_DECK = {
     ethics: [
       "安心して選んでいただけるように、誠実なサービスと分かりやすい価格を大切にします",
       "メンバーにも、その先の大切なご縁にも、いつも誠実な気持ちで向き合います",
-      "一つひとつの関わりを大切に、信頼が積み重なる関係を育てていきます",
+      "一つひとつの関わりを大切に、\n信頼が積み重なる関係を育てていきます",
       "前向きな気持ちと、支え合う姿勢を大切にします",
-      "自分の仕事に誇りを持ち、プロとしての責任を大切に行動します",
+      "自分の仕事に誇りを持ち、\nプロとしての責任を大切に行動します",
       "公の場やチャットにおいても、メンバーやグループへの否定的な発言は控え\n互いを尊重するコミュニケーションを大切にします",
     ],
   },
@@ -2406,7 +2406,7 @@ const REF_SEED_ANNOUNCEMENTS = [
   {
     seedId: "2026-10-25-update-16",
     cat: "アップデート",
-    rev: 6,
+    rev: 7,
     at: Date.UTC(2026, 9, 25, 4, 0), // 2026/10/25 13:00(日本時間)
     title: "【アップデート】紹介診断に「相手がこう言っていたら」・アンケート・運営タブ など",
     body: [
@@ -2426,6 +2426,8 @@ const REF_SEED_ANNOUNCEMENTS = [
       "・おわりのページに「入会までの3ステップ」「アンケートのQRコード」「出席コード(やり方の動画つき。押すと大きくなります)」を足しました。",
       "・スライドの文字が左右の操作パネルに重ならないようにし、題の高さをどのスライドでもそろえました。下の進行バーの名前は、ことばの切れ目で改行します。",
       "・規定の注意書き(※)を、明るい色の太字にして読みやすくしました。",
+      "・「BT-EX の約束」のカードを2×2で大きく出し、数字の下の線の位置をそろえました(「月1回以上」の線がずれていたのを直しました)。",
+      "・一般規定の⑦(ビジターとの1on1)と、倫理規定の「一つひとつの関わりを大切に、」「自分の仕事に誇りを持ち、」を、指定の位置で改行しました。",
       "・エデュケーションコーナーのスライドに資料(「USPについて」12枚)を出しました。資料は画面いっぱいに大きく出し、タイマー(メーターと残り時間)は資料の下のほうに重ねます。資料は「エデュケーションの資料を入れかえる」から、画像かPDFで毎回入れかえられます。",
       "・タイムマネジメントのはじめの場所を「左上の1行の帯」に、戻る・進むの操作バーを「右下」にしました。スライドの中身に重ならず、画面の左右いっぱいを使います(帯の ⌄ でくわしく開けます。これまでどおり、つかんで動かすこともできます)。",
       "・1分プレゼンテーションの1人の時間を、はじめから1分にしました(ゲスト・ほかの BT-EX の方も、はじめは1分)。",
@@ -6333,19 +6335,40 @@ var BtexServerCore = (function () {
         c.saveDb(x.db);
         return c.ok({ config: raw ? JSON.parse(raw) : null, at: x.db.deckConfigAt });
       }
-      // 運営が時間の目安を決め直したとき(2026年10月: 商談7分×4回・用語説明を足した)、前に保存した時間の目安を一度だけ外す
+      function writeCfg(db, cfg) {
+        var raw = cfg && Object.keys(cfg).length ? JSON.stringify(cfg) : "";
+        if (c.blobs) c.blobs.set("deck:config", raw);
+        else if (raw) db.deckConfig = raw; else delete db.deckConfig;
+      }
+      // 運営の依頼で決めた改行(2026年10月)。前に保存したスライドの内容に同じ文が残っていれば、同じように改行する
+      var TEXT_BREAKS = [
+        ["ビジターと1on1をする際は、その招待者を通す、または情報を共有すること\nメンバーと招待者はその責任において(アポの確認や規定の遵守など)ビジターをフォローまたは対応すること", "ビジターと1on1をする際は、その招待者を通す\nまたは情報を共有すること\nメンバーと招待者はその責任において\n(アポの確認や規定の遵守など)ビジターを\nフォローまたは対応すること"],
+        ["一つひとつの関わりを大切に、信頼が積み重なる関係を育てていきます", "一つひとつの関わりを大切に、\n信頼が積み重なる関係を育てていきます"],
+        ["自分の仕事に誇りを持ち、プロとしての責任を大切に行動します", "自分の仕事に誇りを持ち、\nプロとしての責任を大切に行動します"],
+      ];
+      function breakTexts(v) {
+        if (typeof v === "string") { TEXT_BREAKS.forEach(function (p) { if (v === p[0]) v = p[1]; }); return v; }
+        if (Array.isArray(v)) return v.map(breakTexts);
+        if (v && typeof v === "object") { Object.keys(v).forEach(function (k) { v[k] = breakTexts(v[k]); }); return v; }
+        return v;
+      }
       function migrate(db) {
         if (!db.cleanups) db.cleanups = [];
-        if (db.cleanups.indexOf("deck-timeplan-3") !== -1) return false;
-        db.cleanups.push("deck-timeplan-3");
-        var cfg = readCfg(db);
-        if (cfg && "timeplan" in cfg) {
-          delete cfg.timeplan;
-          var raw = Object.keys(cfg).length ? JSON.stringify(cfg) : "";
-          if (c.blobs) c.blobs.set("deck:config", raw);
-          else if (raw) db.deckConfig = raw; else delete db.deckConfig;
+        var changed = false;
+        // 運営が時間の目安を決め直したとき(2026年10月: 商談7分×4回・用語説明を足した)、前に保存した時間の目安を一度だけ外す
+        if (db.cleanups.indexOf("deck-timeplan-3") === -1) {
+          db.cleanups.push("deck-timeplan-3");
+          var cfg = readCfg(db);
+          if (cfg && "timeplan" in cfg) { delete cfg.timeplan; writeCfg(db, cfg); }
+          changed = true;
         }
-        return true;
+        if (db.cleanups.indexOf("deck-text-breaks-1") === -1) {
+          db.cleanups.push("deck-text-breaks-1");
+          var cfg2 = readCfg(db);
+          if (cfg2) writeCfg(db, breakTexts(cfg2));
+          changed = true;
+        }
+        return changed;
       }
       return { migrate: migrate, actions: { getDeckConfig: getDeckConfig, saveDeckConfig: saveDeckConfig } };
     },

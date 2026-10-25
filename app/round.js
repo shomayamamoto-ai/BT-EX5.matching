@@ -1776,11 +1776,16 @@
       el.style.transform = ""; el.style.transformOrigin = "";
       // 大きな数字(約束・実績のタイル): 枠に入りきらないときは、その数字だけ小さくする(枠に触れない)
       el.querySelectorAll(".pd-kpi b, .pd-stats b").forEach((b) => {
-        b.style.fontSize = "";
+        b.style.fontSize = ""; b.style.height = "";
         const box = b.parentElement;
         const cs = getComputedStyle(box);
         const room = box.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
-        if (room > 0 && b.scrollWidth > room) b.style.fontSize = `${(parseFloat(getComputedStyle(b).fontSize) * (room / b.scrollWidth) * 0.96).toFixed(2)}px`;
+        if (room > 0 && b.scrollWidth > room) {
+          // 小さくしても、数字の欄の高さは元のまま(下の線の位置が、ほかのカードとそろうように)
+          const h0 = b.getBoundingClientRect().height;
+          b.style.fontSize = `${(parseFloat(getComputedStyle(b).fontSize) * (room / b.scrollWidth) * 0.96).toFixed(2)}px`;
+          b.style.height = `${h0}px`;
+        }
       });
       // カードの文: 1行が入りきらないときは、同じスライドのカードの文をそろって小さくする
       const texts = [...el.querySelectorAll(".pd-card-text, .pd-check-text, .pd-block ul")];
