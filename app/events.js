@@ -63,7 +63,8 @@
               e.yesNames.length ? h("p", { class: "ev-names" }, `出席予定:${e.yesNames.join("、")}`) : null,
               h("div", { class: "ev-actions" },
                 App.btn("ビジターを招待", () => App.go(`invite?event=${e.id}`), "small"),
-                canPlan() ? App.btn("日時・内容を編集", () => editEvent(e.id), "ghost small") : null,
+                canPlan() ? App.btn("編集", () => editEvent(e.id), "ghost small") : null,
+                canPlan() ? App.btn("削除", () => deleteEvent(e), "ghost small danger") : null,
                 App.isAdmin() ? App.btn("管理", () => App.go(`events/manage/${e.id}`), "ghost small") : null));
             card.redraw();
             return card;
@@ -79,6 +80,8 @@
               h("a", { class: "app-row-main", href: `#events/detail/${e.id}` }, h("b", null, e.title), h("small", null, `${App.fmtDate(e.date)} ・ 出席 ${e.yesCount}名`)),
               e.hasMinutes ? App.chip("議事録", "info") : null,
               e.attended ? App.chip(e.late ? "遅刻早退" : "出席", e.late ? "warn" : "good") : e.myRsvp === "no" ? App.chip("欠席", "mute") : null,
+              canPlan() ? App.btn("編集", () => editEvent(e.id), "ghost small") : null,
+              canPlan() ? App.btn("削除", () => deleteEvent(e), "ghost small danger") : null,
               App.isAdmin() ? App.btn("管理", () => App.go(`events/manage/${e.id}`), "ghost small") : null))))));
       }
 
@@ -280,6 +283,11 @@
   async function editEvent(id) {
     const d = await App.api("getEvent", { id });
     if (d && d.event) eventForm(d.event);
+  }
+  // 定例会の一覧から削除(確かめてから。出欠の記録も消える)
+  async function deleteEvent(e) {
+    if (!(await App.confirm(`${App.fmtDate(e.date)}の「${e.title}」を削除しますか?(出欠の記録も消えます)`, { ok: "削除する", danger: true }))) return;
+    if (await App.api("adminDeleteEvent", { id: e.id })) { App.toast("削除しました"); App.route(); }
   }
 
   // ---------- 定例会の詳細(全員): 出欠・参加リンク・メンバーの出欠一覧・ビジター ----------
