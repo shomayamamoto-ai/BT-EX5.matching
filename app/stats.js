@@ -291,6 +291,8 @@
     const drawTrend = () => {
       const [, label, unit] = TREND.find((t) => t[0] === trendKey);
       [...tabs.children].forEach((b) => { const on = b.dataset.k === trendKey; b.classList.toggle("is-on", on); b.setAttribute("aria-selected", String(on)); });
+      // 共有サーバーが古い(6か月の数字を返さない)ときは、グラフの代わりに案内を出す
+      if (!series.length) { App.fill(trendBox, h("p", { class: "sd-empty" }, "推移のグラフは、共有サーバーを新しくすると表示されます。")); return; }
       App.fill(trendBox, lineChart(series.map((x) => ({ label: mLabel(x.ym), title: `${ymLabel(x.ym)}の${label}`, value: x[trendKey] || 0 })), (v) => `${v}${unit}`, true));
     };
     TREND.forEach(([k, label]) => tabs.append(h("button", { type: "button", role: "tab", "data-k": k, onclick: () => { trendKey = k; drawTrend(); } }, label)));
@@ -326,7 +328,7 @@
           : h("p", { class: "sd-empty" }, "この期間の記録はまだありません。")),
       h("section", { class: "sd-card sd-miles" },
         h("div", { class: "sd-card-head" }, h("h3", null, "ありがとうマイルの推移(受け取った)")),
-        barChart(series.map((x) => ({ label: mLabel(x.ym), title: ymLabel(x.ym), value: x.milesGiven || 0 })), (v) => App.yen(v)),
+        series.length ? barChart(series.map((x) => ({ label: mLabel(x.ym), title: ymLabel(x.ym), value: x.milesGiven || 0 })), (v) => App.yen(v)) : h("p", { class: "sd-empty" }, "推移のグラフは、共有サーバーを新しくすると表示されます。"),
         h("div", { class: "sd-miles-foot" },
           h("div", null, h("small", null, series.length ? `${ymLabel(series[series.length - 1].ym)}のマイル` : "マイル"), h("b", null, App.yen(lastMiles))),
           delta(lastMiles, prevMiles, true)))));
