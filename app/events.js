@@ -57,7 +57,7 @@
         App.clockCard(upcoming[0], d.today), cal.main, cal.day));
       if (!(open || venueSoon)) el.append(checkBox);
 
-      if (canPlan()) el.append(h("div", { class: "app-cta-row" }, App.btn("＋ 定例会の日程を追加", () => eventForm(null, d.events[d.events.length - 1]), "primary wide ev-add-btn")));
+      if (canPlan()) el.append(h("div", { class: "app-cta-row" }, App.btn("＋ 定例会の日程を追加", () => newEvent(d.events), "primary wide ev-add-btn")));
 
       el.append(App.section("これからの定例会",
         upcoming.length
@@ -160,8 +160,14 @@
       syncFes();
       const fesBox = h("div", { class: "ev-fes-name" }, h("span", null, "第"), fesNo, h("span", null, "回BT-EXフェス"));
       const titleBox = h("div", null, f.title, fesBox, fesPreview);
+      // いつもの定例会は、日付と時間だけを変えられる(ほかの項目は、いつもの内容のまま。運営の依頼)。特別会はすべて入れられる
+      const fixedParts = [];
+      const fixedOnly = (el) => { fixedParts.push(el); el.hidden = kind ? kind.getValue() !== "special" : !(ev && ev.kind === "special"); return el; };
+      const fixedNote = h("p", { class: "ev-fixed-note" }, "いつもの定例会は、日付と時間だけを変えられます(名前・開催方法・参加費・当日の流れ・ご案内などは、いつもの内容のままです)。");
       const syncKind = (v) => {
         const sp = v === "special";
+        fixedParts.forEach((el) => { el.hidden = !sp; });
+        fixedNote.hidden = sp;
         f.title.hidden = sp; fesBox.hidden = !sp; fesPreview.hidden = !sp;
         f.title.required = !sp;
         // いつもの定例会に戻したとき、名前が空ならいつもの名前を入れる
@@ -217,6 +223,16 @@
       const syncDl = () => { dlCustom.hidden = dlKind.value !== "custom"; };
       dlKind.addEventListener("change", syncDl);
       syncDl();
+      // いつもの定例会の締切: もとの回と同じ「◯日前の◯時」にそろえる(日付を変えたら締切も動く)
+      const regularDeadline = () => {
+        if (!f.date.value) return "";
+        const src = base && base.kind !== "special" ? base : null;
+        if (!src || !src.deadline) return dlKind.value && dlKind.value !== "custom" ? deadline() : "";
+        // もとの回の「締切の日 − 開催日」の日数(前日なら −1)
+        const day = (k) => Date.UTC(Number(k.slice(0, 4)), Number(k.slice(5, 7)) - 1, Number(k.slice(8, 10))) / 86400000;
+        const off = Math.round(day(src.deadline.slice(0, 10)) - day(src.date));
+        return `${addDays(f.date.value, off)}T${src.deadline.slice(11)}`;
+      };
       const deadline = () => {
         if (!dlKind.value || !f.date.value) return "";
         if (dlKind.value === "custom") return dlDate.value ? `${dlDate.value}T${dlTime.value}` : "";
@@ -275,13 +291,13 @@
         e.preventDefault();
         const special = kind.getValue() === "special";
         if (special && !(Number(fesNo.value) >= 1)) { err.textContent = "特別会は、何回目かを数字で入れてください。"; fesNo.focus(); return; }
-        const title = special ? fesTitle(Number(fesNo.value)) : f.title.value.trim();
+        const title = special ? fesTitle(Number(fesNo.value)) : (base && base.kind !== "special" && base.title) || REGULAR_TITLE;
         if (!title || !f.date.value) { err.textContent = "名前と日付を入れてください。"; return; }
         const online = how.getValue() === "online";
         const payload = {
           id: ev ? ev.id : "", title, date: f.date.value, start: start.value, end: end.value,
           area: online ? "online" : areaSel.value, place: online ? "" : f.place.value.trim(), fee: f.fee.value.trim(), url: f.url.value.trim(),
-          agenda: f.agenda.value, body: f.body.value, deadline: deadline(), meet: online, meetUrl: meetUrl.value.trim(),
+          agenda: f.agenda.value, body: f.body.value, deadline: special ? deadline() : regularDeadline(), meet: online, meetUrl: meetUrl.value.trim(),
           party: hasParty.getValue() === "yes" ? { enabled: true, place: partyPlace.value.trim(), fee: partyFee.value.trim(), time: partyTime.value } : { enabled: false },
           kind: kind.getValue(), doors: doors.value, capacity: Number(capacity.value) || 0,
         };
@@ -294,17 +310,18 @@
         App.route();
       } },
       App.field("種類", kind),
-      App.field("名前", titleBox),
+      fixedNote,
+      fixedOnly(App.field("名前", titleBox)),
       App.field("日付", f.date),
       h("div", { class: "app-grid2" }, App.field("開始", start), App.field("終了", end)),
-      h("div", { class: "app-grid2" }, App.field("受付(任意)", doors), App.field("定員(任意)", capacity)),
-      App.field("開催方法", h("div", null, how, onlineBox, venueBox)),
-      App.field("申込締切", h("div", null, dlKind, dlCustom), "締切を過ぎると、メンバーは出欠を変えられません(管理者は変えられます)"),
-      App.field("参加費", f.fee),
-      App.field("当日の流れ", f.agenda),
-      App.field("ご案内", f.body),
-      App.field("懇親会", h("div", null, hasParty, partyBox)),
-      App.field("案内ページ(任意)", f.url),
+      fixedOnly(h("div", { class: "app-grid2" }, App.field("受付(任意)", doors), App.field("定員(任意)", capacity))),
+      fixedOnly(App.field("開催方法", h("div", null, how, onlineBox, venueBox))),
+      fixedOnly(App.field("申込締切", h("div", null, dlKind, dlCustom), "締切を過ぎると、メンバーは出欠を変えられません(管理者は変えられます)")),
+      fixedOnly(App.field("参加費", f.fee)),
+      fixedOnly(App.field("当日の流れ", f.agenda)),
+      fixedOnly(App.field("ご案内", f.body)),
+      fixedOnly(App.field("懇親会", h("div", null, hasParty, partyBox))),
+      fixedOnly(App.field("案内ページ(任意)", f.url)),
       ev ? null : h("div", { class: "app-grid2" }, App.field("繰り返し", repeat), App.field("回数", times)),
       ev ? null : preview,
       err, save,
@@ -314,6 +331,14 @@
         if (await App.api("adminDeleteEvent", { id: ev.id })) { close(); App.toast("削除しました"); App.go("events"); App.route(); }
       }, "ghost small danger")) : null));
     }, { noFocus: true });
+  }
+  // 新しい定例会: いちばん新しい「いつもの定例会」の中身(当日の流れ・ご案内など)を読みこんで、ひな形にする
+  async function newEvent(events) {
+    const reg = (events || []).filter((e) => e.kind !== "special");
+    const last = reg[reg.length - 1] || (events || [])[events.length - 1];
+    let tpl = last || null;
+    if (last) { const d = await App.api("getEvent", { id: last.id }, { quiet: true }); if (d && d.event) tpl = d.event; }
+    eventForm(null, tpl);
   }
   // 日程を作る・直せる人: 管理者と、プレゼン(定例会の進行)を任された運営メンバー
   const canPlan = () => App.isAdmin() || (App.canPresent && App.canPresent());
