@@ -117,11 +117,26 @@
   // ---------- 定例会の作成・編集(管理者) ----------
   // ev: 編集する定例会 / tpl: 新しく作るときのひな形(直近の定例会。当日の流れなどをそのまま使う)
   let eventMeta = { calendar: false };
+  // 定例会の名前: いつもの定例会はこの名前から。特別会は回の数字だけを入れる(「第◯回BT-EXフェス」)
+  const REGULAR_TITLE = "日本海側最大のマーケット 新潟⇔東京";
+  const KANJI = ["", "一", "二", "三", "四", "五", "六", "七", "八", "九"];
+  const kanjiNum = (n) => (n < 10 ? KANJI[n] : n < 100 ? `${n >= 20 ? KANJI[Math.floor(n / 10)] : ""}十${KANJI[n % 10]}` : String(n));
+  const fesTitle = (n) => `第${kanjiNum(n)}回BT-EXフェス`;
+  // 「第一回BT-EXフェス」→ 1(数字で書かれていても読む)
+  function fesNumber(title) {
+    const m = /第\s*([0-9０-９]+|[一二三四五六七八九十]+)\s*回/.exec(String(title || ""));
+    if (!m) return "";
+    const t = m[1].replace(/[０-９]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xfee0));
+    if (/^\d+$/.test(t)) return t;
+    const [a, b] = t.split("十");
+    const v = t.includes("十") ? (a ? KANJI.indexOf(a) : 1) * 10 + (b ? KANJI.indexOf(b) : 0) : KANJI.indexOf(t);
+    return v > 0 ? String(v) : "";
+  }
   function eventForm(ev, tpl) {
     const base = ev || tpl || null;
     App.openSheet(ev ? "定例会を編集" : "定例会を作る", (body, close) => {
       const f = {
-        title: h("input", { type: "text", maxlength: "80", value: base ? base.title : "BT-EX5 定例会", required: true }),
+        title: h("input", { type: "text", maxlength: "80", value: ev && ev.kind !== "special" ? ev.title : REGULAR_TITLE, required: true }),
         date: h("input", { type: "date", value: ev ? ev.date : "", required: true }),
         place: h("input", { type: "text", maxlength: "120", value: base && !base.online ? base.place : "", placeholder: "会場名・住所" }),
         fee: h("input", { type: "text", maxlength: "60", value: base ? base.fee : "会員 無料", placeholder: "例:会員 無料(ビジター 3,000円)" }),
@@ -133,7 +148,23 @@
       f.body.value = base ? base.body : "";
       const start = App.timeSelect(base ? base.start : "19:00", { label: "開始" });
       // 種類(いつもの定例会か、特別会か)・受付の時刻・定員
-      const kind = App.toggle([{ id: "", label: "定例会" }, { id: "special", label: "特別会" }], ev && ev.kind === "special" ? "special" : "", () => {});
+      // 特別会: 名前は回の数字だけを入れる
+      const fesNo = h("input", { type: "number", min: "1", max: "99", inputmode: "numeric", class: "ev-fes-no", "aria-label": "何回目か", placeholder: "1", value: ev && ev.kind === "special" ? fesNumber(ev.title) : "" });
+      const fesPreview = h("small", { class: "app-field-hint" });
+      const syncFes = () => { const n = Number(fesNo.value); fesPreview.textContent = n >= 1 ? `名前:${fesTitle(n)}` : "何回目かを数字で入れてください"; };
+      fesNo.addEventListener("input", syncFes);
+      syncFes();
+      const fesBox = h("div", { class: "ev-fes-name" }, h("span", null, "第"), fesNo, h("span", null, "回BT-EXフェス"));
+      const titleBox = h("div", null, f.title, fesBox, fesPreview);
+      const syncKind = (v) => {
+        const sp = v === "special";
+        f.title.hidden = sp; fesBox.hidden = !sp; fesPreview.hidden = !sp;
+        f.title.required = !sp;
+        // いつもの定例会に戻したとき、名前が空ならいつもの名前を入れる
+        if (!sp && !f.title.value.trim()) f.title.value = REGULAR_TITLE;
+      };
+      const kind = App.toggle([{ id: "", label: "定例会" }, { id: "special", label: "特別会" }], ev && ev.kind === "special" ? "special" : "", syncKind);
+      syncKind(kind.getValue());
       const doors = App.timeSelect(ev ? ev.doors || "" : "", { label: "受付", none: "なし" });
       const capacity = h("input", { type: "number", min: "0", max: "999", inputmode: "numeric", value: ev && ev.capacity ? String(ev.capacity) : "", placeholder: "例:144(なしは空)" });
       const end = App.timeSelect(base ? base.end : "21:00", { label: "終了" });
@@ -238,10 +269,13 @@
       const save = h("button", { type: "submit", class: "app-btn primary wide" }, "保存する");
       body.append(h("form", { class: "app-form", onsubmit: async (e) => {
         e.preventDefault();
-        if (!f.title.value.trim() || !f.date.value) { err.textContent = "名前と日付を入れてください。"; return; }
+        const special = kind.getValue() === "special";
+        if (special && !(Number(fesNo.value) >= 1)) { err.textContent = "特別会は、何回目かを数字で入れてください。"; fesNo.focus(); return; }
+        const title = special ? fesTitle(Number(fesNo.value)) : f.title.value.trim();
+        if (!title || !f.date.value) { err.textContent = "名前と日付を入れてください。"; return; }
         const online = how.getValue() === "online";
         const payload = {
-          id: ev ? ev.id : "", title: f.title.value.trim(), date: f.date.value, start: start.value, end: end.value,
+          id: ev ? ev.id : "", title, date: f.date.value, start: start.value, end: end.value,
           area: online ? "online" : areaSel.value, place: online ? "" : f.place.value.trim(), fee: f.fee.value.trim(), url: f.url.value.trim(),
           agenda: f.agenda.value, body: f.body.value, deadline: deadline(), meet: online, meetUrl: meetUrl.value.trim(),
           party: hasParty.getValue() === "yes" ? { enabled: true, place: partyPlace.value.trim(), fee: partyFee.value.trim(), time: partyTime.value } : { enabled: false },
@@ -256,7 +290,7 @@
         App.route();
       } },
       App.field("種類", kind),
-      App.field("名前", f.title),
+      App.field("名前", titleBox),
       App.field("日付", f.date),
       h("div", { class: "app-grid2" }, App.field("開始", start), App.field("終了", end)),
       h("div", { class: "app-grid2" }, App.field("受付(任意)", doors), App.field("定員(任意)", capacity)),

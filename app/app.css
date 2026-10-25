@@ -3009,3 +3009,7 @@ button.home-welcome-check:active { transform: scale(0.94); }
 .pd-wavy { text-decoration: underline wavy var(--pd-red-wave); text-decoration-thickness: 0.07em; text-underline-offset: 0.22em; -webkit-text-decoration: underline wavy var(--pd-red-wave); text-decoration-skip-ink: none; }
 /* スケジュールの注意書きは、改行をそのまま(2行目は「＊LINKの公式スケジュールによっては…」) */
 .pd-schedule .pd-note { white-space: pre-line; }
+/* 特別会の名前: 「第 [1] 回BT-EXフェス」(数字だけ入れる) */
+.ev-fes-name { display: flex; align-items: center; gap: 8px; font-weight: 800; }
+.ev-fes-name[hidden] { display: none; }
+.ev-fes-name .ev-fes-no { width: 5.5em; text-align: center; }
