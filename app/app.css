@@ -1859,7 +1859,7 @@ button.home-welcome-check:active { transform: scale(0.94); }
 .pd-rule-block li { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 0.55em; font-size: clamp(12.5px, min(1.45vw, 2.4svh), 20px); line-height: 1.6; color: var(--pd-text); }
 .pd-rules.is-single .pd-rule-block li { font-size: clamp(14px, min(1.8vw, 2.9svh), 25px); }
 .pd-rule-no { color: var(--pd-gold); font-weight: 800; }
-.pd-rule-block em { font-style: normal; font-weight: 800; color: var(--pd-strong); background: linear-gradient(transparent 58%, rgba(226, 184, 102, 0.42) 58%); padding: 0 0.1em; }
+.pd-rule-block em { font-style: normal; font-weight: 800; color: var(--pd-strong); text-decoration: underline wavy var(--pd-red-wave); -webkit-text-decoration: underline wavy var(--pd-red-wave); text-decoration-thickness: 0.1em; text-underline-offset: 0.24em; text-decoration-skip-ink: none; padding: 0 0.1em; }
 
 /* スケジュール: 日ごとのカード */
 .pd-schedule .pd-body { display: grid; gap: clamp(10px, 2.4svh, 24px); }
@@ -1996,7 +1996,7 @@ button.home-welcome-check:active { transform: scale(0.94); }
 .pd-raise-items li { padding: 0.35em 1.1em; border-radius: 999px; border: 1px solid var(--pd-gold-soft); background: rgba(226, 184, 102, 0.12); font-family: var(--pd-serif); font-size: clamp(20px, min(3vw, 4.8svh), 44px); font-weight: 700; color: var(--pd-strong); }
 .pd-raise .pd-display { font-size: clamp(24px, min(3.8vw, 6.2svh), 58px); }
 .pd-raise-note { margin: clamp(4px, 1svh, 10px) 0 0; padding: 0.7em 1.2em; border-radius: 14px; border: 1px dashed var(--pd-gold-soft); font-size: clamp(13px, min(1.6vw, 2.6svh), 22px); font-weight: 700; color: var(--pd-text); }
-.pd-raise-note em { font-style: normal; font-weight: 900; color: var(--pd-strong); background: linear-gradient(transparent 58%, rgba(226, 184, 102, 0.42) 58%); }
+.pd-raise-note em { font-style: normal; font-weight: 900; color: var(--pd-strong); text-decoration: underline wavy var(--pd-red-wave); -webkit-text-decoration: underline wavy var(--pd-red-wave); text-decoration-thickness: 0.1em; text-underline-offset: 0.24em; text-decoration-skip-ink: none; }
 
 /* ---------- スライドの内容の編集 ---------- */
 .pr-deck-edit { margin-top: 8px; }
@@ -2389,7 +2389,7 @@ button.home-welcome-check:active { transform: scale(0.94); }
 .pd-rule-card.is-ban .pd-rule-ic { border-color: rgba(224, 110, 92, 0.6); background: linear-gradient(180deg, rgba(224, 110, 92, 0.24), rgba(224, 110, 92, 0.06)); color: #f0a394; }
 .pd-rule-head { margin: 0; font-family: var(--pd-serif); font-size: clamp(16px, min(1.75vw, 3svh), 26px); font-weight: 700; line-height: 1.35; color: var(--pd-strong); }
 .pd-rule-text { margin: 0; font-size: clamp(12px, min(1.25vw, 2.1svh), 17px); line-height: 1.65; color: var(--pd-text); }
-.pd-rule-text em { font-style: normal; font-weight: 800; color: var(--pd-strong); background: linear-gradient(transparent 58%, rgba(226, 184, 102, 0.42) 58%); padding: 0 0.1em; }
+.pd-rule-text em { font-style: normal; font-weight: 800; color: var(--pd-strong); text-decoration: underline wavy var(--pd-red-wave); -webkit-text-decoration: underline wavy var(--pd-red-wave); text-decoration-thickness: 0.1em; text-underline-offset: 0.24em; text-decoration-skip-ink: none; padding: 0 0.1em; }
 .pd-rules.is-cols-2 .pd-rule-head { font-size: clamp(18px, min(2vw, 3.4svh), 30px); }
 .pd-rules.is-cols-2 .pd-rule-text { font-size: clamp(13px, min(1.45vw, 2.4svh), 20px); }
 @media (max-width: 760px), (max-aspect-ratio: 1/1) { .pd-rule-grid, .pd-rules.is-cols-2 .pd-rule-grid { grid-template-columns: minmax(0, 1fr); } }
@@ -2491,7 +2491,7 @@ button.home-welcome-check:active { transform: scale(0.94); }
 .pd-big-no { margin-left: auto; font-family: var(--pd-serif); font-size: clamp(40px, min(5vw, 9svh), 92px); font-weight: 700; line-height: 1; color: var(--pd-gold); }
 .pd-big-head { margin: 0; font-family: var(--pd-serif); font-size: clamp(26px, min(3.6vw, 6.4svh), 58px); font-weight: 700; line-height: 1.3; color: var(--pd-strong); }
 .pd-big-text { margin: 0; font-size: clamp(17px, min(2.1vw, 3.8svh), 34px); font-weight: 700; line-height: 1.7; color: var(--pd-text); }
-.pd-big-text em { font-style: normal; font-weight: 900; color: var(--pd-strong); background: linear-gradient(transparent 58%, rgba(226, 184, 102, 0.42) 58%); padding: 0 0.1em; }
+.pd-big-text em { font-style: normal; font-weight: 900; color: var(--pd-strong); text-decoration: underline wavy var(--pd-red-wave); -webkit-text-decoration: underline wavy var(--pd-red-wave); text-decoration-thickness: 0.1em; text-underline-offset: 0.24em; text-decoration-skip-ink: none; padding: 0 0.1em; }
 /* カードを1枚ずつ送るスライド: カードはどのスライドでも同じ幅・同じ高さ(高さは app/round.js の fitDeck が画面に合わせて決める) */
 .pd-frame.is-carousel .pd-big-card { width: min(100%, 940px); height: var(--big-h, clamp(220px, 46svh, 520px)); min-height: 0; overflow: hidden; box-sizing: border-box; }
 .pd-lead.is-blank { visibility: hidden; }
@@ -3004,6 +3004,8 @@ button.home-welcome-check:active { transform: scale(0.94); }
 .pr-dock.is-asking:not(.is-vertical) .pr-grip { grid-row: 1 / span 2; grid-column: 1; }
 .pr-dock.is-asking:not(.is-vertical) .pr-ask { grid-row: 1; grid-column: 2 / -1; padding: 6px 8px 2px; text-align: center; white-space: normal; }
 /* 規定のカードの見出しで、《 》で囲んだところ(例: 招待者を「必ず」通す)の下の波線 */
-.pd-wavy { text-decoration: underline wavy var(--pd-gold); text-decoration-thickness: 0.07em; text-underline-offset: 0.22em; -webkit-text-decoration: underline wavy var(--pd-gold); }
+/* 強調(《 》)の赤い波線。スライドの文の強調と、規定のカードの見出しの波線で同じ色 */
+:root { --pd-red-wave: #ff5a4f; }
+.pd-wavy { text-decoration: underline wavy var(--pd-red-wave); text-decoration-thickness: 0.07em; text-underline-offset: 0.22em; -webkit-text-decoration: underline wavy var(--pd-red-wave); text-decoration-skip-ink: none; }
 /* スケジュールの注意書きは、改行をそのまま(2行目は「＊LINKの公式スケジュールによっては…」) */
 .pd-schedule .pd-note { white-space: pre-line; }
