@@ -1489,6 +1489,8 @@
       const lines = (t) => String(t).split("\n").flatMap((x, i) => (i ? [h("br"), x] : [x]));
       // 《 》で囲んだところを強調
       const rich = (t) => String(t).split(/《|》/).map((x, i) => (i % 2 ? h("em", null, x) : x));
+      // 規定のカードの見出しは、《 》で囲んだところの下に波線(例: 招待者を《必ず》通す)
+      const wavy = (t) => String(t).split(/《|》/).map((x, i) => (i % 2 ? h("span", { class: "pd-wavy" }, x) : x));
       // カードの文: 改行のある文は1行ずつ(行の途中では折り返さない)。
       // 「パターン1:リアル定例会⏎& オンライン定例会」のように「:」で始まる文は、続きの行を「:」のあとにそろえる
       // 「パターン1:」の「パターン1」は枠で囲んだ札にして、「:」は出さない
@@ -1707,7 +1709,7 @@
           const ic = (p.icons || [])[i] || "check";
           return h("article", { class: `pd-card pd-big-card${ic === "ban" ? " is-ban" : ""}` },
             h("div", { class: "pd-big-top" }, h("span", { class: "pd-big-ic" }, lineIcon(ic)), ic === "ban" ? h("span", { class: "pd-rule-tag" }, "禁止") : null, h("span", { class: "pd-big-no" }, two(i + 1))),
-            (p.heads || [])[i] ? h("p", { class: "pd-big-head" }, p.heads[i]) : null,
+            (p.heads || [])[i] ? h("p", { class: "pd-big-head" }, ...wavy(p.heads[i])) : null,
             h("p", { class: "pd-big-text" }, ...String(x).split("\n").flatMap((t, k) => (k ? [h("br"), ...rich(t)] : rich(t)))));
         })), p.note ? h("p", { class: "pd-note" }, `※ ${p.note}`) : null);
       }
@@ -1723,7 +1725,7 @@
                 h("span", { class: "pd-rule-ic" }, lineIcon(ic)),
                 ic === "ban" ? h("span", { class: "pd-rule-tag" }, "禁止") : null,
                 h("span", { class: "pd-rule-no" }, two(i + 1))),
-              head ? h("p", { class: "pd-rule-head" }, head) : null,
+              head ? h("p", { class: "pd-rule-head" }, ...wavy(head)) : null,
               h("p", { class: "pd-rule-text" }, ...String(x).split("\n").flatMap((t, k) => (k ? [h("br"), ...rich(t)] : rich(t)))));
           })),
           p.note ? h("p", { class: "pd-note" }, `※ ${p.note}`) : null);

@@ -2705,6 +2705,29 @@
           }
           changed = true;
         }
+        // ビジターの規定(2026年10月): 一般規定⑦の見出し「招待者を通す」を「招待者を《必ず》通す」(必ずの下に波線)に、
+        // 出席規定④の文の下に「＊BT-EXフェスは何度でも参加可能」を、スケジュールの注意書きの下に「＊LINKの公式スケジュールによっては…」を足す。
+        // 前に保存した文が元のままなら書きかえる
+        if (db.cleanups.indexOf("deck-visitor-rules-1") === -1) {
+          db.cleanups.push("deck-visitor-rules-1");
+          var cfg6 = readCfg(db);
+          if (cfg6) {
+            var addMust = function (v) {
+              if (typeof v === "string") {
+                var f = v.replace(/\s/g, "");
+                if (f === "ビジターとの1on1は招待者を通す") return "ビジターとの1on1は招待者を《必ず》通す";
+                if (f === "同一人物のビジター参加は2回までとする") return "同一人物のビジター参加は2回までとする\n＊BT-EXフェスは何度でも参加可能";
+                if (f === "今後、新潟・東京各月でリアル定例会も開催予定") return "今後、新潟・東京各月でリアル定例会も開催予定\n＊LINKの公式スケジュールによってはスケジュールの変更あり";
+                return v;
+              }
+              if (Array.isArray(v)) return v.map(addMust);
+              if (v && typeof v === "object") { Object.keys(v).forEach(function (k) { v[k] = addMust(v[k]); }); return v; }
+              return v;
+            };
+            writeCfg(db, addMust(cfg6));
+          }
+          changed = true;
+        }
         // アンケートの説明(2026年10月): 「本日の定例会の…」を「本日のBT-EX5の定例会の…」に。前に保存した説明が元の文のままなら書きかえる
         if (db.cleanups.indexOf("deck-survey-lead-1") === -1) {
           db.cleanups.push("deck-survey-lead-1");
