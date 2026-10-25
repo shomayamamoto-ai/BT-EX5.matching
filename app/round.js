@@ -1751,6 +1751,9 @@
             h("p", { class: "pd-gloss-hint" }, seq.i < items.length ? "「進む」で次の言葉へ" : "「進む」で次のスライドへ"),
             h("button", { type: "button", class: "pd-gloss-close", "aria-label": "閉じる", onclick: () => seq.show(0) }, lineIcon("close"))));
           pop.hidden = false;
+          // 言葉は1行で出す(入りきらないときは文字を小さくする)
+          const term = pop.querySelector(".pd-gloss-term");
+          if (term && term.scrollWidth > term.clientWidth) term.style.fontSize = `${parseFloat(getComputedStyle(term).fontSize) * (term.clientWidth / term.scrollWidth) * 0.98}px`;
         } };
         pop.addEventListener("click", (e) => { if (e.target === pop) seq.show(0); });
         const wrap = h("div", { class: "pd-gl-seq" }, h("dl", { class: "pd-gloss" }, cells), pop);
