@@ -1,6 +1,7 @@
 // ============================================
 // コミュニティ分析ページ
 // 共通のお客様・今回る紹介は名簿から計算し、いると仕事が回る業種(analysis.js)を合わせて表示する
+// ほかの BT-EX の方との相性は bx-partners.js
 // ============================================
 
 (function () {
@@ -139,6 +140,8 @@
   function renderWhole() {
     const customers = commonCustomers();
     const pairs = topPairs(8);
+    // ほかの BT-EX の方とも合いそうな組(BT-EX5 のメンバーの「求める紹介」が、その方の仕事に当てはまる)
+    const bx = typeof RefBxPartners !== "undefined" ? RefBxPartners.pairs(members, 10) : [];
     const top = openRoles().filter((r) => r.priority === 1).slice(0, 3);
     $("#tmWhole").innerHTML = `
       <header class="tm-team-head">
@@ -153,6 +156,10 @@
           ${pairs.length
             ? `<ul class="tm-flows">${pairs.map((p) => `<li><span class="tm-flow-who">${person(p.a.id)}<span class="tm-arrow" aria-label="と">⇄</span>${person(p.b.id)}</span><span class="tm-flow-what">${esc(p.reason)}</span></li>`).join("")}</ul>`
             : '<p class="tm-none">まだありません(「求める紹介」が入ると出てきます)</p>'}
+          ${bx.length ? `
+          <h3 class="tm-h3">ほかの BT-EX の方とも合いそう</h3>
+          <p class="tm-bx-lead">BT-EX5 のメンバーの「求める紹介」に、ほかのユニットの方の仕事が当てはまる組です(同じ仕事の方は出していません)。定例会や 1on1 で声をかけるきっかけにどうぞ。</p>
+          <ul class="tm-flows is-bx">${bx.map((p) => `<li><span class="tm-flow-who">${person(p.a.id)}<span class="tm-arrow" aria-label="と">⇄</span><span class="tm-bx-person"><span class="tm-bx-unit">BT-EX${p.x.unit}</span>${esc(p.x.name)}</span></span><span class="tm-flow-what">${esc(p.reason)}</span></li>`).join("")}</ul>` : ""}
         </section>
         <section class="tm-col tm-needs">
           <h3 class="tm-h3">この人がいると仕事が回る(特に効果が大きい3つ)</h3>
