@@ -1748,7 +1748,6 @@
             h("p", { class: "pd-gloss-no" }, `${two(seq.i)} / ${two(items.length)}`),
             h("p", { class: "pd-gloss-term" }, x.head),
             h("p", { class: "pd-gloss-text" }, ...lines(x.text || "")),
-            h("p", { class: "pd-gloss-hint" }, seq.i < items.length ? "「進む」で次の言葉へ" : "「進む」で次のスライドへ"),
             h("button", { type: "button", class: "pd-gloss-close", "aria-label": "閉じる", onclick: () => seq.show(0) }, lineIcon("close"))));
           pop.hidden = false;
           // 言葉は1行で出す(入りきらないときは文字を小さくする)
