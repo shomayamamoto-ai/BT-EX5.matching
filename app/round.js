@@ -2028,7 +2028,8 @@
               h("span", null, p.kind === "visitor" ? "ビジター" : p.kind === "guest" ? "ゲスト" : p.kind === "other" ? (p.unit ? `BT-EX${p.unit} メンバー` : "BT-EX メンバー") : p.team || ""),
               p.role ? roleBadge(p.role) : null),
             nameEl(p.name, "h2", "pr-name", h("small", null, "さん"), !solo),
-            p.kana ? h("p", { class: "pr-kana" }, p.kana) : null,
+            // フリガナは BT-EX5 のメンバーだけ(ほかの BT-EX・ゲスト・ビジターの方は出さない)
+            p.kana && p.kind === "member" ? h("p", { class: "pr-kana" }, p.kana) : null,
             p.catch ? h("p", { class: "pr-catch" }, p.catch) : null,
             h("dl", { class: "pr-rows" },
               p.area ? h("div", { class: "pr-row-area" }, h("dt", null, "活動範囲"), h("dd", null, p.area)) : null,
