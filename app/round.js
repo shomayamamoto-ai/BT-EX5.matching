@@ -1173,16 +1173,13 @@
         host.classList.toggle("time-home", on);
         if (on && !was) { setMini(false); setOpen(false); }
         if (!on && was) { panel.classList.remove("is-open"); setMini(false); }
-        const top = host.querySelector(".pr-top");
-        if (top) top.style.minHeight = "";
         fitBar();
       },
       defaultPlace: (r) => {
+        // 上の帯の高さは CSS で決めておく(帯の高さで、スライドの題の位置が動かないように)
         const top = host.querySelector(".pr-top");
         const tr = top ? top.getBoundingClientRect() : { top: 12, height: 40, left: 16 };
-        if (top) top.style.minHeight = `${Math.ceil(r.height)}px`;
-        const tr2 = top ? top.getBoundingClientRect() : tr;
-        return { left: Math.max(8, tr2.left), top: tr2.top + (tr2.height - r.height) / 2 };
+        return { left: Math.max(8, tr.left), top: tr.top + (tr.height - r.height) / 2 };
       },
     });
     // 小さく・大きくしたときも、下のはしの位置をそろえる
@@ -1467,12 +1464,14 @@
       const nth = (i) => ({ style: `--i:${i}` });
       const carousel = makeCarousel;
       // 中身のスライドの共通の形: 左上に「02 BT-EXの理念」の小見出し、題、(あれば)要点の一文、中身
-      const frame = (cls, ...body) => h("div", { class: `pd pd-frame ${cls}` },
+      // どのスライドも、題は同じ位置(左上)・同じ大きさにそろえる(運営の依頼)。lead: 題の下の要点の一文(なければ出さない)
+      const frameL = (cls, lead, ...body) => h("div", { class: `pd pd-frame ${cls}` },
         h("header", { class: "pd-head" },
           p.eyebrow ? h("p", { class: "pd-eyebrow" }, h("span", { class: "pd-eyebrow-no" }, two(p.stepNo)), p.eyebrow) : null,
           h("h2", { class: `pd-title${String(p.name).length > 18 ? " is-long" : ""}` }, p.name),
-          p.lead ? h("p", { class: "pd-lead" }, p.lead) : null),
+          lead ? h("p", { class: "pd-lead" }, lead) : null),
         h("div", { class: "pd-body" }, ...body));
+      const frame = (cls, ...body) => frameL(cls, p.lead, ...body);
       // 流れの一覧(本日の流れ・区切りのスライド)。いまの所を光らせ、終わった所は控えめに
       const agendaList = (compact) => h("ol", { class: `pd-agenda${compact ? " is-compact" : ""}` }, (p.steps || []).map((st, i) =>
         h("li", { class: st.no === p.stepNo && p.type !== "agenda" ? "is-now" : st.no < p.stepNo ? "is-done" : "", ...nth(i) },
@@ -1521,10 +1520,11 @@
       if (p.type === "section") {
         // 区切り: 左に大きな番号と題、右に流れの一覧(いまの所が光る)
         if (!p.no) {
-          return h("div", { class: "pd pd-hero pd-subsection" },
-            p.eyebrow ? h("p", { class: "pd-kicker" }, `${two(p.stepNo)}  ${p.eyebrow}`) : null,
-            h("h2", { class: "pd-display" }, ...lines(p.name)),
-            h("span", { class: "pd-rule", "aria-hidden": "true" }));
+          // 番号のない区切り(規定など): ほかの区切りと同じく左にそろえる
+          return h("div", { class: "pd pd-section pd-subsection" },
+            h("div", { class: "pd-section-main" },
+              p.eyebrow ? h("p", { class: "pd-eyebrow" }, h("span", { class: "pd-eyebrow-no" }, two(p.stepNo)), p.eyebrow) : null,
+              h("h2", { class: "pd-display" }, ...lines(p.name))));
         }
         return h("div", { class: `pd pd-section${p.name.length > 10 ? " is-long-title" : ""}` },
           h("div", { class: "pd-section-main" },
@@ -1563,10 +1563,7 @@
         return frame("pd-about", formula, ...(p.paras || []).map((x, i) => h("p", { class: `pd-para${i ? "" : " is-first"}`, ...nth(i + 1) }, ...lines(x))));
       }
       if (p.type === "vision") {
-        return h("div", { class: "pd pd-hero pd-vision" },
-          p.eyebrow ? h("p", { class: "pd-kicker" }, `${two(p.stepNo)}  ${p.eyebrow}`) : null,
-          h("h2", { class: "pd-wordmark" }, p.name),
-          p.en ? h("p", { class: "pd-en" }, p.en) : null,
+        return frameL("pd-vision", p.en || "",
           h("div", { class: "pd-vrow" },
             h("div", nth(0), h("p", { class: "pd-h" }, "理念"), h("p", { class: "pd-big" }, ...lines(p.philosophy || ""))),
             h("div", nth(1), h("p", { class: "pd-h" }, "ビジョン"), h("p", { class: "pd-big" }, ...lines(p.vision || "")))));
@@ -1574,10 +1571,8 @@
       if (p.type === "feature") {
         // 「新潟 ⇔ 東京」は、2つの街を金の線でつないだ図にする
         const [head, ...rest] = p.lines || [];
-        return h("div", { class: "pd pd-hero pd-feature" },
-          p.eyebrow ? h("p", { class: "pd-kicker" }, `${two(p.stepNo)}  ${p.eyebrow}`) : null,
-          h("p", { class: "pd-h" }, p.name),
-          head ? h("h2", { class: "pd-display" }, head) : null,
+        return frameL("pd-feature is-centered", "",
+          head ? h("p", { class: "pd-display" }, head) : null,
           rest.map((x) => {
             const ends = String(x).split(/\s*[⇔↔]\s*/);
             return ends.length === 2 ? routeMap(ends[0], ends[1], x) : h("p", { class: "pd-big" }, x);
@@ -1607,11 +1602,10 @@
       if (p.type === "raise") {
         // 挙手のお願い: 大きな手のマークと、何について発表するか
         const hand = lineIcon("hand", "is-hand");
-        return h("div", { class: "pd pd-hero pd-raise" },
-          p.eyebrow ? h("p", { class: "pd-kicker" }, `${two(p.stepNo)}  ${p.eyebrow}`) : null,
+        return frameL("pd-raise is-centered", "",
           h("span", { class: "pd-raise-mark" }, h("span", { class: "pd-raise-halo", "aria-hidden": "true" }), hand),
           p.items && p.items.length ? h("ul", { class: "pd-raise-items" }, p.items.map((x, i) => h("li", nth(i), x))) : null,
-          h("h2", { class: "pd-display" }, ...lines(p.text || "について\n発表できる方は\n挙手をお願いします")),
+          h("p", { class: "pd-display" }, ...lines(p.text || "について\n発表できる方は\n挙手をお願いします")),
           // 注意書き: 改行(\n)はそのまま。「※」で始まるときは、続きの行を「※」のあとにそろえる
           p.note ? h("p", { class: "pd-raise-note" }, ...(() => {
             const m = /^※\s*([\s\S]*)$/.exec(p.note);
@@ -1700,7 +1694,7 @@
         const pop = h("div", { class: "pd-gloss-pop", hidden: true, role: "dialog", "aria-modal": "false", "aria-live": "polite" });
         const cells = items.map((x, i) => h("div", Object.assign({ class: "pd-gloss-item", role: "button", tabindex: "0", "aria-label": `${x.head}を大きく見る`,
           onclick: () => seq.show(i + 1), onkeydown: (e) => { if (e.key === "Enter") { e.preventDefault(); e.stopPropagation(); seq.show(i + 1); } } }, nth(i)),
-          h("dt", null, x.head), h("dd", null, ...lines(x.text || ""))));
+          h("dt", null, x.head), h("dd", null, String(x.text || "").split("\n").map((t) => h("span", { class: "pd-line" }, t)))));
         // i: 0 = 閉じている / 1〜n = その番号の言葉を出している(カードの送りと同じ形で、進む・戻るから動かす)
         const seq = { n: items.length + 1, i: 0, show(k) {
           seq.i = Math.max(0, Math.min(items.length, k));
@@ -1722,9 +1716,7 @@
       }
       if (p.type === "joinform") {
         // 入会申し込みフォーム: QR コード(URL が入っているとき)
-        return h("div", { class: "pd pd-hero pd-joinform" },
-          p.eyebrow ? h("p", { class: "pd-kicker" }, `${two(p.stepNo)}  ${p.eyebrow}`) : null,
-          h("h2", { class: "pd-display" }, ...lines(p.name)),
+        return frameL("pd-joinform is-centered", "",
           // 説明は1行ずつ(行の途中では折り返さない)
           p.lead ? h("p", { class: "pd-join-lead" }, String(p.lead).split("\n").map((t) => h("span", { class: "pd-line" }, t))) : null,
           p.url ? h("div", { class: "pd-qr" }, App.qrImage ? App.qrImage(p.url, p.name) : null) : null,
@@ -1734,7 +1726,7 @@
         // 入会への3ステップ: Step のカードを矢印でつなぐ
         return frame("pd-joinsteps", h("ol", { class: "pd-steps" }, (p.cards || []).flatMap((st, i) => [
           i ? h("li", { class: "pd-step-arrow", "aria-hidden": "true" }, lineIcon("next")) : null,
-          h("li", Object.assign({ class: "pd-step-card" }, nth(i)), h("span", { class: "pd-step-no" }, `Step${i + 1}`), h("b", null, ...lines(st.head || "")), st.text ? h("small", null, ...lines(st.text)) : null),
+          h("li", Object.assign({ class: "pd-step-card" }, nth(i)), h("span", { class: "pd-step-no" }, `Step${i + 1}`), h("b", null, ...lines(st.head || "")), st.text ? h("small", null, String(st.text).split("\n").map((t) => h("span", { class: "pd-line" }, t))) : null),
         ]).filter(Boolean)));
       }
       if (p.type === "survey") {
@@ -1775,6 +1767,8 @@
       const el = slide.firstElementChild;
       if (!el || !el.classList.contains("pd")) return;
       el.style.transform = ""; el.style.transformOrigin = "";
+      const body = el.classList.contains("pd-frame") ? el.querySelector(":scope > .pd-body") : null;
+      if (body) { body.style.transform = ""; body.style.transformOrigin = ""; }
       // 大きな数字(約束・実績のタイル): 枠に入りきらないときは、その数字だけ小さくする(枠に触れない)
       el.querySelectorAll(".pd-kpi b, .pd-stats b").forEach((b) => {
         b.style.fontSize = ""; b.style.height = "";
@@ -1789,7 +1783,7 @@
         }
       });
       // カードの文: 1行が入りきらないときは、同じスライドのカードの文をそろって小さくする
-      const texts = [...el.querySelectorAll(".pd-card-text, .pd-check-text, .pd-block ul")];
+      const texts = [...el.querySelectorAll(".pd-card-text, .pd-check-text, .pd-block ul, .pd-gloss dd")];
       texts.forEach((t) => { t.style.fontSize = ""; });
       // (行の左はしからカードの文の右はしまでを、使える幅とする。「パターン1:」の続きの行も同じ)
       const ratio = texts.reduce((r, t) => Math.min(r, [...t.querySelectorAll(".pd-line")].reduce((q, ln) => {
@@ -1801,12 +1795,28 @@
       // 中身の上はし・下はし(段が枠の外へはみ出すこともあるので、段ごとに見る)を測り、
       // 入りきらないときは縮めて、枠の上下のまん中に置く
       const sr = slide.getBoundingClientRect(), er = el.getBoundingClientRect();
+      // 題のあるスライド(pd-frame): 題(小見出し・題・要点)は縮めず、中身だけを縮める。
+      // どのスライドでも題が同じ位置・同じ大きさになるように(運営の依頼)
+      if (body) {
+        const br = body.getBoundingClientRect();
+        const kids = [br, ...[...body.children].map((c) => c.getBoundingClientRect())];
+        const bottom = Math.max(...kids.map((r) => r.bottom), br.top + body.scrollHeight);
+        const need = bottom - br.top, room = sr.bottom - br.top;
+        if (need > room && room > 0) {
+          const k = Math.max(0.55, (room / need) * 0.97);
+          body.style.transformOrigin = "50% 0";
+          body.style.transform = `scale(${k.toFixed(3)})`;
+        }
+        return;
+      }
       const rects = [er, ...[...el.children].map((c) => c.getBoundingClientRect())];
       const top = Math.min(...rects.map((r) => r.top)), bottom = Math.max(...rects.map((r) => r.bottom), er.top + el.scrollHeight);
       const need = bottom - top, room = slide.clientHeight - (el.classList.contains("pd-frame") ? Math.max(0, er.top - sr.top) : 0);
       if (need > room && room > 0) {
         const k = Math.max(0.6, (room / need) * 0.97);
         // 題のあるスライド(pd-frame)は上にそろえる(スライドを送っても題の位置が動かないように)。ほかは上下のまん中
+        // 代表の紹介は左上を動かさずに縮める(小見出しの位置を、ほかのスライドとそろえる)
+        if (el.classList.contains("pd-leader")) { el.style.transformOrigin = "0 0"; el.style.transform = `scale(${k.toFixed(3)})`; return; }
         const dy = el.classList.contains("pd-frame") ? Math.max(sr.top - er.top, (er.top - top) * k)
           : (sr.top + sr.bottom) / 2 - er.top - ((top + bottom) / 2 - er.top) * k;
         el.style.transformOrigin = "50% 0";

@@ -2872,3 +2872,35 @@ button.home-welcome-check:active { transform: scale(0.94); }
 .pr-run.dock-home .pd-progress-steps { grid-auto-columns: minmax(min-content, 1fr); }
 .pr-run.dock-home .pd-progress-steps li { min-width: min-content; }
 .pr-run.dock-home .pd-progress-steps li > span { max-width: none; min-width: min-content; overflow-wrap: normal; }
+
+/* ---------- 題の位置をすべてのスライドでそろえる ----------
+   中身をまん中に置くスライド(挙手・入会フォーム・特徴)も、題は左上のいつもの位置。中身だけをまん中にそろえる */
+.pd-frame.is-centered .pd-body { display: grid; justify-items: center; align-content: center; text-align: center; gap: clamp(10px, 2.2svh, 24px); }
+.pd-frame.is-centered .pd-display { margin: 0; }
+.pd-vision .pd-vrow { margin-top: clamp(4px, 1svh, 12px); }
+/* 番号のない区切り(規定)も、ほかの区切りと同じ左そろえ */
+.pd-subsection .pd-section-main { display: grid; gap: clamp(8px, 1.6svh, 16px); }
+/* 入会への3ステップ: 説明は指定の行のまま(行の途中で折り返さない) */
+.pd-step-card small .pd-line { display: block; white-space: nowrap; }
+
+/* タイムマネジメントの帯がある上の段は、いつも同じ高さ(スライドの題の位置をそろえる) */
+.pr-run.time-home .pr-top { min-height: 44px; }
+/* 用語説明のカード: 説明は指定の行のまま(入りきらないときは、そろって小さくする) */
+.pd-gloss dd .pd-line { display: block; width: max-content; max-width: none; white-space: nowrap; }
+
+/* 出席コード: 題はほかと同じ位置(幅 1180px の左上)。中身(コードと動画)だけ広く使う */
+.pd.pd-attend { width: min(100%, 1180px); }
+.pd-attend > .pd-body { width: min(1400px, calc(100vw - 2 * clamp(16px, 4.5vw, 64px))); justify-self: center; }
+/* 代表の紹介: 題のあるスライドと同じく上にそろえる(小見出しの位置をそろえる) */
+@media (min-aspect-ratio: 1/1) and (min-width: 761px) {
+  .pr-run.is-deck .pr-slide > .pd.pd-leader:not(.pd-frame) { align-self: start; margin-top: clamp(4px, 5svh, 64px); align-items: start; }
+}
+/* 小見出し(「02 用語説明」「AGENDA」)は、番号の有無にかかわらず同じ高さ(題の位置をそろえる) */
+.pd-frame .pd-eyebrow { min-height: 1.9em; }
+/* 用語説明: 低いウィンドウでは 4列×3段にして、カードを縮めずに収める */
+@media (max-height: 700px) and (min-aspect-ratio: 4/3) and (min-width: 761px) {
+  .pd-gloss { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+  .pd-gloss-item { padding: 8px 10px; }
+  .pd-gloss dt { font-size: clamp(14px, min(1.6vw, 3svh), 20px); }
+  .pd-gloss dd { margin-top: 2px; line-height: 1.5; }
+}
