@@ -399,13 +399,13 @@
         // 番号の下に人数(bt-ex.jp のメンバー一覧の人数)。最後に合計
         const COUNTS = typeof BTEX_UNIT_COUNTS !== "undefined" ? BTEX_UNIT_COUNTS : {};
         const nums = Array.from({ length: 14 }, (_, i) => i + 1).filter((n) => n !== 5);
-        const total = nums.reduce((a, n) => a + (COUNTS[n] || 0), 0);
+        // 合計は BT-EX5 も入れた全ユニットの人数(2つのユニットに入っている方は1名と数える)
+        const total = typeof BTEX_ALL_UNITS_TOTAL !== "undefined" ? BTEX_ALL_UNITS_TOTAL : Array.from({ length: 14 }, (_, i) => COUNTS[i + 1] || 0).reduce((a, b) => a + b, 0);
         App.fill(unitRow, ...nums.map((n) =>
           h("button", { type: "button", class: `pr-unit-chip${n === cur ? " is-on" : ""}`, role: "radio", "aria-checked": n === cur ? "true" : "false", dataset: { unit: String(n) },
             "aria-label": `BT-EX${n}(${COUNTS[n] || 0}名)`,
             onclick: () => { unitSel.value = String(n); bx.setUnit(n); drawUnits(n); } }, h("small", null, "BT-EX"), h("b", null, String(n)), h("small", { class: "pr-unit-n" }, `${COUNTS[n] || 0}名`))),
-          h("p", { class: "pr-unit-total" }, h("span", null, "合計"), h("b", null, `${total}名`),
-            typeof BTEX_ALL_UNITS_TOTAL !== "undefined" ? h("small", null, `BT-EX5(${COUNTS[5] || 0}名)を入れた全ユニットは ${BTEX_ALL_UNITS_TOTAL}名(2つのユニットに入っている方は1名と数えます)`) : null));
+          h("p", { class: "pr-unit-total" }, h("span", null, "合計"), h("b", null, `${total}名`)));
       }
       if (bx) {
         unitSel = h("select", { class: "pr-extra-unit", hidden: true, "aria-hidden": "true", tabindex: "-1", onchange: () => { bx.setUnit(Number(unitSel.value)); drawUnits(Number(unitSel.value)); } },
