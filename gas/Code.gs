@@ -2406,7 +2406,7 @@ const REF_SEED_ANNOUNCEMENTS = [
   {
     seedId: "2026-10-25-update-16",
     cat: "アップデート",
-    rev: 3,
+    rev: 4,
     at: Date.UTC(2026, 9, 25, 4, 0), // 2026/10/25 13:00(日本時間)
     title: "【アップデート】紹介診断に「相手がこう言っていたら」・アンケート・運営タブ など",
     body: [
@@ -2430,6 +2430,7 @@ const REF_SEED_ANNOUNCEMENTS = [
       "・タイムマネジメントのはじめの場所を「左上の1行の帯」に、戻る・進むの操作バーを「右下」にしました。スライドの中身に重ならず、画面の左右いっぱいを使います(帯の ⌄ でくわしく開けます。これまでどおり、つかんで動かすこともできます)。",
       "・1分プレゼンテーションの1人の時間を、はじめから1分にしました(ゲスト・ほかの BT-EX の方も、はじめは1分)。",
       "【新機能】",
+      "・記録の「分析」を、ひと目で分かるダッシュボードにしました。数字のカード(前の月とくらべた増減つき)、活動の推移(6か月の折れ線。出した紹介・受けた紹介・1on1・出席・ビジターを切りかえ)、出した紹介の状況(ドーナツ図と成約率)、メンバー TOP5、ありがとうマイルの推移(6か月の棒グラフ)が並びます。点や棒にふれると、その月の数字が出ます。",
       "・定例会アンケート(メンバー用・ビジター用)。結果はアプリの「アンケートの結果」で、数字・グラフ・改善のヒント・CSVで見られます。",
       "・下のメニューの「アップデート」を「運営」にしました(プレゼンを使える運営メンバーだけに出ます)。アップデートはマイページから見られます。",
       "・運営タブ:運営会議の日程を入れると Google Meet を自動で作り、議事録の貼りつけ、Gemini のメモ・文字起こしの取りこみ、あとからの検索ができます。",
@@ -4771,13 +4772,8 @@ var BtexServerCore = (function () {
       // 自分の数字・メンバー別の数字(期間を選んで集計)
       // 出席・1on1 は開催日、紹介・マイルは記録した日、ビジターは参加する定例会の日で数える
       // ============================================
-      function getStats(body) {
-        var w = who(body);
-        if (w.error) return w.error;
-        var db = w.db;
-        var from = cleanDate(body.from), to = cleanDate(body.to);
-        if (!from || !to) { from = today().slice(0, 8) + "01"; to = lastDay(today().slice(0, 7)); }
-        if (from > to) { var tmp = from; from = to; to = tmp; }
+      // 期間(from〜to)の、メンバーごとの数字と全体の数字
+      function countRange(db, from, to) {
         var inRange = function (key) { return key >= from && key <= to; };
         var rows = {};
         (db.referralMembers || []).forEach(function (m) {
@@ -4828,6 +4824,38 @@ var BtexServerCore = (function () {
             if (v.status === "joined") total.joined += 1;
           }
         });
+        return { rows: rows, total: total };
+      }
+      // 日付("YYYY-MM-DD")を n 日ずらす
+      function shiftDay(key, n) {
+        var d = new Date(Date.UTC(Number(key.slice(0, 4)), Number(key.slice(5, 7)) - 1, Number(key.slice(8, 10)) + n));
+        return d.getUTCFullYear() + "-" + ("0" + (d.getUTCMonth() + 1)).slice(-2) + "-" + ("0" + d.getUTCDate()).slice(-2);
+      }
+      // くらべる前の期間: ひと月ちょうど(1日〜月末)なら前の月、それ以外は同じ日数だけ前
+      function prevRange(from, to) {
+        if (from.slice(8) === "01" && to === lastDay(to.slice(0, 7))) {
+          var months = (Number(to.slice(0, 4)) - Number(from.slice(0, 4))) * 12 + Number(to.slice(5, 7)) - Number(from.slice(5, 7)) + 1;
+          var pf = monthShift(from.slice(0, 7), -months);
+          return { from: pf + "-01", to: lastDay(monthShift(to.slice(0, 7), -months)) };
+        }
+        var days = Math.round((Date.UTC(Number(to.slice(0, 4)), Number(to.slice(5, 7)) - 1, Number(to.slice(8, 10))) - Date.UTC(Number(from.slice(0, 4)), Number(from.slice(5, 7)) - 1, Number(from.slice(8, 10)))) / 86400000) + 1;
+        return { from: shiftDay(from, -days), to: shiftDay(from, -1) };
+      }
+      var MY_KEYS = ["attended", "referrals", "received", "oneOnOnes", "milesGiven", "milesReceived", "visitors", "joined"];
+      function pickMine(r) {
+        var o = {};
+        MY_KEYS.forEach(function (k) { o[k] = r ? r[k] : 0; });
+        return o;
+      }
+      function getStats(body) {
+        var w = who(body);
+        if (w.error) return w.error;
+        var db = w.db;
+        var from = cleanDate(body.from), to = cleanDate(body.to);
+        if (!from || !to) { from = today().slice(0, 8) + "01"; to = lastDay(today().slice(0, 7)); }
+        if (from > to) { var tmp = from; from = to; to = tmp; }
+        var cur = countRange(db, from, to);
+        var rows = cur.rows, total = cur.total;
         var list = Object.keys(rows).map(function (k) { return rows[k]; });
         var sc = searchCounts(db, from, to);
         if (rows[w.id]) {
@@ -4835,9 +4863,29 @@ var BtexServerCore = (function () {
           rows[w.id].searchTop = (sc.m[w.id] || [0, 0])[1];
           rows[w.id].searchTotal = sc.n;
         }
+        // 前の期間の自分の数字(前の期間とくらべた増減に使う)
+        var pr = prevRange(from, to);
+        var prev = pickMine(countRange(db, pr.from, pr.to).rows[w.id]);
+        // 期間の終わりの月までの6か月の、自分の数字(月ごと)と、BT-EX5 全体のマイル
+        var endYm = to.slice(0, 7);
+        var series = [];
+        for (var i = 5; i >= 0; i--) {
+          var ym = monthShift(endYm, -i);
+          var mr = countRange(db, ym + "-01", lastDay(ym));
+          series.push(Object.assign({ ym: ym, allMiles: mr.total.miles }, pickMine(mr.rows[w.id])));
+        }
+        // この期間に自分が出した紹介の、いまの状況
+        var mix = { new: 0, contacted: 0, meeting: 0, won: 0, lost: 0 };
+        db.referralLogs.forEach(function (l) {
+          if (memberIdOfUser(db, l.fromUserId) !== w.id || dateKey(l.at) < from || dateKey(l.at) > to) return;
+          if (mix[l.status] !== undefined) mix[l.status] += 1;
+        });
         return c.ok({
           from: from, to: to, today: today(),
           me: rows[w.id] || null,
+          prev: prev, prevFrom: pr.from, prevTo: pr.to,
+          series: series,
+          refMix: mix,
           members: list.map(function (r) {
             return { id: r.id, name: r.name, isMe: r.id === w.id, attended: r.attended, referrals: r.referrals, miles: r.milesGiven, oneOnOnes: r.oneOnOnes, visitors: r.visitors };
           }),
