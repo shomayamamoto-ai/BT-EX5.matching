@@ -1308,8 +1308,8 @@ body.tabs-right .app-to-top { right: calc(var(--dock-w) + 22px); }
 .pr-rows dt { margin: 0 0 4px; font-size: clamp(11px, min(1.2vw, 1.9svh), 15px); font-weight: 800; letter-spacing: 0.12em; color: var(--gold); }
 .pr-rows dd { margin: 0; font-size: clamp(13px, min(1.75vw, 2.7svh), 24px); line-height: 1.55; color: #f3e6cc; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 .pr-tags { display: flex !important; flex-wrap: wrap; gap: 6px 8px; }
-.pr-tags span:nth-child(n+5) { display: none; }
-.pr-tags span { padding: 0.18em 0.7em; border-radius: 999px; border: 1px solid rgba(226, 184, 102, 0.5); font-size: 0.82em; white-space: nowrap; }
+.pr-tags span.is-cut { display: none; } /* 入りきらない分(app/round.js の fitTags が決める) */
+.pr-tags span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; padding: 0.18em 0.7em; border-radius: 999px; border: 1px solid rgba(226, 184, 102, 0.5); font-size: 0.82em; white-space: nowrap; }
 .pr-side { display: grid; gap: clamp(10px, 2svh, 18px); align-content: center; min-height: 0; }
 .pr-photo { width: 100%; aspect-ratio: 3 / 4; max-height: 52svh; object-fit: cover; object-position: 50% 25%; border-radius: 16px; box-shadow: 0 0 0 1px rgba(226, 184, 102, 0.55), 0 0 0 7px rgba(226, 184, 102, 0.08), 0 24px 60px rgba(0, 0, 0, 0.5); justify-self: center; }
 .pr-photo.is-initial { display: grid; place-content: center; background: linear-gradient(160deg, #3a2b1f, #120d0a); color: #f1dcae; font-family: "Shippori Mincho", serif; font-size: clamp(72px, 12vw, 180px); }
@@ -1362,7 +1362,6 @@ body.tabs-right .app-to-top { right: calc(var(--dock-w) + 22px); }
   .pr-catch { -webkit-line-clamp: 2; }
   .pr-rows dd { -webkit-line-clamp: 2; }
   .pr-rows .pr-row-wants dd { -webkit-line-clamp: 5; font-size: clamp(12.5px, min(1.5vw, 2.5svh), 21px); line-height: 1.5; }
-  .pr-tags span:nth-child(n+3) { display: none; } /* こんな話が出たら は2つまで */
 }
 @media (min-aspect-ratio: 1/1) and (max-height: 660px) {
   .pr-rows .pr-row-wants dd { -webkit-line-clamp: 4; }
@@ -2580,6 +2579,39 @@ button.home-welcome-check:active { transform: scale(0.94); }
 .pr-break-load .pr-break-btn.is-main { background: linear-gradient(180deg, #e9c77d, #c9993f); color: #241707; }
 .pr-break-hint { margin: 0; font-size: 12.5px; color: rgba(246, 231, 196, 0.7); }
 @media (prefers-reduced-motion: reduce) { .pr-break, .pr-break-card, .pr-break-cup i, .pr-break-dots i { animation: none; } }
+/* 「このまま続ける」を押したとき: ウイルスに入られたような画面(赤い警告・走査線・ちらつき・警告の窓)。「休む」だけ押せる */
+.pr-run.is-break-forced .pr-dock, .pr-run.is-break-forced .pr-time { visibility: hidden; pointer-events: none; }
+.pr-break.is-hacked { overflow: hidden; background: radial-gradient(120% 90% at 50% 50%, rgba(90, 0, 0, 0.82), rgba(10, 0, 0, 0.96)); backdrop-filter: blur(3px) saturate(0.4); -webkit-backdrop-filter: blur(3px) saturate(0.4); animation: pr-hack-in 0.6s steps(2, end) both; }
+@keyframes pr-hack-in { 0% { opacity: 0; transform: translate(0, 0); } 20% { opacity: 1; transform: translate(-8px, 3px); filter: hue-rotate(40deg); } 40% { transform: translate(6px, -4px); filter: invert(1); } 60% { transform: translate(-3px, 2px); filter: none; } 100% { opacity: 1; transform: none; } }
+.pr-hack-noise { position: absolute; inset: 0; pointer-events: none; z-index: 2;
+  background: repeating-linear-gradient(0deg, rgba(255, 40, 40, 0.07) 0 2px, transparent 2px 4px), linear-gradient(180deg, transparent 0, rgba(255, 60, 60, 0.18) 50%, transparent 100%);
+  background-size: 100% 4px, 100% 220px; animation: pr-hack-scan 2.4s linear infinite, pr-hack-flicker 0.18s steps(2, end) infinite; }
+@keyframes pr-hack-scan { from { background-position: 0 0, 0 -220px; } to { background-position: 0 0, 0 110vh; } }
+@keyframes pr-hack-flicker { 50% { opacity: 0.75; } }
+.pr-hack-wins { position: absolute; inset: 0; pointer-events: none; }
+.pr-hack-win { position: absolute; width: min(300px, 44vw); border: 2px solid #ff3b3b; border-radius: 6px; background: rgba(20, 0, 0, 0.92); box-shadow: 0 0 24px rgba(255, 40, 40, 0.55), 6px 6px 0 rgba(0, 0, 0, 0.5); color: #ffd0d0; font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace; opacity: 0; animation: pr-hack-win 0.28s steps(3, end) both; }
+@keyframes pr-hack-win { 0% { opacity: 0; transform: scale(0.6) skewX(12deg); } 60% { opacity: 1; transform: scale(1.06) skewX(-6deg); } 100% { opacity: 1; transform: none; } }
+.pr-hack-win-bar { display: flex; align-items: center; gap: 5px; margin: 0; padding: 4px 8px; background: #d61f1f; color: #fff; font-size: 11px; font-weight: 800; letter-spacing: 0.08em; }
+.pr-hack-win-bar span { flex: 1; }
+.pr-hack-win-bar i { width: 9px; height: 9px; border: 1.5px solid #fff; border-radius: 2px; }
+.pr-hack-win-text { margin: 0; padding: 10px 12px 12px; font-size: clamp(12px, 1.2vw, 15px); font-weight: 700; line-height: 1.5; }
+.pr-hack-card { position: relative; z-index: 3; width: min(560px, 100%); padding: 30px 28px 26px; border: 2px solid #ff3b3b; border-radius: 18px; text-align: center; background: rgba(16, 0, 0, 0.94); color: #ffe5e5; box-shadow: 0 0 0 6px rgba(255, 40, 40, 0.15), 0 0 60px rgba(255, 30, 30, 0.6); animation: pr-hack-card 0.4s 1s cubic-bezier(0.2, 1.4, 0.4, 1) both; }
+@keyframes pr-hack-card { from { opacity: 0; transform: scale(0.7); } to { opacity: 1; transform: none; } }
+.pr-hack-card.is-shake { animation: pr-hack-shake 0.45s ease both; }
+@keyframes pr-hack-shake { 0%, 100% { transform: none; } 20% { transform: translateX(-14px) rotate(-1deg); } 40% { transform: translateX(12px) rotate(1deg); } 60% { transform: translateX(-8px); } 80% { transform: translateX(5px); } }
+.pr-hack-kicker { margin: 0; font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace; font-size: 14px; font-weight: 900; letter-spacing: 0.3em; color: #ff4d4d; animation: pr-hack-blink 0.8s steps(2, end) infinite; }
+@keyframes pr-hack-blink { 50% { opacity: 0.25; } }
+.pr-hack-title { position: relative; margin: 10px 0 12px; font-size: clamp(26px, 3.6vw, 42px); font-weight: 900; line-height: 1.25; color: #fff; text-shadow: 0 0 18px rgba(255, 60, 60, 0.8); }
+.pr-hack-title::before, .pr-hack-title::after { content: attr(data-text); position: absolute; inset: 0; pointer-events: none; }
+.pr-hack-title::before { color: #ff2a2a; transform: translate(-3px, 0); clip-path: inset(0 0 55% 0); animation: pr-hack-glitch 1.6s steps(1, end) infinite; mix-blend-mode: screen; }
+.pr-hack-title::after { color: #22e6ff; transform: translate(3px, 0); clip-path: inset(55% 0 0 0); animation: pr-hack-glitch 1.3s steps(1, end) infinite reverse; mix-blend-mode: screen; }
+@keyframes pr-hack-glitch { 0%, 86%, 100% { transform: translate(0, 0); opacity: 0; } 88% { transform: translate(-5px, 1px); opacity: 1; } 92% { transform: translate(4px, -1px); opacity: 1; } 96% { transform: translate(-2px, 0); opacity: 1; } }
+.pr-hack-text { margin: 0 0 20px; font-size: 15px; font-weight: 700; line-height: 1.7; color: #ffc4c4; }
+.pr-hack-btn.pr-break-btn.is-main { width: 100%; min-height: 58px; background: linear-gradient(180deg, #ff4d4d, #c41616); color: #fff; font-size: 19px; box-shadow: 0 0 0 0 rgba(255, 60, 60, 0.7); animation: pr-hack-pulse 1.2s ease-out infinite; }
+@keyframes pr-hack-pulse { 0% { box-shadow: 0 0 0 0 rgba(255, 60, 60, 0.7); } 100% { box-shadow: 0 0 0 18px rgba(255, 60, 60, 0); } }
+.pr-hack-btn:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+@media (max-width: 640px) { .pr-hack-win:nth-child(n+5) { display: none; } }
+@media (prefers-reduced-motion: reduce) { .pr-break.is-hacked, .pr-hack-noise, .pr-hack-win, .pr-hack-card, .pr-hack-kicker, .pr-hack-title::before, .pr-hack-title::after, .pr-hack-btn.pr-break-btn.is-main { animation: none; } .pr-hack-win { opacity: 1; } }
 
 /* プレゼンの準備: 商談の時間と回数・出席コード */
 .pr-deck-more { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin: 10px 0 4px; }

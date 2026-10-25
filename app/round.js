@@ -191,7 +191,7 @@
       return {
         key, kind: "member", memberId: id, name: m.name, kana: m.kana || "", photo: photos[id] || "",
         catch: m.company || m.category || "", team: m.team || "",
-        area: areaLine(m), wants: clip(m.wants, 240), wantsRank: (m.wantsRank || []).slice(0, 5), triggers: (m.triggers || []).slice(0, 4),
+        area: areaLine(m), wants: clip(m.wants, 240), wantsRank: (m.wantsRank || []).slice(0, 5), triggers: (m.triggers || []).slice(0, 24),
         role: typeof refRoleOf === "function" ? refRoleOf(id) : null,
       };
     }
@@ -1902,6 +1902,19 @@
     }
     window.addEventListener("resize", fitDeck);
     try { if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitDeck); } catch { /* noop */ }
+    // 「こんな話が出たら」は、スライドの下(メーター)に重ならない範囲で、入るだけ出す(入らない分は後ろから省く)
+    function fitTags() {
+      const tags = slide.querySelector(".pr-tags");
+      if (!tags) return;
+      const spans = [...tags.children];
+      spans.forEach((s) => s.classList.remove("is-cut"));
+      const sr = slide.getBoundingClientRect();
+      if (!sr.height || !tags.getBoundingClientRect().height) return;
+      const limit = sr.bottom - (parseFloat(getComputedStyle(slide).paddingBottom) || 0) - 4;
+      for (let i = spans.length - 1; i > 0 && tags.getBoundingClientRect().bottom > limit; i--) spans[i].classList.add("is-cut");
+    }
+    window.addEventListener("resize", fitTags);
+    try { if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitTags); } catch { /* noop */ }
     // オープニングムービー(この画面の上に流す。終わったら次へ)
     let moviePlaying = false;
     function playMovie() {
@@ -1985,6 +1998,7 @@
             nexts.length
               ? nexts.map((n, i) => h("p", { class: i === 0 ? "is-first" : "" }, i === 0 ? h("b", null, "次 ▶ ") : null, `${two(persons.indexOf(n) + 1)} ${n.name}`))
               : h("p", { class: "is-first" }, h("b", null, "最後の方です")))));
+      requestAnimationFrame(fitTags);
     }
     const running = () => Boolean(timer);
     const leftNow = () => (running() ? (endAt - Date.now()) / 1000 : left0);
@@ -2065,8 +2079,9 @@
     }
     // ---------- 休憩のおさそい(商談の区切りのスライドに入ったとき) ----------
     // 「休む」を押すと1分の休憩の画面。「進む」(または画面のボタン)ですぐに終えられる
-    let breakLayer = null, breakTimer = null, breakAsked = false;
+    let breakLayer = null, breakTimer = null, breakAsked = false, breakForced = false;
     function closeBreak() {
+      if (breakForced) { nudgeBreak(); return; }
       clearInterval(breakTimer); breakTimer = null;
       if (breakLayer) { const el = breakLayer; breakLayer = null; el.classList.add("is-out"); setTimeout(() => el.remove(), 220); }
     }
@@ -2080,12 +2095,48 @@
           h("p", { class: "pr-break-text" }, "ここから商談がはじまります。", h("br"), "お水を飲んだり、体を伸ばしたりして、ひと息つきましょう"),
           h("div", { class: "pr-break-btns" },
             h("button", { type: "button", class: "pr-break-btn is-main", onclick: startBreak }, "休む(1分)"),
-            h("button", { type: "button", class: "pr-break-btn", onclick: closeBreak }, "このまま続ける"))));
+            h("button", { type: "button", class: "pr-break-btn", onclick: forceBreak }, "このまま続ける"))));
       box.append(breakLayer);
       breakLayer.querySelector(".is-main").focus({ preventScroll: true });
     }
+    // 「このまま続ける」を押したとき: ウイルスに入られたような画面で覆い、「休む」しか押せないようにする
+    // (この間は「進む」「戻る」・Esc では閉じず、カードをゆらすだけ)
+    function forceBreak() {
+      if (!breakLayer) return;
+      breakForced = true;
+      box.classList.add("is-break-forced"); // 下の操作バーも隠して、「休む」だけにする
+      const ALERTS = ["休憩不足を検知しました", "集中力が低下しています", "水分が足りていません", "肩こりが進行中です", "「このまま続ける」は無効です", "休憩プロトコルを起動します", "深呼吸が必要です", "ERROR: 休憩をスキップできません"];
+      // 警告の窓の場所(画面の割合)。順番に開いていく
+      const SPOTS = [[6, 10], [58, 6], [14, 62], [64, 58], [36, 18], [4, 38], [70, 32], [40, 70]];
+      const wins = ALERTS.map((t, i) => h("div", { class: "pr-hack-win", style: `left:${SPOTS[i][0]}%;top:${SPOTS[i][1]}%;animation-delay:${(i * 0.12).toFixed(2)}s`, "aria-hidden": "true" },
+        h("p", { class: "pr-hack-win-bar" }, h("span", null, "⚠ SYSTEM ALERT"), h("i"), h("i"), h("i")),
+        h("p", { class: "pr-hack-win-text" }, t)));
+      breakLayer.classList.add("is-hacked");
+      breakLayer.setAttribute("aria-label", "休憩が必要です");
+      App.fill(breakLayer,
+        h("div", { class: "pr-hack-noise", "aria-hidden": "true" }),
+        h("div", { class: "pr-hack-wins" }, wins),
+        h("div", { class: "pr-hack-card" },
+          h("p", { class: "pr-hack-kicker" }, "⚠ WARNING ⚠"),
+          h("h2", { class: "pr-hack-title", "data-text": "休憩をスキップできません" }, "休憩をスキップできません"),
+          h("p", { class: "pr-hack-text" }, "体と頭を守るため、休憩を強制的に実行します。", h("br"), "下のボタンを押してください"),
+          h("button", { type: "button", class: "pr-break-btn is-main pr-hack-btn", onclick: startBreak }, "休む(1分)")));
+      breakLayer.querySelector(".pr-hack-btn").focus({ preventScroll: true });
+    }
+    // 休むしか選べないときに、ほかの操作をしたら、カードをゆらして知らせる
+    function nudgeBreak() {
+      const card = breakLayer && breakLayer.querySelector(".pr-hack-card");
+      if (!card) return;
+      card.classList.remove("is-shake"); void card.offsetWidth; card.classList.add("is-shake");
+      const btn = card.querySelector(".pr-hack-btn");
+      if (btn) btn.focus({ preventScroll: true });
+    }
     function startBreak() {
       if (!breakLayer) return;
+      breakForced = false;
+      box.classList.remove("is-break-forced");
+      breakLayer.classList.remove("is-hacked");
+      breakLayer.setAttribute("aria-label", "休憩中");
       const TOTAL = 60, until = Date.now() + TOTAL * 1000;
       const TIPS = ["お水を一杯どうぞ", "肩をゆっくり回してみましょう", "深呼吸を3回", "次の商談で話したいことを1つ決めておきましょう", "まもなく商談がはじまります"];
       const num = h("b", { class: "pr-break-num" });
@@ -2099,7 +2150,7 @@
         h("p", { class: "pr-break-hint" }, "下の「進む」でも、すぐに再開できます")));
       const upd = () => {
         const left = Math.max(0, Math.ceil((until - Date.now()) / 1000));
-        num.textContent = `0:${String(left).padStart(2, "0")}`;
+        num.textContent = `${Math.floor(left / 60)}:${String(left % 60).padStart(2, "0")}`;
         bar.style.width = `${((TOTAL - left) / TOTAL) * 100}%`;
         tip.textContent = TIPS[Math.min(TIPS.length - 1, Math.floor(((TOTAL - left) / TOTAL) * TIPS.length))];
         if (left <= 0) { try { App.timerSound.end(); } catch { /* noop */ } closeBreak(); }
