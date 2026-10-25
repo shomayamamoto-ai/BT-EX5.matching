@@ -11,7 +11,7 @@
 const AuthApi = (function () {
   "use strict";
 
-  const API_BASE_URL = ""; // 実バックエンド(GAS 等)の URL。空ならデモ実装を使用
+  const API_BASE_URL = "https://script.google.com/macros/s/AKfycbw_Pb3sqA4O83kwIiT5GPO9cBGfhyh5knBqgebBPbKxbedMkzS9skIIH6M7MKb3pP9mqA/exec"; // 共有サーバー(Google Apps Script)の URL。空ならデモ実装を使用
 
   const NETWORK_MESSAGE = "通信に失敗しました。ネットワーク環境をご確認のうえ、再度お試しください。";
 
