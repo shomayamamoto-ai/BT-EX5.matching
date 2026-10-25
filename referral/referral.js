@@ -260,7 +260,7 @@
             ${m.id === myMemberId ? '<span class="ref-tag me">あなた</span>' : ""}
             <span class="ref-tag">${escapeHtml(m.category)}</span>
             ${m.base && m.base !== "未設定" ? `<span class="ref-tag ${m.base === "新潟" ? "base-niigata" : "base-tokyo"}">${escapeHtml(m.base)}拠点</span>` : ""}
-            ${m.team ? `<span class="ref-tag team" title="チーム">チーム ${escapeHtml(m.team)}</span>` : ""}
+            ${m.team ? `<span class="ref-tag team" title="チーム">${/team|チーム/i.test(m.team) ? "" : "チーム "}${escapeHtml(m.team)}</span>` : ""}
             ${memos[m.id] ? `<button type="button" class="ref-tag memo" data-detail="${m.id}" title="${escapeHtml(memos[m.id])}">メモあり</button>` : ""}
           </div>
           ${genreTags(m, sc, narrow ? 4 : 8)}
