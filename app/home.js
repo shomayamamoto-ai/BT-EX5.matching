@@ -474,7 +474,7 @@
 
   // 定例会のカード(出欠はその場で1タップ)
   function eventCard(ev, today, onUpdate, opt) {
-    const card = h("article", { class: "ev-card" });
+    const card = h("article", { class: `ev-card${ev.kind === "special" ? " is-special" : ""}` });
     function draw() {
       const days = App.daysUntil(ev.date, today);
       const when = days === 0 ? "今日" : days === 1 ? "明日" : days > 0 ? `あと${days}日` : "終了";
@@ -490,9 +490,10 @@
             h("span", null, when));
         })(),
         h("div", { class: "ev-main" },
+          ev.kind === "special" ? h("p", { class: "ev-kind" }, "特別会") : null,
           h("h3", null, h("a", { href: `#events/detail/${ev.id}` }, ev.title)),
-          h("p", { class: "ev-meta" }, [ev.start && `${ev.start}${ev.end ? `〜${ev.end}` : ""}`, ev.online ? "オンライン(Google Meet)" : App.AREA_LABELS[ev.area], ev.online ? "" : ev.place].filter(Boolean).join(" ・ ")),
-          ev.fee ? h("p", { class: "ev-meta" }, `参加費 ${ev.fee}`) : null,
+          h("p", { class: "ev-meta" }, [ev.start && `${ev.start}${ev.end ? `〜${ev.end}` : ""}${ev.doors ? `(${ev.doors}受付)` : ""}`, ev.online ? "オンライン(Google Meet)" : App.AREA_LABELS[ev.area], ev.online ? "" : ev.place].filter(Boolean).join(" ・ ")),
+          ev.fee || ev.capacity ? h("p", { class: "ev-meta" }, [ev.fee && `参加費 ${ev.fee}`, ev.capacity && `定員 ${ev.capacity}名`].filter(Boolean).join(" ・ ")) : null,
           ev.deadline && !ev.past ? h("p", { class: `ev-deadline${ev.deadlinePassed ? " is-closed" : ""}` }, ev.deadlinePassed ? "申込の受付は終了しました" : `申込締切 ${App.fmtStamp(ev.deadline).replace(/(\d+:\d+)/, "$1まで")}`) : null,
           h("p", { class: "ev-count" }, `出席予定 ${ev.yesCount}名`, ev.visitorCount ? ` ・ ビジター ${ev.visitorCount}名` : "", ev.attended ? h("span", { class: "ev-done" }, ev.late ? "遅刻早退" : "出席済み") : null),
           ev.past || ev.attended || ev.deadlinePassed ? null : h("div", { class: "ev-rsvp", role: "group", "aria-label": "出欠" },

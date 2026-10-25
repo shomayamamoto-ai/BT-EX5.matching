@@ -1568,6 +1568,22 @@ const REF_SEED_EVENTS = [
   { seedId: "2026-10-17", title: "日本海側最大のマーケット 新潟⇔東京", date: "2026-10-17", start: "20:00", end: "22:00", deadline: "2026-10-15T00:00" },
   { seedId: "2026-11-04", title: "日本海側最大のマーケット 新潟⇔東京", date: "2026-11-04", start: "13:00", end: "15:00", deadline: "2026-11-03T00:00" },
   { seedId: "2026-11-14", title: "日本海側最大のマーケット 新潟⇔東京", date: "2026-11-14", start: "20:00", end: "22:00", deadline: "" },
+  // 特別会(運営から。2026年10月25日)
+  {
+    seedId: "2026-12-02-btex-fes", kind: "special", title: "第一回BT-EXフェス", date: "2026-12-02", start: "14:30", end: "16:30", doors: "14:00",
+    area: "tokyo", place: "銀座Blossom", meet: false, fee: "2,200円", capacity: 144, deadline: "", agenda: "",
+    body: [
+      "定員 144名(メンバー 70名・ビジター 70名)",
+      "14:00 受付 / 14:30 開始 〜 16:30 終了",
+      "会場:銀座Blossom  参加費:2,200円",
+      "",
+      "■ 事前申し込みについて",
+      "・ビジターを連れて来られる方が優先です",
+      "・ユニットアピールがある予定のため、各ユニットの代表は優先的に参加できます",
+      "",
+      "☆メンバーは準備のため 13:00 集合、17:00 完全撤収です",
+    ].join("\n"),
+  },
 ].map((e) => Object.assign({ area: "online", meet: true, fee: "会員 無料", agenda: REF_SEED_AGENDA, body: REF_SEED_GUIDE }, e));
 
 // 開いた前の定例会の出欠(bt-ex.jp の記録から。一度だけ反映する)。
@@ -2551,7 +2567,7 @@ const REF_SEED_ANNOUNCEMENTS = [
   {
     seedId: "2026-10-25-update-16",
     cat: "アップデート",
-    rev: 11,
+    rev: 12,
     at: Date.UTC(2026, 9, 25, 4, 0), // 2026/10/25 13:00(日本時間)
     title: "【アップデート】紹介診断に「相手がこう言っていたら」・アンケート・運営タブ など",
     body: [
@@ -2563,6 +2579,8 @@ const REF_SEED_ANNOUNCEMENTS = [
       "・3問目「相手はどんな方ですか?」を、青い丸を左右に動かして選ぶ形にしました(一般の方向け/フリーランス/個人事業主/中小企業/大企業)。",
       "・ジャンルに「ライバー・ライブ配信」「パソコン・スマホの買い替え・設定」を足しました。",
       "【定例会のスライド】",
+      "・12月2日(水)の予定を「第一回BT-EXフェス」(特別会)にしました。14:30〜16:30(14:00受付)・銀座Blossom・参加費2,200円・定員144名(メンバー70名・ビジター70名)。事前申し込みは、ビジターを連れて来られる方と、ユニットアピールのある各ユニットの代表が優先です。メンバーは準備のため13:00集合・17:00完全撤収です。同じ日の20:00の定例会は消しました。",
+      "・予定に「特別会」の種類・受付の時刻・定員を入れられるようにしました(特別会は金の枠と「特別会」の札で出ます)。",
       "・はじめの挨拶のあとに「本日の運営メンバー」のスライドを足しました(ファシリテーター・エデュケーション・本システム・スライド・ブレイクアウトルーム)。担当の方は、はじめる前にプレゼンの画面で、プレゼンを使える方から押して選びます(もう一度押すと外れます。複数選べます)。",
       "・すべてのスライドで、題の位置と大きさをそろえました(挙手・入会フォーム・特徴などのスライドも、題は左上のいつもの位置です)。",
       "・入会申し込みフォームのスライドを、「入会への簡単な3ステップ」のすぐあとに移しました。",
@@ -3997,13 +4015,24 @@ var BtexServerCore = (function () {
             db.eventSeeds.push(se.seedId);
             var ev = {
               seedId: se.seedId, id: newId("ev_"), title: se.title, date: se.date, start: se.start, end: se.end, place: se.place || "", area: se.area,
-              body: se.body || "", agenda: se.agenda || "", fee: se.fee || "", capacity: 0, url: "", deadline: se.deadline || "",
+              body: se.body || "", agenda: se.agenda || "", fee: se.fee || "", capacity: se.capacity || 0, url: "", deadline: se.deadline || "",
+              kind: se.kind === "special" ? "special" : "", doors: se.doors || "",
               meet: se.meet !== false, party: { enabled: false }, rsvps: {}, attended: [], createdAt: c.nowMs(), seed: true,
             };
             syncEventCalendar(db, ev); // 共有サーバーでカレンダーが使えれば、Meet もここで作る
             db.events.push(ev);
             changed = true;
           });
+        }
+        // 12/2(水)20:00 の定例会は、運営の依頼で消す(同じ日は「第一回BT-EXフェス」の特別会。2026年10月25日)
+        if (db.eventSeeds && db.eventSeeds.indexOf("remove-2026-12-02-regular") === -1) {
+          db.eventSeeds.push("remove-2026-12-02-regular");
+          db.events = db.events.filter(function (ev) {
+            var drop = ev.date === "2026-12-02" && ev.kind !== "special" && /日本海側最大のマーケット/.test(ev.title || "");
+            if (drop && ev.calId && c.calendar) { try { c.calendar.remove(ev.calId); } catch (err) { /* 予定が消せなくても消す */ } }
+            return !drop;
+          });
+          changed = true;
         }
         // 初めに入れた定例会の「当日の流れ」を BT-EX の指針の順にする(運営が書きかえた回はそのまま)
         if (typeof REF_SEED_AGENDA_PREV !== "undefined" && typeof REF_SEED_AGENDA !== "undefined" && db.eventSeeds && db.eventSeeds.indexOf("agenda-shishin-4") === -1) {
@@ -4158,6 +4187,7 @@ var BtexServerCore = (function () {
         var v = {
           id: e.id, title: e.title, date: e.date, start: e.start, end: e.end, place: e.place, area: e.area, hasMinutes: !!e.minutes,
           body: e.body, agenda: e.agenda || "", fee: e.fee, capacity: e.capacity || 0, url: e.url || "",
+          kind: e.kind === "special" ? "special" : "", doors: e.doors || "",
           online: e.area === "online",
           deadline: e.deadline || "", deadlinePassed: deadlinePassed(e),
           // 参加リンク(Meet)は、申し込んだ人と管理者にだけ見せる
@@ -4345,6 +4375,9 @@ var BtexServerCore = (function () {
           agenda: cleanText(input.agenda, 2000),
           deadline: cleanStamp(input.deadline),
           meet: input.meet === true,
+          // 種類(特別会)と受付の時刻
+          kind: input.kind === "special" ? "special" : "",
+          doors: cleanTime(input.doors),
           party: input.party && input.party.enabled ? { enabled: true, place: c.cleanStr(input.party.place, 120), fee: c.cleanStr(input.party.fee, 60), time: c.cleanStr(input.party.time, 20) } : { enabled: false },
         };
         // Meet の URL を手で入れた(自動で作れないとき)

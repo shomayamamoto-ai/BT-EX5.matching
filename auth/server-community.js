@@ -117,13 +117,24 @@
             db.eventSeeds.push(se.seedId);
             var ev = {
               seedId: se.seedId, id: newId("ev_"), title: se.title, date: se.date, start: se.start, end: se.end, place: se.place || "", area: se.area,
-              body: se.body || "", agenda: se.agenda || "", fee: se.fee || "", capacity: 0, url: "", deadline: se.deadline || "",
+              body: se.body || "", agenda: se.agenda || "", fee: se.fee || "", capacity: se.capacity || 0, url: "", deadline: se.deadline || "",
+              kind: se.kind === "special" ? "special" : "", doors: se.doors || "",
               meet: se.meet !== false, party: { enabled: false }, rsvps: {}, attended: [], createdAt: c.nowMs(), seed: true,
             };
             syncEventCalendar(db, ev); // 共有サーバーでカレンダーが使えれば、Meet もここで作る
             db.events.push(ev);
             changed = true;
           });
+        }
+        // 12/2(水)20:00 の定例会は、運営の依頼で消す(同じ日は「第一回BT-EXフェス」の特別会。2026年10月25日)
+        if (db.eventSeeds && db.eventSeeds.indexOf("remove-2026-12-02-regular") === -1) {
+          db.eventSeeds.push("remove-2026-12-02-regular");
+          db.events = db.events.filter(function (ev) {
+            var drop = ev.date === "2026-12-02" && ev.kind !== "special" && /日本海側最大のマーケット/.test(ev.title || "");
+            if (drop && ev.calId && c.calendar) { try { c.calendar.remove(ev.calId); } catch (err) { /* 予定が消せなくても消す */ } }
+            return !drop;
+          });
+          changed = true;
         }
         // 初めに入れた定例会の「当日の流れ」を BT-EX の指針の順にする(運営が書きかえた回はそのまま)
         if (typeof REF_SEED_AGENDA_PREV !== "undefined" && typeof REF_SEED_AGENDA !== "undefined" && db.eventSeeds && db.eventSeeds.indexOf("agenda-shishin-4") === -1) {
@@ -278,6 +289,7 @@
         var v = {
           id: e.id, title: e.title, date: e.date, start: e.start, end: e.end, place: e.place, area: e.area, hasMinutes: !!e.minutes,
           body: e.body, agenda: e.agenda || "", fee: e.fee, capacity: e.capacity || 0, url: e.url || "",
+          kind: e.kind === "special" ? "special" : "", doors: e.doors || "",
           online: e.area === "online",
           deadline: e.deadline || "", deadlinePassed: deadlinePassed(e),
           // 参加リンク(Meet)は、申し込んだ人と管理者にだけ見せる
@@ -465,6 +477,9 @@
           agenda: cleanText(input.agenda, 2000),
           deadline: cleanStamp(input.deadline),
           meet: input.meet === true,
+          // 種類(特別会)と受付の時刻
+          kind: input.kind === "special" ? "special" : "",
+          doors: cleanTime(input.doors),
           party: input.party && input.party.enabled ? { enabled: true, place: c.cleanStr(input.party.place, 120), fee: c.cleanStr(input.party.fee, 60), time: c.cleanStr(input.party.time, 20) } : { enabled: false },
         };
         // Meet の URL を手で入れた(自動で作れないとき)

@@ -129,6 +129,10 @@
       f.agenda.value = base ? base.agenda : "";
       f.body.value = base ? base.body : "";
       const start = App.timeSelect(base ? base.start : "19:00", { label: "開始" });
+      // 種類(いつもの定例会か、特別会か)・受付の時刻・定員
+      const kind = App.toggle([{ id: "", label: "定例会" }, { id: "special", label: "特別会" }], ev && ev.kind === "special" ? "special" : "", () => {});
+      const doors = App.timeSelect(ev ? ev.doors || "" : "", { label: "受付", none: "なし" });
+      const capacity = h("input", { type: "number", min: "0", max: "999", inputmode: "numeric", value: ev && ev.capacity ? String(ev.capacity) : "", placeholder: "例:144(なしは空)" });
       const end = App.timeSelect(base ? base.end : "21:00", { label: "終了" });
 
       // 開催方法: オンライン(Google Meet)か会場
@@ -238,6 +242,7 @@
           area: online ? "online" : areaSel.value, place: online ? "" : f.place.value.trim(), fee: f.fee.value.trim(), url: f.url.value.trim(),
           agenda: f.agenda.value, body: f.body.value, deadline: deadline(), meet: online, meetUrl: meetUrl.value.trim(),
           party: hasParty.getValue() === "yes" ? { enabled: true, place: partyPlace.value.trim(), fee: partyFee.value.trim(), time: partyTime.value } : { enabled: false },
+          kind: kind.getValue(), doors: doors.value, capacity: Number(capacity.value) || 0,
         };
         save.disabled = true;
         const d = await App.api("adminSaveEvent", { event: payload, dates: ev ? [] : repeatDates() });
@@ -247,9 +252,11 @@
         App.toast(`${d.created > 1 ? `${d.created}回分の定例会を作りました` : "保存しました"}${online && d.event.meetUrl ? "(Google Meet を作りました)" : ""}`);
         App.route();
       } },
+      App.field("種類", kind),
       App.field("名前", f.title),
       App.field("日付", f.date),
       h("div", { class: "app-grid2" }, App.field("開始", start), App.field("終了", end)),
+      h("div", { class: "app-grid2" }, App.field("受付(任意)", doors), App.field("定員(任意)", capacity)),
       App.field("開催方法", h("div", null, how, onlineBox, venueBox)),
       App.field("申込締切", h("div", null, dlKind, dlCustom), "締切を過ぎると、メンバーは出欠を変えられません(管理者は変えられます)"),
       App.field("参加費", f.fee),
@@ -315,6 +322,7 @@
       h("p", { class: "app-lead" }, `${App.fmtDateLong(ev.date)} ${ev.start || ""}${ev.end ? `〜${ev.end}` : ""}`));
     const open = !ev.past && !ev.deadlinePassed;
     el.append(h("div", { class: "evd-badges" },
+      ev.kind === "special" ? App.chip("特別会", "warn") : null,
       App.chip(ev.online ? "オンライン" : App.AREA_LABELS[ev.area] || "会場", "info"),
       App.chip(ev.past ? "終了" : open ? "受付中" : "受付終了", ev.past || !open ? "mute" : "good"),
       ev.past ? null : App.chip(ev.myRsvp === "yes" ? "申込済" : ev.myRsvp === "no" ? "欠席で登録済" : "未申込", ev.myRsvp ? "good" : "warn"),
@@ -323,8 +331,9 @@
     const card = h("section", { class: "evd-card" });
     const yesN = d.members.filter((m) => m.rsvp === "yes").length;
     card.append(h("dl", { class: "evd-info" },
-      h("div", null, h("dt", null, "開催日時"), h("dd", null, `${App.fmtDate(ev.date)} ${ev.start || ""}${ev.end ? `〜${ev.end}` : ""}`)),
+      h("div", null, h("dt", null, "開催日時"), h("dd", null, `${App.fmtDate(ev.date)} ${ev.start || ""}${ev.end ? `〜${ev.end}` : ""}${ev.doors ? `(${ev.doors}受付)` : ""}`)),
       h("div", null, h("dt", null, "参加費"), h("dd", null, ev.fee || "—")),
+      ev.capacity ? h("div", null, h("dt", null, "定員"), h("dd", null, `${ev.capacity}名`)) : null,
       h("div", null, h("dt", null, "参加予定"), h("dd", null, `${yesN}名${d.visitors.length ? `(ビジター ${d.visitors.length}名)` : ""}`)),
       h("div", null, h("dt", null, "申込締切"), h("dd", null, ev.deadline ? App.fmtStamp(ev.deadline).replace(/(\d+:\d+)/, "$1まで") : "当日まで"))));
     // 開催場所(オンラインは、申し込んだ人だけに参加リンク)
