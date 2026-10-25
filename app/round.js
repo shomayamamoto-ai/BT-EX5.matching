@@ -217,11 +217,14 @@
       .sort((a, b) => (a.date + (a.start || "")).localeCompare(b.date + (b.start || "")));
     const wanted = params.get("event");
     const ev = (wanted && ((list && list.events) || []).find((e) => e.id === wanted)) || (wanted === "none" ? null : upcoming[0] || null);
-    const d = ev ? await App.api("getEvent", { id: ev.id }, { quiet: true }) : null;
     const members = (App.members || []).slice();
-    const photos = await App.photos(members.map((m) => m.id));
-    // 定例会のスライドの内容(運営が書きかえたところ)
-    const deckInfo = App.loadDeckConfig ? await App.loadDeckConfig() : { config: null, canEdit: false };
+    // 定例会の出欠・顔写真・スライドの内容(運営が書きかえたところ)・エデュケーションの資料は、まとめて読みこむ(待ち時間を短く)
+    const [d, photos, deckInfo, eduInfo] = await Promise.all([
+      ev ? App.api("getEvent", { id: ev.id }, { quiet: true }) : null,
+      App.photos(members.map((m) => m.id)),
+      App.loadDeckConfig ? App.loadDeckConfig() : { config: null, canEdit: false },
+      App.loadEducation ? App.loadEducation() : { info: null, canEdit: false },
+    ]);
     const going = new Set(d ? d.members.filter((m) => m.rsvp === "yes" || m.attended).map((m) => `m:${m.id}`) : []);
     const absent = new Set(d ? d.members.filter((m) => m.rsvp === "no" && !m.attended).map((m) => `m:${m.id}`) : []);
     const visitors = d ? (d.visitors || []).filter((v) => v.name && ["applied", "confirmed", "attended", "joined"].includes(v.status))
@@ -553,7 +556,7 @@
       }).filter(Boolean);
       if (withDeck) {
         const D = App.deckData ? App.deckData(deckInfo.config) : {};
-        App.roundRun(buildDeck(ev, people, photos, upcoming, deckInfo.config, { bo: { min: Number(boMin.value) || 7, times: Number(boTimes.value) || 4 }, code: codeIn.value }), per, auto ? gapSec : 0, ev ? ev.title : "BT-EX5 定例会",
+        App.roundRun(buildDeck(ev, people, photos, upcoming, deckInfo.config, { edu: eduInfo.info, bo: { min: Number(boMin.value) || 7, times: Number(boTimes.value) || 4 }, code: codeIn.value }), per, auto ? gapSec : 0, ev ? ev.title : "BT-EX5 定例会",
           { deck: true, timing: { plan: eventPlan(ev, D.timeplan), start: eventStartMs(ev), per, gap: auto ? gapSec : 0 } });
         return;
       }
@@ -613,6 +616,7 @@
           h("label", { class: "pr-deck-field" }, h("span", null, "出席コード(4桁)"), codeIn, h("small", null, "終わりの挨拶の「出席コード」のスライドに大きく出ます"))),
         h("div", { class: "app-btn-row pr-deck-edit" },
           deckInfo.canEdit && App.deckEditor ? App.btn("スライドの内容・時間の目安を編集", () => App.deckEditor(deckInfo.config, deckSteps(ev), (cfg) => { deckInfo.config = cfg; }), "ghost small") : null,
+          eduInfo.canEdit && App.eduEditor ? App.btn(`エデュケーションの資料を入れかえる(いま: ${(eduInfo.info && eduInfo.info.title) || ((App.deckData ? App.deckData(deckInfo.config) : {}).education || {}).title || "なし"})`, () => App.eduEditor(eduInfo.info, (info) => { eduInfo.info = info; App.route(); }), "ghost small") : null,
           App.surveyResults ? App.btn("アンケートの結果", () => App.surveyResults(), "ghost small") : null),
         h("p", { class: "app-field-hint" }, "残り10秒で小さな音、0秒で鐘の音が鳴ります。キーボードでは スペース=止める・つづける、→=次へ、←=前へ、Esc=終わる。会場のスクリーンで画面いっぱいに映すときは、ブラウザの全画面(Mac は control+command+F、Windows は F11)を使ってください。"),
         h("div", { class: "pr-go-bar" }, goBtn)),
@@ -723,6 +727,10 @@
     // 見出しの後ろの時間(「15分×2」「(15分×2回)」「5分」)は、見出しの下の小さな行に分ける
     const TIME = /\s*[（(]?\s*(\d+)\s*分(?:\s*[×xX✕]\s*(\d+)\s*回?)?\s*[)）]?\s*$/;
     // 商談の時間と回数: プレゼンをはじめる前に選んだ値(なければ進行表の値)
+    // エデュケーションコーナーの資料: 運営が入れた資料(サーバー)→ 元の資料(BTEX_DECK.education)
+    const material = more.edu && more.edu.pages
+      ? { title: more.edu.title, pages: Array.from({ length: more.edu.pages }, (_, i) => ({ rev: more.edu.rev, i })) }
+      : D.education && (D.education.pages || []).length ? { title: D.education.title, pages: D.education.pages.map((u) => ({ url: `../${u}` })) } : null;
     const boOf = (st, tm) => (more.bo && /商談/.test(st.title) && tm && tm[2]
       ? [more.bo.min, more.bo.times] : [Number(tm[1]), Math.min(6, Number(tm[2] || 1))]);
     const subOf = (st, tm) => { if (!tm) return ""; if (!tm[2]) return `${tm[1]}分`; const [m, t] = boOf(st, tm); return `${m}分 × ${t}回`; };
@@ -754,7 +762,7 @@
       // 商談: 区切りのスライドで「休憩しませんか?」を出す
       if (/商談/.test(st.title)) { const sec = items[items.length - 1]; if (sec && sec.type === "section") sec.breakAsk = true; }
       // 「エデュケーションコーナー 5分」のように時間だけが書いてあるときは、その時間のタイマー
-      if (tm && !tm[2]) items.push({ key: `d:t${items.length}`, kind: "timer", name: st.title.replace(TIME, ""), sub: `${tm[1]}分`, sec: Number(tm[1]) * 60, step: label });
+      if (tm && !tm[2]) items.push({ key: `d:t${items.length}`, kind: "timer", name: st.title.replace(TIME, ""), sub: `${tm[1]}分`, sec: Number(tm[1]) * 60, step: label, material: /エデュケーション/.test(st.title) ? material : null });
       if (tm && tm[2]) {
         const [min, times] = boOf(st, tm);
         const base = st.title.replace(TIME, "");
@@ -1235,10 +1243,11 @@
     const slide = h("div", { class: "pr-slide" });
     // 定例会のスライドの下の進行バー: 流れの1〜7のどこにいるかと、ページ数
     const deckSteps = opts.deck ? ((people.find((p) => p.steps) || {}).steps || []) : [];
-    // 進行バーの名前を、ことばの切れ目で折り返す(「エデュケーション/コーナー」「ブレイクアウト/ルーム商談」)
-    const STEP_BREAK = /(エデュケーション|ブレイクアウト|商談|ビジネス|1分|の)/;
-    const stepWords = (title) => String(title || "").split(STEP_BREAK).filter(Boolean)
-      .flatMap((part, i, a) => (STEP_BREAK.test(part) && i < a.length - 1 ? [part, h("wbr")] : [part]));
+    // 進行バーの名前を、ことばの切れ目でだけ折り返す(「エデュケーション/コーナー」「ブレイクアウト/ルーム商談/(テーブル商談)」)
+    // ことばのかたまりは1行のまま(途中で折り返さない)
+    const stepWords = (title) => String(title || "")
+      .replace(/(エデュケーション|ブレイクアウト|ビジネス|1分|の)(?=.)/g, "$1\u0000").replace(/(.)(?=[（(])/g, "$1\u0000")
+      .split("\u0000").filter(Boolean).flatMap((part, i) => (i ? [h("wbr"), h("span", { class: "pd-nw" }, part)] : [h("span", { class: "pd-nw" }, part)]));
     const progress = opts.deck ? h("div", { class: "pd-progress", "aria-hidden": "true" }) : null;
     function drawProgress() {
       if (!progress) return;
@@ -1340,6 +1349,39 @@
     // 写真は先に読みこんでおく(切りかえたときにすぐ出るように)
     people.forEach((p) => { if (p.photo) { const im = new Image(); im.src = p.photo; } });
 
+    // カードの多いスライド: カードを1ページくらいの大きさにして、スライドの中で1枚ずつ送る
+    // (左右の矢印・下の点・指でなぞる。「進む」「戻る」も、まずカードを送る)
+    function makeCarousel(cards) {
+      const n = cards.length;
+      let cur = 0;
+      const track = h("div", { class: "pd-car-track" }, cards.map((c) => h("div", { class: "pd-car-cell" }, c)));
+      const dots = h("div", { class: "pd-car-dots", role: "tablist" }, cards.map((_, i) => h("button", { type: "button", role: "tab", "aria-label": `${i + 1}枚目`, onclick: () => show(i) }, String(i + 1))));
+      const prevB = h("button", { type: "button", class: "pd-car-btn is-prev", "aria-label": "前のカード", onclick: () => show(cur - 1) }, lineIcon("prev"));
+      const nextB = h("button", { type: "button", class: "pd-car-btn is-next", "aria-label": "次のカード", onclick: () => show(cur + 1) }, lineIcon("next"));
+      const count = h("span", { class: "pd-car-count" });
+      const mark = () => {
+        [...dots.children].forEach((d, i) => { d.classList.toggle("is-on", i === cur); d.setAttribute("aria-selected", i === cur ? "true" : "false"); });
+        count.textContent = `${cur + 1} / ${n}`;
+        prevB.disabled = cur === 0; nextB.disabled = cur === n - 1;
+      };
+      // ボタンで送っている途中(なめらかに動いているあいだ)は、動きの途中の位置で番号を戻さない
+      let lockUntil = 0;
+      function show(i, instant) {
+        cur = Math.max(0, Math.min(n - 1, i));
+        lockUntil = instant ? 0 : Date.now() + 700;
+        track.scrollTo({ left: cur * track.clientWidth, behavior: instant ? "auto" : "smooth" });
+        mark();
+      }
+      track.addEventListener("scroll", () => {
+        if (Date.now() < lockUntil) return;
+        const i = Math.round(track.scrollLeft / Math.max(1, track.clientWidth));
+        if (i !== cur && i >= 0 && i < n) { cur = i; mark(); }
+      }, { passive: true });
+      const el = h("div", { class: "pd-car" }, h("div", { class: "pd-car-stage" }, prevB, track, nextB), h("div", { class: "pd-car-foot" }, dots, count));
+      el.car = { n, get i() { return cur; }, show };
+      mark();
+      return el;
+    }
     // 定例会のスライド
     function deckSlide(p) {
       const L = p.leader || {};
@@ -1361,39 +1403,7 @@
       const softBreaks = (t) => String(t).split(/(?=ルーム商談|[（(]テーブル)/).flatMap((x, i) => (i ? [h("br"), x] : [x]));
       // カードなどを順に浮かび上がらせる(--i は順番)
       const nth = (i) => ({ style: `--i:${i}` });
-      // カードの多いスライド: カードを1ページくらいの大きさにして、スライドの中で1枚ずつ送る
-      // (左右の矢印・下の点・指でなぞる。「進む」「戻る」も、まずカードを送る)
-      const carousel = (cards) => {
-        const n = cards.length;
-        let cur = 0;
-        const track = h("div", { class: "pd-car-track" }, cards.map((c) => h("div", { class: "pd-car-cell" }, c)));
-        const dots = h("div", { class: "pd-car-dots", role: "tablist" }, cards.map((_, i) => h("button", { type: "button", role: "tab", "aria-label": `${i + 1}枚目`, onclick: () => show(i) }, String(i + 1))));
-        const prevB = h("button", { type: "button", class: "pd-car-btn is-prev", "aria-label": "前のカード", onclick: () => show(cur - 1) }, lineIcon("prev"));
-        const nextB = h("button", { type: "button", class: "pd-car-btn is-next", "aria-label": "次のカード", onclick: () => show(cur + 1) }, lineIcon("next"));
-        const count = h("span", { class: "pd-car-count" });
-        const mark = () => {
-          [...dots.children].forEach((d, i) => { d.classList.toggle("is-on", i === cur); d.setAttribute("aria-selected", i === cur ? "true" : "false"); });
-          count.textContent = `${cur + 1} / ${n}`;
-          prevB.disabled = cur === 0; nextB.disabled = cur === n - 1;
-        };
-        // ボタンで送っている途中(なめらかに動いているあいだ)は、動きの途中の位置で番号を戻さない
-        let lockUntil = 0;
-        function show(i, instant) {
-          cur = Math.max(0, Math.min(n - 1, i));
-          lockUntil = instant ? 0 : Date.now() + 700;
-          track.scrollTo({ left: cur * track.clientWidth, behavior: instant ? "auto" : "smooth" });
-          mark();
-        }
-        track.addEventListener("scroll", () => {
-          if (Date.now() < lockUntil) return;
-          const i = Math.round(track.scrollLeft / Math.max(1, track.clientWidth));
-          if (i !== cur && i >= 0 && i < n) { cur = i; mark(); }
-        }, { passive: true });
-        const el = h("div", { class: "pd-car" }, h("div", { class: "pd-car-stage" }, prevB, track, nextB), h("div", { class: "pd-car-foot" }, dots, count));
-        el.car = { n, get i() { return cur; }, show };
-        mark();
-        return el;
-      };
+      const carousel = makeCarousel;
       // 中身のスライドの共通の形: 左上に「02 BT-EXの理念」の小見出し、題、(あれば)要点の一文、中身
       const frame = (cls, ...body) => h("div", { class: `pd pd-frame ${cls}` },
         h("header", { class: "pd-head" },
@@ -1658,9 +1668,9 @@
               h("p", { class: "pd-attend-lead" }, ...lines(p.msg || "")),
               h("div", { class: `pd-attend-code${code ? "" : " is-empty"}`, "aria-label": code ? `出席コード ${code.split("").join(" ")}` : "出席コード(未設定)" }, digits.map((d) => h("span", null, d === "-" ? "" : d))),
               p.note ? h("p", { class: "pd-note" }, `※ ${p.note}`) : null),
-            p.video ? h("figure", { class: "pd-attend-video" },
+            p.video ? h("figure", { class: "pd-attend-video", title: "押すと大きくなります", onclick: (e) => { const f = e.currentTarget; f.classList.toggle("is-zoom"); f.closest(".pd").classList.toggle("is-video-zoom", f.classList.contains("is-zoom")); } },
               (() => { const v = h("video", { src: `../${p.video}`, poster: `../${String(p.video).replace(/\.mp4$/, ".jpg")}`, autoplay: true, muted: true, loop: true, playsinline: true, preload: "auto", "aria-label": "出席コードの入れ方の動画" }); v.muted = true; return v; })(),
-              h("figcaption", null, "入れ方がわからない方はこちら")) : null));
+              h("figcaption", null, "入れ方がわからない方はこちら(押すと大きくなります)")) : null));
       }
       if (p.type === "schedule") {
         return frame("pd-schedule",
@@ -1703,10 +1713,12 @@
       const sr = slide.getBoundingClientRect(), er = el.getBoundingClientRect();
       const rects = [er, ...[...el.children].map((c) => c.getBoundingClientRect())];
       const top = Math.min(...rects.map((r) => r.top)), bottom = Math.max(...rects.map((r) => r.bottom), er.top + el.scrollHeight);
-      const need = bottom - top, room = slide.clientHeight;
+      const need = bottom - top, room = slide.clientHeight - (el.classList.contains("pd-frame") ? Math.max(0, er.top - sr.top) : 0);
       if (need > room && room > 0) {
         const k = Math.max(0.6, (room / need) * 0.97);
-        const dy = (sr.top + sr.bottom) / 2 - er.top - ((top + bottom) / 2 - er.top) * k;
+        // 題のあるスライド(pd-frame)は上にそろえる(スライドを送っても題の位置が動かないように)。ほかは上下のまん中
+        const dy = el.classList.contains("pd-frame") ? Math.max(sr.top - er.top, (er.top - top) * k)
+          : (sr.top + sr.bottom) / 2 - er.top - ((top + bottom) / 2 - er.top) * k;
         el.style.transformOrigin = "50% 0";
         el.style.transform = `translateY(${dy.toFixed(1)}px) scale(${k.toFixed(3)})`;
       }
@@ -1732,6 +1744,20 @@
       // スライドの間は残り時間の欄が隠れていて幅を測れないので、出たときに測りなおす
       if (!sec.style.width || parseFloat(sec.style.width) < 20) fixSecWidth();
       // 自分だけのタイマー: まん中に大きく「集中」「休憩」などと、次にくるもの
+      if (p.kind === "timer" && opts.deck && p.material && (p.material.pages || []).length) {
+        // エデュケーションコーナー: 資料を大きく(1枚ずつ送る)。下のタイマー(メーター・残り時間)はそのまま
+        box.classList.remove("is-rest");
+        const imgs = p.material.pages.map((pg, i) => {
+          const img = h("img", { class: "pd-edu-img", alt: `${p.material.title} ${i + 1}枚目`, loading: i < 2 ? "eager" : "lazy", decoding: "async" });
+          if (pg.url) img.src = pg.url;
+          else if (App.eduPageUrl) App.eduPageUrl(pg.rev, pg.i).then((u) => { if (u) img.src = u; });
+          return h("figure", { class: "pd-edu-page" }, img);
+        });
+        App.fill(slide, h("div", { class: "pd-edu" },
+          h("p", { class: "pd-edu-title" }, h("span", null, p.name), h("b", null, p.material.title)),
+          makeCarousel(imgs)));
+        return;
+      }
       if (p.kind === "timer" && opts.deck) {
         box.classList.remove("is-rest");
         App.fill(slide, h("div", { class: "pr-timer-slide is-big" },

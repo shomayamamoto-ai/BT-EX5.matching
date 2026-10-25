@@ -2617,3 +2617,32 @@ button.home-welcome-check:active { transform: scale(0.94); }
 @media (max-width: 520px) { .sv-bars li { grid-template-columns: minmax(0, 1fr) auto; } .sv-bar-track { grid-column: 1 / -1; grid-row: 2; } }
 /* ほかの BT-EX の方の仕事(お名前の下) */
 .bx-name .bx-cat { display: block; margin-top: 1px; font-size: 11.5px; font-weight: 400; line-height: 1.4; color: var(--text-light); }
+/* エデュケーションコーナーの資料(下のタイマーはそのまま) */
+.pd-edu { width: min(100%, 1280px); display: grid; gap: clamp(6px, 1.2svh, 12px); }
+.pd-edu-title { margin: 0; display: flex; align-items: baseline; gap: 12px; font-family: var(--pd-serif); color: var(--pd-gold); }
+.pd-edu-title span { font-size: clamp(12px, 1.2vw, 16px); letter-spacing: 0.12em; }
+.pd-edu-title b { font-size: clamp(18px, min(2vw, 3.4svh), 30px); color: var(--pd-strong); }
+.pd-edu .pd-car-cell { padding: 0; }
+.pd-edu-page { margin: 0; width: 100%; display: flex; justify-content: center; }
+.pd-edu-img { display: block; max-width: 100%; max-height: calc(100svh - 330px); min-height: 120px; aspect-ratio: 16 / 9; object-fit: contain; border-radius: 12px; background: #fff; box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45); }
+.pr-run.is-timer .pr-slide:has(.pd-edu) { align-items: center; }
+.pd-nw { white-space: nowrap; }
+/* 題のあるスライドは、どれも同じ高さから始める(送っても題の位置が動かない) */
+@media (min-width: 761px) and (min-aspect-ratio: 1/1) {
+  .pr-run.is-deck .pr-slide { align-items: flex-start; }
+  .pr-run.is-deck .pr-slide > .pd-frame { margin-top: clamp(4px, 5svh, 64px); }
+  .pr-run.is-deck .pr-slide > .pd:not(.pd-frame) { align-self: center; }
+}
+/* 出席コード: やり方の動画を大きく(コードは左に小さめ)。押すとスライドいっぱいに */
+@media (min-width: 761px) and (min-aspect-ratio: 1/1) {
+  .pd-attend .pd-attend-row { grid-template-columns: minmax(0, 0.62fr) minmax(0, 1.38fr); gap: clamp(14px, 2vw, 32px); }
+  .pd-attend .pd-attend-code span { width: clamp(44px, min(4.6vw, 10svh), 92px); height: clamp(58px, min(6vw, 13svh), 120px); font-size: clamp(34px, min(4.2vw, 8.4svh), 84px); border-radius: 14px; }
+  .pd-attend .pd-attend-lead { font-size: clamp(14px, min(1.5vw, 2.7svh), 24px); }
+}
+.pd.pd-attend { width: min(100%, 1400px); }
+.pd-attend-video { cursor: zoom-in; }
+.pd-attend-video video { max-height: calc(100svh - 300px); object-fit: contain; }
+.pd-attend.is-video-zoom .pd-attend-main { display: none; }
+.pd-attend.is-video-zoom .pd-attend-row { grid-template-columns: minmax(0, 1fr); }
+.pd-attend-video.is-zoom { cursor: zoom-out; }
+.pd-attend-video.is-zoom video { max-height: calc(100svh - 260px); }

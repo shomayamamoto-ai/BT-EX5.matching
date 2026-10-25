@@ -1123,6 +1123,11 @@ const BTEX_DECK = {
     note: "出席コードの入力は、開催開始から24時間以内です",
     video: "assets/video/attendance-code-howto.mp4",
   },
+  // エデュケーションコーナーの資料(はじめの値)。運営は「スライドの内容を編集」から毎回入れかえられる(画像・PDF)
+  education: {
+    title: "USPについて",
+    pages: Array.from({ length: 12 }, (_, i) => `materials/edu/usp/s-${String(i + 1).padStart(2, "0")}.jpg`),
+  },
   // ⑤商談の時間と回数(はじめの値。プレゼンをはじめる前の画面で変えられる)
   breakout: { min: 7, times: 4 },
   // いちばんはじめのページ: BT-EX でよく使う言葉

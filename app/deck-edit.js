@@ -115,6 +115,100 @@
     ]],
   ];
 
+  // ---------- エデュケーションコーナーの資料(毎回入れかえる) ----------
+  // 画像(1枚ずつ)か PDF を選ぶと、1枚ずつの画像にしてサーバーに置く。PDF は pdf.js を読みこんで画像にする
+  App.loadEducation = async function () {
+    const r = await App.api("getEducation", {}, { quiet: true });
+    return r ? { info: r.education || null, canEdit: !!r.canEdit } : { info: null, canEdit: false };
+  };
+  const eduCache = {};
+  App.eduPageUrl = async function (rev, i) {
+    const k = `${rev}:${i}`;
+    if (eduCache[k]) return eduCache[k];
+    const r = await App.api("getEduPage", { i }, { quiet: true });
+    if (r && r.data) eduCache[k] = r.data;
+    return eduCache[k] || "";
+  };
+  const loadScript = (src) => new Promise((ok, ng) => { const el = document.createElement("script"); el.src = src; el.onload = ok; el.onerror = ng; document.head.append(el); });
+  // キャンバスを JPEG にする(大きいときは画質を下げて、1枚 約45万文字まで)
+  function canvasJpeg(cv) {
+    for (const q of [0.82, 0.72, 0.62, 0.52, 0.42]) { const d = cv.toDataURL("image/jpeg", q); if (d.length < 450000) return d; }
+    return cv.toDataURL("image/jpeg", 0.35);
+  }
+  function fitCanvas(w, h) { const k = Math.min(1, 1600 / w); const cv = document.createElement("canvas"); cv.width = Math.round(w * k); cv.height = Math.round(h * k); return cv; }
+  async function imageToPage(file) {
+    const url = URL.createObjectURL(file);
+    try {
+      const img = await new Promise((ok, ng) => { const im = new Image(); im.onload = () => ok(im); im.onerror = ng; im.src = url; });
+      const cv = fitCanvas(img.naturalWidth, img.naturalHeight);
+      const g = cv.getContext("2d"); g.fillStyle = "#fff"; g.fillRect(0, 0, cv.width, cv.height); g.drawImage(img, 0, 0, cv.width, cv.height);
+      return canvasJpeg(cv);
+    } finally { URL.revokeObjectURL(url); }
+  }
+  async function pdfToPages(file, onStep) {
+    if (!window.pdfjsLib) {
+      await loadScript("https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js");
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+    }
+    const pdf = await window.pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise;
+    const out = [];
+    for (let n = 1; n <= Math.min(pdf.numPages, 40); n++) {
+      onStep(n, pdf.numPages);
+      const page = await pdf.getPage(n);
+      const v1 = page.getViewport({ scale: 1 });
+      const vp = page.getViewport({ scale: 1600 / v1.width });
+      const cv = document.createElement("canvas"); cv.width = Math.round(vp.width); cv.height = Math.round(vp.height);
+      const g = cv.getContext("2d"); g.fillStyle = "#fff"; g.fillRect(0, 0, cv.width, cv.height);
+      await page.render({ canvasContext: g, viewport: vp }).promise;
+      out.push(canvasJpeg(cv));
+    }
+    return out;
+  }
+  App.eduEditor = function (info, onSaved) {
+    App.openSheet("エデュケーションコーナーの資料", (body, close) => {
+      const titleIn = h("input", { type: "text", maxlength: "60", value: (info && info.title) || (base().education || {}).title || "" });
+      const fileIn = h("input", { type: "file", accept: "image/*,application/pdf", multiple: true });
+      const state = h("p", { class: "app-field-hint", "aria-live": "polite" }, info ? `いまの資料: ${info.title}(${info.pages}枚)` : `いまの資料: 元の資料「${(base().education || {}).title || ""}」`);
+      let pages = null;
+      fileIn.addEventListener("change", async () => {
+        const files = [...fileIn.files];
+        if (!files.length) return;
+        pages = [];
+        try {
+          for (const f of files) {
+            if (/pdf$/i.test(f.type) || /\.pdf$/i.test(f.name)) pages.push(...(await pdfToPages(f, (n, all) => { state.textContent = `PDF を画像にしています… ${n} / ${all}`; })));
+            else { state.textContent = `画像を読みこんでいます… ${pages.length + 1}枚目`; pages.push(await imageToPage(f)); }
+          }
+          if (!titleIn.value.trim()) titleIn.value = files[0].name.replace(/\.[^.]+$/, "");
+          state.textContent = `${pages.length}枚の資料を読みこみました。「保存する」で入れかえます`;
+        } catch (e) {
+          pages = null;
+          state.textContent = "読みこめませんでした。PowerPoint は「ファイル → エクスポート」で PDF か画像にしてから選んでください。";
+        }
+      });
+      const save = App.btn("保存する", async () => {
+        const title = titleIn.value.trim();
+        if (!pages && !info) { App.toast("資料(PDF・画像)を選んでください", "error"); return; }
+        save.disabled = true; state.textContent = "保存しています…";
+        const r = await App.api("saveEducation", pages ? { title, pages } : { title, titleOnly: true });
+        save.disabled = false;
+        if (r) { App.toast("エデュケーションコーナーの資料を入れかえました"); close(); if (onSaved) onSaved(r.education); }
+        else state.textContent = "保存できませんでした。枚数を減らすか、もう一度お試しください。";
+      }, "primary wide");
+      body.append(
+        h("p", { class: "app-lead" }, "定例会の「エデュケーションコーナー」で、タイマーと一緒に映す資料です。毎回、ここで入れかえられます。"),
+        App.field("資料の題", titleIn, "例: USPについて"),
+        App.field("資料(PDF か画像)", fileIn, "PowerPoint・Keynote・Googleスライドは、PDF に書き出してから選んでください。画像は選んだ順に並びます(40枚まで)"),
+        state,
+        info ? h("div", { class: "app-btn-row" }, App.btn("元の資料に戻す", async () => {
+          if (!(await App.confirm("入れかえた資料を消して、元の資料に戻しますか?", { ok: "元に戻す", danger: true }))) return;
+          const r = await App.api("saveEducation", { pages: [] });
+          if (r) { App.toast("元の資料に戻しました"); close(); if (onSaved) onSaved(null); }
+        }, "ghost small")) : null,
+        save);
+    });
+  };
+
   // 編集の画面。steps: 当日の流れ(時間の目安の欄の名前に使う)。onSaved(config)
   App.deckEditor = function (cfg, steps, onSaved) {
     const now = App.deckData(cfg);

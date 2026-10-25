@@ -2651,4 +2651,68 @@
       return { actions: { submitSurvey: submitSurvey, listSurveys: listSurveys, adminDeleteSurvey: adminDeleteSurvey } };
     },
   });
+  // ============================================
+  // エデュケーションコーナーの資料(毎回入れかえる)
+  //   getEducation(ログインした人)/ getEduPage(1枚ずつ)/ saveEducation(プレゼンの進行役。pages を空にすると元の資料に戻す)
+  //   1枚の画像は、スプレッドシートの1セルに収まる大きさに分けて置く
+  // ============================================
+  var EDU_PAGES_MAX = 40, EDU_PAGE_MAX = 600000, EDU_CHUNK = 45000;
+  BtexServerCore.registerModule({
+    mutating: ["saveEducation"],
+    create: function (c) {
+      function bget(db, k) { return c.blobs ? c.blobs.get(k) || "" : ((db.eduBlobs || {})[k] || ""); }
+      function bset(db, k, v) {
+        if (c.blobs) { c.blobs.set(k, v); return; }
+        if (!db.eduBlobs) db.eduBlobs = {};
+        if (v) db.eduBlobs[k] = v; else delete db.eduBlobs[k];
+      }
+      function session(body) { var db = c.ensureDb(); var a = c.authSession(db, body.sessionToken); return a ? { db: db, a: a } : null; }
+      function info(db) { var e = db.education || null; return e && e.pages ? { title: e.title || "", pages: e.pages.length, rev: e.rev || 0 } : null; }
+      function getEducation(body) {
+        var x = session(body);
+        if (!x) return c.fail("SESSION_INVALID");
+        return c.ok({ education: info(x.db), canEdit: DECK_OWNERS.indexOf(x.a.user.memberId) !== -1 });
+      }
+      function getEduPage(body) {
+        var x = session(body);
+        if (!x) return c.fail("SESSION_INVALID");
+        var e = x.db.education, i = Number(body.i);
+        if (!e || !e.pages || !(i >= 0 && i < e.pages.length)) return c.fail("NOT_FOUND");
+        var data = "";
+        for (var k = 0; k < e.pages[i]; k++) data += bget(x.db, "edu:" + e.rev + ":" + i + ":" + k);
+        return c.ok({ data: data, rev: e.rev });
+      }
+      function saveEducation(body) {
+        var x = session(body);
+        if (!x) return c.fail("SESSION_INVALID");
+        if (DECK_OWNERS.indexOf(x.a.user.memberId) === -1) return c.fail("FORBIDDEN_ADMIN");
+        var db = x.db, old = db.education;
+        // 題だけを変える
+        if (body.titleOnly) {
+          if (!old) return c.fail("INVALID_REQUEST", "先に資料を入れてください。");
+          old.title = c.cleanStr(body.title, 60) || old.title; c.saveDb(db);
+          return c.ok({ education: info(db) });
+        }
+        var pages = Array.isArray(body.pages) ? body.pages : [];
+        if (pages.length > EDU_PAGES_MAX) return c.fail("INVALID_REQUEST", "資料は" + EDU_PAGES_MAX + "枚までです。");
+        for (var j = 0; j < pages.length; j++) {
+          var s = String(pages[j] || "");
+          if (s.length > EDU_PAGE_MAX || !/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+\/=]+$/.test(s)) return c.fail("INVALID_REQUEST", (j + 1) + "枚目の画像が大きすぎるか、形式が読めません。");
+        }
+        // 前の資料を消す
+        if (old && old.pages) old.pages.forEach(function (n, i) { for (var k = 0; k < n; k++) bset(db, "edu:" + old.rev + ":" + i + ":" + k, ""); });
+        if (!pages.length) { delete db.education; c.saveDb(db); return c.ok({ education: null }); }
+        var rev = c.nowMs(), counts = [];
+        pages.forEach(function (s, i) {
+          var n = Math.ceil(s.length / EDU_CHUNK);
+          for (var k = 0; k < n; k++) bset(db, "edu:" + rev + ":" + i + ":" + k, s.slice(k * EDU_CHUNK, (k + 1) * EDU_CHUNK));
+          counts.push(n);
+        });
+        db.education = { title: c.cleanStr(body.title, 60) || "エデュケーションコーナー", pages: counts, rev: rev, by: x.a.user.memberId };
+        c.saveDb(db);
+        return c.ok({ education: info(db) });
+      }
+      return { actions: { getEducation: getEducation, getEduPage: getEduPage, saveEducation: saveEducation } };
+    },
+  });
 })();
