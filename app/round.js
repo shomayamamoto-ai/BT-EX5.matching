@@ -1725,8 +1725,9 @@
         return h("div", { class: "pd pd-hero pd-joinform" },
           p.eyebrow ? h("p", { class: "pd-kicker" }, `${two(p.stepNo)}  ${p.eyebrow}`) : null,
           h("h2", { class: "pd-display" }, ...lines(p.name)),
-          p.lead ? h("p", { class: "pd-join-lead" }, ...lines(p.lead)) : null,
-          p.url ? h("div", { class: "pd-qr" }, App.qrImage ? App.qrImage(p.url, p.name) : null) : h("p", { class: "pd-join-empty" }, "フォームの URL は「スライドの内容を編集」で入れられます"),
+          // 説明は1行ずつ(行の途中では折り返さない)
+          p.lead ? h("p", { class: "pd-join-lead" }, String(p.lead).split("\n").map((t) => h("span", { class: "pd-line" }, t))) : null,
+          p.url ? h("div", { class: "pd-qr" }, App.qrImage ? App.qrImage(p.url, p.name) : null) : null,
           p.url && p.note ? h("p", { class: "pd-join-note" }, p.note) : null);
       }
       if (p.type === "joinsteps") {

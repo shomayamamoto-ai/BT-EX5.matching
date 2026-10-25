@@ -2860,3 +2860,15 @@ button.home-welcome-check:active { transform: scale(0.94); }
 .pd-kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); width: min(100%, 1100px); }
 .pd-kpi b { display: flex; align-items: flex-end; font-size: clamp(30px, min(4.8vw, 7.4svh), 80px); }
 .pd-kpi small { font-size: clamp(13px, min(1.6vw, 2.6svh), 22px); }
+
+/* 入会申し込みフォーム: 説明は指定の2行のまま(行の途中で折り返さない) */
+.pd-join-lead .pd-line { display: block; white-space: nowrap; }
+/* 狭いウィンドウ(〜1000px)では、下の進行バーの名前を少し小さく・字間をつめる */
+@media (max-width: 1000px) {
+  .pr-run.dock-home .pd-progress-steps span { font-size: 9.5px; letter-spacing: -0.02em; }
+  .pr-run.dock-home .pd-progress-steps { gap: 4px; }
+}
+/* 進行バーの列は、いちばん長いことばのかたまりが入る幅を下限にして、残りを等しく分ける */
+.pr-run.dock-home .pd-progress-steps { grid-auto-columns: minmax(min-content, 1fr); }
+.pr-run.dock-home .pd-progress-steps li { min-width: min-content; }
+.pr-run.dock-home .pd-progress-steps li > span { max-width: none; min-width: min-content; overflow-wrap: normal; }

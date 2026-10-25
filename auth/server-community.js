@@ -2637,10 +2637,18 @@
           if (cfg && "timeplan" in cfg) { delete cfg.timeplan; writeCfg(db, cfg); }
           changed = true;
         }
-        if (db.cleanups.indexOf("deck-text-breaks-2") === -1) {
-          db.cleanups.push("deck-text-breaks-2");
+        if (db.cleanups.indexOf("deck-text-breaks-3") === -1) {
+          db.cleanups.push("deck-text-breaks-3");
           var cfg2 = readCfg(db);
-          if (cfg2) writeCfg(db, breakTexts(cfg2));
+          if (cfg2) {
+            breakTexts(cfg2);
+            // 入会申し込みフォームの説明: 同じ文なら、改行・読点の入れ方にかかわらず2行にそろえる
+            var jf = cfg2.joinForm;
+            var JOIN_LEAD = "BT-EX5 への入会をご希望の方は\nこちらのフォームからお申し込みください";
+            var flat = function (t) { return String(t || "").replace(/[\s、,]/g, ""); };
+            if (jf && typeof jf.lead === "string" && flat(jf.lead) === flat(JOIN_LEAD)) jf.lead = JOIN_LEAD;
+            writeCfg(db, cfg2);
+          }
           changed = true;
         }
         return changed;

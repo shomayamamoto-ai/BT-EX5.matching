@@ -2406,7 +2406,7 @@ const REF_SEED_ANNOUNCEMENTS = [
   {
     seedId: "2026-10-25-update-16",
     cat: "アップデート",
-    rev: 9,
+    rev: 10,
     at: Date.UTC(2026, 9, 25, 4, 0), // 2026/10/25 13:00(日本時間)
     title: "【アップデート】紹介診断に「相手がこう言っていたら」・アンケート・運営タブ など",
     body: [
@@ -2422,7 +2422,7 @@ const REF_SEED_ANNOUNCEMENTS = [
       "・「ブレイクアウトルーム商談(テーブル商談) 7分×4」にし、はじめる前に1回の分数と回数を選べるようにしました。商談のあいだに休憩を入れるかを聞き、1分の休憩画面を出します(「進む」でとばせます)。",
       "・ベネフィットと規定のカードを、1枚ずつ大きく出して左右に送る形にしました。3つの強みのスライドは、スケジュールのあとに移しました。",
       "・タイマーを大きな数字の表示にしました(時計の絵はなくしました)。",
-      "・挙手のページの前に入会フォームのページを、挙手のページに「LINK内での実績紹介」を足しました。一般規定に⑦を足しました。",
+      "・挙手のページの前に入会フォームのページ(説明は「BT-EX5 への入会をご希望の方は/こちらのフォームからお申し込みください」の2行)を、挙手のページに「LINK内での実績紹介」を足しました。一般規定に⑦を足しました。",
       "・おわりのページに「入会までの3ステップ」「アンケートのQRコード」「出席コード(やり方の動画つき。押すと大きくなります)」を足しました。",
       "・スライドの文字が左右の操作パネルに重ならないようにし、題の高さをどのスライドでもそろえました。下の進行バーの名前は、ことばの切れ目で改行します。",
       "・規定の注意書き(※)を、明るい色の太字にして読みやすくしました。",
@@ -6363,10 +6363,18 @@ var BtexServerCore = (function () {
           if (cfg && "timeplan" in cfg) { delete cfg.timeplan; writeCfg(db, cfg); }
           changed = true;
         }
-        if (db.cleanups.indexOf("deck-text-breaks-2") === -1) {
-          db.cleanups.push("deck-text-breaks-2");
+        if (db.cleanups.indexOf("deck-text-breaks-3") === -1) {
+          db.cleanups.push("deck-text-breaks-3");
           var cfg2 = readCfg(db);
-          if (cfg2) writeCfg(db, breakTexts(cfg2));
+          if (cfg2) {
+            breakTexts(cfg2);
+            // 入会申し込みフォームの説明: 同じ文なら、改行・読点の入れ方にかかわらず2行にそろえる
+            var jf = cfg2.joinForm;
+            var JOIN_LEAD = "BT-EX5 への入会をご希望の方は\nこちらのフォームからお申し込みください";
+            var flat = function (t) { return String(t || "").replace(/[\s、,]/g, ""); };
+            if (jf && typeof jf.lead === "string" && flat(jf.lead) === flat(JOIN_LEAD)) jf.lead = JOIN_LEAD;
+            writeCfg(db, cfg2);
+          }
           changed = true;
         }
         return changed;
