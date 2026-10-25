@@ -2502,11 +2502,8 @@ button.home-welcome-check:active { transform: scale(0.94); }
 @media (max-width: 760px), (max-aspect-ratio: 1/1) { .pd-gloss { grid-template-columns: minmax(0, 1fr); } }
 
 /* 入会申し込みフォーム */
-.pd-joinform { gap: clamp(8px, 2svh, 20px); }
-.pd-join-lead { margin: 0; font-size: clamp(16px, min(2vw, 3.4svh), 30px); font-weight: 700; line-height: 1.6; color: var(--pd-text); text-align: center; }
 .pd-qr { padding: clamp(10px, 1.6svh, 18px); border-radius: 22px; background: #fff; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.35); }
 .pd-qr .qr-img { display: block; width: clamp(160px, min(22vw, 34svh), 340px); height: auto; image-rendering: pixelated; }
-.pd-join-note, .pd-join-empty { margin: 0; font-size: clamp(12px, 1.2vw, 16px); color: rgba(243, 230, 204, 0.7); }
 
 /* 入会への3ステップ */
 .pd-steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1fr); align-items: stretch; gap: clamp(8px, 1.2vw, 18px); }
@@ -2516,7 +2513,12 @@ button.home-welcome-check:active { transform: scale(0.94); }
 .pd-step-card small { padding: 0 12px; font-size: clamp(13px, min(1.4vw, 2.4svh), 20px); font-weight: 700; color: var(--pd-text); line-height: 1.6; }
 .pd-step-arrow { display: grid; place-items: center; color: var(--pd-gold); }
 .pd-step-arrow .pr-icon { width: clamp(26px, 2.6vw, 40px); height: clamp(26px, 2.6vw, 40px); }
-@media (max-width: 760px), (max-aspect-ratio: 1/1) { .pd-steps { grid-template-columns: minmax(0, 1fr); } .pd-step-arrow { transform: rotate(90deg); } }
+/* カードの外の注意書き: はじめの何枚かのカードの下に、下向きのかっこでまとめる */
+.pd-step-note { position: relative; margin-top: clamp(4px, 1svh, 10px); padding-top: clamp(16px, 2.6svh, 28px); text-align: center; animation: pd-in 0.55s ease both; animation-delay: 0.5s; }
+.pd-step-note::before { content: ""; position: absolute; left: 6%; right: 6%; top: 0; height: clamp(10px, 1.6svh, 16px); border: 2px solid var(--pd-gold); border-top: 0; border-radius: 0 0 14px 14px; }
+.pd-step-note::after { content: ""; position: absolute; left: 50%; top: clamp(10px, 1.6svh, 16px); width: 2px; height: clamp(8px, 1.2svh, 12px); background: var(--pd-gold); transform: translateX(-50%); }
+.pd-step-note span { display: inline-block; margin-top: clamp(6px, 1svh, 10px); padding: 0.35em 1.2em; border-radius: 999px; border: 1px solid rgba(226, 184, 102, 0.55); background: rgba(226, 184, 102, 0.1); font-size: clamp(14px, min(1.6vw, 2.8svh), 24px); font-weight: 800; color: var(--pd-strong); }
+@media (max-width: 760px), (max-aspect-ratio: 1/1) { .pd-steps { grid-template-columns: minmax(0, 1fr); } .pd-step-arrow { transform: rotate(90deg); } .pd-step-note { grid-column: 1 / -1 !important; order: 1; } .pd-steps > li:nth-child(n+4):not(.pd-step-note) { order: 2; } }
 
 /* アンケート */
 .pd-survey-lead { margin: 0 0 clamp(8px, 2svh, 20px); font-size: clamp(15px, min(1.8vw, 3svh), 26px); font-weight: 700; color: var(--pd-text); }
@@ -2622,7 +2624,6 @@ button.home-welcome-check:active { transform: scale(0.94); }
 .pr-code-in { letter-spacing: 0.3em; max-width: 12em; }
 /* 休憩の画面の上にも操作バーを出す(「進む」で休憩を終えられるように) */
 .pr-run .pr-dock { z-index: 40; }
-.pd-joinform .pd-display { font-size: clamp(30px, min(4.4vw, 7.6svh), 70px); }
 /* アンケートの結果 */
 .sv-res { display: grid; gap: 14px; }
 .sv-res-lead, .sv-res .app-empty p { white-space: pre-line; }
@@ -2898,7 +2899,6 @@ button.home-welcome-check:active { transform: scale(0.94); }
 .pd-kpi small { font-size: clamp(13px, min(1.6vw, 2.6svh), 22px); }
 
 /* 入会申し込みフォーム: 説明は指定の2行のまま(行の途中で折り返さない) */
-.pd-join-lead .pd-line { display: block; white-space: nowrap; }
 /* 狭いウィンドウ(〜1000px)では、下の進行バーの名前を少し小さく・字間をつめる */
 @media (max-width: 1000px) {
   .pr-run.dock-home .pd-progress-steps span { font-size: 9.5px; letter-spacing: -0.02em; }

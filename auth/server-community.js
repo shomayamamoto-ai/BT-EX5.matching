@@ -2678,6 +2678,30 @@
           }
           changed = true;
         }
+        // 入会の3ステップ(2026年10月): 順番を「LINKへの入会 → BT-EX5 入会 → ユニット選択」にし、Step1・2 の説明はカードの外の「詳しくは紹介者まで」にまとめた。
+        // 前に保存したステップが元のままなら、一度だけ外して新しい形にする(書きかえていたときはそのまま)
+        if (db.cleanups.indexOf("deck-joinsteps-2") === -1) {
+          db.cleanups.push("deck-joinsteps-2");
+          var cfg3 = readCfg(db);
+          var isOld = function (v) { return Array.isArray(v) && v.map(function (x) { return String((x && x.head) || "").replace(/\s/g, ""); }).join("|") === "LINKへの入会|ユニット選択|BT-EX5入会"; };
+          // 保存の形は「joinSteps.steps」(編集画面)と「joinSteps: { steps }」の2通り
+          if (cfg3 && isOld(cfg3["joinSteps.steps"])) { delete cfg3["joinSteps.steps"]; writeCfg(db, cfg3); }
+          else if (cfg3 && cfg3.joinSteps && isOld(cfg3.joinSteps.steps)) { delete cfg3.joinSteps.steps; writeCfg(db, cfg3); }
+          changed = true;
+        }
+        // アンケートの説明(2026年10月): 「本日の定例会の…」を「本日のBT-EX5の定例会の…」に。前に保存した説明が元の文のままなら書きかえる
+        if (db.cleanups.indexOf("deck-survey-lead-1") === -1) {
+          db.cleanups.push("deck-survey-lead-1");
+          var cfg4 = readCfg(db);
+          var OLD_LEAD = "本日の定例会の感想をお聞かせください", NEW_LEAD = "本日のBT-EX5の定例会の感想をお聞かせください";
+          var fixLead = function (t) { return typeof t === "string" && t.indexOf(OLD_LEAD) === 0 ? NEW_LEAD + t.slice(OLD_LEAD.length) : t; };
+          if (cfg4) {
+            if (typeof cfg4["survey.lead"] === "string") cfg4["survey.lead"] = fixLead(cfg4["survey.lead"]);
+            if (cfg4.survey && typeof cfg4.survey.lead === "string") cfg4.survey.lead = fixLead(cfg4.survey.lead);
+            writeCfg(db, cfg4);
+          }
+          changed = true;
+        }
         return changed;
       }
       return { migrate: migrate, actions: { getDeckConfig: getDeckConfig, saveDeckConfig: saveDeckConfig } };

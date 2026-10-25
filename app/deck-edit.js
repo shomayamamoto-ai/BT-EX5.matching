@@ -93,11 +93,6 @@
       { path: "fits.items", label: "このような人のお役に立てます(1行に1つ)", type: "lines" },
       { path: "strengths.groups", label: "それぞれの強み(1行目が名前、続く行が強み。空の行で区切る)", type: "blocks", key: "name", items: "items" },
     ]],
-    ["入会申し込みフォーム(挙手のお願いの前)", [
-      { path: "joinForm.url", label: "フォームの URL(入れると QR コードが出ます)", type: "text" },
-      { path: "joinForm.title", label: "題", type: "text" },
-      { path: "joinForm.lead", label: "説明(改行はそのままスライドの改行になります)", type: "multi" },
-    ]],
     ["挙手のお願い(LINKのビジネス実績紹介のあと)", [
       { path: "raise.0.items", label: "1ページ目: 発表すること(1行に1つ)", type: "lines" },
       { path: "raise.0.note", label: "1ページ目: 注意書き(《 》で囲むと強調)", type: "text" },
@@ -109,6 +104,7 @@
     ["終わりの挨拶(入会の3ステップ・アンケート・出席コード)", [
       { path: "joinSteps.title", label: "入会のステップの題", type: "text" },
       { path: "joinSteps.steps", label: "ステップ(1行目が見出し、続く行が文。空の行で区切る)", type: "cards" },
+      { path: "joinSteps.note", label: "ステップのカードの外の注意書き(Step1・Step2 の下にまとめて出す)", type: "text" },
       { path: "survey.lead", label: "アンケートの説明", type: "text" },
       { path: "attend.lead", label: "出席コードの説明(改行はそのままスライドの改行になります)", type: "multi" },
       { path: "attend.note", label: "出席コードの注意書き", type: "text" },

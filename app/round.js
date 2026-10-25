@@ -824,9 +824,7 @@
     if (hasGloss && !glossDone) { glossary("用語説明"); items.unshift(items.pop()); }
     // 終わりの挨拶: 入会への3ステップ → アンケート(BT-EX メンバー / ビジター) → 出席コード → おわり
     const endLabel = steps.length ? `${steps[steps.length - 1].no}. ${steps[steps.length - 1].title}` : "おわり";
-    if (D.joinSteps) deck("joinsteps", { name: D.joinSteps.title, step: endLabel, cards: D.joinSteps.steps || [] });
-    // 入会申し込みフォームは、入会への3ステップのすぐあと(運営の依頼)
-    if (D.joinForm) deck("joinform", Object.assign({ step: endLabel }, D.joinForm, { name: D.joinForm.title }));
+    if (D.joinSteps) deck("joinsteps", { name: D.joinSteps.title, step: endLabel, cards: D.joinSteps.steps || [], note: D.joinSteps.note || "", noteSpan: D.joinSteps.noteSpan || 2 });
     if (D.survey) {
       const url = (k) => { try { return new URL(`../survey/?k=${k}${ev ? `&e=${encodeURIComponent(ev.id)}` : ""}`, location.href).href; } catch { return ""; } };
       deck("survey", { name: D.survey.title, step: endLabel, lead: D.survey.lead, urls: [["BT-EX メンバーの方", url("member")], ["ビジターの方", url("visitor")]] });
@@ -1759,14 +1757,6 @@
         wrap.car = seq;
         return frame("pd-glossary", wrap);
       }
-      if (p.type === "joinform") {
-        // 入会申し込みフォーム: QR コード(URL が入っているとき)
-        return frameL("pd-joinform is-centered", "",
-          // 説明は1行ずつ(行の途中では折り返さない)
-          p.lead ? h("p", { class: "pd-join-lead" }, String(p.lead).split("\n").map((t) => h("span", { class: "pd-line" }, t))) : null,
-          p.url ? h("div", { class: "pd-qr" }, App.qrImage ? App.qrImage(p.url, p.name) : null) : null,
-          p.url && p.note ? h("p", { class: "pd-join-note" }, p.note) : null);
-      }
       if (p.type === "staff") {
         // 本日の運営メンバー: 役ごとのカードに、担当の方の顔写真とお名前
         return frame("pd-staff", h("ul", { class: "pd-staff-grid" }, (p.roles || []).map((r, i) => h("li", Object.assign({ class: "pd-staff-card" }, nth(i)),
@@ -1779,7 +1769,9 @@
         return frame("pd-joinsteps", h("ol", { class: "pd-steps" }, (p.cards || []).flatMap((st, i) => [
           i ? h("li", { class: "pd-step-arrow", "aria-hidden": "true" }, lineIcon("next")) : null,
           h("li", Object.assign({ class: "pd-step-card" }, nth(i)), h("span", { class: "pd-step-no" }, `Step${i + 1}`), h("b", null, ...lines(st.head || "")), st.text ? h("small", null, String(st.text).split("\n").map((t) => h("span", { class: "pd-line" }, t))) : null),
-        ]).filter(Boolean)));
+        ]).filter(Boolean).concat(
+          // カードの外の注意書き(「詳しくは紹介者まで」)。はじめの何枚かのカードの下に、かっこでまとめて出す
+          p.note ? [h("li", { class: "pd-step-note", style: `grid-column: 1 / ${Math.min(p.cards.length, Math.max(1, p.noteSpan || 2)) * 2}` }, h("span", null, p.note))] : [])));
       }
       if (p.type === "survey") {
         // アンケート: BT-EX メンバーの方・ビジターの方で分けた QR コード
@@ -1928,7 +1920,7 @@
       const nexts = people.slice(idx + 1).filter(isPerson).slice(0, 3);
       box.classList.toggle("is-deck", isDeck(p));
       box.classList.toggle("is-timer", p.kind === "timer");
-      ["movie", "cover", "agenda", "section", "leader", "about", "vision", "list", "feature", "checks", "strengths", "venn", "kpis", "rules", "schedule", "raise", "closing", "glossary", "joinform", "joinsteps", "survey", "attend", "staff"].forEach((t) => box.classList.toggle(`is-d-${t}`, isDeck(p) && p.type === t));
+      ["movie", "cover", "agenda", "section", "leader", "about", "vision", "list", "feature", "checks", "strengths", "venn", "kpis", "rules", "schedule", "raise", "closing", "glossary", "joinsteps", "survey", "attend", "staff"].forEach((t) => box.classList.toggle(`is-d-${t}`, isDeck(p) && p.type === t));
       box.classList.remove("is-edu");
       // スライドとプレゼンで操作バーの幅が変わる(スライドでは「はじめる」の場所をつめる)ので、置き直す
       if (box.dataset.kindWas !== String(isDeck(p))) { box.dataset.kindWas = String(isDeck(p)); if (box.classList.contains("dock-home")) requestAnimationFrame(() => window.dispatchEvent(new Event("resize"))); }

@@ -1306,25 +1306,21 @@ const BTEX_DECK = {
       note: "",
     },
   ],
-  // ⑥の挙手のお願いの前: BT-EX5 の入会申し込みフォーム(url を入れると QR コードを出す)
-  joinForm: {
-    title: "BT-EX5 入会申し込みフォーム",
-    lead: "BT-EX5 への入会をご希望の方は\nこちらのフォームからお申し込みください",
-    url: "",
-    note: "スマホのカメラで QR コードを読み取ると、フォームが開きます",
-  },
   // ⑦終わりの挨拶: 入会への3ステップ → アンケート → 出席コード → おわり
   joinSteps: {
     title: "BT-EX5 入会への簡単な3ステップ",
     steps: [
-      { head: "LINKへの入会", text: "詳しくは紹介者まで" },
-      { head: "ユニット選択", text: "BT-EX5 を選んで\n申し込み・審査" },
+      { head: "LINKへの入会", text: "" },
       { head: "BT-EX5 入会", text: "" },
+      { head: "ユニット選択", text: "BT-EX5 を選択" },
     ],
+    // カードの外(Step1・Step2 の下)にまとめて出す注意書き。noteSpan は、はじめから何枚目のカードまでにかかるか
+    note: "詳しくは紹介者まで",
+    noteSpan: 2,
   },
   survey: {
     title: "定例会のアンケート",
-    lead: "本日の定例会の感想をお聞かせください(2〜3分)",
+    lead: "本日のBT-EX5の定例会の感想をお聞かせください(2〜3分)",
   },
   attend: {
     title: "出席コード",
@@ -2567,7 +2563,7 @@ const REF_SEED_ANNOUNCEMENTS = [
   {
     seedId: "2026-10-25-update-16",
     cat: "アップデート",
-    rev: 18,
+    rev: 19,
     at: Date.UTC(2026, 9, 25, 4, 0), // 2026/10/25 13:00(日本時間)
     title: "【アップデート】紹介診断に「相手がこう言っていたら」・アンケート・運営タブ など",
     body: [
@@ -2583,7 +2579,6 @@ const REF_SEED_ANNOUNCEMENTS = [
       "・予定に「特別会」の種類・受付の時刻・定員を入れられるようにしました(特別会は金の枠と「特別会」の札で出ます)。",
       "・はじめの挨拶のあとに「本日の運営メンバー」のスライドを足しました(ファシリテーター・エデュケーション・本システム・スライド・ブレイクアウトルーム)。担当の方は、はじめる前にプレゼンの画面で、プレゼンを使える方から押して選びます(もう一度押すと外れます。複数選べます)。",
       "・すべてのスライドで、題の位置と大きさをそろえました(挙手・入会フォーム・特徴などのスライドも、題は左上のいつもの位置です)。",
-      "・入会申し込みフォームのスライドを、「入会への簡単な3ステップ」のすぐあとに移しました。",
       "・出席コードのやり方の動画を押すと、画面いっぱい(全画面)に出るようにしました。もう一度押すと元に戻ります。",
       "・用語説明の説明文と、一般規定・倫理規定の文を、指定の位置で改行しました。",
       "・用語説明のポップアップで、言葉(「ありがとうマイル」など)を必ず1行で出すようにしました(入りきらない画面では文字を少し小さくします)。",
@@ -2591,6 +2586,9 @@ const REF_SEED_ANNOUNCEMENTS = [
       "・30秒・1分プレゼンの画面の「こんな話が出たら」を、4つまでではなく、画面の下(メーター)に重ならない範囲で入るだけ出すようにしました。",
       "・商談の前の「休憩しませんか?」で「このまま続ける」を押すと、ウイルスに入られたような警告の画面で覆い、「休む(1分)」のボタンだけになるようにしました(この間は下の操作バーも隠れ、「進む」や Esc でも閉じません)。",
       "・休憩中の残り時間が、はじめ「0:60」と出ていたのを「1:00」にしました。",
+      "・「BT-EX5 入会への簡単な3ステップ」を「LINKへの入会 → BT-EX5 入会 → ユニット選択(BT-EX5 を選択)」の順にし、Step1・Step2 の下にまとめて「詳しくは紹介者まで」と出すようにしました。",
+      "・終わりの挨拶の「BT-EX5 入会申し込みフォーム」のページをなくしました。",
+      "・アンケートのスライドの説明を「本日のBT-EX5の定例会の感想をお聞かせください」にしました。",
       "・エデュケーションコーナーの資料を、上の帯と下のタイマー・操作バーの間に収まる大きさにしました(資料の下のはしまで見えます)。",
       "・操作バーの「終了」を押したときの「進行を終わりますか?」を、「つづける」「終わる」のボタンの上に出すようにしました。",
       "・本日の流れの「はじめの挨拶」のあとに「②用語説明」を入れ、用語説明のスライドを足しました。言葉を押すか「進む」で、1つずつ大きく出ます(「戻る」で1つ前へ。最後の言葉のあとの「進む」で次のスライドへ)。",
@@ -6584,6 +6582,30 @@ var BtexServerCore = (function () {
             var flat = function (t) { return String(t || "").replace(/[\s、,]/g, ""); };
             if (jf && typeof jf.lead === "string" && flat(jf.lead) === flat(JOIN_LEAD)) jf.lead = JOIN_LEAD;
             writeCfg(db, cfg2);
+          }
+          changed = true;
+        }
+        // 入会の3ステップ(2026年10月): 順番を「LINKへの入会 → BT-EX5 入会 → ユニット選択」にし、Step1・2 の説明はカードの外の「詳しくは紹介者まで」にまとめた。
+        // 前に保存したステップが元のままなら、一度だけ外して新しい形にする(書きかえていたときはそのまま)
+        if (db.cleanups.indexOf("deck-joinsteps-2") === -1) {
+          db.cleanups.push("deck-joinsteps-2");
+          var cfg3 = readCfg(db);
+          var isOld = function (v) { return Array.isArray(v) && v.map(function (x) { return String((x && x.head) || "").replace(/\s/g, ""); }).join("|") === "LINKへの入会|ユニット選択|BT-EX5入会"; };
+          // 保存の形は「joinSteps.steps」(編集画面)と「joinSteps: { steps }」の2通り
+          if (cfg3 && isOld(cfg3["joinSteps.steps"])) { delete cfg3["joinSteps.steps"]; writeCfg(db, cfg3); }
+          else if (cfg3 && cfg3.joinSteps && isOld(cfg3.joinSteps.steps)) { delete cfg3.joinSteps.steps; writeCfg(db, cfg3); }
+          changed = true;
+        }
+        // アンケートの説明(2026年10月): 「本日の定例会の…」を「本日のBT-EX5の定例会の…」に。前に保存した説明が元の文のままなら書きかえる
+        if (db.cleanups.indexOf("deck-survey-lead-1") === -1) {
+          db.cleanups.push("deck-survey-lead-1");
+          var cfg4 = readCfg(db);
+          var OLD_LEAD = "本日の定例会の感想をお聞かせください", NEW_LEAD = "本日のBT-EX5の定例会の感想をお聞かせください";
+          var fixLead = function (t) { return typeof t === "string" && t.indexOf(OLD_LEAD) === 0 ? NEW_LEAD + t.slice(OLD_LEAD.length) : t; };
+          if (cfg4) {
+            if (typeof cfg4["survey.lead"] === "string") cfg4["survey.lead"] = fixLead(cfg4["survey.lead"]);
+            if (cfg4.survey && typeof cfg4.survey.lead === "string") cfg4.survey.lead = fixLead(cfg4.survey.lead);
+            writeCfg(db, cfg4);
           }
           changed = true;
         }
