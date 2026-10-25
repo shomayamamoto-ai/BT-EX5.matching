@@ -866,7 +866,7 @@ var BtexServerCore = (function () {
         team: cleanStr(m.team, 40),
         base: !bases || bases.indexOf(base) !== -1 ? base || "未設定" : "未設定",
         category: !categories || categories.indexOf(category) !== -1 ? category : categories[categories.length - 1],
-        business: cleanStr(m.business, 600),
+        business: cleanStr(m.business, 2000),
         customers: cleanStr(m.customers, 400),
         offer: cleanStr(m.offer, 120),
         selfIntro: cleanStr(String(m.selfIntro || "").replace(/\r\n?/g, "\n"), 3000),
@@ -874,7 +874,7 @@ var BtexServerCore = (function () {
         wants: cleanStr(m.wants, 400),
         // 欲しい紹介の順位(1位〜5位。上から順に)
         wantsRank: cleanList(m.wantsRank, null, 5),
-        triggers: cleanList(m.triggers, null, 24).map(function (t) { return t.slice(0, 40); }),
+        triggers: cleanList(m.triggers, null, 40).map(function (t) { return t.slice(0, 40); }),
         face: cleanStr(m.face, 60),
         faceAreas: cleanList(m.faceAreas, ["niigata", "tokyo"], 2),
         online: ["all", "partial", "none", "unknown"].indexOf(online) !== -1 ? online : "unknown",
