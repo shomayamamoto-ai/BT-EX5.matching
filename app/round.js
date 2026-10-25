@@ -1318,7 +1318,7 @@
     const dockBtn = (icon, label, cls, onclick) => setBtn(h("button", { type: "button", class: `pr-dock-btn${cls ? ` ${cls}` : ""}`, onclick }), icon, label);
     const pauseBtn = dockBtn("play", "はじめる", "is-main");
     // スライドの中のカード(カルーセル)
-    const carNow = () => { const el = slide.querySelector(".pd-car"); return el && el.car; };
+    const carNow = () => { const el = slide.querySelector(".pd-car, .pd-gl-seq"); return el && el.car; };
     function backward() {
       if (breakLayer) { closeBreak(); return; }
       const c = carNow();
@@ -1694,9 +1694,31 @@
           p.note ? h("p", { class: "pd-note" }, `※ ${p.note}`) : null);
       }
       if (p.type === "glossary") {
-        // BT-EX でよく使う言葉
-        return frame("pd-glossary", h("dl", { class: "pd-gloss" }, (p.items || []).map((x, i) => h("div", Object.assign({ class: "pd-gloss-item" }, nth(i)),
-          h("dt", null, x.head), h("dd", null, ...lines(x.text || ""))))));
+        // BT-EX でよく使う言葉。言葉を押すか「進む」で、1つずつ大きく出す(ポップアップ)。
+        // 最後の言葉のあとの「進む」で次のスライドへ。「戻る」は1つ前の言葉、最初の言葉ならポップアップを閉じる
+        const items = p.items || [];
+        const pop = h("div", { class: "pd-gloss-pop", hidden: true, role: "dialog", "aria-modal": "false", "aria-live": "polite" });
+        const cells = items.map((x, i) => h("div", Object.assign({ class: "pd-gloss-item", role: "button", tabindex: "0", "aria-label": `${x.head}を大きく見る`,
+          onclick: () => seq.show(i + 1), onkeydown: (e) => { if (e.key === "Enter") { e.preventDefault(); e.stopPropagation(); seq.show(i + 1); } } }, nth(i)),
+          h("dt", null, x.head), h("dd", null, ...lines(x.text || ""))));
+        // i: 0 = 閉じている / 1〜n = その番号の言葉を出している(カードの送りと同じ形で、進む・戻るから動かす)
+        const seq = { n: items.length + 1, i: 0, show(k) {
+          seq.i = Math.max(0, Math.min(items.length, k));
+          cells.forEach((c, j) => { c.classList.toggle("is-on", j === seq.i - 1); c.classList.toggle("is-seen", j < seq.i - 1); });
+          if (!seq.i) { pop.hidden = true; return; }
+          const x = items[seq.i - 1];
+          App.fill(pop, h("div", { class: "pd-gloss-card", key: String(seq.i) },
+            h("p", { class: "pd-gloss-no" }, `${two(seq.i)} / ${two(items.length)}`),
+            h("p", { class: "pd-gloss-term" }, x.head),
+            h("p", { class: "pd-gloss-text" }, ...lines(x.text || "")),
+            h("p", { class: "pd-gloss-hint" }, seq.i < items.length ? "「進む」で次の言葉へ" : "「進む」で次のスライドへ"),
+            h("button", { type: "button", class: "pd-gloss-close", "aria-label": "閉じる", onclick: () => seq.show(0) }, lineIcon("close"))));
+          pop.hidden = false;
+        } };
+        pop.addEventListener("click", (e) => { if (e.target === pop) seq.show(0); });
+        const wrap = h("div", { class: "pd-gl-seq" }, h("dl", { class: "pd-gloss" }, cells), pop);
+        wrap.car = seq;
+        return frame("pd-glossary", wrap);
       }
       if (p.type === "joinform") {
         // 入会申し込みフォーム: QR コード(URL が入っているとき)
