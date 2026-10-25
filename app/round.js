@@ -165,8 +165,8 @@
   // 小さく出す顔写真(一覧の丸・自分の写真)は、運営が用意した写真なら小さい版(thumbs/)を使う(読み込みを軽く)
   const SMALL_FACE = /^(pr-card-face|pr-row-face|pr-me-face|pd-staff-face)$/;
   // 本日の運営メンバーの役(はじめの挨拶のあとのスライド)
-  // 3つ目があるのは担当が決まっている役(選べない)。本システム(スライド含む)は山本 捷真が作ったので固定
-  const STAFF_ROLES = [["facilitator", "ファシリテーター"], ["education", "エデュケーション"], ["system", "スライド"], ["breakout", "ブレイクアウトルーム"], ["builder", "本システム（スライド含む）", ["yamamoto"]]];
+  // 3つ目があるのは担当が決まっている役(選べない)。本システム(スライド含む)制作は山本 捷真なので固定
+  const STAFF_ROLES = [["facilitator", "ファシリテーター"], ["education", "エデュケーション"], ["system", "スライド進行"], ["breakout", "ブレイクアウトルーム"], ["builder", "本システム（スライド含む）制作", ["yamamoto"]]];
   const thumbOf = (url) => String(url).replace(/assets\/members\/([^/?#]+\.jpg)/, "assets/members/thumbs/$1");
   function face(url, name, cls) {
     return url
