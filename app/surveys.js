@@ -120,6 +120,70 @@
     return sec;
   }
 
+  // ---------- ダッシュボード(記録の「分析」と同じ見た目): 数字のカード・回ごとの推移・内訳 ----------
+  const SCORE_COLORS = ["#16865a", "#58b88a", "#c9b28a", "#e0861a", "#c2462a"];
+  const INTEREST_COLORS = { "ぜひ入会したい": "#16865a", "詳しく話を聞きたい": "#2c5fb2", "今は考えていない": "#bdb2a6" };
+  const md = (key) => `${Number(key.slice(5, 7))}/${Number(key.slice(8, 10))}`;
+  function dashboard(list, ofKind, date, kind, scores) {
+    const C = App.charts || {};
+    const n = list.length;
+    const avgOf = (xs) => (xs.length ? xs.reduce((t, x) => t + POINT[x.score], 0) / xs.length : 0);
+    const pctOf = (xs, fn) => (xs.length ? Math.round((xs.filter(fn).length / xs.length) * 100) : 0);
+    const warm = (x) => x.interest === "ぜひ入会したい" || x.interest === "詳しく話を聞きたい";
+    // くらべる相手: 回を選んでいればその1つ前の回、「すべての回」ならいちばん新しい回とその前の回
+    const dates = [...new Set(ofKind.map((x) => x.date))].sort();
+    const curDate = date || dates[dates.length - 1];
+    const prevDate = dates[dates.indexOf(curDate) - 1];
+    const cur = ofKind.filter((x) => x.date === curDate), prev = prevDate ? ofKind.filter((x) => x.date === prevDate) : null;
+    const vs = prevDate ? `前回(${md(prevDate)})比` : "";
+    const delta = (now, before, unit, digits) => {
+      if (!prev) return h("p", { class: "sd-delta is-flat" }, h("span", null, "—"), h("small", null, "くらべる前回がありません"));
+      const d = now - before;
+      const cls = d > 0.0001 ? "is-up" : d < -0.0001 ? "is-down" : "is-flat";
+      const v = digits ? Math.abs(d).toFixed(digits) : String(Math.abs(Math.round(d)));
+      return h("p", { class: `sd-delta ${cls}` }, h("span", null, d > 0.0001 ? `↑ +${v}${unit}` : d < -0.0001 ? `↓ −${v}${unit}` : "±0"), h("small", null, `${date ? "" : `今回(${md(curDate)})・`}${vs}`));
+    };
+    const kpi = (icon, tone, label, value, dl, sub) => h("div", { class: "sd-kpi" },
+      h("div", { class: "sd-kpi-head" }, h("span", { class: `sd-kpi-ic tone-${tone}` }, App.glyph(icon)), h("span", null, label)),
+      h("b", { class: "sd-kpi-val" }, value), dl, h("small", { class: "sd-kpi-sub" }, sub || ""));
+    const kpis = h("div", { class: "sd-kpis" },
+      kpi("comment", "gold", "回答数", `${n}件`, delta(cur.length, prev ? prev.length : 0, "件"), date ? `${md(date)} の回` : `${dates.length}回分の合計`),
+      kpi("won", "green", "可能性の平均", `${avgOf(list).toFixed(1)} / 5`, delta(avgOf(cur), prev ? avgOf(prev) : 0, "", 1), "とても感じた=5 〜 感じなかった=1"),
+      kpi("thanks", "blue", "「感じた」以上", `${pctOf(list, (x) => x.score <= 1)}%`, delta(pctOf(cur, (x) => x.score <= 1), prev ? pctOf(prev, (x) => x.score <= 1) : 0, "pt"), "とても感じた+感じた"),
+      kind === "visitor"
+        ? kpi("visitor", "teal", "入会に前向き", `${pctOf(list, warm)}%`, delta(pctOf(cur, warm), prev ? pctOf(prev, warm) : 0, "pt"), "ぜひ入会したい+詳しく話を聞きたい")
+        : kpi("one", "violet", "所属ユニットの数", `${new Set(list.map((x) => x.unit).filter(Boolean)).size}`, delta(new Set(cur.map((x) => x.unit)).size, prev ? new Set(prev.map((x) => x.unit)).size : 0, ""), "回答してくれたユニット"));
+    // 回ごとの推移(折れ線): 可能性の平均・回答数
+    const TREND = [["avg", "可能性の平均", (v) => `${v.toFixed(1)} / 5`], ["count", "回答数", (v) => `${v}件`], ["good", "「感じた」以上", (v) => `${v}%`]];
+    let tk = "avg";
+    const tBody = h("div");
+    const tabs = h("div", { class: "sd-tabs", role: "tablist", "aria-label": "推移の項目" });
+    const drawTrend = () => {
+      [...tabs.children].forEach((b) => { const on = b.dataset.k === tk; b.classList.toggle("is-on", on); b.setAttribute("aria-selected", String(on)); });
+      const [, label, fmt] = TREND.find((t) => t[0] === tk);
+      const pts = dates.slice(-8).map((dk) => {
+        const xs = ofKind.filter((x) => x.date === dk);
+        const v = tk === "avg" ? Math.round(avgOf(xs) * 10) / 10 : tk === "count" ? xs.length : pctOf(xs, (x) => x.score <= 1);
+        return { label: md(dk), title: `${md(dk)} の${label}`, value: v };
+      });
+      if (pts.length < 2 || !C.lineChart) { App.fill(tBody, h("p", { class: "sd-empty" }, "2回分以上の回答がたまると、回ごとの推移が出ます。")); return; }
+      App.fill(tBody, C.lineChart(pts, fmt, true));
+    };
+    TREND.forEach(([k, label]) => tabs.append(h("button", { type: "button", role: "tab", "data-k": k, onclick: () => { tk = k; drawTrend(); } }, label)));
+    drawTrend();
+    const trendCard = h("section", { class: "sd-card" }, h("div", { class: "sd-card-head" }, h("h3", null, "回ごとの推移"), tabs), tBody);
+    const scoreCard = h("section", { class: "sd-card" }, h("div", { class: "sd-card-head" }, h("h3", null, "可能性を感じたか(5段階)")),
+      C.donut ? C.donut(scores.map((label, i) => ({ label, value: list.filter((x) => x.score === i).length, color: SCORE_COLORS[i] })), "回答", "件") : bars(scores.map((label, i) => [label, list.filter((x) => x.score === i).length]), n));
+    const progCard = h("section", { class: "sd-card" }, h("div", { class: "sd-card-head" }, h("h3", null, "特に良かったプログラム TOP")), bars(countBy(list, (x) => x.program).slice(0, 8), n));
+    const sideCard = kind === "visitor"
+      ? h("section", { class: "sd-card" }, h("div", { class: "sd-card-head" }, h("h3", null, "入会への興味")),
+        C.donut ? C.donut(Object.keys(INTEREST_COLORS).map((k) => ({ label: k, value: list.filter((x) => x.interest === k).length, color: INTEREST_COLORS[k] })), "回答", "件") : bars(countBy(list, (x) => x.interest), n))
+      : h("section", { class: "sd-card" }, h("div", { class: "sd-card-head" }, h("h3", null, "所属ユニット")), bars(countBy(list, (x) => x.unit), n));
+    return h("div", { class: "sv-dash" }, kpis,
+      h("div", { class: "sd-row" }, trendCard, scoreCard),
+      h("div", { class: "sd-row is-half" }, progCard, sideCard));
+  }
+
   App.surveyResults = async function () {
     const d = await App.api("listSurveys", {});
     if (!d) return;
@@ -142,18 +206,11 @@
         // 改善のヒント: 「どちらともいえない」以下の回答の理由と、感想・提案
         const low = list.filter((x) => x.score >= 2);
         App.fill(box,
-          App.segmented([{ id: "member", label: "BT-EX メンバー", badge: all.filter((x) => x.kind === "member").length }, { id: "visitor", label: "ビジター", badge: all.filter((x) => x.kind === "visitor").length }], kind, (k) => { kind = k; date = ""; draw(); }),
-          h("div", { class: "sv-res-tools" }, dateSel, n ? App.btn("CSV で保存", () => csv(list, kind, scores), "ghost small") : null),
-          n ? h("div", { class: "home-stats sv-res-kpis" },
-            App.kpi("回答", `${n}件`),
-            App.kpi("可能性の平均", `${avg.toFixed(1)} / 5`, "とても感じた=5 〜 感じなかった=1"),
-            App.kpi("「感じた」以上", `${Math.round((good / n) * 100)}%`),
-            kind === "visitor" ? App.kpi("入会に前向き", `${Math.round((list.filter((x) => x.interest === "ぜひ入会したい" || x.interest === "詳しく話を聞きたい").length / n) * 100)}%`, "ぜひ入会したい+詳しく話を聞きたい") : null) : null,
+          h("div", { class: "sv-dash-head" },
+            App.segmented([{ id: "member", label: "BT-EX メンバー", badge: all.filter((x) => x.kind === "member").length }, { id: "visitor", label: "ビジター", badge: all.filter((x) => x.kind === "visitor").length }], kind, (k) => { kind = k; date = ""; draw(); }),
+            h("div", { class: "sv-res-tools" }, dateSel, n ? App.btn("CSV で保存", () => csv(list, kind, scores), "ghost small") : null)),
+          n ? dashboard(list, ofKind, date, kind, scores) : null,
           n ? summarize(list, all, kind, scores) : null,
-          n ? h("section", { class: "sv-res-sec" }, h("h3", null, "ビジネスを加速させる可能性を感じたか"), bars(scores.map((label, i) => [label, list.filter((x) => x.score === i).length]), n)) : null,
-          n ? h("section", { class: "sv-res-sec" }, h("h3", null, "特に良かったプログラム"), bars(countBy(list, (x) => x.program), n)) : null,
-          n && kind === "member" ? h("section", { class: "sv-res-sec" }, h("h3", null, "所属ユニット"), bars(countBy(list, (x) => x.unit), n)) : null,
-          n && kind === "visitor" ? h("section", { class: "sv-res-sec" }, h("h3", null, "入会への興味"), bars(countBy(list, (x) => x.interest), n)) : null,
           n && kind === "member" && list.some((x) => x.adopt) ? h("section", { class: "sv-res-sec" }, h("h3", null, "自ユニットに取り入れたいこと"),
             h("ul", { class: "sv-res-quotes" }, list.filter((x) => x.adopt).map((x) => h("li", null, x.adopt, h("small", null, `${x.unit} ${x.last}さん`))))) : null,
           n ? h("section", { class: "sv-res-sec is-improve" }, h("h3", null, "改善のヒント(「どちらともいえない」以下の回答)"),
@@ -200,6 +257,6 @@
       const notShared = typeof AuthApi !== "undefined" && !AuthApi.isShared();
       body.append(h("p", { class: "app-lead sv-res-lead" }, "定例会の終わりに QR コードから答えてもらったアンケートです。\nBT-EX メンバーとビジターで分けて集計します。"), live,
         notShared ? h("p", { class: "sv-res-warn tone-warn" }, "いまは共有サーバーにつながっていないため、ほかの方のスマホで答えたアンケートはここに届きません(この端末で答えたものだけが出ます)。共有サーバー(Google Apps Script)の URL を設定すると、全員の回答がここに集まります。") : null, box);
-    });
+    }, { full: true, noFocus: true });
   };
 })();

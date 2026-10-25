@@ -3039,3 +3039,19 @@ button.home-welcome-check:active { transform: scale(0.94); }
 /* 「＋ 定例会の日程を追加」: 押せるとひと目で分かる、色のついたボタン */
 .app-btn.ev-add-btn { min-height: 54px; max-width: 520px; margin: 0 auto; display: flex; justify-content: center; font-size: 16px; font-weight: 900; letter-spacing: 0.04em; border-radius: 14px; }
 .app-btn.ev-add-btn:hover { filter: brightness(1.06); transform: translateY(-1px); }
+/* 全画面のシート(アンケートの結果など): 画面いっぱいに広げ、中身は広い画面で読みやすい幅に */
+.app-sheet-wrap.is-full { align-items: stretch; }
+.app-sheet-wrap.is-full .app-sheet { width: 100%; max-width: none; height: 100%; max-height: none; border-radius: 0; }
+.app-sheet-wrap.is-full .app-sheet-body { flex: 1; }
+.app-sheet-wrap.is-full .app-sheet-body > * { max-width: 1240px; margin-left: auto; margin-right: auto; }
+/* アンケートの結果のダッシュボード */
+.sv-dash .sd-kpis { margin-bottom: 0; }
+.sv-dash { display: grid; gap: 12px; }
+.sv-dash .sd-row { margin-bottom: 0; }
+.sv-dash .sd-row.is-half { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.sv-dash .sd-card .sv-bars { margin-top: 2px; }
+.sv-dash .sd-kpi-sub { min-height: 1.45em; }
+.sv-dash-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
+.sv-dash-head .app-seg { flex: 1 1 320px; }
+@media (max-width: 860px) { .sv-dash .sd-row, .sv-dash .sd-row.is-half { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 760px) { .sv-dash .sd-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } }

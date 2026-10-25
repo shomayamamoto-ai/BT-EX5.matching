@@ -128,7 +128,7 @@
     return box;
   }
   // 縦の棒(6か月)。いちばん右(期間の終わりの月)を濃くして、値を上に出す
-  function barChart(points, fmt) {
+  function barChart(points, fmt, tickFmt) {
     const box = h("div", { class: "sd-chart" });
     const tip = tipBox(box);
     responsive(box, (W) => {
@@ -155,7 +155,7 @@
       });
       const cxLast = L + slot * (last + 0.5);
       const svg = sv("svg", { class: "sd-svg", width: W, height: H, viewBox: `0 0 ${W} ${H}` },
-        ticks.map((t) => [sv("line", { class: "sd-grid", x1: L, x2: W - R, y1: y(t), y2: y(t) }), sv("text", { class: "sd-ytick", x: L - 8, y: y(t) + 4, "text-anchor": "end" }, yenShort(t))]),
+        ticks.map((t) => [sv("line", { class: "sd-grid", x1: L, x2: W - R, y1: y(t), y2: y(t) }), sv("text", { class: "sd-ytick", x: L - 8, y: y(t) + 4, "text-anchor": "end" }, (tickFmt || yenShort)(t))]),
         points.map((p, i) => sv("text", { class: `sd-xtick${i === last ? " is-last" : ""}`, x: L + slot * (i + 0.5), y: H - 6, "text-anchor": "middle" }, p.label)),
         bars,
         sv("text", { class: "sd-end", x: cxLast, y: y(points[last].value) - 8, "text-anchor": cxLast > W - 50 ? "end" : "middle" }, fmt(points[last].value)));
@@ -192,6 +192,8 @@
       h("b", null, `${p.value}${unit}`), h("small", null, total ? `${((p.value / total) * 100).toFixed(1)}%` : "—"))));
     return h("div", { class: "sd-donut" }, h("div", { class: "sd-donut-fig" }, svg, mid), legend);
   }
+  // ほかの画面(アンケートの結果など)でも同じグラフを使う
+  App.charts = { lineChart, barChart, donut };
   function dateLabel(key) { return `${key.slice(0, 4)}年${Number(key.slice(5, 7))}月${Number(key.slice(8, 10))}日`; }
 
   // 期間: params → { mode, ym, from, to, title }

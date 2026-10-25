@@ -357,7 +357,7 @@ const App = (function () {
         h("button", { type: "button", class: "app-sheet-close", "aria-label": "閉じる", onclick: close }, "×")),
       body);
     // 入力中に枠外を触って閉じてしまわないよう、枠外では閉じない
-    const wrap = h("div", { class: "app-sheet-wrap" }, panel);
+    const wrap = h("div", { class: `app-sheet-wrap${opt && opt.full ? " is-full" : ""}` }, panel);
     document.body.append(wrap);
     document.body.classList.add("app-sheet-open");
     sheetStack.push(wrap);
