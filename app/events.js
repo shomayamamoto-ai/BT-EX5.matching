@@ -164,8 +164,24 @@
       const fixedParts = [];
       const fixedOnly = (el) => { fixedParts.push(el); el.hidden = kind ? kind.getValue() !== "special" : !(ev && ev.kind === "special"); return el; };
       const fixedNote = h("p", { class: "ev-fixed-note" }, "いつもの定例会は、日付と時間だけを変えられます(名前・開催方法・参加費・当日の流れ・ご案内などは、いつもの内容のままです)。");
+      // 特別会の入れ方の例(今回の第一回BT-EXフェス)。いつもの定例会の中身が入っていたら空にして、例を薄く出す
+      const FES = (typeof REF_SEED_EVENTS !== "undefined" ? REF_SEED_EVENTS : []).find((x) => x.kind === "special") || null;
+      const fromRegular = !(ev && ev.kind === "special");
+      let exampleSet = false;
+      const showExample = () => {
+        if (exampleSet || !FES || !fromRegular) return;
+        exampleSet = true;
+        fesNo.placeholder = String(Number(fesNumber(FES.title)) + 1 || 2);
+        [[f.fee, FES.fee], [f.place, FES.place], [f.agenda, "(例)\n14:00 受付\n14:30 開始・はじめの挨拶\n…\n16:30 終了"], [f.body, `(例)\n${FES.body}`], [capacity, FES.capacity ? `例:${FES.capacity}` : ""]].forEach(([el, ex]) => {
+          el.value = "";
+          if (ex) el.placeholder = String(ex).startsWith("例") || String(ex).startsWith("(例)") ? ex : `例:${ex}`;
+        });
+        // 会場の例(東京・会場)
+        if (FES.place) { how.setValue && how.setValue("venue"); onlineBox.hidden = true; venueBox.hidden = false; areaSel.value = FES.area || "tokyo"; }
+      };
       const syncKind = (v) => {
         const sp = v === "special";
+        if (sp) showExample();
         fixedParts.forEach((el) => { el.hidden = !sp; });
         fixedNote.hidden = sp;
         f.title.hidden = sp; fesBox.hidden = !sp; fesPreview.hidden = !sp;
