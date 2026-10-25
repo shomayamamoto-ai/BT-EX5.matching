@@ -2593,6 +2593,7 @@ button.home-welcome-check:active { transform: scale(0.94); }
 .pd-joinform .pd-display { font-size: clamp(30px, min(4.4vw, 7.6svh), 70px); }
 /* アンケートの結果 */
 .sv-res { display: grid; gap: 14px; }
+.sv-res-lead, .sv-res .app-empty p { white-space: pre-line; }
 .sv-res-warn { margin: 0 0 12px; padding: 10px 12px; border-radius: 12px; font-size: 13px; font-weight: 700; line-height: 1.6; }
 .sv-res-tools { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; }
 .sv-res-date { min-height: 40px; padding: 6px 30px 6px 12px; border-radius: 10px; border: 1.5px solid var(--line-strong); background: #fff; font: inherit; font-size: 14px; font-weight: 700; }

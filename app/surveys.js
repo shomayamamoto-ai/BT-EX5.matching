@@ -82,12 +82,12 @@
                 App.btn("この回答を消す", async () => {
                   if (!(await App.confirm(`${x.last} ${x.first}さんの回答を消しますか?`, { ok: "消す", danger: true }))) return;
                   if (await App.api("adminDeleteSurvey", { id: x.id })) { all = all.filter((y) => y.id !== x.id); draw(); App.toast("回答を消しました"); }
-                }, "ghost small"))))) : App.empty("まだ回答がありません。定例会の終わりの「定例会のアンケート」のスライドの QR コードから答えてもらえます。")));
+                }, "ghost small"))))) : App.empty("まだ回答がありません。定例会の終わりの「定例会のアンケート」の\nスライドの QR コードから答えてもらえます。")));
       }
       draw();
       // 共有サーバーにつながっていない間は、回答は答えた人のスマホの中にしか残らない(ここには届かない)
       const notShared = typeof AuthApi !== "undefined" && !AuthApi.isShared();
-      body.append(h("p", { class: "app-lead" }, "定例会の終わりに QR コードから答えてもらったアンケートです。BT-EX メンバーとビジターで分けて集計します。"),
+      body.append(h("p", { class: "app-lead sv-res-lead" }, "定例会の終わりに QR コードから答えてもらったアンケートです。\nBT-EX メンバーとビジターで分けて集計します。"),
         notShared ? h("p", { class: "sv-res-warn tone-warn" }, "いまは共有サーバーにつながっていないため、ほかの方のスマホで答えたアンケートはここに届きません(この端末で答えたものだけが出ます)。共有サーバー(Google Apps Script)の URL を設定すると、全員の回答がここに集まります。") : null, box);
     });
   };
