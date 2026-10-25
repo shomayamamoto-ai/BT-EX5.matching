@@ -1770,7 +1770,7 @@
           i ? h("li", { class: "pd-step-arrow", "aria-hidden": "true" }, lineIcon("next")) : null,
           h("li", Object.assign({ class: "pd-step-card" }, nth(i)), h("span", { class: "pd-step-no" }, `Step${i + 1}`), h("b", null, ...lines(st.head || "")), st.text ? h("small", null, String(st.text).split("\n").map((t) => h("span", { class: "pd-line" }, t))) : null),
         ]).filter(Boolean).concat(
-          // カードの外の注意書き(「詳しくは紹介者まで」)。はじめの何枚かのカードの下に、かっこでまとめて出す
+          // カードの外の注意書き(「入会希望の方はご紹介者の方へお聞きください」)。はじめの何枚かのカードの下に、かっこでまとめて出す
           p.note ? [h("li", { class: "pd-step-note", style: `grid-column: 1 / ${Math.min(p.cards.length, Math.max(1, p.noteSpan || 2)) * 2}` }, h("span", null, p.note))] : [])));
       }
       if (p.type === "survey") {
