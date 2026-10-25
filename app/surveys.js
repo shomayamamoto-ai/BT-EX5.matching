@@ -85,7 +85,10 @@
                 }, "ghost small"))))) : App.empty("まだ回答がありません。定例会の終わりの「定例会のアンケート」のスライドの QR コードから答えてもらえます。")));
       }
       draw();
-      body.append(h("p", { class: "app-lead" }, "定例会の終わりに QR コードから答えてもらったアンケートです。BT-EX メンバーとビジターで分けて集計します。"), box);
+      // 共有サーバーにつながっていない間は、回答は答えた人のスマホの中にしか残らない(ここには届かない)
+      const notShared = typeof AuthApi !== "undefined" && !AuthApi.isShared();
+      body.append(h("p", { class: "app-lead" }, "定例会の終わりに QR コードから答えてもらったアンケートです。BT-EX メンバーとビジターで分けて集計します。"),
+        notShared ? h("p", { class: "sv-res-warn tone-warn" }, "いまは共有サーバーにつながっていないため、ほかの方のスマホで答えたアンケートはここに届きません(この端末で答えたものだけが出ます)。共有サーバー(Google Apps Script)の URL を設定すると、全員の回答がここに集まります。") : null, box);
     });
   };
 })();

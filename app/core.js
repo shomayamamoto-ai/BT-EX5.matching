@@ -242,24 +242,56 @@ const App = (function () {
     if (item.body) p.set("details", item.body.slice(0, 800));
     return `https://calendar.google.com/calendar/render?${p}`;
   }
+  // .ics(iPhone・Mac のカレンダー・Outlook)。時刻は世界標準時(Z)で書く(タイムゾーンの定義がなくても、どのカレンダーでも読める)。
+  // 1行は75バイトまでで折り返す(長い説明があると読めないカレンダーがあるため)
   function icsFile(item) {
     const [a, b] = calRange(item);
     const esc = (t) => String(t || "").replace(/\\/g, "\\\\").replace(/[;,]/g, (c) => `\\${c}`).replace(/\r?\n/g, "\\n");
+    // 日本時間の「20261202T143000」→ 世界標準時の「20261202T053000Z」
+    const utc = (x) => {
+      const m = /^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})$/.exec(x);
+      if (!m) return x;
+      return new Date(Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4] - 9, +m[5], +m[6])).toISOString().replace(/[-:]/g, "").replace(/\.\d+/, "");
+    };
+    const enc = new TextEncoder();
+    const fold = (line) => {
+      const out = [];
+      let cur = "", size = 0;
+      for (const ch of line) {
+        const n = enc.encode(ch).length;
+        if (size + n > (out.length ? 74 : 75)) { out.push(cur); cur = ""; size = 0; }
+        cur += ch; size += n;
+      }
+      out.push(cur);
+      return out.join("\r\n ");
+    };
     const now = new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d+/, "");
     const text = [
-      "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//BT-EX5//JA", "CALSCALE:GREGORIAN", "BEGIN:VEVENT",
+      "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//BT-EX5//JA", "CALSCALE:GREGORIAN", "METHOD:PUBLISH", "BEGIN:VEVENT",
       `UID:${item.uid || `${a}-${Math.random().toString(36).slice(2)}`}@bt-ex5`, `DTSTAMP:${now}`,
-      item.allDay ? `DTSTART;VALUE=DATE:${a}` : `DTSTART;TZID=Asia/Tokyo:${a}`, item.allDay ? `DTEND;VALUE=DATE:${b}` : `DTEND;TZID=Asia/Tokyo:${b}`,
+      item.allDay ? `DTSTART;VALUE=DATE:${a}` : `DTSTART:${utc(a)}`, item.allDay ? `DTEND;VALUE=DATE:${b}` : `DTEND:${utc(b)}`,
       `SUMMARY:${esc(item.title)}`, item.place ? `LOCATION:${esc(item.place)}` : "", item.body ? `DESCRIPTION:${esc(item.body)}` : "",
       "BEGIN:VALARM", "TRIGGER:-PT1H", "ACTION:DISPLAY", `DESCRIPTION:${esc(item.title)}`, "END:VALARM",
       "END:VEVENT", "END:VCALENDAR",
-    ].filter(Boolean).join("\r\n");
+    ].filter(Boolean).map(fold).join("\r\n") + "\r\n";
+    // LINE・Instagram などのアプリ内ブラウザはカレンダーのファイルを開けないので、Safari などで開き直してもらう
+    if (/\bLine\/|FBAN|FBAV|Instagram/i.test(navigator.userAgent)) {
+      toast("アプリ内のブラウザでは追加できません。右上(または右下)のメニューから「ブラウザで開く」を選び、もう一度押してください");
+      return;
+    }
+    // iPhone・iPad は、ファイルを開くと「カレンダーに追加」の画面が出る(ダウンロードにすると追加できない)。
+    // blob: の URL は Safari が開けないことがあるので、data: の URL で開く
+    const ios = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+    if (ios) { location.href = `data:text/calendar;charset=utf-8,${encodeURIComponent(text)}`; return; }
+    const url = URL.createObjectURL(new Blob([text], { type: "text/calendar;charset=utf-8" }));
     const a2 = document.createElement("a");
-    a2.href = URL.createObjectURL(new Blob([text], { type: "text/calendar;charset=utf-8" }));
+    a2.href = url;
     a2.download = `btex5-${item.date}.ics`;
     document.body.append(a2);
     a2.click();
-    setTimeout(() => { URL.revokeObjectURL(a2.href); a2.remove(); }, 1000);
+    a2.remove();
+    toast("カレンダーのファイルを保存しました。開くとカレンダーに追加できます");
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
   }
   function calendarButtons(item) {
     return h("details", { class: "cal-add" },
