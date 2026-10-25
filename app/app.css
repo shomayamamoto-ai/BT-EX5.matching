@@ -2696,7 +2696,12 @@ button.home-welcome-check:active { transform: scale(0.94); }
 /* ---------- エデュケーションコーナーの資料: 画面いっぱいに出し、タイマーは下のほうに重ねる ---------- */
 /* 上の帯(タイムマネジメント・進行の場所)はそのまま。資料はそのすぐ下から画面の下まで */
 .pr-run.is-edu .pr-top .pr-title { visibility: hidden; }
-.pr-run.is-edu .pr-slide { position: fixed; inset: var(--edu-top, 56px) 0 0 0; z-index: 1; padding: 0 !important; display: block; overflow: hidden; background: #0b0805; }
+/* 資料は画面の上のはしから下のはしまで。上の帯(タイムマネジメント・進行の場所)は、下のタイマーと同じように資料の上に重ねる */
+.pr-run.is-edu .pr-top { position: fixed; top: 0; left: 0; right: 0; z-index: 2; padding: clamp(10px, 2svh, 22px) clamp(16px, 4.5vw, 64px) 22px;
+  background: linear-gradient(to bottom, rgba(8, 6, 4, 0.82), rgba(8, 6, 4, 0.5) 60%, rgba(8, 6, 4, 0)); pointer-events: none; }
+.pr-run.is-edu .pr-top > * { pointer-events: auto; }
+@media (max-width: 1200px) { .pr-run.is-edu.dock-home .pr-top { padding-left: 16px; padding-right: 16px; } }
+.pr-run.is-edu .pr-slide { position: fixed; inset: 0; z-index: 1; padding: 0 !important; display: block; overflow: hidden; background: #0b0805; }
 .pr-run.is-edu .pd-edu { width: 100%; height: 100%; display: block; }
 .pr-run.is-edu .pd-edu-title { display: none; }
 .pr-run.is-edu .pd-car, .pr-run.is-edu .pd-car-stage, .pr-run.is-edu .pd-car-track, .pr-run.is-edu .pd-car-cell { height: 100%; }
@@ -2713,9 +2718,12 @@ button.home-welcome-check:active { transform: scale(0.94); }
 .pr-run.is-edu .pd-car-dots { display: none; }
 .pr-run.is-edu .pd-car-count { color: #fff3dc; }
 /* タイマー(メーターと残り時間)は、資料の下のほうに重ねる(下から暗くして読めるように) */
-.pr-run.is-edu .pr-meter-row { position: fixed; left: 0; right: 0; bottom: 0; z-index: 2; padding: 28px clamp(16px, 3vw, 40px) calc(10px + env(safe-area-inset-bottom)); background: linear-gradient(to top, rgba(8, 6, 4, 0.9), rgba(8, 6, 4, 0.72) 65%, rgba(8, 6, 4, 0)); }
+.pr-run.is-edu .pr-meter-row { position: fixed; left: 0; right: 0; bottom: 0; z-index: 2; padding: 16px clamp(16px, 3vw, 40px) calc(10px + env(safe-area-inset-bottom)); background: linear-gradient(to top, rgba(8, 6, 4, 0.9), rgba(8, 6, 4, 0.72) 65%, rgba(8, 6, 4, 0)); }
 .pr-run.is-edu.dock-home .pr-meter-row { padding-right: calc(var(--dock-w, 300px) + 24px); }
 .pr-run.is-edu .pd-progress { display: none; }
+/* 下のタイマーは細めに(資料が隠れる所を少なく) */
+.pr-run.is-edu .pr-sec-num { font-size: clamp(30px, min(4.4vw, 7svh), 64px); }
+.pr-run.is-edu .pr-meter { height: clamp(16px, 3svh, 28px); }
 /* 進行バーの名前は、ことばのかたまりの途中で折り返さない */
 .pd-progress-steps .pd-nw { white-space: nowrap; overflow-wrap: normal; word-break: keep-all; }
 /* 狭めの画面(〜1200px)では、右下の操作バーを少し小さくして、下の進行バー・メーターの幅を残す */
