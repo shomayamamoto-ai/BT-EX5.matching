@@ -1533,3 +1533,6 @@ a.ref-btn { display: inline-flex; align-items: center; justify-content: center; 
 .pt-more:hover { text-decoration: none; background: var(--accent-dark); color: #fff; }
 .pt-more:focus-visible { outline: 3px solid var(--amber); outline-offset: 2px; }
 @media (max-width: 600px) { .pt-more { display: flex; justify-content: center; width: 100%; box-sizing: border-box; border-radius: 14px; text-align: center; line-height: 1.5; } }
+
+/* 軽くする: 画面の外にあるメンバーのカードは、見えるところまで来たときに描く(見た目は同じ) */
+.ref-list > .ref-card { content-visibility: auto; contain-intrinsic-size: auto 520px; }

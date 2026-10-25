@@ -238,19 +238,33 @@
     const hh = dial.querySelector(".lux-h"), mm = dial.querySelector(".lux-m"), ss = dial.querySelector(".lux-s");
     const dateText = dial.querySelector(".lux-date");
     const calm = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    let started = false, lastMin = -1, running = true;
-    function frame() {
+    let started = false, lastMin = -1, running = true, visible = true, lastDraw = 0;
+    const lastRot = { h: "", m: "", s: "" };
+    // 針の向きは、変わったときだけ書きかえる(時針・分針は1秒に少ししか動かないので、毎回の描き直しをしない)
+    const turn = (key, el, deg) => { const v = `rotate(${deg.toFixed(2)} 100 100)`; if (lastRot[key] !== v) { lastRot[key] = v; el.setAttribute("transform", v); } };
+    // 時計が画面に見えていないあいだは動かさない(見えたらすぐ動かし直す)。見た目は変わらない
+    if (typeof IntersectionObserver !== "undefined") {
+      new IntersectionObserver((es) => {
+        visible = es.some((e) => e.isIntersecting);
+        if (visible && !running && wrap.isConnected) { running = true; requestAnimationFrame(frame); }
+      }).observe(wrap);
+    }
+    function frame(ts) {
       // 画面から外れたら止める(もう一度画面に出したときは restart() で動かし直す)
       if (!wrap.isConnected) { if (started) { running = false; return; } requestAnimationFrame(frame); return; }
+      if (started && !visible) { running = false; return; }
+      // 秒針のなめらかな動きは1秒に30回で十分(画面の書きかえを半分にして軽くする)
+      if (started && !calm && ts && ts - lastDraw < 30) { requestAnimationFrame(frame); return; }
+      lastDraw = ts || 0;
       started = true;
       const now = jstNow();
       const ms = now.getUTCMilliseconds();
       const s = now.getUTCSeconds() + (calm ? 0 : ms / 1000);
       const m = now.getUTCMinutes() + s / 60;
       const hr = (now.getUTCHours() % 12) + m / 60;
-      ss.setAttribute("transform", `rotate(${s * 6} 100 100)`);
-      mm.setAttribute("transform", `rotate(${m * 6} 100 100)`);
-      hh.setAttribute("transform", `rotate(${hr * 30} 100 100)`);
+      turn("s", ss, s * 6);
+      turn("m", mm, m * 6);
+      turn("h", hh, hr * 30);
       if (now.getUTCMinutes() !== lastMin) {
         lastMin = now.getUTCMinutes();
         dateText.textContent = String(now.getUTCDate());
