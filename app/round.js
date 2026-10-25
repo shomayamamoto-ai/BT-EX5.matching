@@ -2,7 +2,7 @@
 // app/round.js — プレゼン(下のメニューの「プレゼン」)
 // 定例会の「プレゼンテーション」を、顔写真と紹介つきの大きな画面で順番に進める。
 // ・準備(#present): 定例会を選ぶ → 出る人を押して選ぶ(押した順が話す順番)→ 並べかえ(つかんで動かす・↑↓・シャッフル)
-//   → 1人の時間(30秒・1分・2分・5分)・次の人までの間(1〜10秒)→「プレゼンをはじめる」
+//   → 1人の時間(30秒・1分・2分・5分。はじめは1分)・次の人までの間(1〜10秒)→「プレゼンをはじめる」
 // ・進行(画面いっぱい): 番号・名前・肩書き・活動範囲・つながりたい人・こんな話が出たら・顔写真・次の人、
 //   下に残り時間のメーター(1分までは1目盛り=1秒。左の5秒が赤、次の5秒がオレンジ。目盛りの下に残り秒数の数字)と残り秒数。
 //   残り10秒と 0秒で音(鐘)。「自動で次へ」なら 0秒のあと、選んだ秒数(はじめは5秒)で次の人へ。
@@ -233,7 +233,7 @@
       ...members.map((m) => ({ key: `m:${m.id}`, id: m.id, name: m.name, company: m.company || m.category || "", team: m.team || "", kind: "member" })),
       ...visitors.map((v) => ({ ...v, kind: "visitor" })),
     ];
-    // 名簿にいないBT-EXのメンバー・ゲスト(この端末に定例会ごとに覚える)。時間は1人ずつ(はじめは30秒・5秒きざみ)
+    // 名簿にいないBT-EXのメンバー・ゲスト(この端末に定例会ごとに覚える)。時間は1人ずつ(はじめは1分・5秒きざみ)
     const extraKey = `extras-${ev ? ev.id : "none"}`;
     let extras = (() => { try { const s = JSON.parse(store.get(extraKey, "[]")); return Array.isArray(s) ? s.filter((x) => x && x.key && x.name) : []; } catch { return []; } })();
     const saveExtras = () => store.set(extraKey, JSON.stringify(extras));
@@ -254,8 +254,9 @@
       try { const s = JSON.parse(store.get(saveKey, "null")); if (Array.isArray(s)) return s.filter((k) => byKey(k)); } catch { /* noop */ }
       return [...going];
     })();
-    let per = Number(store.get("per", 30)) || 30;
-    if (!MEET_PER.some(([v]) => v === per)) per = 30;
+    // 1分プレゼンテーションなので、はじめは1分(前の「30秒がはじめ」の時に覚えた値は使わず、選び直した値だけ覚える)
+    let per = Number(store.get("per-v2", 60)) || 60;
+    if (!MEET_PER.some(([v]) => v === per)) per = 60;
     let auto = store.get("auto", "1") === "1";
     let gapSec = Number(store.get("gap", 5)) || 5;
     if (!GAPS.includes(gapSec)) gapSec = 5;
@@ -297,7 +298,7 @@
         h("span", { class: "pr-grip", "aria-hidden": "true" }, "⋮⋮"),
         h("span", { class: "round-no" }, String(i + 1)),
         face(x.kind === "member" ? photos[x.id] : "", x.name, "pr-row-face"),
-        h("span", { class: "round-name" }, nameEl(x.name, "b"), x.kind === "visitor" ? App.chip("ビジター", "info") : x.kind === "guest" ? App.chip(`ゲスト・${secLabel(x.sec || 30)}`, "info") : x.kind === "other" ? App.chip(`BT-EX・${secLabel(x.sec || 30)}`, "mute") : null, x.company ? h("small", null, x.company) : null),
+        h("span", { class: "round-name" }, nameEl(x.name, "b"), x.kind === "visitor" ? App.chip("ビジター", "info") : x.kind === "guest" ? App.chip(`ゲスト・${secLabel(x.sec || 60)}`, "info") : x.kind === "other" ? App.chip(`BT-EX・${secLabel(x.sec || 60)}`, "mute") : null, x.company ? h("small", null, x.company) : null),
         canPhoto ? h("button", { type: "button", class: "pr-photo-btn", onclick: () => App.choosePhoto(x.id, (url) => { photos[x.id] = url; draw(); }) }, photos[x.id] ? "写真を変える" : "写真を入れる") : null,
         h("span", { class: "round-move" },
           h("button", { type: "button", "aria-label": `${x.name}さんを上へ`, disabled: i === 0 || groupRank(order[i - 1]) !== groupRank(k), onclick: () => { [order[i - 1], order[i]] = [order[i], order[i - 1]]; draw(); } }, "↑"),
@@ -378,7 +379,7 @@
         const name = sp.name;
         if (!name) { (bx || nameIn).focus && nameIn.focus(); App.toast("お名前を選ぶか、入れてください", "error"); return; }
         if (extras.some((y) => y.kind === kind && y.name === name && (!v || y.unit === v.unit))) { App.toast(`${name}さんはもう入っています`); if (bx) bx.setUnit(v.unit); return; }
-        const x = { key: `${kind === "guest" ? "g" : "o"}:${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`, kind, name, company: v ? extraCompany(v.unit, coIn.value.trim() || ((bx.profileOf && bx.profileOf(v.unit, v.name)) || [])[1] || "") : coIn.value.trim(), kana: v ? ((bx.profileOf && bx.profileOf(v.unit, v.name)) || [])[0] || "" : kanaIn.value.trim() || sp.kana, unit: v ? v.unit : 0, sec: 30 };
+        const x = { key: `${kind === "guest" ? "g" : "o"}:${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`, kind, name, company: v ? extraCompany(v.unit, coIn.value.trim() || ((bx.profileOf && bx.profileOf(v.unit, v.name)) || [])[1] || "") : coIn.value.trim(), kana: v ? ((bx.profileOf && bx.profileOf(v.unit, v.name)) || [])[0] || "" : kanaIn.value.trim() || sp.kana, unit: v ? v.unit : 0, sec: 60 };
         extras.push(x); all.push(x); order.push(x.key); saveExtras();
         nameIn.value = ""; kanaIn.value = ""; coIn.value = ""; if (bx) { const u = v.unit; bx.setUnit(0); bx.setUnit(u); } draw();
         if (!bx) { nameIn.focus(); App.toast(`${name}さんを足しました`); }
@@ -434,9 +435,9 @@
         countEl.textContent = mine.length ? `${mine.length}名` : "";
         countEl.hidden = !mine.length;
         App.fill(listBox, mine.map((x) => {
-          const sel = h("select", { class: "pr-extra-sec", "aria-label": `${x.name}さんの時間`, onchange: () => { x.sec = Number(sel.value) || 30; saveExtras(); draw(); } },
+          const sel = h("select", { class: "pr-extra-sec", "aria-label": `${x.name}さんの時間`, onchange: () => { x.sec = Number(sel.value) || 60; saveExtras(); draw(); } },
             EXTRA_SECS.map((v) => h("option", { value: String(v) }, secLabel(v))));
-          sel.value = String(x.sec || 30);
+          sel.value = String(x.sec || 60);
           const n = order.indexOf(x.key);
           return h("li", { class: `pr-extra-item${n >= 0 ? " is-on" : ""}` },
             h("button", { type: "button", class: "pr-extra-pick", "aria-pressed": n >= 0 ? "true" : "false", onclick: () => { const i = order.indexOf(x.key); if (i >= 0) order.splice(i, 1); else order.push(x.key); draw(); } },
@@ -454,8 +455,8 @@
       };
       return box;
     }
-    const otherBox = extraBox("other", "ほかの BT-EX のメンバー", "BT-EX5 の名簿にいない方。1人の時間ははじめ30秒(あとで変えられます)");
-    const guestBox = extraBox("guest", "ゲスト", "BT-EX 以外の方。1人の時間ははじめ30秒(あとで変えられます)");
+    const otherBox = extraBox("other", "ほかの BT-EX のメンバー", "BT-EX5 の名簿にいない方。1人の時間ははじめ1分(あとで変えられます)");
+    const guestBox = extraBox("guest", "ゲスト", "BT-EX 以外の方。1人の時間ははじめ1分(あとで変えられます)");
 
     // 話す順番は必ず BT-EX5 のメンバー → ほかの BT-EX(BT-EX1 → BT-EX14 の順)→ ゲスト・ビジター。
     // それぞれの組の中では、押した順・↑↓・つかんで動かす・シャッフル・名前の順で並べかえられる
@@ -480,7 +481,7 @@
 
     const perRow = h("div", { class: "pitch-lens round-per" }, MEET_PER.map(([v, label]) =>
       h("button", { type: "button", class: `pitch-len${v === per ? " is-on" : ""}`, onclick: (e) => {
-        per = v; store.set("per", v);
+        per = v; store.set("per-v2", v);
         perRow.querySelectorAll(".pitch-len").forEach((b) => b.classList.toggle("is-on", b === e.currentTarget));
         draw();
       } }, label)));
@@ -881,6 +882,8 @@
     return svg;
   }
   // opt.sides: 左右のはしに寄せたら、縦に並べる(操作バー)
+  // opt.defaultPlace: まだ動かしていないときの場所。{ side, inset, bottom } か、その場で計算する関数({ left, top } も使える)
+  // opt.onHome(true/false): はじめの場所にいるかどうか(大きさを変えるときに使う。場所を測る前に呼ぶ)
   function floatable(el, key, host, opt = {}) {
     if (!el) return;
     const KEY = `btex5-float-${key}`;
@@ -911,22 +914,25 @@
       const y = Math.max(4, Math.min(vh() - r.height - 4, r.top));
       el.style.top = `${Math.round(y)}px`;
     }
+    const home = (on) => { if (opt.onHome) opt.onHome(on); };
     function apply() {
       let pos = null;
       try { pos = JSON.parse(localStorage.getItem(KEY) || "null"); } catch { /* noop */ }
       setSide(opt.sides && pos && pos.side ? pos.side : "");
-      if (pos && typeof pos.x === "number") { el.classList.add("is-floating"); place(pos.x, pos.y); if (opt.sides && pos.side) snapSide(pos.side); }
+      if (pos && typeof pos.x === "number") { home(false); el.classList.add("is-floating"); place(pos.x, pos.y); if (opt.sides && pos.side) snapSide(pos.side); }
       else if (opt.defaultPlace && vw() > 760) {
-        // まだ動かしていないときの場所(広い画面): 下のメーターのすぐ上
-        const d = opt.defaultPlace;
-        setSide(opt.sides && d.side ? d.side : "");
+        // まだ動かしていないときの場所(広い画面)
+        home(true);
         el.classList.add("is-floating");
+        const d0 = typeof opt.defaultPlace === "function" ? null : opt.defaultPlace;
+        setSide(opt.sides && d0 && d0.side ? d0.side : "");
         const r = el.getBoundingClientRect();
-        const top = Math.max(4, vh() - r.height - (d.bottom || 0));
-        const left = d.side === "right" ? vw() - r.width - (d.inset || 0) : (d.inset || 0);
-        el.style.left = `${Math.round(Math.max(0, left))}px`; el.style.top = `${Math.round(top)}px`;
+        const d = d0 || opt.defaultPlace(r) || {};
+        const top = typeof d.top === "number" ? d.top : vh() - r.height - (d.bottom || 0);
+        const left = typeof d.left === "number" ? d.left : d.side === "right" ? vw() - r.width - (d.inset || 0) : (d.inset || 0);
+        el.style.left = `${Math.round(Math.max(0, Math.min(vw() - r.width, left)))}px`; el.style.top = `${Math.round(Math.max(4, Math.min(vh() - r.height - 4, top)))}px`;
       }
-      else { el.classList.remove("is-floating"); el.style.left = ""; el.style.top = ""; }
+      else { home(false); el.classList.remove("is-floating"); el.style.left = ""; el.style.top = ""; }
     }
     function save() {
       const r = el.getBoundingClientRect();
@@ -943,7 +949,7 @@
     });
     grip.addEventListener("pointermove", (e) => {
       if (!drag) return;
-      if (!drag.moved) { drag.moved = true; el.classList.add("is-floating", "is-dragging"); }
+      if (!drag.moved) { drag.moved = true; home(false); el.classList.add("is-floating", "is-dragging"); }
       // 左右のはしへ持っていくと縦に並ぶ(つまみの位置はそのまま指の下に)
       if (opt.sides) {
         const side = e.clientX < EDGE ? "left" : e.clientX > vw() - EDGE ? "right" : "";
@@ -973,6 +979,7 @@
       const d = { ArrowLeft: [-16, 0], ArrowRight: [16, 0], ArrowUp: [0, -16], ArrowDown: [0, 16] }[e.key];
       if (!d) return;
       e.preventDefault(); e.stopPropagation();
+      home(false);
       const r = el.getBoundingClientRect();
       el.classList.add("is-floating");
       place((r.left + d[0]) / vw(), (r.top + d[1]) / vh());
@@ -1088,15 +1095,15 @@
       if (!idxs.length) continue;
       const want = plan[k] * 60000;
       const fixed = idxs.filter((i) => items[i].kind !== "deck");
-      const fixedMs = fixed.reduce((a, i) => a + ((items[i].sec || t.per || 30) + (items[i].kind === "timer" ? 0 : t.gap || 0)) * 1000, 0);
+      const fixedMs = fixed.reduce((a, i) => a + ((items[i].sec || t.per || 60) + (items[i].kind === "timer" ? 0 : t.gap || 0)) * 1000, 0);
       const decks = idxs.filter((i) => items[i].kind === "deck");
       if (fixedMs <= want) {
-        fixed.forEach((i) => { dur[i] = ((items[i].sec || t.per || 30) + (items[i].kind === "timer" ? 0 : t.gap || 0)) * 1000; });
+        fixed.forEach((i) => { dur[i] = ((items[i].sec || t.per || 60) + (items[i].kind === "timer" ? 0 : t.gap || 0)) * 1000; });
         const rest = want - fixedMs;
         if (decks.length) decks.forEach((i) => { dur[i] = rest / decks.length; });
         else if (fixed.length) dur[fixed[fixed.length - 1]] += rest;
       } else {
-        fixed.forEach((i) => { dur[i] = ((items[i].sec || t.per || 30) + (items[i].kind === "timer" ? 0 : t.gap || 0)) * 1000 * (want / fixedMs); });
+        fixed.forEach((i) => { dur[i] = ((items[i].sec || t.per || 60) + (items[i].kind === "timer" ? 0 : t.gap || 0)) * 1000 * (want / fixedMs); });
       }
     }
     const stepList = (items.find((it) => it.steps) || {}).steps || [];
@@ -1134,7 +1141,17 @@
       toggle.setAttribute("aria-label", label); toggle.title = label;
       toggle.replaceChildren(lineIcon(mini ? "expand" : "collapse"));
     };
-    const toggle = h("button", { type: "button", class: "pt-min", onclick: () => setMini(!panel.classList.contains("is-mini")) });
+    // はじめの場所(広い画面の左上)では1行の帯(is-bar)。押すと下にくわしく開く(is-open)
+    const setOpen = (open) => {
+      panel.classList.toggle("is-open", open);
+      const label = open ? "とじる" : "くわしく見る";
+      toggle.setAttribute("aria-label", label); toggle.title = label;
+      toggle.replaceChildren(lineIcon(open ? "collapse" : "expand"));
+    };
+    const toggle = h("button", { type: "button", class: "pt-min", onclick: () => {
+      if (panel.classList.contains("is-bar")) setOpen(!panel.classList.contains("is-open"));
+      else setMini(!panel.classList.contains("is-mini"));
+    } });
     // 閉じているときは、状態の札を押しても開く
     status.addEventListener("click", () => { if (panel.classList.contains("is-mini")) { setMini(false); window.dispatchEvent(new Event("resize")); } });
     const panel = h("section", { class: "pr-time is-v2", "aria-label": "タイムマネジメント" },
@@ -1148,8 +1165,26 @@
     // スマホなど狭い画面では、はじめは小さく(状態だけ)出す
     setMini((document.documentElement.clientWidth || innerWidth) <= 760);
     host.append(panel);
-    // はじめの場所(広い画面): 左はし、メーターのすぐ上
-    floatable(panel, "time", host, { defaultPlace: { side: "left", inset: 4, bottom: 136 } });
+    // はじめの場所(広い画面): 左上の帯(上の題のところ)。スライドの中身に重ならない
+    floatable(panel, "time-v2", host, { // 前の置き場所(左下・右はし)は使わず、新しいはじめの場所から
+      onHome: (on) => {
+        const was = panel.classList.contains("is-bar");
+        panel.classList.toggle("is-bar", on);
+        host.classList.toggle("time-home", on);
+        if (on && !was) { setMini(false); setOpen(false); }
+        if (!on && was) { panel.classList.remove("is-open"); setMini(false); }
+        const top = host.querySelector(".pr-top");
+        if (top) top.style.minHeight = "";
+        fitBar();
+      },
+      defaultPlace: (r) => {
+        const top = host.querySelector(".pr-top");
+        const tr = top ? top.getBoundingClientRect() : { top: 12, height: 40, left: 16 };
+        if (top) top.style.minHeight = `${Math.ceil(r.height)}px`;
+        const tr2 = top ? top.getBoundingClientRect() : tr;
+        return { left: Math.max(8, tr2.left), top: tr2.top + (tr2.height - r.height) / 2 };
+      },
+    });
     // 小さく・大きくしたときも、下のはしの位置をそろえる
     toggle.addEventListener("click", () => window.dispatchEvent(new Event("resize")));
 
@@ -1161,7 +1196,18 @@
       while (l < items.length - 1 && stepOf(items[l + 1]) === k) l++;
       return [start + offs[f], start + offs[l] + dur[l]];
     };
+    // 帯は、右の「進行の場所」の選択の手前までに収める(選択の位置はスライドによって変わるので、そのつど合わせる)
+    function fitBar() {
+      const jumpEl = host.querySelector(".pr-top .pr-jump");
+      const on = panel.classList.contains("is-bar");
+      const room = on && jumpEl ? Math.max(240, Math.round(jumpEl.getBoundingClientRect().left - panel.getBoundingClientRect().left - 12)) : 0;
+      const mw = room ? `${room}px` : "";
+      if (panel.style.maxWidth !== mw) panel.style.maxWidth = mw;
+      // 幅が足りないときは「現在」の時刻を省く(状態の札と理想の時間を優先)
+      panel.classList.toggle("is-tight", !!room && room < 470);
+    }
     function tick() {
+      fitBar();
       const now = Date.now();
       const d = jst(now);
       const i = Math.min(items.length - 1, Math.max(0, getIdx()));
@@ -1246,7 +1292,7 @@
     // 進行バーの名前を、ことばの切れ目でだけ折り返す(「エデュケーション/コーナー」「ブレイクアウト/ルーム商談/(テーブル商談)」)
     // ことばのかたまりは1行のまま(途中で折り返さない)
     const stepWords = (title) => String(title || "")
-      .replace(/(エデュケーション|ブレイクアウト|ビジネス|1分|の)(?=.)/g, "$1\u0000").replace(/(.)(?=[（(])/g, "$1\u0000")
+      .replace(/(エデュケーション|ブレイクアウト|ビジネス|プレゼン(?=テーション)|1分|の)(?=.)/g, "$1\u0000").replace(/(.)(?=[（(])/g, "$1\u0000")
       .split("\u0000").filter(Boolean).flatMap((part, i) => (i ? [h("wbr"), h("span", { class: "pd-nw" }, part)] : [h("span", { class: "pd-nw" }, part)]));
     const progress = opts.deck ? h("div", { class: "pd-progress", "aria-hidden": "true" }) : null;
     function drawProgress() {
@@ -1300,8 +1346,24 @@
     document.documentElement.append(box);
     // 下の操作バーは、つまみ(⠿)をつかんで好きな場所へ動かせる
     const dock = box.querySelector(".pr-dock");
-    // はじめの場所(広い画面): 右はしに縦に並べ、メーターのすぐ上
-    floatable(dock, "dock", box, { sides: true, defaultPlace: { side: "right", inset: 8, bottom: 116 } });
+    // はじめの場所(広い画面): 右下に横に並べる。下のメーター・進行バーは、その分だけ右をあける(スライドの中身に重ならない)
+    floatable(dock, "dock-v2", box, {
+      sides: true,
+      onHome: (on) => {
+        box.classList.toggle("dock-home", on);
+        if (!on) return;
+        const r = dock.getBoundingClientRect();
+        box.style.setProperty("--dock-w", `${Math.ceil(r.width)}px`);
+        box.style.setProperty("--dock-h", `${Math.ceil(r.height)}px`);
+      },
+      defaultPlace: (r) => {
+        box.style.setProperty("--dock-w", `${Math.ceil(r.width)}px`);
+        box.style.setProperty("--dock-h", `${Math.ceil(r.height)}px`);
+        const vw = box.clientWidth || document.documentElement.clientWidth;
+        const vh = box.clientHeight || document.documentElement.clientHeight;
+        return { left: vw - r.width - 12, top: vh - r.height - 12 };
+      },
+    });
     const dockGrip = dock.gripEl;
     // 定例会のスライドのときは、2時間の定例会のタイムマネジメント(動かせる)
     const timing = opts.deck && opts.timing ? timePanel(people, opts.timing, () => idx, box) : null;
@@ -1739,14 +1801,20 @@
       box.classList.toggle("is-deck", isDeck(p));
       box.classList.toggle("is-timer", p.kind === "timer");
       ["movie", "cover", "agenda", "section", "leader", "about", "vision", "list", "feature", "checks", "strengths", "venn", "kpis", "rules", "schedule", "raise", "closing", "glossary", "joinform", "joinsteps", "survey", "attend"].forEach((t) => box.classList.toggle(`is-d-${t}`, isDeck(p) && p.type === t));
+      box.classList.remove("is-edu");
+      // スライドとプレゼンで操作バーの幅が変わる(スライドでは「はじめる」の場所をつめる)ので、置き直す
+      if (box.dataset.kindWas !== String(isDeck(p))) { box.dataset.kindWas = String(isDeck(p)); if (box.classList.contains("dock-home")) requestAnimationFrame(() => window.dispatchEvent(new Event("resize"))); }
       drawProgress();
       if (isDeck(p)) { App.fill(slide, deckSlide(p)); fitDeck(); return; }
       // スライドの間は残り時間の欄が隠れていて幅を測れないので、出たときに測りなおす
       if (!sec.style.width || parseFloat(sec.style.width) < 20) fixSecWidth();
       // 自分だけのタイマー: まん中に大きく「集中」「休憩」などと、次にくるもの
       if (p.kind === "timer" && opts.deck && p.material && (p.material.pages || []).length) {
-        // エデュケーションコーナー: 資料を大きく(1枚ずつ送る)。下のタイマー(メーター・残り時間)はそのまま
+        // エデュケーションコーナー: 資料を画面いっぱいに(1枚ずつ送る)。下のタイマー(メーター・残り時間)は資料の下のほうに重ねる
         box.classList.remove("is-rest");
+        box.classList.add("is-edu");
+        const topBar = box.querySelector(".pr-top");
+        if (topBar) box.style.setProperty("--edu-top", `${Math.round(topBar.getBoundingClientRect().bottom + 6)}px`);
         const imgs = p.material.pages.map((pg, i) => {
           const img = h("img", { class: "pd-edu-img", alt: `${p.material.title} ${i + 1}枚目`, loading: i < 2 ? "eager" : "lazy", decoding: "async" });
           if (pg.url) img.src = pg.url;
@@ -1998,12 +2066,13 @@
       if (closed) { clearInterval(avoidTimer); return; }
       const wide = (document.documentElement.clientWidth || innerWidth) > 760 && innerWidth > innerHeight;
       let padL = 0, padR = 0;
-      if (wide) {
+      // 資料を画面いっぱいに出すとき(エデュケーションコーナー)は、よけない(タイマー・操作バーは資料の上に重ねる)
+      if (wide && !box.classList.contains("is-edu")) {
         const sr = slide.getBoundingClientRect();
         [timing && timing.el, dock].forEach((el) => {
           if (!el || !el.isConnected) return;
           const r = el.getBoundingClientRect();
-          if (!r.width || r.bottom < sr.top || r.top > sr.bottom) return;
+          if (!r.width || r.bottom < sr.top + 12 || r.top > sr.bottom - 12) return;
           if (r.left - sr.left < sr.width * 0.3) padL = Math.max(padL, r.right - sr.left + 14);
           else if (sr.right - r.right < sr.width * 0.3) padR = Math.max(padR, sr.right - r.left + 14);
         });
