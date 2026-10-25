@@ -53,7 +53,7 @@
         App.clockCard(upcoming[0], d.today), cal.main, cal.day));
       if (!(open || venueSoon)) el.append(checkBox);
 
-      if (App.isAdmin()) el.append(h("div", { class: "app-cta-row" }, App.btn("＋ 定例会を作る", () => eventForm(null, d.events[d.events.length - 1]), "ghost wide")));
+      if (canPlan()) el.append(h("div", { class: "app-cta-row" }, App.btn("＋ 定例会の日程を追加", () => eventForm(null, d.events[d.events.length - 1]), "ghost wide")));
 
       el.append(App.section("これからの定例会",
         upcoming.length
@@ -63,6 +63,7 @@
               e.yesNames.length ? h("p", { class: "ev-names" }, `出席予定:${e.yesNames.join("、")}`) : null,
               h("div", { class: "ev-actions" },
                 App.btn("ビジターを招待", () => App.go(`invite?event=${e.id}`), "small"),
+                canPlan() ? App.btn("日時・内容を編集", () => editEvent(e.id), "ghost small") : null,
                 App.isAdmin() ? App.btn("管理", () => App.go(`events/manage/${e.id}`), "ghost small") : null));
             card.redraw();
             return card;
@@ -258,8 +259,20 @@
       App.field("案内ページ(任意)", f.url),
       ev ? null : h("div", { class: "app-grid2" }, App.field("繰り返し", repeat), App.field("回数", times)),
       ev ? null : preview,
-      err, save));
+      err, save,
+      // 編集のときは、この回を消せる(管理者・運営メンバー)
+      ev ? h("div", { class: "app-btn-row ev-del-row" }, App.btn("この定例会を削除", async () => {
+        if (!(await App.confirm(`${App.fmtDate(ev.date)}の「${ev.title}」を削除しますか?(出欠の記録も消えます)`, { ok: "削除する", danger: true }))) return;
+        if (await App.api("adminDeleteEvent", { id: ev.id })) { close(); App.toast("削除しました"); App.go("events"); App.route(); }
+      }, "ghost small danger")) : null));
     }, { noFocus: true });
+  }
+  // 日程を作る・直せる人: 管理者と、プレゼン(定例会の進行)を任された運営メンバー
+  const canPlan = () => App.isAdmin() || (App.canPresent && App.canPresent());
+  // 一覧から編集: 定例会の中身(当日の流れ・ご案内など)を読みこんでから開く
+  async function editEvent(id) {
+    const d = await App.api("getEvent", { id });
+    if (d && d.event) eventForm(d.event);
   }
 
   // ---------- 定例会の詳細(全員): 出欠・参加リンク・メンバーの出欠一覧・ビジター ----------
@@ -379,7 +392,7 @@
     el.append(h("div", { class: "app-btn-row" },
       ev.past ? null : App.btn("ビジターを招待", () => App.go(`invite?event=${ev.id}`), "small"),
       d.isAdmin ? App.btn("受付・出欠の管理", () => App.go(`events/manage/${ev.id}`), "ghost small") : null,
-      d.isAdmin ? App.btn("編集", () => eventForm(ev), "ghost small") : null));
+      d.isAdmin || canPlan() ? App.btn("日時・内容を編集", () => eventForm(ev), "ghost small") : null));
 
     // メンバーの出欠一覧(出席・欠席・未回答に分けて)
     const groups = [

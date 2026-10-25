@@ -77,6 +77,13 @@
         if (!w.isAdmin) return { error: c.fail("FORBIDDEN_ADMIN") };
         return w;
       }
+      // 定例会の日程の追加・編集・削除: 管理者と、プレゼン(定例会の進行)を任された運営メンバー
+      function planner(body) {
+        var w = who(body);
+        if (w.error) return w;
+        if (!w.isAdmin && DECK_OWNERS.indexOf(w.id) === -1) return { error: c.fail("FORBIDDEN_ADMIN") };
+        return w;
+      }
       function member(db, id) { return c.find(db.referralMembers || [], function (m) { return m.id === id; }); }
       function nameOf(db, id) {
         var m = member(db, id);
@@ -440,7 +447,7 @@
       }
 
       function adminSaveEvent(body) {
-        var w = admin(body);
+        var w = planner(body);
         if (w.error) return w.error;
         var input = body.event || {};
         var e = c.find(w.db.events, function (x) { return x.id === input.id; });
@@ -504,7 +511,7 @@
       }
 
       function adminDeleteEvent(body) {
-        var w = admin(body);
+        var w = planner(body);
         if (w.error) return w.error;
         var target = c.find(w.db.events, function (x) { return x.id === body.id; });
         if (!target) return c.fail("NOT_FOUND");
@@ -2713,6 +2720,134 @@
         return c.ok({ education: info(db) });
       }
       return { actions: { getEducation: getEducation, getEduPage: getEduPage, saveEducation: saveEducation } };
+    },
+  });
+  // ============================================
+  // 運営会議(プレゼンを任された運営メンバーだけ)
+  //   listOpsMeetings / saveOpsMeeting / deleteOpsMeeting / saveOpsNotes / fetchOpsNotes
+  //   会議を作ると Google Meet を自動で作り(カレンダー連携のとき)、運営メンバーを招待する。
+  //   会議のあと、Google Meet の「Gemini によるメモ」・文字起こしを読みこんで議事録にする(共有サーバーのとき)。
+  //   読みこめないときは、メモを貼り付けて残せる
+  // ============================================
+  var OPS_MAX = 300, OPS_NOTE_MAX = 40000;
+  BtexServerCore.registerModule({
+    mutating: ["saveOpsMeeting", "deleteOpsMeeting", "saveOpsNotes", "fetchOpsNotes"],
+    create: function (c) {
+      function ops(body) {
+        var db = c.ensureDb();
+        var a = c.authSession(db, body.sessionToken);
+        if (!a) return { error: c.fail("SESSION_INVALID") };
+        if (DECK_OWNERS.indexOf(a.user.memberId) === -1 && !a.isAdmin) return { error: c.fail("FORBIDDEN_ADMIN") };
+        if (!Array.isArray(db.opsMeetings)) db.opsMeetings = [];
+        return { db: db, a: a, id: a.user.memberId };
+      }
+      function nameOf(db, id) { var m = c.find(db.referralMembers || [], function (x) { return x.id === id; }); return m ? m.name : ""; }
+      function view(db, m) {
+        return { id: m.id, title: m.title, date: m.date, start: m.start, end: m.end, agenda: m.agenda || "", meetUrl: m.meetUrl || "", link: m.link || "",
+          notes: (m.notes || []).map(function (n) { return { id: n.id, source: n.source, title: n.title || "", text: n.text || "", url: n.url || "", at: n.at, byName: n.by ? nameOf(db, n.by) : "" }; }),
+          byName: nameOf(db, m.by), at: m.at };
+      }
+      function cleanDate(v) { return /^\d{4}-\d{2}-\d{2}$/.test(String(v || "")) ? String(v) : ""; }
+      function cleanTime(v) { return /^\d{2}:\d{2}$/.test(String(v || "")) ? String(v) : ""; }
+      function listOpsMeetings(body) {
+        var x = ops(body); if (x.error) return x.error;
+        var list = x.db.opsMeetings.slice().sort(function (p, q) { return (q.date + q.start).localeCompare(p.date + p.start); });
+        return c.ok({ items: list.map(function (m) { return view(x.db, m); }), calendar: !!c.calendar, autoNotes: !!(c.meet && c.meet.notes) });
+      }
+      function saveOpsMeeting(body) {
+        var x = ops(body); if (x.error) return x.error;
+        var input = body.meeting || {};
+        var date = cleanDate(input.date), start = cleanTime(input.start), end = cleanTime(input.end) || start;
+        var title = c.cleanStr(input.title, 80) || "運営会議";
+        if (!date || !start) return c.fail("INVALID_REQUEST", "日付と開始の時刻を入れてください。");
+        var m = input.id ? c.find(x.db.opsMeetings, function (y) { return y.id === input.id; }) : null;
+        if (input.id && !m) return c.fail("NOT_FOUND");
+        if (!m) { m = { id: "op_" + c.randomHex(6), by: x.id, at: c.nowMs(), notes: [] }; x.db.opsMeetings.push(m); if (x.db.opsMeetings.length > OPS_MAX) x.db.opsMeetings.shift(); }
+        m.title = title; m.date = date; m.start = start; m.end = end;
+        m.agenda = c.cleanStr(input.agenda, 2000);
+        if (!c.calendar) m.meetUrl = /^https:\/\/meet\.google\.com\/[a-z0-9-]+/i.test(String(input.meetUrl || "")) ? c.cleanStr(input.meetUrl, 200) : (m.meetUrl || "");
+        if (c.calendar) {
+          // 運営メンバーのうち、カレンダー用のメールを入れている人を招待する
+          var guests = (x.db.users || []).filter(function (u) { return DECK_OWNERS.indexOf(u.memberId) !== -1 && u.calendarEmail; }).map(function (u) { return u.calendarEmail; });
+          try {
+            var r = c.calendar.upsert({ id: m.calId, title: "【BT-EX5 運営会議】" + title, date: date, start: start, end: end, meet: true, description: m.agenda, guests: guests });
+            m.calId = r.id; m.meetUrl = r.meetUrl || m.meetUrl || ""; m.link = r.link || "";
+          } catch (err) { /* カレンダーに入れられなくても、会議は保存する */ }
+        }
+        c.saveDb(x.db);
+        return c.ok({ meeting: view(x.db, m) });
+      }
+      function deleteOpsMeeting(body) {
+        var x = ops(body); if (x.error) return x.error;
+        var m = c.find(x.db.opsMeetings, function (y) { return y.id === body.id; });
+        if (!m) return c.fail("NOT_FOUND");
+        if (m.calId && c.calendar) { try { c.calendar.remove(m.calId); } catch (err) { /* noop */ } }
+        x.db.opsMeetings = x.db.opsMeetings.filter(function (y) { return y.id !== m.id; });
+        c.saveDb(x.db);
+        return c.ok({});
+      }
+      // 議事録を貼り付けて残す(Gemini のメモ・自分のメモ)。noteId があれば直す、text を空にすると消す
+      function saveOpsNotes(body) {
+        var x = ops(body); if (x.error) return x.error;
+        var m = c.find(x.db.opsMeetings, function (y) { return y.id === body.id; });
+        if (!m) return c.fail("NOT_FOUND");
+        if (!m.notes) m.notes = [];
+        var text = c.cleanStr(String(body.text || "").replace(/\r\n?/g, "\n"), OPS_NOTE_MAX);
+        var url = /^https:\/\/[^\s"'<>]+$/.test(String(body.url || "")) ? c.cleanStr(body.url, 500) : "";
+        var n = body.noteId ? c.find(m.notes, function (y) { return y.id === body.noteId; }) : null;
+        if (n && !text && !url) { m.notes = m.notes.filter(function (y) { return y.id !== n.id; }); c.saveDb(x.db); return c.ok({ meeting: view(x.db, m) }); }
+        if (!text && !url) return c.fail("INVALID_REQUEST", "議事録の内容か、リンクを入れてください。");
+        if (!n) { n = { id: "nt_" + c.randomHex(5), source: "manual" }; m.notes.push(n); }
+        n.title = c.cleanStr(body.title, 80) || "議事録"; n.text = text; n.url = url; n.by = x.id; n.at = c.nowMs();
+        c.saveDb(x.db);
+        return c.ok({ meeting: view(x.db, m) });
+      }
+      // Google Meet の「Gemini によるメモ」・文字起こしを読みこむ(共有サーバーで Meet・ドキュメントが使えるとき)
+      function pullNotes(db, m) {
+        if (!c.meet || !c.meet.notes || (!m.calId && !m.meetUrl)) return 0;
+        var got = c.meet.notes({ calId: m.calId || "", meetUrl: m.meetUrl || "" }) || [];
+        var added = 0;
+        if (!m.notes) m.notes = [];
+        got.forEach(function (g) {
+          if (!g || !g.text) return;
+          var key = String(g.url || g.title);
+          var cur = c.find(m.notes, function (y) { return y.source !== "manual" && (y.url || y.title) === key; });
+          if (cur) { cur.text = c.cleanStr(g.text, OPS_NOTE_MAX); cur.at = c.nowMs(); return; }
+          m.notes.push({ id: "nt_" + c.randomHex(5), source: g.kind === "transcript" ? "transcript" : "gemini", title: c.cleanStr(g.title, 120), text: c.cleanStr(g.text, OPS_NOTE_MAX), url: c.cleanStr(g.url, 500), at: c.nowMs() });
+          added++;
+        });
+        m.notesCheckedAt = c.nowMs();
+        return added;
+      }
+      function fetchOpsNotes(body) {
+        var x = ops(body); if (x.error) return x.error;
+        var m = c.find(x.db.opsMeetings, function (y) { return y.id === body.id; });
+        if (!m) return c.fail("NOT_FOUND");
+        if (!c.meet || !c.meet.notes) return c.fail("INVALID_REQUEST", "共有サーバーで Google Meet と連携すると、会議のあとに議事録を自動で読みこめます。いまはメモを貼り付けてください。");
+        var added = 0;
+        try { added = pullNotes(x.db, m); } catch (err) { return c.fail("INVALID_REQUEST", "議事録を読みこめませんでした。会議の主催者の Google アカウントで、Gemini のメモがオンになっていたか確かめてください。"); }
+        c.saveDb(x.db);
+        return c.ok({ meeting: view(x.db, m), added: added });
+      }
+      // 1時間ごと: 終わってから3日以内の会議で、まだ議事録のないものを読みこむ
+      function jobOpsNotes() {
+        var db = c.ensureDb();
+        if (!c.meet || !c.meet.notes || !Array.isArray(db.opsMeetings)) return 0;
+        var now = c.nowMs(), n = 0;
+        db.opsMeetings.forEach(function (m) {
+          var endMs = Date.parse(m.date + "T" + (m.end || m.start || "23:59") + ":00+09:00");
+          if (!(endMs < now && now - endMs < 3 * 86400000)) return;
+          if ((m.notes || []).some(function (y) { return y.source === "gemini"; })) return;
+          if (m.notesCheckedAt && now - m.notesCheckedAt < 50 * 60000) return;
+          try { n += pullNotes(db, m); } catch (err) { m.notesCheckedAt = now; }
+        });
+        c.saveDb(db);
+        return n;
+      }
+      return {
+        actions: { listOpsMeetings: listOpsMeetings, saveOpsMeeting: saveOpsMeeting, deleteOpsMeeting: deleteOpsMeeting, saveOpsNotes: saveOpsNotes, fetchOpsNotes: fetchOpsNotes },
+        jobs: { syncMeet: jobOpsNotes },
+      };
     },
   });
 })();

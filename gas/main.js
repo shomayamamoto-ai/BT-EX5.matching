@@ -183,6 +183,36 @@ var MEET_ = {
     });
     return Object.keys(totals).map(function (n) { return { name: n, minutes: Math.round(totals[n] / 60000) }; });
   },
+  // 運営会議の議事録: カレンダーの予定に付いた「Gemini によるメモ」・文字起こし(Google ドキュメント)の中身を読む。
+  // 予定に付いていないときは、Meet REST API の文字起こし(transcripts)から読む
+  notes: function (x) {
+    var out = [];
+    var docText = function (id) { return DocumentApp.openById(id).getBody().getText(); };
+    if (x.calId) {
+      try {
+        var ev = Calendar.Events.get(oneOnOneCalendarId_(), x.calId);
+        (ev.attachments || []).forEach(function (at) {
+          if (!at.fileId || !/document/.test(String(at.mimeType || ""))) return;
+          try {
+            out.push({ kind: /文字起こし|transcript/i.test(at.title || "") ? "transcript" : "gemini", title: at.title || "議事録", text: docText(at.fileId), url: at.fileUrl || "" });
+          } catch (e) { /* 読めないファイルは飛ばす */ }
+        });
+      } catch (e) { /* 予定が見つからないときは Meet の文字起こしへ */ }
+    }
+    var m = String(x.meetUrl || "").match(/meet\.google\.com\/([a-z0-9-]+)/i);
+    if (!out.length && m) {
+      var API = "https://meet.googleapis.com/v2/";
+      var space = meetGet_(API + "spaces/" + m[1]);
+      meetList_(API + "conferenceRecords?filter=" + encodeURIComponent('space.name="' + space.name + '"'), "conferenceRecords").forEach(function (rec) {
+        meetList_(API + rec.name + "/transcripts", "transcripts").forEach(function (t) {
+          var d = t.docsDestination;
+          if (!d || !d.document) return;
+          try { out.push({ kind: "transcript", title: "文字起こし " + String(rec.startTime || "").slice(0, 10), text: docText(d.document), url: d.exportUri || "" }); } catch (e) { /* noop */ }
+        });
+      });
+    }
+    return out;
+  },
 };
 
 // ---------- プッシュ通知(iPhone・Android・パソコン) ----------

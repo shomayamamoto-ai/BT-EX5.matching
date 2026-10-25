@@ -620,7 +620,8 @@ const App = (function () {
     { id: "events", label: "予定", icon: "M7 2v2H5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-2V2h-2v2H9V2zm-2 8h14v9H5z" },
     { id: "present", label: "プレゼン", icon: "M3 3h18v2h-1v10a1 1 0 0 1-1 1h-6v2.3l3.6 2.4-1.1 1.6L12 20.1l-3.5 2.2-1.1-1.6L11 18.3V16H5a1 1 0 0 1-1-1V5H3zm3 2v9h12V5zm2 6h3v2H8zm0-3h8v2H8z" },
     { id: "board", label: "掲示板", icon: "M4 3h16a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H8l-4 4V4a1 1 0 0 1 1-1Zm3 4v2h10V7Zm0 4v2h7v-2Z" },
-    { id: "news", label: "アップデート", icon: "M3 10v4a1 1 0 0 0 1 1h2l5 4V5L6 9H4a1 1 0 0 0-1 1Zm13.5 2A4.5 4.5 0 0 0 14 8v8a4.5 4.5 0 0 0 2.5-4ZM14 3.2v2.1a7 7 0 0 1 0 13.4v2.1a9 9 0 0 0 0-17.6Z" },
+    // 運営(運営会議・議事録)は、プレゼンを任された運営メンバーだけ。アップデートはマイページから開く
+    { id: "ops", label: "運営", icon: "M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm8 0a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM1 20c0-3.3 3.6-6 8-6s8 2.7 8 6v1H1zm16.5-5.9c2.9.4 5.5 2.4 5.5 4.9v1h-4.2c0-2.3-.5-4.3-1.3-5.9Z" },
   ];
   // プレゼン(定例会の進行)のタブは、この人だけに出す
   const PRESENT_OWNERS = ["yamamoto", "m22", "m02", "m16", "m08", "m14", "m09", "m10", "m24", "m04"]; // 山本 捷真・小林 末季(こばねぇ)・あまみや 七音・桜羽 李果・床島 良夫・三村 隆・大場 雅俊・大枝 篤志・栁橋 雅也・吉澤 美和子
@@ -699,7 +700,7 @@ const App = (function () {
 
   function renderTabs() {
     const nav = document.getElementById("appTabs");
-    const tabs = TABS.filter((t) => t.id !== "present" || canPresent());
+    const tabs = TABS.filter((t) => (t.id !== "present" && t.id !== "ops") || canPresent());
     nav.style.setProperty("--tab-n", String(tabs.length));
     nav.replaceChildren(...tabs.map((t) => {
       const count = t.id === "news" ? badges.announcements || 0
@@ -738,7 +739,7 @@ const App = (function () {
     tick: "M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z",
   };
   // 線のアイコン(assets/icons.js)があればそちらを使う(どの画面でも同じ太さ・形)
-  const TAB_GLYPH = { search: "search", log: "log", events: "calendar", present: "present", board: "board", news: "news" };
+  const TAB_GLYPH = { search: "search", log: "log", events: "calendar", present: "present", board: "board", news: "news", ops: "one" };
   function lineGlyph(name) { return name && typeof BtexIcons !== "undefined" && BtexIcons.has(name) ? BtexIcons.svg(name) : null; }
   function glyph(name) { return lineGlyph(name) || icon(GLYPHS[name] || GLYPHS.dot); }
   // ヘッダーの検索・ベル・ムービーも線のアイコンに
@@ -931,6 +932,7 @@ const App = (function () {
     get current() { return current; },
     isAdmin: () => !!(session && session.user && session.user.isAdmin),
     canPresent,
+    badgeCount: (k) => badges[k] || 0,
     siteUrl: (path) => new URL(path, location.href).href,
   };
 })();

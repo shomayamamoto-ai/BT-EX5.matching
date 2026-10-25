@@ -2646,3 +2646,19 @@ button.home-welcome-check:active { transform: scale(0.94); }
 .pd-attend.is-video-zoom .pd-attend-row { grid-template-columns: minmax(0, 1fr); }
 .pd-attend-video.is-zoom { cursor: zoom-out; }
 .pd-attend-video.is-zoom video { max-height: calc(100svh - 260px); }
+/* 運営(運営会議・議事録) */
+.ops-search { width: 100%; min-height: 44px; margin: 4px 0 6px; padding: 8px 14px; border-radius: 12px; border: 1.5px solid var(--line-strong); background: #fff; font: inherit; font-size: 15px; }
+.ops-list { display: grid; gap: 12px; }
+.ops-card { display: grid; gap: 10px; padding: 14px; border-radius: 16px; border: 1px solid var(--line); background: #fff; box-shadow: 0 1px 2px rgba(30, 22, 12, 0.04); }
+.ops-card-head { display: flex; gap: 12px; align-items: center; }
+.ops-date { flex: none; display: grid; justify-items: center; min-width: 74px; padding: 6px 8px; border-radius: 12px; background: linear-gradient(180deg, #2b2016, #17110c); color: #f6e7c4; }
+.ops-date b { font-size: 14px; } .ops-date small { font-size: 11.5px; color: #d9c08e; }
+.ops-ttl h3 { margin: 0; font-size: 16px; } .ops-ttl small { color: var(--text-light); font-size: 12px; }
+.ops-agenda { margin: 0; white-space: pre-wrap; font-size: 13.5px; color: var(--text-sub); }
+.ops-notes { display: grid; gap: 8px; padding-top: 10px; border-top: 1px dashed var(--line-strong); }
+.ops-notes h4 { margin: 0; font-size: 14px; }
+.ops-note { border-radius: 12px; background: #faf6ee; }
+.ops-note summary { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; padding: 10px 12px; cursor: pointer; font-size: 13.5px; }
+.ops-note summary small { margin-left: auto; color: var(--text-light); }
+.ops-note-text { margin: 0 12px 10px; padding: 12px; border-radius: 10px; background: #fff; white-space: pre-wrap; font-size: 13.5px; line-height: 1.75; max-height: 60vh; overflow: auto; }
+.ops-note .app-btn-row { padding: 0 12px 12px; }
