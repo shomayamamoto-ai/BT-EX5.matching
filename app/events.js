@@ -53,7 +53,7 @@
         App.clockCard(upcoming[0], d.today), cal.main, cal.day));
       if (!(open || venueSoon)) el.append(checkBox);
 
-      if (canPlan()) el.append(h("div", { class: "app-cta-row" }, App.btn("＋ 定例会の日程を追加", () => eventForm(null, d.events[d.events.length - 1]), "ghost wide")));
+      if (canPlan()) el.append(h("div", { class: "app-cta-row" }, App.btn("＋ 定例会の日程を追加", () => eventForm(null, d.events[d.events.length - 1]), "primary wide ev-add-btn")));
 
       el.append(App.section("これからの定例会",
         upcoming.length

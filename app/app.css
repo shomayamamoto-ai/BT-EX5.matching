@@ -3013,3 +3013,6 @@ button.home-welcome-check:active { transform: scale(0.94); }
 .ev-fes-name { display: flex; align-items: center; gap: 8px; font-weight: 800; }
 .ev-fes-name[hidden] { display: none; }
 .ev-fes-name .ev-fes-no { width: 5.5em; text-align: center; }
+/* 「＋ 定例会の日程を追加」: 押せるとひと目で分かる、色のついたボタン */
+.app-btn.ev-add-btn { min-height: 54px; max-width: 520px; margin: 0 auto; display: flex; justify-content: center; font-size: 16px; font-weight: 900; letter-spacing: 0.04em; border-radius: 14px; }
+.app-btn.ev-add-btn:hover { filter: brightness(1.06); transform: translateY(-1px); }
