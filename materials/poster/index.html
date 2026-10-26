@@ -352,6 +352,35 @@
       return new Blob(parts, { type: "application/pdf" });
     }
 
+    // PNG に解像度(300dpi)を書きこむ(pHYs)。書かないと、プレビューなどのアプリが 72dpi とみなして、
+    // 3508 × 2480 ピクセルの画像を A4 よりずっと大きい紙(約 1238 × 875 mm)として扱うため
+    var CRC_TABLE = (function () {
+      var t = [];
+      for (var n = 0; n < 256; n++) { var c = n; for (var k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; }
+      return t;
+    })();
+    function crc32(bytes) {
+      var c = 0xffffffff;
+      for (var i = 0; i < bytes.length; i++) c = CRC_TABLE[(c ^ bytes[i]) & 0xff] ^ (c >>> 8);
+      return (c ^ 0xffffffff) >>> 0;
+    }
+    function pngWithDpi(dataUrl, dpi) {
+      var bin = atob(dataUrl.split(",")[1]), src = new Uint8Array(bin.length);
+      for (var i = 0; i < bin.length; i++) src[i] = bin.charCodeAt(i);
+      var ppm = Math.round(dpi / 0.0254); // 1メートルあたりのピクセル数
+      var chunk = new Uint8Array(21), dv = new DataView(chunk.buffer);
+      dv.setUint32(0, 9);
+      chunk.set([0x70, 0x48, 0x59, 0x73], 4); // "pHYs"
+      dv.setUint32(8, ppm); dv.setUint32(12, ppm); chunk[16] = 1; // 単位: メートル
+      dv.setUint32(17, crc32(chunk.subarray(4, 17)));
+      var at = 8 + 25; // 署名(8) + IHDR(25) のすぐあと
+      var out = new Uint8Array(src.length + chunk.length);
+      out.set(src.subarray(0, at), 0); out.set(chunk, at); out.set(src.subarray(at), at + chunk.length);
+      var str = "";
+      for (var j = 0; j < out.length; j += 0x8000) str += String.fromCharCode.apply(null, out.subarray(j, j + 0x8000));
+      return "data:image/png;base64," + btoa(str);
+    }
+
     // ポスターの中の写真・ロゴを、キャンバスに直接描く(角の丸み・object-fit・object-position も合わせる)
     function drawImages(g, poster, k) {
       var pr = poster.getBoundingClientRect();
@@ -447,7 +476,7 @@
             return layer("is-shot-top", null);
           }).then(function (top) {
             base.getContext("2d").drawImage(top, 0, 0);
-            return finish(opts && opts.jpeg ? base.toDataURL("image/jpeg", 0.92) : base.toDataURL("image/png"));
+            return finish(opts && opts.jpeg ? base.toDataURL("image/jpeg", 0.92) : pngWithDpi(base.toDataURL("image/png"), 300));
           }, function (e) { stage.style.transform = keep; throw e; });
         });
       },
