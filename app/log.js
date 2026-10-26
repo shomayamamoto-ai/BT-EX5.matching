@@ -413,6 +413,8 @@
         const to = picker.getValue();
         if (!to) { App.fieldError(picker, "紹介先のメンバーを選んでください。"); return; }
         if (!prospect.value.trim()) { App.fieldError(prospect, "紹介した方のお名前を入れてください。"); return; }
+        const target = App.memberById(to);
+        if (target && target.pending) { App.fieldError(picker, `${target.name}さんは、共有の名簿への登録を待っています。運営者がアプリを開くと登録され、記録できるようになります。`); return; }
         save.disabled = true;
         const res = await AuthApi.recordReferral(AuthSession.getToken(), to, prospect.value.trim(), [], memo.value.trim(), contact.value.trim());
         save.disabled = false;

@@ -961,6 +961,7 @@ const App = (function () {
 
   // 新しく入ったメンバー(初期名簿の「足す」に書いた人)が共有サーバーの名簿にいなければ、管理者が開いたときに足す。
   // 共有サーバーの Code.gs を貼り直さなくても、早見表・プレゼン・記録などに出るように
+  let serverMembers = []; // 共有サーバーの名簿そのもの(新しいメンバーを足す前)
   async function syncSeedMembers() {
     if (!(session && session.user && session.user.isAdmin) || typeof AuthApi === "undefined" || !AuthApi.isShared()) return;
     try {
@@ -969,7 +970,7 @@ const App = (function () {
       const norm = (t) => String(t || "").replace(/\s+/g, "");
       const removed = new Set(REF_SEED_REVISIONS.flatMap((r) => r.remove || []));
       const ids = [...new Set(REF_SEED_REVISIONS.flatMap((r) => r.add || []))].filter((id) => !removed.has(id));
-      const haveIds = new Set(members.map((m) => m.id)), haveNames = new Set(members.map((m) => norm(m.name)));
+      const haveIds = new Set(serverMembers.map((m) => m.id)), haveNames = new Set(serverMembers.map((m) => norm(m.name)));
       const missing = ids.map((id) => REF_SEED_MEMBERS.find((m) => m.id === id)).filter((m) => m && !haveIds.has(m.id) && !haveNames.has(norm(m.name)));
       if (!missing.length) return;
       const added = [];
@@ -980,8 +981,9 @@ const App = (function () {
       if (!added.length) return;
       const res = await AuthApi.listReferralMembers(AuthSession.getToken());
       if (res.success) {
-        members = refAliasPhotos(res.data.members);
-        try { localStorage.setItem("btex5-members-cache", JSON.stringify(members)); } catch { /* noop */ }
+        serverMembers = res.data.members;
+        members = refAliasPhotos(refMergeNewMembers(serverMembers));
+        try { localStorage.setItem("btex5-members-cache", JSON.stringify(serverMembers)); } catch { /* noop */ }
         cacheClear();
         toast(`共有の名簿に ${added.join("・")}さんを足しました`);
         softRefresh(false);
@@ -1010,12 +1012,13 @@ const App = (function () {
     try { cachedMembers = JSON.parse(localStorage.getItem(MEMBERS_CACHE) || "null"); } catch { /* noop */ }
     const takeMembers = (res) => {
       if (!res.success) return false;
-      members = refAliasPhotos(res.data.members);
-      try { localStorage.setItem(MEMBERS_CACHE, JSON.stringify(members)); } catch { /* noop */ }
+      serverMembers = res.data.members;
+      members = refAliasPhotos(refMergeNewMembers(serverMembers));
+      try { localStorage.setItem(MEMBERS_CACHE, JSON.stringify(serverMembers)); } catch { /* noop */ }
       return true;
     };
     if (Array.isArray(cachedMembers) && cachedMembers.length) {
-      members = refAliasPhotos(cachedMembers);
+      members = refAliasPhotos(refMergeNewMembers(cachedMembers));
       membersP.then(takeMembers).then((ok) => { if (ok) syncSeedMembers(); });
     } else {
       const res = await membersP;

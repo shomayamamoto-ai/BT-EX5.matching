@@ -1366,11 +1366,11 @@
     const useCache = Array.isArray(cached) && cached.length > 0;
     const keep = (res) => { if (res.success) { try { localStorage.setItem(MEMBERS_CACHE, JSON.stringify(res.data.members)); } catch { /* noop */ } } };
     if (useCache) {
-      members = viewerOrder(dailyOrder(refAliasPhotos(cached)));
+      members = viewerOrder(dailyOrder(refAliasPhotos(refMergeNewMembers(cached))));
       fresh.then((res) => {
         keep(res);
         if (!res.success || JSON.stringify(res.data.members) === JSON.stringify(cached)) return;
-        members = viewerOrder(dailyOrder(refAliasPhotos(res.data.members)));
+        members = viewerOrder(dailyOrder(refAliasPhotos(refMergeNewMembers(res.data.members))));
         renderNudge();
         renderPartners();
         renderChips();
@@ -1379,7 +1379,7 @@
     } else {
       const res = await fresh;
       keep(res);
-      members = viewerOrder(dailyOrder(refAliasPhotos(res.success ? res.data.members : [])));
+      members = viewerOrder(dailyOrder(refAliasPhotos(refMergeNewMembers(res.success ? res.data.members : []))));
     }
     $("#communityLabel").textContent = COMMUNITY.label;
     // 業種・エリアの絞り込みは、広い画面では最初から開いておく
