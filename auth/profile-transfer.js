@@ -71,6 +71,7 @@ const ProfileTransfer = (function () {
     try { localStorage.setItem(flag, "1"); } catch { /* noop */ }
     if (!ok) return;
     const profile = {};
+    await AuthApi.loadLocal(); // 自分で直せる項目の一覧(SELF_EDITABLE)を使うため
     BtexServerCore.SELF_EDITABLE.forEach((k) => { if (k in local) profile[k] = local[k]; });
     const res = await AuthApi.updateMyProfile(AuthSession.getToken(), profile);
     alert(res.success ? "送りました。ほかのメンバーにも表示されます。" : res.error.userMessage);

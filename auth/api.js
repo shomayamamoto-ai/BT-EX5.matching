@@ -37,6 +37,25 @@ const AuthApi = (function () {
     return { success: false, error: { code, userMessage } };
   }
 
+  // お試し版(端末の中のデモ)の仕組みは、共有サーバーにつないでいないときだけ読みこむ(ふだんは読みこまないので軽い)
+  const SELF = document.currentScript ? document.currentScript.src : "";
+  let localReady = null;
+  function loadLocal() {
+    if (typeof AuthMockServer !== "undefined") return Promise.resolve();
+    if (localReady) return localReady;
+    const v = SELF ? new URL(SELF).search : "";
+    const files = ["../referral/data-seed.js", "server-core.js", "server-community.js", "server-billing.js", "mock-server.js"];
+    localReady = files.reduce((p, f) => p.then(() => new Promise((ok, ng) => {
+      const s = document.createElement("script");
+      s.src = new URL(f + v, SELF || location.href).href;
+      s.onload = ok;
+      s.onerror = () => ng(new Error(`${f} を読みこめませんでした`));
+      document.head.append(s);
+    })), Promise.resolve());
+    localReady.catch(() => { localReady = null; });
+    return localReady;
+  }
+
   async function post(action, payload) {
     // userAgent は全 POST に自動付与(ログ用途のみ・最大300文字)。
     // GASのdoPost(e)はHTTPヘッダーを受け取れないため、サーバー側でUA取得は不可能(docs/specs §14)
@@ -46,6 +65,7 @@ const AuthApi = (function () {
     });
 
     if (!API_BASE_URL) {
+      try { await loadLocal(); } catch { return { success: false, error: { code: "NETWORK", userMessage: NETWORK_MESSAGE } }; }
       const json = await AuthMockServer.handle(body);
       return readResult(json);
     }
@@ -147,6 +167,7 @@ const AuthApi = (function () {
     adminSaveReferralMember, adminDeleteReferralMember, adminImportReferralMembers,
     recordReferral, deleteReferral, updateReferralStatus, getReferralStats,
     isShared: () => Boolean(API_BASE_URL),
+    loadLocal,
     apiUrl: () => API_BASE_URL,
     NETWORK_MESSAGE,
   };
