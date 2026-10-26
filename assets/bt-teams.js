@@ -1,7 +1,7 @@
 // ============================================
 // assets/bt-teams.js — B.T. のチームと直上の方の一覧と、押して選ぶ入力(トグル)
 // アンケートの「B.T.内系列名」、ビジター申し込みの「所属チーム」で使う。
-// 系列 → チームの順に押して選び、結果は隠し入力(input)に
+// すべての系列のチームを系列ごとに並べて出し、1つ押して選ぶ。結果は隠し入力(input)に
 // 「系列 / チーム / 直上の方」の文字で入る。一覧にないときは「一覧にない」から文字で入れる。
 // ============================================
 const BtTeams = (function () {
@@ -29,45 +29,29 @@ const BtTeams = (function () {
     return e;
   }
 
-  // input: 結果を入れる input(type=hidden にする)。opts.none: 「LINK会員ではない」などの選択肢(押すと値は opts.noneValue)
-  function mount(input, opts = {}) {
+  // input: 結果を入れる input(type=hidden にする)。すべての系列のチームを一度に出し、1つ押して選ぶ
+  function mount(input) {
     input.type = "hidden";
-    let group = null, team = null, other = false, none = false;
-    const otherInput = el("input", { type: "text", class: "bt-other", maxlength: "40", placeholder: "チーム名と直上の方のお名前" });
-    const groupsRow = el("div", { class: "bt-chips", role: "group", "aria-label": "系列" });
-    const teamsWrap = el("div", { class: "bt-teams", hidden: "" });
-    const root = el("div", { class: "bt-pick" },
-      el("p", { class: "bt-step" }, "① 系列を選ぶ"), groupsRow, teamsWrap);
+    let pick = null, other = false; // pick: [系列, チーム]
+    const otherInput = el("input", { type: "text", class: "bt-other", maxlength: "60", placeholder: "系列・チーム名・直上の方のお名前" });
+    const root = el("div", { class: "bt-pick" });
     input.after(root);
 
     const chip = (label, sub, on, onclick) => el("button", { type: "button", class: "bt-chip" + (on ? " is-on" : ""), "aria-pressed": on ? "true" : "false", onclick },
       el("span", { class: "bt-chip-main" }, label), sub ? el("span", { class: "bt-chip-sub" }, sub) : null);
 
     function write() {
-      let v = "";
-      if (none) v = opts.noneValue || "なし";
-      else if (group) {
-        const parts = [groupLabel(group)];
-        if (other) { if (otherInput.value.trim()) parts.push(otherInput.value.trim()); }
-        else if (team) parts.push(team[0], team[1]);
-        v = parts.join(" / ");
-      }
-      input.value = v;
+      input.value = other ? otherInput.value.trim() : pick ? [groupLabel(pick[0]), pick[1][0], pick[1][1]].join(" / ") : "";
       input.dispatchEvent(new Event("input", { bubbles: true }));
     }
     function draw() {
-      groupsRow.replaceChildren(...[
-        ...GROUPS.map((g) => chip(g[0], g[1], group === g, () => { none = false; team = null; other = false; group = group === g ? null : g; draw(); })),
-        opts.none ? chip(opts.none, null, none, () => { none = !none; group = null; team = null; other = false; draw(); }) : null].filter(Boolean));
-      teamsWrap.hidden = !group;
-      if (group) {
-        teamsWrap.replaceChildren(...[
-          el("p", { class: "bt-step" }, "② チームを選ぶ(チーム / 直上の方)"),
-          el("div", { class: "bt-chips is-teams", role: "group", "aria-label": "チーム" },
-            ...group[2].map((t) => chip(t[0], t[1], team === t, () => { other = false; team = team === t ? null : t; draw(); })),
-            chip(OTHER, null, other, () => { team = null; other = !other; draw(); if (other) otherInput.focus(); })),
-          other ? otherInput : null].filter(Boolean));
-      }
+      root.replaceChildren(...[
+        ...GROUPS.map((g) => el("div", { class: "bt-group", role: "group", "aria-label": groupLabel(g) },
+          el("p", { class: "bt-group-head" }, el("b", null, g[0]), el("span", null, g[1])),
+          el("div", { class: "bt-chips is-teams" },
+            ...g[2].map((t) => chip(t[0], t[1], !!pick && pick[1] === t, () => { other = false; pick = pick && pick[1] === t ? null : [g, t]; draw(); }))))),
+        el("div", { class: "bt-chips" }, chip(OTHER, null, other, () => { pick = null; other = !other; draw(); if (other) otherInput.focus(); })),
+        other ? otherInput : null].filter(Boolean));
       write();
     }
     otherInput.addEventListener("input", write);
@@ -76,12 +60,10 @@ const BtTeams = (function () {
       root,
       // 入力の確認: 足りなければ文言を返す
       problem(required) {
-        if (none) return "";
-        if (!group) return required ? "系列を選んでください。" : "";
-        if (other ? !otherInput.value.trim() : !team) return other ? "チーム名と直上の方のお名前を入れてください。" : "チームを選んでください。";
-        return "";
+        if (other) return otherInput.value.trim() ? "" : "系列・チーム名・直上の方のお名前を入れてください。";
+        return !pick && required ? "チームを選んでください。" : "";
       },
-      reset() { group = null; team = null; other = false; none = false; otherInput.value = ""; draw(); },
+      reset() { pick = null; other = false; otherInput.value = ""; draw(); },
     };
   }
 
