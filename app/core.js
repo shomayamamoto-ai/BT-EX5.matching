@@ -738,6 +738,18 @@ const App = (function () {
     newerVersion().then((yes) => { if (yes) location.reload(); });
   });
 
+  // 各画面の頭: 英字の筆記体と日本語の画面名(assets/soft.css の .app-hero)。
+  // 画面の中にもう大きな見出し(.app-h1)があるときは、その上に英字だけを添える
+  const HERO_EN = { home: "Schedule", events: "Schedule", log: "Record", present: "Presentation", board: "Board", news: "Update", feed: "News", me: "My Page", admin: "Admin", ops: "Meeting", invite: "Invitation", help: "Guide" };
+  function addHero(el, view, parts) {
+    const en = HERO_EN[view];
+    if (!en) return;
+    const first = el.firstElementChild;
+    if (first && first.matches("h1.app-h1")) { first.dataset.en = parts.length && view === "events" ? "Event" : en; return; }
+    if (parts.length || !views[view].title) return;
+    el.prepend(h("header", { class: "app-hero" }, h("p", { class: "sf-script", "aria-hidden": "true" }, en), h("h1", null, views[view].title), h("i", { "aria-hidden": "true" })));
+  }
+
   async function route() {
     // 画面の切りかえは待たせずに、裏で確かめる(新しい版があれば、入力中のシートやプレゼン中でないときに読み直す)
     newerVersion().then((yes) => { if (yes && !document.querySelector(".app-sheet-wrap, .pr-run")) location.reload(); });
@@ -782,6 +794,7 @@ const App = (function () {
     refreshBadges();
     // 読み込み中に別の画面へ移っていたら捨てる
     if (current.view !== view || current.parts.join("/") !== r.parts.join("/")) { loadingBar(false); return; }
+    addHero(el, view, r.parts);
     main.replaceChildren(el);
     if (!fresh.size) { loadingBar(false); return; }
     // 控えで出した中身の最新を取りに行き、変わっていたら(入力中でなければ)そっと描き直す
@@ -819,6 +832,7 @@ const App = (function () {
     if (current.view !== view || current.parts.join("/") !== key) return;
     if (cleanup) { try { cleanup(); } catch { /* noop */ } }
     cleanup = typeof result === "function" ? result : null;
+    addHero(el, view, current.parts);
     main.replaceChildren(el);
     window.scrollTo({ top: y, behavior: "instant" });
     refreshBadges();

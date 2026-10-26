@@ -3120,10 +3120,8 @@ button.home-welcome-check:active { transform: scale(0.94); }
 .svx .svx-hero .sv-res-live { justify-content: center; margin: 0; color: var(--svx-sub); }
 /* 切りかえ(メンバー・ビジター)と回の選択 */
 .svx .svx-controls { justify-content: center; gap: 12px; margin: 4px auto 6px; }
-.svx .svx-controls .app-seg { max-width: 520px; background: #fff; border-radius: 999px; padding: 5px; box-shadow: 0 6px 18px rgba(120, 80, 60, 0.08); }
+.svx .svx-controls .app-seg { max-width: 520px; }
 .svx .svx-controls .app-seg button { border-radius: 999px; }
-.svx .svx-controls .app-seg button[aria-selected="true"], .svx .svx-controls .app-seg button.is-on { background: var(--svx-accent) !important; color: #fff !important; box-shadow: 0 6px 14px rgba(217, 119, 107, 0.35); }
-.svx .svx-controls .app-seg button.is-on .app-badge { background: #fff; color: var(--svx-accent); }
 .svx .sv-res-tools select, .svx .sv-res-tools .app-btn { border-radius: 999px; border: 1px solid rgba(217, 119, 107, 0.45); background: #fff; color: var(--svx-ink); }
 .svx .app-btn.ghost { border-radius: 999px; border-color: rgba(217, 119, 107, 0.55); color: var(--svx-accent); background: #fff; }
 .svx .app-btn.ghost:hover { background: var(--svx-accent); color: #fff; }
