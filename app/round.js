@@ -236,10 +236,17 @@
       ...members.map((m) => ({ key: `m:${m.id}`, id: m.id, name: m.name, company: m.company || m.category || "", team: m.team || "", kind: "member" })),
       ...visitors.map((v) => ({ ...v, kind: "visitor" })),
     ];
-    // 名簿にいないBT-EXのメンバー・ゲスト(この端末に定例会ごとに覚える)。時間は1人ずつ(はじめは1分・5秒きざみ)
+    // 名簿にいないBT-EXのメンバー・ゲスト(この端末に定例会ごとに覚える)。時間は1人ずつ(はじめは30秒・5秒きざみ)
     const extraKey = `extras-${ev ? ev.id : "none"}`;
     let extras = (() => { try { const s = JSON.parse(store.get(extraKey, "[]")); return Array.isArray(s) ? s.filter((x) => x && x.key && x.name) : []; } catch { return []; } })();
     const saveExtras = () => store.set(extraKey, JSON.stringify(extras));
+    // 1分は BT-EX5 のメンバーだけ。ほかの BT-EX の方・ゲストのはじめの時間は30秒(運営の依頼)。
+    // 前に「はじめ1分」で入れた方は、一度だけ30秒にそろえる(自分で選び直した時間はそのまま)
+    if (!store.get("extra-sec30", "") && extras.some((x) => (x.sec || 60) === 60 && !x.secChosen)) {
+      extras.forEach((x) => { if ((x.sec || 60) === 60 && !x.secChosen) x.sec = 30; });
+      saveExtras();
+    }
+    store.set("extra-sec30", "1");
     // 「加藤寛之(カトウヒロユキ)」のように、お名前のうしろのカッコにカタカナがあるときは、お名前とフリガナに分ける
     const splitKana = (name) => {
       const m = /^(.+?)\s*[(（]\s*([ァ-ヴー・\s　]+?)\s*[)）]\s*$/.exec(String(name || "").trim());
@@ -301,7 +308,7 @@
         h("span", { class: "pr-grip", "aria-hidden": "true" }, "⋮⋮"),
         h("span", { class: "round-no" }, String(i + 1)),
         face(x.kind === "member" ? photos[x.id] : "", x.name, "pr-row-face"),
-        h("span", { class: "round-name" }, nameEl(x.name, "b"), x.kind === "visitor" ? App.chip("ビジター", "info") : x.kind === "guest" ? App.chip(`ゲスト・${secLabel(x.sec || 60)}`, "info") : x.kind === "other" ? App.chip(`BT-EX・${secLabel(x.sec || 60)}`, "mute") : null, x.company ? h("small", null, x.company) : null),
+        h("span", { class: "round-name" }, nameEl(x.name, "b"), x.kind === "visitor" ? App.chip("ビジター", "info") : x.kind === "guest" ? App.chip(`ゲスト・${secLabel(x.sec || 30)}`, "info") : x.kind === "other" ? App.chip(`BT-EX・${secLabel(x.sec || 30)}`, "mute") : null, x.company ? h("small", null, x.company) : null),
         canPhoto ? h("button", { type: "button", class: "pr-photo-btn", onclick: () => App.choosePhoto(x.id, (url) => { photos[x.id] = url; draw(); }) }, photos[x.id] ? "写真を変える" : "写真を入れる") : null,
         h("span", { class: "round-move" },
           h("button", { type: "button", "aria-label": `${x.name}さんを上へ`, disabled: i === 0 || groupRank(order[i - 1]) !== groupRank(k), onclick: () => { [order[i - 1], order[i]] = [order[i], order[i - 1]]; draw(); } }, "↑"),
@@ -382,7 +389,7 @@
         const name = sp.name;
         if (!name) { (bx || nameIn).focus && nameIn.focus(); App.toast("お名前を選ぶか、入れてください", "error"); return; }
         if (extras.some((y) => y.kind === kind && y.name === name && (!v || y.unit === v.unit))) { App.toast(`${name}さんはもう入っています`); if (bx) bx.setUnit(v.unit); return; }
-        const x = { key: `${kind === "guest" ? "g" : "o"}:${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`, kind, name, company: v ? extraCompany(v.unit, coIn.value.trim() || ((bx.profileOf && bx.profileOf(v.unit, v.name)) || [])[1] || "") : coIn.value.trim(), kana: v ? ((bx.profileOf && bx.profileOf(v.unit, v.name)) || [])[0] || "" : kanaIn.value.trim() || sp.kana, unit: v ? v.unit : 0, sec: 60 };
+        const x = { key: `${kind === "guest" ? "g" : "o"}:${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`, kind, name, company: v ? extraCompany(v.unit, coIn.value.trim() || ((bx.profileOf && bx.profileOf(v.unit, v.name)) || [])[1] || "") : coIn.value.trim(), kana: v ? ((bx.profileOf && bx.profileOf(v.unit, v.name)) || [])[0] || "" : kanaIn.value.trim() || sp.kana, unit: v ? v.unit : 0, sec: 30 };
         extras.push(x); all.push(x); order.push(x.key); saveExtras();
         nameIn.value = ""; kanaIn.value = ""; coIn.value = ""; if (bx) { const u = v.unit; bx.setUnit(0); bx.setUnit(u); } draw();
         if (!bx) { nameIn.focus(); App.toast(`${name}さんを足しました`); }
@@ -445,9 +452,9 @@
         countEl.textContent = mine.length ? `${mine.length}名` : "";
         countEl.hidden = !mine.length;
         App.fill(listBox, mine.map((x) => {
-          const sel = h("select", { class: "pr-extra-sec", "aria-label": `${x.name}さんの時間`, onchange: () => { x.sec = Number(sel.value) || 60; saveExtras(); draw(); } },
+          const sel = h("select", { class: "pr-extra-sec", "aria-label": `${x.name}さんの時間`, onchange: () => { x.sec = Number(sel.value) || 30; x.secChosen = true; saveExtras(); draw(); } },
             EXTRA_SECS.map((v) => h("option", { value: String(v) }, secLabel(v))));
-          sel.value = String(x.sec || 60);
+          sel.value = String(x.sec || 30);
           const n = order.indexOf(x.key);
           return h("li", { class: `pr-extra-item${n >= 0 ? " is-on" : ""}` },
             h("button", { type: "button", class: "pr-extra-pick", "aria-pressed": n >= 0 ? "true" : "false", onclick: () => { const i = order.indexOf(x.key); if (i >= 0) order.splice(i, 1); else order.push(x.key); draw(); } },
@@ -465,8 +472,8 @@
       };
       return box;
     }
-    const otherBox = extraBox("other", "ほかの BT-EX のメンバー", "BT-EX5 の名簿にいない方。1人の時間ははじめ1分(あとで変えられます)");
-    const guestBox = extraBox("guest", "ゲスト", "BT-EX 以外の方。1人の時間ははじめ1分(あとで変えられます)");
+    const otherBox = extraBox("other", "ほかの BT-EX のメンバー", "BT-EX5 の名簿にいない方。1人の時間ははじめ30秒(あとで変えられます)");
+    const guestBox = extraBox("guest", "ゲスト", "BT-EX 以外の方。1人の時間ははじめ30秒(あとで変えられます)");
 
     // 話す順番は必ず BT-EX5 のメンバー → ほかの BT-EX(BT-EX1 → BT-EX14 の順)→ ゲスト・ビジター。
     // それぞれの組の中では、押した順・↑↓・つかんで動かす・シャッフル・名前の順で並べかえられる
@@ -596,7 +603,7 @@
         const p = personOf(k, photos);
         if (p) return p;
         const x = byKey(k);
-        return x ? { key: k, kind: x.kind, name: x.name, kana: x.kana || "", catch: x.unit ? String(x.company || "").replace(/^BT-EX\d+( ・ )?/, "") : x.company, unit: x.unit || 0, photo: "", area: "", wants: "", triggers: [], sec: x.sec || 0 } : null;
+        return x ? { key: k, kind: x.kind, name: x.name, kana: x.kana || "", catch: x.unit ? String(x.company || "").replace(/^BT-EX\d+( ・ )?/, "") : x.company, unit: x.unit || 0, photo: "", area: "", wants: "", triggers: [], sec: x.sec || 30 } : null;
       }).filter(Boolean);
       if (withDeck) {
         const D = App.deckData ? App.deckData(deckInfo.config) : {};
