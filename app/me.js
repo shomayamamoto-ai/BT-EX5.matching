@@ -434,7 +434,7 @@
         h("p", { class: "app-lead" }, "LINE 公式アカウントを用意すると、会員が自分の LINE とつなぎ、紹介・1on1・運営連絡などのお知らせを LINE のトークでも受け取れるようになります(スマホの通知と同じ内容・同じ種類の設定)。"),
         h("p", { class: "line-state" }, "いまは未設定です。LINE 公式アカウントを作ったら、設定はシステムの開発者に依頼してください(10分ほどで終わります)。"),
         h("details", { class: "app-more-box" }, h("summary", null, "設定の手順(開発者向け)"), h("ol", { class: "line-steps" },
-          h("li", null, "LINE 公式アカウントを作る(無料プランは月200通まで。26名に週1〜2回なら収まります)"),
+          h("li", null, "LINE 公式アカウントを作る(無料プランは月200通まで。27名に週1〜2回なら収まります)"),
           h("li", null, "LINE Developers で Messaging API を有効にし、チャネルアクセストークン(長期)を発行する"),
           h("li", null, "Apps Script エディタで setupLine を開き、トークンと友だち追加の URL を書いて1回実行する(gas/README.md の「LINE で通知を送る」)"),
           h("li", null, "実行ログに出た Webhook URL を LINE Developers に入れて「Webhookの利用」をオンにし、新しいバージョンでデプロイする"))),
