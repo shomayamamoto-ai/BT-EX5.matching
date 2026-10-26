@@ -1073,6 +1073,7 @@ const REF_MEMBER_PHOTOS = {
   m25: "assets/members/m25.jpg", // 松田 依子
   m26: "assets/members/m26.jpg", // 坂上 智子
   m27: "assets/members/m27.jpg", // 一場 ゆな
+  m29: "assets/members/m29.jpg", // 大小原 翔太
 };
 
 // 代表・役職・役割と、その基礎ポイント(大きいほど上に出る)
