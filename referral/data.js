@@ -1080,6 +1080,17 @@ const REF_MEMBER_PHOTOS = {
   m29: "assets/members/m29.jpg", // 大小原 翔太
 };
 
+// 共有サーバーの名簿に、アプリがあとから足したメンバー(古い共有サーバーでは別の ID が付く)の写真を、お名前で合わせる
+const REF_MEMBER_PHOTO_NAMES = { "大小原翔太": "m29" };
+function refAliasPhotos(list) {
+  (list || []).forEach((m) => {
+    if (!m || REF_MEMBER_PHOTOS[m.id]) return;
+    const id = REF_MEMBER_PHOTO_NAMES[String(m.name || "").replace(/\s+/g, "")];
+    if (id && REF_MEMBER_PHOTOS[id]) REF_MEMBER_PHOTOS[m.id] = REF_MEMBER_PHOTOS[id];
+  });
+  return list;
+}
+
 // 代表・役職・役割と、その基礎ポイント(大きいほど上に出る)
 // - マーク: 名前の下に表示する(kind: leader=代表 / post=役職 / role=役割)
 // - 紹介診断: 話題かキーワードが合った人の点数に足す(合わない人を上げることはしない)

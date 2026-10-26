@@ -206,7 +206,7 @@
     const session = await AuthSession.guardPage({ next: "teams", loginPath: "../login/" });
     if (!session) return;
     const res = await AuthApi.listReferralMembers(AuthSession.getToken());
-    members = res.success ? res.data.members : [];
+    members = res.success ? refAliasPhotos(res.data.members) : [];
     renderHighlights();
     renderFields();
     renderWhole();

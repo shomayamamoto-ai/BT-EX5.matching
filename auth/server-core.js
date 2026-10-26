@@ -279,7 +279,9 @@ var BtexServerCore = (function () {
         // add: 初期名簿に新しく入った人を、既にある名簿にも足す(まだいないときだけ)
         (r.add || []).forEach(function (id) {
           var sm = seedMembers.filter(function (m) { return m.id === id; })[0];
-          if (sm && findIndex(db.referralMembers, function (m) { return m.id === id; }) < 0) db.referralMembers.push(clone(sm));
+          // 同じお名前の方がもういる(アプリの管理者画面から先に足された)ときは足さない
+          var norm = function (t) { return String(t || "").replace(/\s+/g, ""); };
+          if (sm && findIndex(db.referralMembers, function (m) { return m.id === id || norm(m.name) === norm(sm.name); }) < 0) db.referralMembers.push(clone(sm));
         });
         r.ids.forEach(function (id) {
           var seedMember = seedMembers.filter(function (m) { return m.id === id; })[0];
@@ -957,7 +959,9 @@ var BtexServerCore = (function () {
 
       var requestedId = cleanStr(body.member && body.member.id, 40);
       var index = findIndex(db.referralMembers, function (x) { return x.id === requestedId; });
-      var id = index >= 0 ? requestedId : "m_" + randomHex(5);
+      // 初期名簿の ID(m29 など)で、まだ名簿にいない方は、その ID のまま足す(写真・初期名簿の更新と合うように)
+      var seedIds = (dataList("REF_SEED_MEMBERS") || []).map(function (x) { return x.id; });
+      var id = index >= 0 || (requestedId && seedIds.indexOf(requestedId) !== -1) ? requestedId : "m_" + randomHex(5);
       // 送られてこなかった項目(1on1シートなど)は今の値を残す
       var input = index >= 0 ? Object.assign({}, db.referralMembers[index], body.member || {}) : body.member;
       var member = sanitizeReferralMember(input, id);

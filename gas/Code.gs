@@ -1088,6 +1088,17 @@ const REF_MEMBER_PHOTOS = {
   m29: "assets/members/m29.jpg", // 大小原 翔太
 };
 
+// 共有サーバーの名簿に、アプリがあとから足したメンバー(古い共有サーバーでは別の ID が付く)の写真を、お名前で合わせる
+const REF_MEMBER_PHOTO_NAMES = { "大小原翔太": "m29" };
+function refAliasPhotos(list) {
+  (list || []).forEach((m) => {
+    if (!m || REF_MEMBER_PHOTOS[m.id]) return;
+    const id = REF_MEMBER_PHOTO_NAMES[String(m.name || "").replace(/\s+/g, "")];
+    if (id && REF_MEMBER_PHOTOS[id]) REF_MEMBER_PHOTOS[m.id] = REF_MEMBER_PHOTOS[id];
+  });
+  return list;
+}
+
 // 代表・役職・役割と、その基礎ポイント(大きいほど上に出る)
 // - マーク: 名前の下に表示する(kind: leader=代表 / post=役職 / role=役割)
 // - 紹介診断: 話題かキーワードが合った人の点数に足す(合わない人を上げることはしない)
@@ -3043,7 +3054,9 @@ var BtexServerCore = (function () {
         // add: 初期名簿に新しく入った人を、既にある名簿にも足す(まだいないときだけ)
         (r.add || []).forEach(function (id) {
           var sm = seedMembers.filter(function (m) { return m.id === id; })[0];
-          if (sm && findIndex(db.referralMembers, function (m) { return m.id === id; }) < 0) db.referralMembers.push(clone(sm));
+          // 同じお名前の方がもういる(アプリの管理者画面から先に足された)ときは足さない
+          var norm = function (t) { return String(t || "").replace(/\s+/g, ""); };
+          if (sm && findIndex(db.referralMembers, function (m) { return m.id === id || norm(m.name) === norm(sm.name); }) < 0) db.referralMembers.push(clone(sm));
         });
         r.ids.forEach(function (id) {
           var seedMember = seedMembers.filter(function (m) { return m.id === id; })[0];
@@ -3721,7 +3734,9 @@ var BtexServerCore = (function () {
 
       var requestedId = cleanStr(body.member && body.member.id, 40);
       var index = findIndex(db.referralMembers, function (x) { return x.id === requestedId; });
-      var id = index >= 0 ? requestedId : "m_" + randomHex(5);
+      // 初期名簿の ID(m29 など)で、まだ名簿にいない方は、その ID のまま足す(写真・初期名簿の更新と合うように)
+      var seedIds = (dataList("REF_SEED_MEMBERS") || []).map(function (x) { return x.id; });
+      var id = index >= 0 || (requestedId && seedIds.indexOf(requestedId) !== -1) ? requestedId : "m_" + randomHex(5);
       // 送られてこなかった項目(1on1シートなど)は今の値を残す
       var input = index >= 0 ? Object.assign({}, db.referralMembers[index], body.member || {}) : body.member;
       var member = sanitizeReferralMember(input, id);
