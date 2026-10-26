@@ -77,7 +77,48 @@
         refresh();
       };
       const hint = h("p", { class: "app-field-hint mt-hint" });
-      const kindToggle = App.toggle(KINDS, kind, (k) => { kind = k; fill(); });
+      const kindToggle = App.toggle(KINDS, kind, (k) => { kind = k; drawPhoto(); fill(); });
+
+      // 写真の入れかえ: えらんだ写真を小さく(長い辺 1600px・JPEG)してこの端末に保存し、ポスターに使う
+      const PHOTO_KEY = () => `btex5-poster-photo-${kind}`;
+      const storedPhoto = () => { try { return localStorage.getItem(PHOTO_KEY()) || ""; } catch { return ""; } };
+      const thumb = h("img", { class: "mt-photo-thumb", alt: "" });
+      const photoNote = h("small", { class: "mt-photo-note" });
+      const resetBtn = App.btn("元の写真に戻す", () => {
+        try { localStorage.removeItem(PHOTO_KEY()); } catch { /* noop */ }
+        drawPhoto(); refresh(); App.toast("元の写真に戻しました");
+      }, "ghost small");
+      const drawPhoto = () => {
+        const url = storedPhoto();
+        thumb.hidden = !url; if (url) thumb.src = url;
+        resetBtn.hidden = !url;
+        photoNote.textContent = url ? "入れかえた写真を使っています(この端末に保存)" : kind === "fes" ? "いまは第一回の銀座の写真です" : "いまはロゴと新潟⇔東京のイラストです";
+      };
+      const shrink = (file) => new Promise((res, rej) => {
+        const img = new Image();
+        img.onload = () => {
+          const k = Math.min(1, 1600 / Math.max(img.naturalWidth, img.naturalHeight));
+          const c = h("canvas", { width: Math.round(img.naturalWidth * k), height: Math.round(img.naturalHeight * k) });
+          c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+          URL.revokeObjectURL(img.src);
+          res(c.toDataURL("image/jpeg", 0.86));
+        };
+        img.onerror = rej;
+        img.src = URL.createObjectURL(file);
+      });
+      const photoIn = h("input", { type: "file", accept: "image/*", class: "mt-photo-input", onchange: async () => {
+        const file = photoIn.files && photoIn.files[0];
+        photoIn.value = "";
+        if (!file) return;
+        try {
+          const url = await shrink(file);
+          try { localStorage.setItem(PHOTO_KEY(), url); } catch { App.toast("この端末に保存できませんでした。写真をもう少し小さくしてください", "error"); return; }
+          drawPhoto(); refresh(); App.toast("写真を入れかえました");
+        } catch { App.toast("写真を読みこめませんでした", "error"); }
+      } });
+      const photoField = h("div", { class: "mt-photo" }, thumb,
+        h("div", { class: "mt-photo-main" },
+          h("label", { class: "app-btn ghost small mt-photo-pick" }, photoIn, "写真をえらぶ"), resetBtn, photoNote));
 
       const busy = (b, on, label) => { b.disabled = on; b.textContent = on ? "作っています…" : label; };
       const pngBtn = App.btn("画像で保存(PNG)", async () => {
@@ -108,6 +149,7 @@
               h("div", { class: "app-grid2 mt-times" }, App.field("はじまり", f.start), App.field("おわり", f.end), App.field("受付(任意)", f.open)),
               App.field("会場", f.place),
               App.field("参加費", f.fee, "数字だけなら「2,200円」の形になります"),
+              App.field("写真", photoField, "アーチの中の写真を入れかえられます(横より縦長の写真が合います)"),
               h("div", { class: "app-btn-row mt-actions" },
                 App.btn("PDF で保存・印刷", () => window.open(params({ print: "1" }), "_blank", "noopener"), "primary"),
                 pngBtn,
@@ -119,6 +161,7 @@
             h("li", null, h("a", { class: "app-row", href: "../materials/fes-poster/bt-ex-fes-poster-a4.pdf", target: "_blank", rel: "noopener" },
               h("span", { class: "mt-file-ic", "aria-hidden": "true" }, "PDF"),
               h("span", { class: "app-row-main" }, h("b", null, "第一回 BT-EX フェス ポスター(A4 横)"), h("small", null, "2026年12月2日(水)銀座 Blossom")))))));
+      drawPhoto();
       fill();
     },
   };

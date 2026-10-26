@@ -48,7 +48,7 @@
     /* ---------- 左: 題・日時・会場 ---------- */
     .main { position: absolute; left: 20mm; top: 13mm; width: 158mm; }
     .brand { display: flex; align-items: center; gap: 2.6mm; }
-    .brand img { width: 9.5mm; height: 9.5mm; border-radius: 2.2mm; box-shadow: 0 1mm 3mm rgba(80, 50, 40, 0.25); }
+    .brand img { width: 9.5mm; height: 9.5mm; border-radius: 2.2mm; }
     .brand b { font-family: "Inter", var(--sans); font-size: 4.4mm; font-weight: 900; letter-spacing: 0.06em; }
     .brand b em { font-style: normal; color: var(--coral-deep); }
     .brand span { font-size: 2.6mm; font-weight: 700; letter-spacing: 0.24em; color: var(--sub); }
@@ -62,12 +62,13 @@
     .title-ja { display: inline-block; margin-top: 1mm; font-family: var(--mincho); font-size: 19mm; font-weight: 800; letter-spacing: 0.08em; color: var(--ink); }
     .title-fes { position: absolute; left: 76mm; top: 41mm; font-family: var(--script); font-size: 27mm; line-height: 1; color: var(--coral); transform: rotate(-6deg); text-shadow: 0 0.6mm 0 rgba(255, 255, 255, 0.8); }
     .catch { margin-top: 5mm; font-family: var(--mincho); font-size: 6.2mm; font-weight: 700; letter-spacing: 0.34em; color: var(--ink); }
-    .catch::after { content: ""; display: block; width: 14mm; height: 0.5mm; margin-top: 3.4mm; border-radius: 1mm; background: var(--coral); }
+    .catch { display: inline-block; vertical-align: top; }
+    .catch::after { content: ""; display: block; width: calc(100% - 0.3em); height: 0.5mm; margin-top: 3.4mm; border-radius: 1mm; background: var(--coral); }
 
     .when { margin-top: 6mm; display: flex; align-items: flex-end; gap: 6mm; }
     .date { display: flex; align-items: flex-start; gap: 2mm; font-family: var(--num); font-weight: 700; color: var(--ink); line-height: 0.82; }
     .date b { font-size: 30mm; font-weight: 700; letter-spacing: -0.01em; }
-    .date i { display: grid; place-items: center; width: 10.5mm; height: 10.5mm; margin-top: 2mm; border-radius: 50%; background: linear-gradient(140deg, #e48a7d, #b9564c); color: #fff; font-family: var(--mincho); font-style: normal; font-size: 5.4mm; font-weight: 800; box-shadow: 0 1mm 3mm rgba(185, 86, 76, 0.35); }
+    .date i { display: grid; place-items: center; width: 10.5mm; height: 10.5mm; margin-top: 2mm; border-radius: 50%; background: linear-gradient(140deg, #e48a7d, #b9564c); color: #fff; font-family: var(--mincho); font-style: normal; font-size: 5.4mm; font-weight: 800; }
     .time { padding-bottom: 1.4mm; }
     .time b { display: block; font-family: var(--num); font-size: 12.5mm; font-weight: 700; line-height: 1; letter-spacing: 0.02em; color: var(--ink); }
     .time span { display: inline-block; margin-top: 2mm; padding: 0.8mm 3.6mm; border-radius: 99mm; background: var(--coral-soft); color: var(--coral-deep); font-size: 3.6mm; font-weight: 700; letter-spacing: 0.12em; }
@@ -86,7 +87,7 @@
     .arch::after { content: ""; position: absolute; inset: -3.4mm; border-radius: 49.4mm 49.4mm 10mm 10mm; border: 0.35mm solid rgba(217, 119, 107, 0.45); pointer-events: none; }
     .arch img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: 50% 30%; border-radius: 43.8mm 43.8mm 5mm 5mm; }
     .arch-script { position: absolute; left: -15mm; top: 8mm; font-family: var(--script); font-size: 15mm; line-height: 1; color: var(--coral); transform: rotate(-8deg); text-shadow: 0 0.6mm 0 #fff, 0 0 2mm rgba(255, 255, 255, 0.9); }
-    .bubble { position: absolute; left: -30mm; bottom: 13mm; padding: 4.4mm 5.6mm; border-radius: 5mm; background: rgba(255, 255, 255, 0.96); box-shadow: 0 3mm 10mm rgba(120, 80, 60, 0.16); font-family: var(--mincho); font-size: 5.4mm; font-weight: 800; line-height: 1.5; letter-spacing: 0.06em; color: var(--ink); }
+    .bubble { position: absolute; left: -30mm; bottom: 13mm; padding: 4.4mm 5.6mm; border-radius: 5mm; background: rgba(255, 255, 255, 0.96); border: 0.3mm solid rgba(217, 119, 107, 0.3); font-family: var(--mincho); font-size: 5.4mm; font-weight: 800; line-height: 1.5; letter-spacing: 0.06em; color: var(--ink); }
     .bubble em { font-style: normal; color: var(--coral-deep); }
     .bubble::before { content: ""; position: absolute; left: 0; top: 4.4mm; bottom: 4.4mm; width: 0.9mm; border-radius: 1mm; background: var(--coral); }
 
@@ -121,7 +122,7 @@
         <span class="title-ja">フェス</span>
         <span class="title-fes" aria-hidden="true">Fes</span>
       </h1>
-      <p class="catch">つながりが、未来を動かす。</p>
+      <p class="catch">つながりが、未来を動かす</p>
       <div class="when">
         <p class="date"><b>12/2</b><i>水</i></p>
         <p class="time"><b>14:30〜16:30</b><span>14:00 受付</span></p>

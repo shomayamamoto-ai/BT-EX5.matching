@@ -56,7 +56,7 @@
     /* ---------- 左: 題・日時・会場 ---------- */
     .main { position: absolute; left: 20mm; top: 13mm; width: 158mm; }
     .brand { display: flex; align-items: center; gap: 2.6mm; }
-    .brand img { width: 9.5mm; height: 9.5mm; border-radius: 2.2mm; box-shadow: 0 1mm 3mm rgba(80, 50, 40, 0.25); }
+    .brand img { width: 9.5mm; height: 9.5mm; border-radius: 2.2mm; }
     .brand b { font-family: "Inter", var(--sans); font-size: 4.4mm; font-weight: 900; letter-spacing: 0.06em; }
     .brand b em { font-style: normal; color: var(--coral-deep); }
     .brand span { font-size: 2.6mm; font-weight: 700; letter-spacing: 0.24em; color: var(--sub); }
@@ -70,12 +70,13 @@
     .title-ja { display: inline-block; margin-top: 1mm; font-family: var(--mincho); font-size: 19mm; font-weight: 800; letter-spacing: 0.08em; color: var(--ink); }
     .title-fes { position: absolute; left: 76mm; top: 41mm; font-family: var(--script); font-size: 27mm; line-height: 1; color: var(--coral); transform: rotate(-6deg); text-shadow: 0 0.6mm 0 rgba(255, 255, 255, 0.8); }
     .catch { margin-top: 5mm; font-family: var(--mincho); font-size: 6.2mm; font-weight: 700; letter-spacing: 0.34em; color: var(--ink); }
-    .catch::after { content: ""; display: block; width: 14mm; height: 0.5mm; margin-top: 3.4mm; border-radius: 1mm; background: var(--coral); }
+    .catch { display: inline-block; vertical-align: top; max-width: 150mm; }
+    .catch::after { content: ""; display: block; width: calc(100% - 0.3em); height: 0.5mm; margin-top: 3.4mm; border-radius: 1mm; background: var(--coral); }
 
     .when { margin-top: 6mm; display: flex; align-items: flex-end; gap: 6mm; }
     .date { display: flex; align-items: flex-start; gap: 2mm; font-family: var(--num); font-weight: 700; color: var(--ink); line-height: 0.82; }
     .date b { font-size: 30mm; font-weight: 700; letter-spacing: -0.01em; }
-    .date i { display: grid; place-items: center; width: 10.5mm; height: 10.5mm; margin-top: 2mm; border-radius: 50%; background: linear-gradient(140deg, #e48a7d, #b9564c); color: #fff; font-family: var(--mincho); font-style: normal; font-size: 5.4mm; font-weight: 800; box-shadow: 0 1mm 3mm rgba(185, 86, 76, 0.35); }
+    .date i { display: grid; place-items: center; width: 10.5mm; height: 10.5mm; margin-top: 2mm; border-radius: 50%; background: linear-gradient(140deg, #e48a7d, #b9564c); color: #fff; font-family: var(--mincho); font-style: normal; font-size: 5.4mm; font-weight: 800; }
     .time { padding-bottom: 1.4mm; }
     .time b { display: block; font-family: var(--num); font-size: 12.5mm; font-weight: 700; line-height: 1; letter-spacing: 0.02em; color: var(--ink); }
     .time span { display: inline-block; margin-top: 2mm; padding: 0.8mm 3.6mm; border-radius: 99mm; background: var(--coral-soft); color: var(--coral-deep); font-size: 3.6mm; font-weight: 700; letter-spacing: 0.12em; }
@@ -94,7 +95,7 @@
     .arch::after { content: ""; position: absolute; inset: -3.4mm; border-radius: 49.4mm 49.4mm 10mm 10mm; border: 0.35mm solid rgba(217, 119, 107, 0.45); pointer-events: none; }
     .arch img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: 50% 30%; border-radius: 43.8mm 43.8mm 5mm 5mm; }
     .arch-script { position: absolute; left: -15mm; top: 8mm; font-family: var(--script); font-size: 15mm; line-height: 1; color: var(--coral); transform: rotate(-8deg); text-shadow: 0 0.6mm 0 #fff, 0 0 2mm rgba(255, 255, 255, 0.9); }
-    .bubble { position: absolute; left: -30mm; bottom: 13mm; padding: 4.4mm 5.6mm; border-radius: 5mm; background: rgba(255, 255, 255, 0.96); box-shadow: 0 3mm 10mm rgba(120, 80, 60, 0.16); font-family: var(--mincho); font-size: 5.4mm; font-weight: 800; line-height: 1.5; letter-spacing: 0.06em; color: var(--ink); }
+    .bubble { position: absolute; left: -30mm; bottom: 13mm; padding: 4.4mm 5.6mm; border-radius: 5mm; background: rgba(255, 255, 255, 0.96); border: 0.3mm solid rgba(217, 119, 107, 0.3); font-family: var(--mincho); font-size: 5.4mm; font-weight: 800; line-height: 1.5; letter-spacing: 0.06em; color: var(--ink); }
     .bubble em { font-style: normal; color: var(--coral-deep); }
     .bubble::before { content: ""; position: absolute; left: 0; top: 4.4mm; bottom: 4.4mm; width: 0.9mm; border-radius: 1mm; background: var(--coral); }
 
@@ -223,7 +224,7 @@
       talk: '<path d="M4.5 6.5h9a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2H9l-3 2.5v-2.5H4.5a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2Z"/><path d="M15.5 9.5h4a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-1v2.5l-3-2.5h-2.5"/>',
     };
     var C = kind === "fes" ? {
-      en: "BT-EX", ja: "フェス", script: "Fes", catchText: "つながりが、未来を動かす。",
+      en: "BT-EX", ja: "フェス", script: "Fes", catchText: "つながりが、未来を動かす",
       arch: '<img src="../fes-poster/photo.jpg" alt="銀座の夜景と、交流する経営者たち">', archScript: "Welcome",
       bubble: "<em>経営者、事業者</em>の<br>集まる会です<span class=\"ex\">!</span>",
       values: [["people", "経営者同士の<br>つながり"], ["bulb", "新たな<br>ビジネスの創出"], ["chart", "共に描く<br>未来の可能性"]],
@@ -243,8 +244,22 @@
     $("titleJa").textContent = C.ja;
     $("titleScript").textContent = C.script;
     $("catch").textContent = C.catchText;
-    $("arch").innerHTML = C.arch;
-    $("arch").classList.toggle("is-illust", kind === "regular");
+    // 写真: アプリの「資料」で入れかえた写真(この端末に保存)があれば、それを使う(定例会はイラストの代わりに)
+    var PHOTO_KEY = "btex5-poster-photo-" + kind;
+    // url: 写真(data URL)/ なし: この端末に保存した写真(なければ元の写真・イラスト)/ null: 元の写真・イラスト
+    function setPhoto(url) {
+      var custom = url === null ? "" : url || "";
+      if (url === undefined) { try { custom = localStorage.getItem(PHOTO_KEY) || ""; } catch (e) { custom = ""; } }
+      if (custom) {
+        $("arch").innerHTML = '<img alt="">';
+        $("arch").firstChild.src = custom;
+        $("arch").classList.remove("is-illust");
+      } else {
+        $("arch").innerHTML = C.arch;
+        $("arch").classList.toggle("is-illust", kind === "regular");
+      }
+    }
+    setPhoto(q.get("photo") === "default" ? null : undefined);
     $("archScript").textContent = C.archScript;
     $("bubble").innerHTML = C.bubble;
     $("values").innerHTML = C.values.map(function (x) { return '<li class="value"><svg viewBox="0 0 24 24" aria-hidden="true">' + ICON[x[0]] + "</svg><p>" + x[1] + "</p></li>"; }).join("");
@@ -313,6 +328,8 @@
       print: function () { ready.then(function () { window.print(); }); },
       // opts.download: false のときは保存せずに画像(data URL)だけ返す(アプリの見本から使うとき、保存はアプリ側で)
       fileName: fileName,
+      // 写真を入れかえる(アプリの「資料」から。null で元の写真に戻す)
+      setPhoto: function (url) { setPhoto(url); layout(); },
       png: function (opts) {
         return ready.then(function () {
           return new Promise(function (res, rej) {
@@ -324,7 +341,13 @@
         }).then(function (fontCSS) {
           var stage = $("stage"), keep = stage.style.transform;
           stage.style.transform = "";
-          return window.htmlToImage.toPng($("poster"), { pixelRatio: 3.125, backgroundColor: "#faf5f2", fontEmbedCSS: fontCSS || undefined }).then(function (url) {
+          var o = { backgroundColor: "#faf5f2", fontEmbedCSS: fontCSS || undefined };
+          // iPhone・Mac の Safari は、1回目に写真が入らないことがある。小さく2回描いてから本番を描く
+          var safari = /^((?!chrome|android|crios|fxios|edg).)*safari/i.test(navigator.userAgent);
+          var warm = safari
+            ? window.htmlToImage.toPng($("poster"), Object.assign({}, o, { pixelRatio: 0.4 })).then(function () { return window.htmlToImage.toPng($("poster"), Object.assign({}, o, { pixelRatio: 0.4 })); })
+            : Promise.resolve();
+          return warm.then(function () { return window.htmlToImage.toPng($("poster"), Object.assign({}, o, { pixelRatio: 3.125 })); }).then(function (url) {
             stage.style.transform = keep;
             if (!opts || opts.download !== false) { var a = document.createElement("a"); a.href = url; a.download = fileName("png"); document.body.appendChild(a); a.click(); a.remove(); }
             return url;
