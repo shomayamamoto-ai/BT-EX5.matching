@@ -3086,3 +3086,20 @@ button.home-welcome-check:active { transform: scale(0.94); }
 /* ポップアップの言葉: カードの幅をこえないように(こえる分は app/round.js が文字を小さくする) */
 .pd-gloss-term { max-width: 100%; overflow: hidden; }
 .pd-gloss-card { min-width: 0; max-width: 100%; box-sizing: border-box; }
+/* 出席コード: 数字のボタンで入れる(4つの枠 + 電話のような数字のボタン) */
+.checkin-form.is-pad { display: grid; justify-items: center; gap: 12px; margin-top: 12px; outline: none; }
+.ck-display { display: flex; gap: 10px; }
+.ck-slot { display: grid; place-items: center; width: 54px; height: 64px; border-radius: 14px; border: 2px solid var(--line-strong); background: #fff;
+  font-size: 30px; font-weight: 900; font-variant-numeric: tabular-nums; color: var(--text); transition: border-color 0.15s, transform 0.15s; }
+.ck-slot.is-filled { border-color: var(--accent); background: #fffaf0; }
+.ck-slot.is-next { border-color: #c99a52; box-shadow: 0 0 0 4px rgba(201, 154, 82, 0.18); }
+.ck-pad { display: grid; grid-template-columns: repeat(3, 76px); gap: 10px; }
+.ck-key { height: 58px; border-radius: 16px; border: 1px solid var(--line-strong); background: #fff; color: var(--text); font: inherit; font-size: 24px; font-weight: 800;
+  cursor: pointer; box-shadow: 0 2px 0 rgba(60, 42, 20, 0.12); -webkit-tap-highlight-color: transparent; transition: transform 0.08s, background 0.12s; }
+.ck-key:active { transform: translateY(2px); box-shadow: none; background: #f6efe2; }
+.ck-key:focus-visible { outline: 3px solid var(--amber, #c99a52); outline-offset: 2px; }
+.ck-key.is-sub { font-size: 15px; color: var(--text-sub); background: #faf6ee; }
+.checkin-form.is-busy { opacity: 0.6; pointer-events: none; }
+.checkin-form.is-shake .ck-display { animation: ck-shake 0.4s ease; }
+@keyframes ck-shake { 20% { transform: translateX(-10px); } 40% { transform: translateX(8px); } 60% { transform: translateX(-5px); } 80% { transform: translateX(3px); } }
+@media (prefers-reduced-motion: reduce) { .checkin-form.is-shake .ck-display { animation: none; } }

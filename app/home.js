@@ -457,18 +457,41 @@
     return h("span", { class: "home-me-stat" }, h("b", null, String(value), h("small", null, unit)), h("span", null, label));
   }
 
-  // 出席コードの入力(ホームと予定で使う)
+  // 出席コードの入力(ホームと予定で使う): 数字のボタンを押して入れる(4桁そろうと自動で送る)。
+  // パソコンのキーボードの数字・Backspace・Enter でも入れられる
   function checkInForm(eventId, onDone) {
-    const input = h("input", { type: "text", inputmode: "numeric", pattern: "[0-9]*", maxlength: "4", placeholder: "0000", "aria-label": "出席コード(4桁)", autocomplete: "one-time-code", class: "checkin-input" });
-    const form = h("form", { class: "checkin-form", onsubmit: async (e) => {
-      e.preventDefault();
-      const code = input.value.replace(/\D/g, "");
-      if (code.length !== 4) { App.toast("4桁の数字を入れてください", "error"); return; }
+    let code = "", busy = false;
+    const slots = [0, 1, 2, 3].map(() => h("span", { class: "ck-slot" }));
+    const display = h("div", { class: "ck-display", role: "status", "aria-live": "polite", "aria-label": "出席コード(4桁)" }, slots);
+    const draw = () => slots.forEach((s, i) => { s.textContent = code[i] || ""; s.classList.toggle("is-filled", i < code.length); s.classList.toggle("is-next", i === code.length); });
+    const send = async () => {
+      if (busy || code.length !== 4) return;
+      busy = true; form.classList.add("is-busy");
       const d = await App.api("checkIn", { code, eventId: eventId || "" });
-      if (!d) { input.select(); return; }
+      busy = false; form.classList.remove("is-busy");
+      if (!d) { form.classList.remove("is-shake"); void form.offsetWidth; form.classList.add("is-shake"); code = ""; draw(); return; }
       App.toast(`${d.event.title} に出席しました`);
       if (onDone) onDone(d.event); else App.route();
-    } }, input, h("button", { type: "submit", class: "app-btn" }, "出席する"));
+    };
+    const press = (k) => {
+      if (busy) return;
+      if (k === "del") code = code.slice(0, -1);
+      else if (k === "clear") code = "";
+      else if (code.length < 4) code += k;
+      draw();
+      if (code.length === 4) send();
+    };
+    const key = (label, k, cls) => h("button", { type: "button", class: `ck-key${cls ? ` ${cls}` : ""}`, "aria-label": k === "del" ? "1文字消す" : k === "clear" ? "全部消す" : label, onclick: () => press(k) }, label);
+    const pad = h("div", { class: "ck-pad" },
+      ["1", "2", "3", "4", "5", "6", "7", "8", "9"].map((n) => key(n, n)),
+      key("クリア", "clear", "is-sub"), key("0", "0"), key("⌫", "del", "is-sub"));
+    const form = h("form", { class: "checkin-form is-pad", tabindex: "0", onsubmit: (e) => { e.preventDefault(); send(); },
+      onkeydown: (e) => {
+        if (/^[0-9]$/.test(e.key)) { e.preventDefault(); press(e.key); }
+        else if (e.key === "Backspace") { e.preventDefault(); press("del"); }
+        else if (e.key === "Enter") { e.preventDefault(); send(); }
+      } }, display, pad);
+    draw();
     return form;
   }
 
