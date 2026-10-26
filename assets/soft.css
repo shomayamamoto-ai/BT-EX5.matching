@@ -77,6 +77,9 @@ a { color: var(--sf-coral-deep); }
   color: var(--sf-coral); text-transform: none;
 }
 
+/* 定例会のスライドの英字は assets/deck-soft.css で(スライドを元の黒×金にしたときは出さない) */
+.pr-run [data-en]::before { content: none; }
+
 /* ページの頭(会員アプリの各画面の上): 英字の筆記体 + 日本語 + 短い線 */
 .app-hero { text-align: center; padding: 6px 0 18px; }
 .app-hero .sf-script { font-size: 44px; }

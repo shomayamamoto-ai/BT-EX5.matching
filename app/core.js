@@ -743,7 +743,7 @@ const App = (function () {
   const HERO_EN = { home: "Schedule", events: "Schedule", log: "Record", present: "Presentation", board: "Board", news: "Update", feed: "News", me: "My Page", admin: "Admin", ops: "Meeting", invite: "Invitation", help: "Guide" };
   function addHero(el, view, parts) {
     const en = HERO_EN[view];
-    if (!en) return;
+    if (!en || (typeof BtexTheme !== "undefined" && BtexTheme.site() === "classic")) return; // 元の黒×金のデザインでは出さない
     const first = el.firstElementChild;
     if (first && first.matches("h1.app-h1")) { first.dataset.en = parts.length && view === "events" ? "Event" : en; return; }
     if (parts.length || !views[view].title) return;

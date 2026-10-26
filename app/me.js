@@ -39,7 +39,8 @@
           menu("#me/password", s.hasPassword ? "パスワードを変える" : "パスワードを決める", s.hasPassword ? "" : "共通パスコードの代わりに、あなた専用のパスワードで入れます", !s.hasPassword),
           menu("#me/notify", "通知を受け取る(iPhone・Android)", "紹介・掲示板・運営連絡が届いたら、スマホに通知します"),
           menu("#me/calendar", "Google カレンダー・Meet の設定", "1on1 の招待を受け取るアドレスと、Meet で表示される名前"),
-          menu("#me/install", "スマホのホーム画面に追加", "アプリのようにすぐ開けます")),
+          menu("#me/install", "スマホのホーム画面に追加", "アプリのようにすぐ開けます"),
+          typeof BtexTheme !== "undefined" ? menu("#me/design", "デザインの切りかえ", `いま: サイト ${BtexTheme.site() === "classic" ? "元の黒×金" : "やわらかいデザイン"}・スライド ${BtexTheme.deck() === "classic" ? "元の黒×金" : "やわらかいデザイン"}`) : null),
         group("サポート",
           menu("#help", "使い方・よくある質問", "できること・だれに何が見えるか・困ったとき"),
           menu("#me/feedback", "バグ・要望を送る", "使いにくいところ・ほしい機能を運営へ")),
@@ -71,6 +72,7 @@
       if (parts[0] === "password") passwordForm();
       if (parts[0] === "feedback") feedbackSheet();
       if (parts[0] === "install") installSheet();
+      if (parts[0] === "design") designSheet();
       if (parts[0] === "calendar") calendarSheet();
       if (parts[0] === "notify") notifySheet();
       if (parts[0] === "export") exportSheet();
@@ -87,6 +89,22 @@
 
   function menu(href, title, sub, hot) {
     return h("a", { class: `me-item${hot ? " is-hot" : ""}`, href }, h("b", null, title), sub ? h("small", null, sub) : null);
+  }
+
+  // ---------- デザインの切りかえ(この端末に覚える。元の黒×金にすると、前の見た目にそのまま戻る) ----------
+  function designSheet() {
+    if (typeof BtexTheme === "undefined") return;
+    App.openSheet("デザインの切りかえ", (body) => {
+      const CHOICES = [["soft", "やわらかいデザイン", "白・コーラルピンク・筆記体の見出し"], ["classic", "元の黒×金", "前のデザインにそのまま戻します"]];
+      const pick = (label, hint, cur, onpick) => h("section", { class: "app-section" },
+        h("h2", { class: "app-h2" }, label), h("p", { class: "app-field-hint" }, hint),
+        h("div", { class: "design-pick" }, CHOICES.map(([v, name, sub]) => h("button", { type: "button", class: `design-opt is-${v}${cur === v ? " is-on" : ""}`, "aria-pressed": String(cur === v), onclick: () => onpick(v) },
+          h("span", { class: "design-swatch", "aria-hidden": "true" }, h("i"), h("i"), h("i")), h("b", null, name), h("small", null, sub)))));
+      body.append(
+        pick("サイト全体", "ホーム・早見表・アンケートなど、すべてのページの見た目です。", BtexTheme.site(), (v) => { BtexTheme.setSite(v); location.reload(); }),
+        pick("定例会のスライド", "プレゼンの画面の「定例会をはじめる」で映すスライド・タイマーの見た目です。サイトとは別に選べます。", BtexTheme.deck(), (v) => { BtexTheme.setDeck(v); App.toast(v === "classic" ? "スライドを元の黒×金にしました" : "スライドをやわらかいデザインにしました"); body.closest(".app-sheet-wrap") && App.route(); }),
+        h("p", { class: "app-field-hint" }, "この端末(ブラウザ)に覚えます。会場で映すパソコンでも、同じように選んでください。"));
+    });
   }
 
   // ---------- パスワード ----------

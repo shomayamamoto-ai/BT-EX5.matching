@@ -662,6 +662,15 @@
           h("label", { class: "pitch-sound" }, autoBox, h("span", null, "0秒になったら、自動で次の人へ")),
           h("label", { class: "pr-gap-row" }, h("span", null, "次の人までの間"), gapSel)),
         h("label", { class: "pitch-sound pr-deck-opt" }, deckBox, h("span", null, h("b", null, "定例会のスライドも入れる"), h("small", null, "オープニングムービー → はじめの挨拶 → BT-EXの理念 → … → 終わりの挨拶(定例会の進行表の順)。プレゼンは「1分プレゼンテーション」のところに入ります"))),
+        typeof BtexTheme !== "undefined" ? h("div", { class: "pr-deck-theme" }, h("span", null, "スライドのデザイン"),
+          (() => {
+            const seg = App.segmented([{ id: "soft", label: "やわらかいデザイン" }, { id: "classic", label: "元の黒×金" }], BtexTheme.deck(), (v) => {
+              BtexTheme.setDeck(v);
+              seg.querySelectorAll("button").forEach((b, i) => { const on = ["soft", "classic"][i] === v; b.classList.toggle("is-on", on); b.setAttribute("aria-selected", String(on)); });
+              App.toast(v === "classic" ? "スライドを元の黒×金にしました" : "スライドをやわらかいデザインにしました");
+            });
+            return seg;
+          })()) : null,
         h("div", { class: "pr-deck-more" },
           h("label", { class: "pr-deck-field" }, h("span", null, "ブレイクアウトルーム商談(テーブル商談)"), h("span", { class: "pr-bo" }, boMin, h("b", null, "×"), boTimes)),
           h("label", { class: "pr-deck-field" }, h("span", null, "出席コード(4桁)"), codeIn, h("small", null, "終わりの挨拶の「出席コード」のスライドに大きく出ます")),
@@ -1396,7 +1405,9 @@
     // 時間の途中で話し終わったとき: 計っている最中に「進む」を押すと、次の人の時間もそのまま始まる
     const nextBtn = dockBtn("next", "進む", "", () => forward(running() || gapUntil > 0));
     const endBtn = dockBtn("end", "終了", "is-end", () => finish(true));
-    const box = h("div", { class: `pr-run is-entering${solo ? " is-solo" : ""}`, role: "dialog", "aria-label": solo ? "タイマー" : "プレゼンの進行" },
+    // スライドの見た目(やわらかいデザイン ⇔ 元の黒×金)。assets/deck-soft.css は .deck-soft のときだけ効く
+    const deckSoft = typeof BtexTheme === "undefined" || BtexTheme.deck() !== "classic";
+    const box = h("div", { class: `pr-run is-entering${solo ? " is-solo" : ""}${deckSoft ? " deck-soft" : ""}`, role: "dialog", "aria-label": solo ? "タイマー" : "プレゼンの進行" },
       h("div", { class: "pr-top" }, h("p", { class: "pr-title" }, title || `${(PER.find(([v]) => v === per) || [0, ""])[1]}プレゼン`), jump, count),
       slide,
       progress,
@@ -1528,12 +1539,20 @@
       const softBreaks = (t) => String(t).split(/(?=ルーム商談|[（(]テーブル)/).flatMap((x, i) => (i ? [h("br"), x] : [x]));
       // カードなどを順に浮かび上がらせる(--i は順番)
       const nth = (i) => ({ style: `--i:${i}` });
+      // 区切りの英語の名前(やわらかいデザインのスライドで、筆記体で添える。assets/deck-soft.css)
+      const enOf = (t) => {
+        const x = String(t || "");
+        return /はじめ/.test(x) && /挨拶/.test(x) ? "Opening" : /終わり/.test(x) ? "Closing" : /用語/.test(x) ? "Glossary" : /理念|BT-EX/.test(x) && !/スケジュール|規定/.test(x) ? "Philosophy"
+          : /エデュケーション/.test(x) ? "Education" : /プレゼン/.test(x) ? "Presentation" : /商談|ブレイクアウト/.test(x) ? "Business Talk"
+          : /実績/.test(x) ? "Achievements" : /規定/.test(x) ? "Rules" : /スケジュール/.test(x) ? "Schedule" : /アンケート/.test(x) ? "Survey" : "";
+      };
+      const enAttr = (t) => { const e = enOf(t); return e ? { "data-en": e } : {}; };
       const carousel = makeCarousel;
       // 中身のスライドの共通の形: 左上に「02 BT-EXの理念」の小見出し、題、(あれば)要点の一文、中身
       // どのスライドも、題は同じ位置(左上)・同じ大きさにそろえる(運営の依頼)。lead: 題の下の要点の一文(なければ出さない)
       const frameL = (cls, lead, ...body) => h("div", { class: `pd pd-frame ${cls}` },
         h("header", { class: "pd-head" },
-          p.eyebrow ? h("p", { class: "pd-eyebrow" }, h("span", { class: "pd-eyebrow-no" }, two(p.stepNo)), p.eyebrow) : null,
+          p.eyebrow ? h("p", Object.assign({ class: "pd-eyebrow" }, enAttr(p.eyebrow)), h("span", { class: "pd-eyebrow-no" }, two(p.stepNo)), p.eyebrow) : null,
           h("h2", { class: `pd-title${String(p.name).length > 18 ? " is-long" : ""}` }, p.name),
           lead ? h("p", { class: "pd-lead" }, lead)
             // カードを1枚ずつ送るスライドは、要点の行がなくても同じ高さをあけて、カードの位置をそろえる
@@ -1553,7 +1572,7 @@
           h("button", { type: "button", class: "round-btn is-main pd-play", onclick: playMovie }, "▶ もう一度流す"));
       }
       if (p.type === "cover") {
-        return h("div", { class: "pd pd-hero pd-cover" },
+        return h("div", { class: "pd pd-hero pd-cover", "data-en": "Welcome" },
           h("img", { class: "pd-mark", src: "../assets/bt-ex5-mark-3d-512.png", alt: "" }),
           h("p", { class: "pd-kicker" }, "BT-EX5 定例会"),
           // 「日本海側最大のマーケット 新潟⇔東京」のように空白で区切った題は、空白のところで改行する
@@ -1575,7 +1594,7 @@
           plan[0] ? h("span", { class: "pd-tseg is-op", style: `flex:${plan[0]}` }, h("small", null, "OP")) : null,
           (p.steps || []).map((st, i) => (plan[st.no] ? h("span", Object.assign({ class: "pd-tseg", style: `flex:${plan[st.no]};--i:${i}` }), h("b", null, two(st.no)), h("small", null, `${plan[st.no]}分`)) : null))) : null;
         return h("div", { class: "pd pd-frame pd-agenda-slide" },
-          h("header", { class: "pd-head" }, h("p", { class: "pd-eyebrow" }, "AGENDA"), h("h2", { class: "pd-title" }, p.name)),
+          h("header", { class: "pd-head" }, h("p", { class: "pd-eyebrow", "data-en": "Agenda" }, "AGENDA"), h("h2", { class: "pd-title" }, p.name)),
           h("div", { class: "pd-body" }, bar,
             h("ol", { class: "pd-agenda" }, (p.steps || []).map((st, i) =>
               h("li", nth(i),
@@ -1590,12 +1609,12 @@
         if (!p.no) {
           // 番号のない区切り(規定など): ほかの区切りと同じく左にそろえる
           return h("div", { class: "pd pd-section pd-subsection" },
-            h("div", { class: "pd-section-main" },
+            h("div", Object.assign({ class: "pd-section-main" }, enAttr(p.eyebrow || p.name)),
               p.eyebrow ? h("p", { class: "pd-eyebrow" }, h("span", { class: "pd-eyebrow-no" }, two(p.stepNo)), p.eyebrow) : null,
               h("h2", { class: "pd-display" }, ...lines(p.name))));
         }
         return h("div", { class: `pd pd-section${p.name.length > 10 ? " is-long-title" : ""}` },
-          h("div", { class: "pd-section-main" },
+          h("div", Object.assign({ class: "pd-section-main" }, enAttr(p.name)),
             h("p", { class: "pd-no", "aria-hidden": "true" }, two(p.no)),
             h("h2", { class: "pd-display" }, ...softBreaks(p.name)),
             p.sub ? h("p", { class: "pd-sub" }, p.sub) : null),
@@ -1830,7 +1849,7 @@
             h("span", { class: "pd-sched-ic" }, lineIcon("calendar")), h("p", { class: "pd-sched-day" }, a), h("p", { class: "pd-sched-time" }, b)))),
           p.note ? h("p", { class: "pd-note is-center" }, p.note) : null);
       }
-      return h("div", { class: "pd pd-hero pd-closing" },
+      return h("div", { class: "pd pd-hero pd-closing", "data-en": "Thank you" },
         h("img", { class: "pd-mark", src: "../assets/bt-ex5-mark-3d-512.png", alt: "" }),
         h("h2", { class: "pd-display" }, p.name),
         h("span", { class: "pd-rule", "aria-hidden": "true" }),

@@ -1,0 +1,174 @@
+/* ============================================
+   assets/deck-soft.css — 定例会のスライド・タイマーの「やわらかいデザイン」
+   サイト全体(assets/soft.css)と同じ: うすいピンクベージュの地に淡い葉の線画、白いカード、
+   コーラルピンクの差し色、英字の筆記体の見出し。
+   .pr-run.deck-soft のときだけ効く(プレゼンの画面・マイページの「デザインの切りかえ」で
+   「元の黒×金」を選ぶと、このクラスが付かず、前のスライドの見た目にそのまま戻る)。
+   ============================================ */
+@import url("https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap");
+
+.pr-run.deck-soft {
+  --pd-gold: #c25d53;
+  --pd-gold-soft: rgba(217, 119, 107, 0.45);
+  --pd-line: rgba(196, 98, 90, 0.2);
+  --pd-text: #4a3b33;
+  --pd-strong: #33251f;
+  --pd-muted: #8a6f66;
+  --pd-card: #ffffff;
+  --gold: #c25d53;
+  --ink: #3f322c;
+  --sf-coral: #d9776b;
+  --sf-coral-soft: #fbe9e5;
+  --sf-script: "Great Vibes", "Snell Roundhand", "Apple Chancery", cursive;
+  --glass-bg: rgba(255, 255, 255, 0.88);
+  --glass-edge: rgba(217, 119, 107, 0.25);
+  color: var(--ink);
+  background-color: #faf6f4;
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='360' height='360' viewBox='0 0 360 360'%3E%3Cg fill='none' stroke='%23e3a69c' stroke-width='1.1' stroke-linecap='round' opacity='.55'%3E%3Cpath d='M350 10C280 60 230 120 200 200s-40 120-30 150'/%3E%3Cpath d='M300 45c-30-5-55 10-62 30 25 6 50-6 62-30Z'/%3E%3Cpath d='M262 92c-28-12-56-4-68 14 22 12 50 8 68-14Z'/%3E%3Cpath d='M232 145c-26-16-55-12-70 4 20 15 49 15 70-4Z'/%3E%3Cpath d='M300 45c8 25 0 50-20 62-8-24 2-48 20-62Z'/%3E%3Cpath d='M262 92c10 26 4 52-14 66-10-24-4-50 14-66Z'/%3E%3Cpath d='M232 145c10 26 6 52-12 68-10-24-6-50 12-68Z'/%3E%3C/g%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300' viewBox='0 0 300 300'%3E%3Cg fill='none' stroke='%239dbba3' stroke-width='1.1' stroke-linecap='round' opacity='.5'%3E%3Cpath d='M10 290c40-50 70-110 80-170S95 30 90 10'/%3E%3Cpath d='M86 70c24-10 46-2 54 16-22 10-44 4-54-16Z'/%3E%3Cpath d='M90 130c26-8 48 2 54 20-24 8-46-2-54-20Z'/%3E%3Cpath d='M78 190c26-4 46 8 50 26-24 4-44-8-50-26Z'/%3E%3Cpath d='M86 70c-22-12-46-6-56 10 20 12 44 8 56-10Z'/%3E%3Cpath d='M90 130c-22-14-48-10-58 6 20 14 46 12 58-6Z'/%3E%3C/g%3E%3C/svg%3E"),
+    radial-gradient(1100px 620px at 108% -10%, rgba(242, 196, 186, 0.45), rgba(242, 196, 186, 0) 62%),
+    radial-gradient(900px 560px at -8% 110%, rgba(186, 214, 192, 0.38), rgba(186, 214, 192, 0) 60%);
+  background-position: right -30px top -20px, left -20px bottom -10px, 0 0, 0 0;
+  background-repeat: no-repeat;
+}
+.pr-run.deck-soft.is-edu, .pr-run.deck-soft.is-edu .pr-slide { background: #f6eeea; }
+
+/* ---------- 英字の筆記体(区切り・小見出し・表紙・おわり) ---------- */
+.pr-run [data-en]::before { content: none; }
+.pr-run.deck-soft .pd-eyebrow[data-en]::before {
+  content: attr(data-en); font-family: var(--sf-script); font-weight: 400; font-size: 2em; line-height: 0.8;
+  letter-spacing: 0; color: var(--sf-coral); text-transform: none; margin-right: 0.15em;
+}
+.pr-run.deck-soft .pd-section-main[data-en]::before, .pr-run.deck-soft .pd-hero[data-en]::before {
+  content: attr(data-en); display: block; font-family: var(--sf-script); font-weight: 400; line-height: 1;
+  font-size: clamp(34px, min(5vw, 8svh), 84px); color: var(--sf-coral); letter-spacing: 0.01em;
+}
+.pr-run.deck-soft .pd-hero[data-en]::before { margin-bottom: clamp(-6px, -1svh, 0px); }
+
+/* ---------- 上の帯・文字 ---------- */
+.pr-run.deck-soft .pr-title, .pr-run.deck-soft .pr-count { color: var(--pd-muted); }
+.pr-run.deck-soft .pr-jump { background-color: #fff; color: var(--ink); border-color: var(--pd-gold-soft); box-shadow: 0 4px 14px rgba(120, 80, 60, 0.08); }
+.pr-run.deck-soft .pr-jump:hover { background-color: #fff; border-color: var(--sf-coral); }
+.pr-run.deck-soft .pr-jump option { color: var(--ink); }
+.pr-run.deck-soft .pd-note { text-shadow: none; }
+.pr-run.deck-soft .pd-mark { filter: drop-shadow(0 10px 24px rgba(120, 80, 60, 0.22)); }
+.pr-run.deck-soft .pd-rule { background: linear-gradient(90deg, transparent, var(--sf-coral), transparent); }
+.pr-run.deck-soft .pd-no { color: rgba(217, 119, 107, 0.3); }
+.pr-run.deck-soft .pd-frame .pd-title::after { background: var(--sf-coral); opacity: 0.8; }
+
+/* ---------- カード: 白く、角を大きく丸めて、やわらかい影 ---------- */
+.pr-run.deck-soft .pd-card, .pr-run.deck-soft .pd-agenda li, .pr-run.deck-soft .pd-vrow > div, .pr-run.deck-soft .pd-stats li,
+.pr-run.deck-soft .pd-kpi, .pr-run.deck-soft .pd-gloss-item, .pr-run.deck-soft .pd-fterm {
+  background: #fff; border-color: rgba(217, 119, 107, 0.16); box-shadow: 0 10px 30px rgba(120, 80, 60, 0.08);
+}
+.pr-run.deck-soft .pd-card { border-radius: 22px; }
+.pr-run.deck-soft .pd-agenda.is-compact li { background: none; box-shadow: none; }
+.pr-run.deck-soft .pd-agenda.is-compact li.is-now { background: linear-gradient(90deg, #fbe9e5, rgba(251, 233, 229, 0.2)); border-color: var(--pd-gold-soft); }
+.pr-run.deck-soft .pd-badges li, .pr-run.deck-soft .pd-raise-items li, .pr-run.deck-soft .pd-step-note span, .pr-run.deck-soft .pd-tag { background: var(--sf-coral-soft); border-color: var(--pd-gold-soft); color: var(--pd-strong); }
+.pr-run.deck-soft .pd-card-text.is-boxed { background: #fdf4f1; border-color: var(--pd-gold-soft); }
+.pr-run.deck-soft .pd-card-ic, .pr-run.deck-soft .pd-sched-ic, .pr-run.deck-soft .pd-ficon, .pr-run.deck-soft .pd-rule-ic, .pr-run.deck-soft .pd-big-ic {
+  background: var(--sf-coral-soft); border-color: rgba(217, 119, 107, 0.3); color: var(--pd-gold);
+}
+.pr-run.deck-soft .pd-rule-tag { background: rgba(214, 84, 66, 0.1); border-color: rgba(214, 84, 66, 0.45); color: #b23d2e; }
+.pr-run.deck-soft .pd-rule-card.is-ban .pd-rule-ic, .pr-run.deck-soft .pd-big-card.is-ban .pd-big-ic { background: rgba(214, 84, 66, 0.1); border-color: rgba(214, 84, 66, 0.45); color: #b23d2e; }
+.pr-run.deck-soft .pd-fterm.is-result { background: linear-gradient(120deg, #dc8073, #b9564c); border-color: transparent; }
+.pr-run.deck-soft .pd-fterm.is-result b { color: #fff; }
+.pr-run.deck-soft .pd-route-line { background: linear-gradient(90deg, var(--sf-coral), rgba(217, 119, 107, 0.35), var(--sf-coral)); }
+.pr-run.deck-soft .pd-route-line::before, .pr-run.deck-soft .pd-route-line::after { box-shadow: 0 0 14px rgba(217, 119, 107, 0.5); }
+.pr-run.deck-soft .pd-route-map .rt-trail { stroke: var(--sf-coral); }
+.pr-run.deck-soft .pd-route-map .rt-rails { stroke: #e3a69c; }
+.pr-run.deck-soft .pd-route-map .rt-rails-gap { stroke: #fbf3f0; }
+.pr-run.deck-soft .pd-route-map .rt-city { fill: var(--pd-strong); }
+.pr-run.deck-soft .pd-tseg { background: linear-gradient(180deg, rgba(217, 119, 107, 0.3), rgba(217, 119, 107, 0.14)); }
+.pr-run.deck-soft .pd-tseg:nth-child(even) { background: linear-gradient(180deg, rgba(217, 119, 107, 0.2), rgba(217, 119, 107, 0.07)); }
+.pr-run.deck-soft .pd-tseg.is-op { background: #fff; }
+.pr-run.deck-soft .pd-venn .vn-c1 { fill: rgba(217, 119, 107, 0.12); }
+.pr-run.deck-soft .pd-venn .vn-c2 { fill: rgba(143, 174, 150, 0.16); }
+.pr-run.deck-soft .pd-venn .vn-name { fill: var(--pd-strong); }
+.pr-run.deck-soft .pd-venn .vn-count { fill: var(--pd-gold); }
+.pr-run.deck-soft .pd-venn .vn-item { fill: #6f5f57; }
+.pr-run.deck-soft .pd-venn .vn-core { fill: var(--sf-coral); stroke: #fff; filter: drop-shadow(0 0 14px rgba(217, 119, 107, 0.45)); }
+.pr-run.deck-soft .pd-venn .vn-center { fill: #fff; }
+.pr-run.deck-soft .pd-step-card { background: #fff; border-color: rgba(217, 119, 107, 0.2); box-shadow: 0 10px 30px rgba(120, 80, 60, 0.08); }
+.pr-run.deck-soft .pd-step-no { background: linear-gradient(120deg, #e48a7d, #c25d53); color: #fff; }
+.pr-run.deck-soft .pd-attend-code span { background: #fff; border-color: var(--sf-coral); color: var(--pd-strong); }
+.pr-run.deck-soft .pd-qr, .pr-run.deck-soft .pd-attend-video video { box-shadow: 0 10px 30px rgba(120, 80, 60, 0.14); }
+.pr-run.deck-soft .pd-car-btn { background: #fff; border-color: var(--pd-gold-soft); color: var(--pd-gold); box-shadow: 0 4px 12px rgba(120, 80, 60, 0.08); }
+.pr-run.deck-soft .pd-car-btn:hover:not(:disabled) { background: var(--sf-coral-soft); }
+.pr-run.deck-soft .pd-car-dots button { border-color: var(--pd-gold-soft); color: var(--pd-muted); background: #fff; }
+.pr-run.deck-soft .pd-car-dots button.is-on { background: var(--sf-coral); border-color: var(--sf-coral); color: #fff; }
+.pr-run.deck-soft .pd-check { color: var(--pd-gold); }
+/* 挙手のお願い: 金の輪 → コーラルの輪 */
+.pr-run.deck-soft .pd-raise-mark::before { background: conic-gradient(from 210deg, #fbe0da, #d9776b 30%, #b9564c 55%, #f3b9ae 80%, #fbe0da); }
+.pr-run.deck-soft .pd-raise-mark::after { background: radial-gradient(circle at 32% 26%, #fff, #fdf1ed 60%, #f9e1dc); }
+.pr-run.deck-soft .pd-raise-halo { background: radial-gradient(circle, rgba(217, 119, 107, 0.25), rgba(217, 119, 107, 0) 65%); }
+.pr-run.deck-soft .pd-raise-mark .pr-icon.is-hand { color: var(--pd-gold); filter: none; }
+
+/* 下の流れの帯 */
+.pr-run.deck-soft .pd-progress-steps i { background: rgba(217, 119, 107, 0.16); }
+.pr-run.deck-soft .pd-progress-steps li.is-done i { background: rgba(217, 119, 107, 0.5); }
+.pr-run.deck-soft .pd-progress-steps li.is-now i { background: var(--sf-coral); box-shadow: 0 0 8px rgba(217, 119, 107, 0.45); }
+.pr-run.deck-soft .pd-progress-steps span { color: rgba(111, 95, 87, 0.65); }
+.pr-run.deck-soft .pd-progress-steps li.is-now span { color: var(--pd-gold); }
+
+/* ---------- プレゼン(1人ずつ)のスライド ---------- */
+.pr-run.deck-soft .pr-no { color: rgba(217, 119, 107, 0.28); }
+.pr-run.deck-soft .pr-name { color: var(--pd-strong); }
+.pr-run.deck-soft .pr-name small, .pr-run.deck-soft .pr-kana, .pr-run.deck-soft .pr-teamname > span:first-child { color: var(--pd-muted); }
+.pr-run.deck-soft .pr-catch { color: var(--pd-gold); }
+.pr-run.deck-soft .pr-rows dt { color: var(--pd-muted); }
+.pr-run.deck-soft .pr-rows dd { color: var(--pd-text); }
+.pr-run.deck-soft .pr-photo { box-shadow: 0 14px 34px rgba(120, 80, 60, 0.16); }
+.pr-run.deck-soft .pr-photo.is-initial { background: linear-gradient(160deg, #eea596, #c25d53); color: #fff; }
+.pr-run.deck-soft .pr-next { background: #fff; border-color: rgba(217, 119, 107, 0.25); box-shadow: 0 6px 18px rgba(120, 80, 60, 0.06); }
+.pr-run.deck-soft .pr-next p { color: var(--pd-muted); }
+.pr-run.deck-soft .pr-next p.is-first { color: var(--pd-strong); }
+.pr-run.deck-soft .pr-scale { color: var(--pd-muted); }
+.pr-run.deck-soft .pr-scale span::before { background: rgba(217, 119, 107, 0.5); }
+.pr-run.deck-soft .pr-meter i { --c: #d9776b; opacity: 0.16; }
+.pr-run.deck-soft .pr-sec small, .pr-run.deck-soft .pr-ask { color: var(--pd-muted); }
+.pr-run.deck-soft .pr-sec-num { color: var(--pd-strong); }
+.pr-run.deck-soft.is-last .pr-sec-num { color: #d9822b; }
+.pr-run.deck-soft.is-red .pr-sec-num, .pr-run.deck-soft.is-end .pr-sec-num { color: #d64535; }
+.pr-run.deck-soft.is-gap .pr-sec-num { color: var(--pd-muted); }
+.pr-run.deck-soft .pr-big-time { color: var(--pd-strong); text-shadow: none; }
+.pr-run.deck-soft.is-last .pr-big-time { color: #d9822b; }
+.pr-run.deck-soft.is-red .pr-big-time, .pr-run.deck-soft.is-end .pr-big-time { color: #d64535; }
+.pr-run.deck-soft .pr-timer-name { color: var(--pd-strong); }
+.pr-run.deck-soft .pr-rank li.is-r1 { color: var(--pd-strong); }
+.pr-run.deck-soft .pr-rank b { background: var(--sf-coral-soft); border-color: var(--pd-gold-soft); color: var(--pd-gold); }
+.pr-run.deck-soft .pr-rank li.is-r1 b { background: linear-gradient(120deg, #dc8073, #b9564c); color: #fff; }
+.pr-run.deck-soft .pr-break { background: rgba(90, 50, 44, 0.3); }
+
+/* ---------- 操作バー・タイムマネジメント(白いすりガラス) ---------- */
+.pr-run.deck-soft .pr-dock, .pr-run.deck-soft .pr-time { background: var(--glass-bg); border-color: var(--glass-edge); box-shadow: 0 14px 40px rgba(120, 80, 60, 0.16), 0 0 0 4px var(--pt-glow, transparent); color: var(--ink); }
+.pr-run.deck-soft .pr-dock { box-shadow: 0 14px 40px rgba(120, 80, 60, 0.16); }
+.pr-run.deck-soft .pr-dock-btn { color: #6f5f57; }
+.pr-run.deck-soft .pr-dock-btn::before { background: var(--sf-coral); }
+.pr-run.deck-soft .pr-dock-btn:hover:not(:disabled), .pr-run.deck-soft .pr-dock-btn:active:not(:disabled) { color: var(--pd-strong); }
+.pr-run.deck-soft .pr-dock-btn.is-main, .pr-run.deck-soft .pr-dock-btn.is-main:hover:not(:disabled) { color: var(--pd-gold); }
+.pr-run.deck-soft .pr-dock-btn.is-main .pr-dock-ind { background: var(--sf-coral-soft); box-shadow: 0 0 0 1px rgba(217, 119, 107, 0.35); }
+.pr-run.deck-soft .pr-dock-btn.is-end { color: var(--pd-muted); }
+.pr-run.deck-soft .pr-dock .pr-ask { color: var(--pd-text); }
+.pr-run.deck-soft .pr-grip { color: rgba(217, 119, 107, 0.6); }
+.pr-run.deck-soft .pr-grip:hover { color: var(--pd-gold); background: var(--sf-coral-soft); }
+.pr-run.deck-soft .pt-label, .pr-run.deck-soft .pt-row, .pr-run.deck-soft .pt-now-time, .pr-run.deck-soft .pt2-foot, .pr-run.deck-soft .pt2-start, .pr-run.deck-soft .pt2-sub { color: var(--pd-muted); }
+.pr-run.deck-soft .pt-row b, .pr-run.deck-soft .pt-clock, .pr-run.deck-soft .pt2-step, .pr-run.deck-soft .pt2-foot b { color: var(--pd-strong); }
+.pr-run.deck-soft .pt-min, .pr-run.deck-soft .pr-time.is-v2 .pt-min { background: #f6ebe7; color: var(--pd-muted); }
+.pr-run.deck-soft .pt-bar, .pr-run.deck-soft .pt2-bar { background: rgba(217, 119, 107, 0.14); }
+.pr-run.deck-soft .pt-bar-plan { background: linear-gradient(90deg, rgba(217, 119, 107, 0.3), rgba(217, 119, 107, 0.7)); }
+.pr-run.deck-soft .pt-bar-now { box-shadow: 0 0 0 2px #fff, 0 0 8px var(--pt-c); }
+.pr-run.deck-soft .pt-start, .pr-run.deck-soft .pr-time.is-v2 .pt-start { background: #fff; border-color: var(--pd-gold-soft); color: var(--pd-strong); color-scheme: light; }
+.pr-run.deck-soft .pt2-row.is-now { color: #2f6fc9; }
+.pr-run.deck-soft .pr-time.is-v2 { --pt-c: #1f9d5c; }
+.pr-run.deck-soft .pr-time[data-state="late"] .pt-eta { color: #d64535; }
+.pr-run.deck-soft .pr-time[data-state="early"] .pt-eta { color: #1f9d5c; }
+.pr-run.deck-soft .is-floatable.is-dragging { box-shadow: 0 24px 60px rgba(120, 80, 60, 0.3), 0 0 0 1px var(--pd-gold-soft); }
+
+/* エデュケーションの資料(画面いっぱい): 上下の帯は白くぼかす(時間・操作が読めるように) */
+.pr-run.deck-soft.is-edu .pr-top { background: linear-gradient(to bottom, rgba(250, 246, 244, 0.95), rgba(250, 246, 244, 0.7) 60%, rgba(250, 246, 244, 0)); }
+.pr-run.deck-soft.is-edu .pr-meter-row { background: linear-gradient(to top, rgba(250, 246, 244, 0.97), rgba(250, 246, 244, 0.85) 65%, rgba(250, 246, 244, 0)); }
+.pr-run.deck-soft.is-edu .pd-car-btn { background: rgba(255, 255, 255, 0.85); }
+.pr-run.deck-soft.is-edu .pd-car-foot { background: rgba(255, 255, 255, 0.9); color: var(--pd-strong); box-shadow: 0 4px 12px rgba(120, 80, 60, 0.12); }
+.pr-run.deck-soft.is-edu .pd-car-foot * { color: var(--pd-strong); }
