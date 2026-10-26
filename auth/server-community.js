@@ -2744,6 +2744,25 @@
           }
           changed = true;
         }
+        // 用語説明(2026年10月): 「リファーラル」を「貢献（リファーラル）」に。前に保存した用語説明が元の言葉のままなら書きかえる
+        if (db.cleanups.indexOf("deck-glossary-referral-1") === -1) {
+          db.cleanups.push("deck-glossary-referral-1");
+          var cfg8 = readCfg(db);
+          if (cfg8) {
+            var renameRef = function (v) {
+              if (Array.isArray(v)) return v.map(renameRef);
+              if (v && typeof v === "object") {
+                if (v.head === "リファーラル") v.head = "貢献（リファーラル）";
+                Object.keys(v).forEach(function (k) { if (k !== "head") v[k] = renameRef(v[k]); });
+              }
+              return v;
+            };
+            if (cfg8["glossary.items"]) cfg8["glossary.items"] = renameRef(cfg8["glossary.items"]);
+            if (cfg8.glossary) renameRef(cfg8.glossary);
+            writeCfg(db, cfg8);
+          }
+          changed = true;
+        }
         // アンケートの説明(2026年10月): 「本日の定例会の…」を「本日のBT-EX5の定例会の…」に。前に保存した説明が元の文のままなら書きかえる
         if (db.cleanups.indexOf("deck-survey-lead-1") === -1) {
           db.cleanups.push("deck-survey-lead-1");

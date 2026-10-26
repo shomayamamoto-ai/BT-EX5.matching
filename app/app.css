@@ -3070,3 +3070,8 @@ button.home-welcome-check:active { transform: scale(0.94); }
 @media (max-width: 560px) { .pr-survey-btn { width: 100%; margin-bottom: 6px; } .pr-survey-go { margin-left: auto; } }
 /* 定例会を作るとき: ひな形と同じ時間を薄く出す(選び直すとふつうの濃さ) */
 .app-form select.is-example { color: #a89a88; }
+/* 用語説明の言葉は1行で(入りきらないときは app/round.js の fitDeck が文字を小さくする) */
+.pd-gloss dt { white-space: nowrap; overflow: hidden; }
+/* ポップアップの言葉: カードの幅をこえないように(こえる分は app/round.js が文字を小さくする) */
+.pd-gloss-term { max-width: 100%; overflow: hidden; }
+.pd-gloss-card { min-width: 0; max-width: 100%; box-sizing: border-box; }

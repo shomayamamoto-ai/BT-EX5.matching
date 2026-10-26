@@ -1876,6 +1876,11 @@
         }
       });
       // カードの文: 1行が入りきらないときは、同じスライドのカードの文をそろって小さくする
+      // 用語説明の言葉(dt)は1行で。入りきらないときは、その言葉だけ小さくする
+      el.querySelectorAll(".pd-gloss dt").forEach((t) => {
+        t.style.fontSize = "";
+        if (t.clientWidth > 0 && t.scrollWidth > t.clientWidth) t.style.fontSize = `${(parseFloat(getComputedStyle(t).fontSize) * (t.clientWidth / t.scrollWidth) * 0.97).toFixed(2)}px`;
+      });
       const texts = [...el.querySelectorAll(".pd-card-text, .pd-check-text, .pd-block ul, .pd-gloss dd")];
       texts.forEach((t) => { t.style.fontSize = ""; });
       // (行の左はしからカードの文の右はしまでを、使える幅とする。「パターン1:」の続きの行も同じ)
