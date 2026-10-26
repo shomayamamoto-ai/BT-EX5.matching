@@ -326,8 +326,52 @@ const App = (function () {
     return p;
   }
 
+  // ---------- 画面の中身の控え(すぐ表示するため) ----------
+  // 読むだけの問い合わせ(get・list…)の結果を、この端末に控えておく。画面を開くときは控えで先に表示し、
+  // 裏で最新を取りに行って、変わっていたら描き直す。書きこむ操作をしたら控えは全部すてる(古い中身を出さない)
+  const VIEW_CACHE = "btex5-view-cache";
+  let viewCache = null, renderMode = null, pendingFresh = null;
+  const cacheKey = (action, payload) => { try { return `${action}:${JSON.stringify(payload || {})}`; } catch { return ""; } };
+  function cacheStore() {
+    if (viewCache) return viewCache;
+    viewCache = {};
+    try {
+      const raw = JSON.parse(localStorage.getItem(VIEW_CACHE) || "null");
+      if (raw && session && raw.who === session.memberId && raw.items) viewCache = raw.items;
+    } catch { /* noop */ }
+    return viewCache;
+  }
+  let saveTimer = 0;
+  function cacheSave() {
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => {
+      try { localStorage.setItem(VIEW_CACHE, JSON.stringify({ who: session && session.memberId, items: viewCache || {} })); }
+      catch { try { localStorage.removeItem(VIEW_CACHE); } catch { /* noop */ } }
+    }, 300);
+  }
+  function cachePut(key, data) {
+    if (!key) return;
+    let s;
+    try { s = JSON.stringify(data); } catch { return; }
+    if (s.length > 400000) return; // 大きすぎるもの(資料の画像など)は控えない
+    cacheStore()[key] = s;
+    cacheSave();
+  }
+  function cacheClear() { viewCache = {}; cacheSave(); }
+
   async function api(action, payload, opt) {
+    const readOnly = READ_ONLY.test(action) && !(opt && opt.raw);
+    const key = readOnly ? cacheKey(action, payload) : "";
+    // 画面を開くとき: 控えがあれば、それをすぐ返す(最新は描いたあとで取りに行く)
+    if (readOnly && key && renderMode && cacheStore()[key] !== undefined) {
+      if (renderMode === "cache-first" && pendingFresh) pendingFresh.set(key, [action, payload]);
+      try { return JSON.parse(cacheStore()[key]); } catch { /* 読めなければ、ふつうに取りに行く */ }
+    }
     const res = await call(action, payload);
+    if (res.success) {
+      if (readOnly) cachePut(key, res.data);
+      else if (!/^(logout|heartbeat|ping)/.test(action)) cacheClear();
+    }
     if (!res.success) {
       if (res.error.code === "SESSION_INVALID") {
         AuthSession.clearToken();
@@ -714,31 +758,64 @@ const App = (function () {
     document.getElementById("appTitle").textContent = views[view].title || "";
     // 読み込みのあいだは、カードの形の薄いひな形を出す(文字だけの「読み込み中」より落ち着いて見える)
     main.replaceChildren(h("div", { class: "app-skel", role: "status", "aria-label": "読み込み中" },
-      h("div", { class: "app-skel-line is-title" }), h("div", { class: "app-skel-card" }), h("div", { class: "app-skel-card is-short" }), h("div", { class: "app-skel-card" })));
+      h("div", { class: "app-skel-line is-title" }), h("div", { class: "app-skel-card" }), h("div", { class: "app-skel-card is-short" }), h("div", { class: "app-skel-card" }),
+      // 少し時間がかかるときだけ、そっと一言を出す(すぐ出たときは見えない)
+      h("p", { class: "app-skel-note" }, h("i"), h("i"), h("i"), h("span", null, "最新の内容を読みこんでいます。次からはすぐに開きます"))));
     window.scrollTo({ top: 0, behavior: "instant" });
     const el = h("div", { class: `app-page page-${view}` });
+    const myTurn = ++routeTurn;
+    // 読みこみ中は、いちばん上に細い金色の線を流す(待っていることが分かるように)
+    loadingBar(true);
+    // 控えのある中身はすぐ出す(最新は裏で取りに行く)
+    const fresh = new Map();
+    pendingFresh = fresh;
+    renderMode = "cache-first";
     try {
       const result = await views[view].render(el, r.parts, r.params);
       if (typeof result === "function") cleanup = result;
     } catch (err) {
       console.error(err);
       el.replaceChildren(empty("表示できませんでした。画面を読み込み直してください。"));
+    } finally {
+      if (routeTurn === myTurn) { renderMode = null; pendingFresh = null; }
     }
     refreshBadges();
     // 読み込み中に別の画面へ移っていたら捨てる
-    if (current.view !== view || current.parts.join("/") !== r.parts.join("/")) return;
+    if (current.view !== view || current.parts.join("/") !== r.parts.join("/")) { loadingBar(false); return; }
     main.replaceChildren(el);
+    if (!fresh.size) { loadingBar(false); return; }
+    // 控えで出した中身の最新を取りに行き、変わっていたら(入力中でなければ)そっと描き直す
+    let changed = false;
+    await Promise.all([...fresh].map(async ([key, [action, payload]]) => {
+      const before = cacheStore()[key];
+      const res = await call(action, payload);
+      if (res.success) { cachePut(key, res.data); if (cacheStore()[key] !== before) changed = true; }
+      else if (res.error && res.error.code === "SESSION_INVALID") { AuthSession.clearToken(); location.replace("../login/?next=home"); }
+    }));
+    if (routeTurn !== myTurn) return;
+    loadingBar(false);
+    if (!changed || current.view !== view || current.parts.join("/") !== r.parts.join("/")) return;
+    const typing = document.activeElement && /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName);
+    if (sheetStack.length || typing) return;
+    await softRefresh(true);
+  }
+  let routeTurn = 0;
+  let barEl = null;
+  function loadingBar(on) {
+    if (!barEl) { barEl = h("div", { class: "app-loadbar", "aria-hidden": "true" }, h("i")); document.body.append(barEl); }
+    barEl.classList.toggle("is-on", !!on);
   }
 
   // 開いている画面を、見ている場所(スクロール)のまま描き直す(ほかの人の投稿・予定が届いたとき)
-  async function softRefresh() {
+  async function softRefresh(useCache) {
     const view = current.view, key = current.parts.join("/");
     if (!views[view]) return;
     const main = document.getElementById("appView");
     const y = window.scrollY;
     const el = h("div", { class: `app-page page-${view}` });
     let result;
-    try { result = await views[view].render(el, current.parts, current.params); } catch (err) { console.error(err); return; }
+    renderMode = useCache ? "replay" : null;
+    try { result = await views[view].render(el, current.parts, current.params); } catch (err) { console.error(err); return; } finally { renderMode = null; }
     if (current.view !== view || current.parts.join("/") !== key) return;
     if (cleanup) { try { cleanup(); } catch { /* noop */ } }
     cleanup = typeof result === "function" ? result : null;
