@@ -1352,13 +1352,35 @@
   (async function init() {
     // ログイン前にメンバーのリンクを開いたときは、ログイン後に開けるように覚えておく
     try { if (/^#(member|ask)=/.test(location.hash)) sessionStorage.setItem("btex5-pending-hash", location.hash); } catch { /* noop */ }
+    // 名簿は、ログインの確認と同時に取りに行く(順番に待たない)
+    const MEMBERS_CACHE = "btex5-members-cache";
+    const fresh = AuthApi.listReferralMembers(AuthSession.getToken());
     const session = await AuthSession.guardPage({ next: "referral", loginPath: "../login/" });
     if (!session) return;
-    const res = await AuthApi.listReferralMembers(AuthSession.getToken());
     myMemberId = session.memberId || "";
     loadFavs();
     loadMemos();
-    members = viewerOrder(dailyOrder(res.success ? res.data.members : []));
+    // 前回の名簿(この端末の控え)があれば、それですぐに表示し、最新の名簿は届きしだい入れかえる
+    let cached = null;
+    try { cached = JSON.parse(localStorage.getItem(MEMBERS_CACHE) || "null"); } catch { /* noop */ }
+    const useCache = Array.isArray(cached) && cached.length > 0;
+    const keep = (res) => { if (res.success) { try { localStorage.setItem(MEMBERS_CACHE, JSON.stringify(res.data.members)); } catch { /* noop */ } } };
+    if (useCache) {
+      members = viewerOrder(dailyOrder(cached));
+      fresh.then((res) => {
+        keep(res);
+        if (!res.success || JSON.stringify(res.data.members) === JSON.stringify(cached)) return;
+        members = viewerOrder(dailyOrder(res.data.members));
+        renderNudge();
+        renderPartners();
+        renderChips();
+        renderList();
+      });
+    } else {
+      const res = await fresh;
+      keep(res);
+      members = viewerOrder(dailyOrder(res.success ? res.data.members : []));
+    }
     $("#communityLabel").textContent = COMMUNITY.label;
     // 業種・エリアの絞り込みは、広い画面では最初から開いておく
     $("#moreFilters").open = window.matchMedia("(min-width: 720px)").matches;
