@@ -84,9 +84,9 @@
 .pr-run.deck-soft .pd-tseg:nth-child(even) { background: linear-gradient(180deg, rgba(217, 119, 107, 0.2), rgba(217, 119, 107, 0.07)); }
 .pr-run.deck-soft .pd-tseg.is-op { background: #fff; }
 /* 3つの円: 白い地でも縁が見えるように(元の「スクリーン」の重ね方は白い地では消えるので、掛け合わせに) */
-.pr-run.deck-soft .pd-venn .vn-c { mix-blend-mode: multiply; fill: rgba(232, 168, 120, 0.12); stroke: rgba(205, 128, 72, 0.75); stroke-width: 2.5; }
-.pr-run.deck-soft .pd-venn .vn-c1 { fill: rgba(217, 119, 107, 0.12); stroke: rgba(194, 93, 83, 0.75); }
-.pr-run.deck-soft .pd-venn .vn-c2 { fill: rgba(143, 174, 150, 0.16); stroke: rgba(95, 140, 108, 0.75); }
+.pr-run.deck-soft .pd-venn .vn-c, .pr-run.deck-soft .pd-venn .vn-c0 { mix-blend-mode: normal !important; fill: rgba(232, 168, 120, 0.12); stroke: #d08a55; stroke-width: 2.5; stroke-opacity: 1; }
+.pr-run.deck-soft .pd-venn .vn-c1 { fill: rgba(217, 119, 107, 0.12); stroke: #c86a5f; }
+.pr-run.deck-soft .pd-venn .vn-c2 { fill: rgba(143, 174, 150, 0.16); stroke: #7fa48a; }
 .pr-run.deck-soft .pd-venn .vn-name { fill: var(--pd-strong); }
 .pr-run.deck-soft .pd-venn .vn-count { fill: var(--pd-gold); }
 .pr-run.deck-soft .pd-venn .vn-item { fill: #6f5f57; }
