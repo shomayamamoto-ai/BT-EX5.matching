@@ -3177,3 +3177,13 @@ button.home-welcome-check:active { transform: scale(0.94); }
 .design-opt.is-classic .design-swatch i:nth-child(3) { background: #f6f2ea; }
 .pr-deck-theme { display: grid; gap: 6px; margin: 12px 0 4px; }
 .pr-deck-theme > span { font-size: 13px; font-weight: 800; color: var(--text-sub); }
+/* 資料: ポスターを作る(左に入力、右に見本。スマホは上下に) */
+.mt-maker { display: grid; gap: 16px; }
+@media (min-width: 900px) { .mt-maker { grid-template-columns: minmax(300px, 380px) minmax(0, 1fr); align-items: start; } .mt-preview { position: sticky; top: 84px; } }
+.mt-form { display: grid; gap: 12px; }
+.mt-times { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.mt-hint { margin: -4px 0 0; }
+.mt-actions { flex-wrap: wrap; }
+.mt-preview { border-radius: 16px; overflow: hidden; background: #fff; box-shadow: 0 10px 30px rgba(120, 80, 60, 0.12); }
+.mt-frame { display: block; width: 100%; aspect-ratio: 297 / 210; border: 0; background: #faf5f2; }
+.mt-file-ic { flex: none; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 12px; background: #fbe9e5; color: #b4554a; font-size: 11px; font-weight: 900; letter-spacing: 0.04em; }

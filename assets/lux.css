@@ -389,3 +389,11 @@ button.home-welcome-check:active { transform: scale(0.94); }
 .me-item:hover { background: rgba(201, 164, 92, 0.06); }
 .me-item:active { background: rgba(201, 164, 92, 0.1); }
 .me-item:focus-visible { outline: 2px solid var(--lux-gold-hi, #b8873f); outline-offset: -2px; }
+
+/* スマホでは文字の大きさの切りかえ(「ぁ|あ」)を出さない(上の帯の右の、名前の丸が押せるように)。
+   大きい文字にしていた端末も、スマホではふつうの大きさで出す */
+@media (max-width: 560px) {
+  .ts-toggle { display: none !important; }
+  html.big-text body > header, html.big-text body > main, html.big-text body > footer,
+  html.big-text .app-sheet, html.big-text .diag-overlay > * { zoom: 1; }
+}

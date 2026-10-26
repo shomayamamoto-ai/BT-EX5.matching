@@ -15,11 +15,13 @@
     { id: "log", label: "記録", href: `${base.pathname}#log`, icon: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Zm1 4v4h4v2h-4v4h-2v-4H7v-2h4V7z" },
     { id: "events", label: "予定", href: `${base.pathname}#events`, icon: "M7 2v2H5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-2V2h-2v2H9V2zm-2 8h14v9H5z" },
     { id: "present", label: "プレゼン", href: `${base.pathname}#present`, icon: "M3 3h18v2h-1v10a1 1 0 0 1-1 1h-6v2.3l3.6 2.4-1.1 1.6L12 20.1l-3.5 2.2-1.1-1.6L11 18.3V16H5a1 1 0 0 1-1-1V5H3zm3 2v9h12V5zm2 6h3v2H8zm0-3h8v2H8z" },
+    // 資料(ポスターづくりなど。全員が使える)
+    { id: "materials", label: "資料", href: `${base.pathname}#materials`, icon: "M6 2h8l6 6v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Zm7 1.5V9h5.5ZM8 12v2h8v-2Zm0 4v2h5v-2Z" },
     { id: "board", label: "掲示板", href: `${base.pathname}#board`, icon: "M4 3h16a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H8l-4 4V4a1 1 0 0 1 1-1Zm3 4v2h10V7Zm0 4v2h7v-2Z" },
     { id: "ops", label: "運営", href: `${base.pathname}#ops`, icon: "M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm8 0a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM1 20c0-3.3 3.6-6 8-6s8 2.7 8 6v1H1zm16.5-5.9c2.9.4 5.5 2.4 5.5 4.9v1h-4.2c0-2.3-.5-4.3-1.3-5.9Z" },
   ];
   const NS = "http://www.w3.org/2000/svg";
-  const TAB_GLYPH = { search: "search", log: "log", events: "calendar", present: "present", board: "board", news: "news", ops: "one" };
+  const TAB_GLYPH = { search: "search", log: "log", events: "calendar", present: "present", materials: "doc", board: "board", news: "news", ops: "one" };
   // 線のアイコン(assets/icons.js)があれば、ヘッダーの検索・ベルもそれにする
   const lineIcon = (name) => (typeof BtexIcons !== "undefined" && BtexIcons.has(name) ? BtexIcons.svg(name) : null);
 
