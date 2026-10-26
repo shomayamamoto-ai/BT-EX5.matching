@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex">
+  <title>第一回 BT-EX フェス ポスター(A4横)</title>
+  <!-- 第一回 BT-EX フェスのポスター(A4 横・印刷用)。サイトと同じやわらかいデザイン:
+       うすいピンクベージュの地に淡い葉の線画、白いカード、コーラルピンク、英字の筆記体 -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Great+Vibes&family=Noto+Sans+JP:wght@500;700;900&family=Shippori+Mincho:wght@500;700;800&display=swap">
+  <style>
+    @page { size: 297mm 210mm; margin: 0; }
+    :root {
+      --coral: #d9776b; --coral-deep: #b4554a; --coral-soft: #fbe9e5; --blush: #faf5f2;
+      --ink: #3a2c26; --sub: #75645b; --sage: #8fae96; --line: rgba(196, 98, 90, 0.22);
+      --script: "Great Vibes", cursive; --mincho: "Shippori Mincho", "Noto Serif CJK JP", serif;
+      --num: "Cormorant Garamond", "Shippori Mincho", serif; --sans: "Noto Sans JP", "Noto Sans CJK JP", sans-serif;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    /* 数字は高さのそろった形(12/2・14:30 が上下にずれて見えないように) */
+    .date, .time b, .card-value .num { font-variant-numeric: lining-nums; font-feature-settings: "lnum" 1; }
+    html, body { background: #e9e2de; }
+    body { display: grid; place-items: center; min-height: 100vh; font-family: var(--sans); color: var(--ink); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    @media print { html, body { background: none; min-height: 0; display: block; } .poster { box-shadow: none !important; } }
+
+    .poster {
+      position: relative; width: 297mm; height: 210mm; overflow: hidden; background: var(--blush);
+      box-shadow: 0 20px 60px rgba(80, 50, 40, 0.18);
+    }
+    /* 淡い水彩のにじみ */
+    .wash { position: absolute; inset: 0; pointer-events: none;
+      background:
+        radial-gradient(60mm 46mm at 96% 4%, rgba(240, 186, 174, 0.55), rgba(240, 186, 174, 0) 70%),
+        radial-gradient(70mm 52mm at 52% 100%, rgba(244, 205, 196, 0.42), rgba(244, 205, 196, 0) 70%),
+        radial-gradient(64mm 50mm at 0% 96%, rgba(178, 208, 186, 0.5), rgba(178, 208, 186, 0) 70%),
+        radial-gradient(50mm 40mm at 36% 0%, rgba(250, 226, 214, 0.7), rgba(250, 226, 214, 0) 70%); }
+    /* 葉の線画 */
+    .leaf { position: absolute; pointer-events: none; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+    .leaf.is-tl { left: -8mm; top: -6mm; width: 62mm; stroke: #e2a497; stroke-width: 1.1; opacity: 0.7; }
+    .leaf.is-bl { left: -6mm; bottom: -10mm; width: 56mm; stroke: #93b59b; stroke-width: 1.1; opacity: 0.75; }
+    .leaf.is-r { right: -4mm; bottom: 26mm; width: 34mm; stroke: #e2a497; stroke-width: 1; opacity: 0.55; }
+    /* 散らした小さな点 */
+    .dots { position: absolute; inset: 0; pointer-events: none;
+      background-image: radial-gradient(circle, rgba(217, 119, 107, 0.45) 0.45mm, transparent 0.55mm), radial-gradient(circle, rgba(143, 174, 150, 0.45) 0.4mm, transparent 0.5mm);
+      background-size: 41mm 37mm, 53mm 47mm; background-position: 7mm 9mm, 29mm 21mm; opacity: 0.5;
+      -webkit-mask: linear-gradient(90deg, #000 0 8%, transparent 30% 70%, #000 92%); mask: linear-gradient(90deg, #000 0 8%, transparent 30% 70%, #000 92%); }
+
+    /* ---------- 左: 題・日時・会場 ---------- */
+    .main { position: absolute; left: 20mm; top: 13mm; width: 158mm; }
+    .brand { display: flex; align-items: center; gap: 2.6mm; }
+    .brand img { width: 9.5mm; height: 9.5mm; border-radius: 2.2mm; box-shadow: 0 1mm 3mm rgba(80, 50, 40, 0.25); }
+    .brand b { font-family: "Inter", var(--sans); font-size: 4.4mm; font-weight: 900; letter-spacing: 0.06em; }
+    .brand b em { font-style: normal; color: var(--coral-deep); }
+    .brand span { font-size: 2.6mm; font-weight: 700; letter-spacing: 0.24em; color: var(--sub); }
+
+    .kicker { margin-top: 9mm; display: flex; align-items: center; gap: 3mm; font-family: var(--mincho); font-size: 5.2mm; font-weight: 700; letter-spacing: 0.5em; color: var(--coral-deep); }
+    .kicker::before, .kicker::after { content: ""; width: 12mm; height: 0.35mm; background: linear-gradient(90deg, rgba(217, 119, 107, 0), var(--coral)); }
+    .kicker::after { transform: scaleX(-1); }
+
+    .title { position: relative; margin-top: 1mm; line-height: 1; }
+    .title-en { display: block; font-family: var(--num); font-size: 44mm; font-weight: 700; letter-spacing: -0.01em; line-height: 0.9; color: #33251f; }
+    .title-ja { display: inline-block; margin-top: 1mm; font-family: var(--mincho); font-size: 19mm; font-weight: 800; letter-spacing: 0.08em; color: var(--ink); }
+    .title-fes { position: absolute; left: 76mm; top: 41mm; font-family: var(--script); font-size: 27mm; line-height: 1; color: var(--coral); transform: rotate(-6deg); text-shadow: 0 0.6mm 0 rgba(255, 255, 255, 0.8); }
+    .catch { margin-top: 5mm; font-family: var(--mincho); font-size: 6.2mm; font-weight: 700; letter-spacing: 0.34em; color: var(--ink); }
+    .catch::after { content: ""; display: block; width: 14mm; height: 0.5mm; margin-top: 3.4mm; border-radius: 1mm; background: var(--coral); }
+
+    .when { margin-top: 6mm; display: flex; align-items: flex-end; gap: 6mm; }
+    .date { display: flex; align-items: flex-start; gap: 2mm; font-family: var(--num); font-weight: 700; color: var(--ink); line-height: 0.82; }
+    .date b { font-size: 30mm; font-weight: 700; letter-spacing: -0.01em; }
+    .date i { display: grid; place-items: center; width: 10.5mm; height: 10.5mm; margin-top: 2mm; border-radius: 50%; background: linear-gradient(140deg, #e48a7d, #b9564c); color: #fff; font-family: var(--mincho); font-style: normal; font-size: 5.4mm; font-weight: 800; box-shadow: 0 1mm 3mm rgba(185, 86, 76, 0.35); }
+    .time { padding-bottom: 1.4mm; }
+    .time b { display: block; font-family: var(--num); font-size: 12.5mm; font-weight: 700; line-height: 1; letter-spacing: 0.02em; color: var(--ink); }
+    .time span { display: inline-block; margin-top: 2mm; padding: 0.8mm 3.6mm; border-radius: 99mm; background: var(--coral-soft); color: var(--coral-deep); font-size: 3.6mm; font-weight: 700; letter-spacing: 0.12em; }
+
+    .info { margin-top: 7mm; display: grid; grid-template-columns: 1.25fr 1fr; gap: 4mm; width: 150mm; }
+    .card { position: relative; padding: 4.2mm 5.5mm 4.4mm; border-radius: 6mm; background: #fff; box-shadow: 0 3mm 9mm rgba(120, 80, 60, 0.1); }
+    .card-en { position: absolute; right: 4.5mm; top: 1.6mm; font-family: var(--script); font-size: 9mm; line-height: 1; color: rgba(217, 119, 107, 0.4); }
+    .card-label { font-size: 3.2mm; font-weight: 700; letter-spacing: 0.3em; color: var(--coral-deep); }
+    .card-value { margin-top: 1.4mm; font-family: var(--mincho); font-size: 8.4mm; font-weight: 800; line-height: 1.15; color: var(--ink); white-space: nowrap; }
+    .card-value .num { font-family: var(--num); font-size: 1.32em; font-weight: 700; letter-spacing: 0.01em; }
+    .card-value small { font-size: 0.62em; margin-left: 0.5mm; }
+
+    /* ---------- 右: 写真(アーチ型)・ひとこと・3つの価値 ---------- */
+    .visual { position: absolute; right: 18mm; top: 13mm; width: 92mm; }
+    .arch { position: relative; width: 92mm; height: 118mm; border-radius: 46mm 46mm 7mm 7mm; padding: 2.2mm; background: #fff; box-shadow: 0 5mm 14mm rgba(120, 80, 60, 0.18); }
+    .arch::after { content: ""; position: absolute; inset: -3.4mm; border-radius: 49.4mm 49.4mm 10mm 10mm; border: 0.35mm solid rgba(217, 119, 107, 0.45); pointer-events: none; }
+    .arch img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: 50% 30%; border-radius: 43.8mm 43.8mm 5mm 5mm; }
+    .arch-script { position: absolute; left: -15mm; top: 8mm; font-family: var(--script); font-size: 15mm; line-height: 1; color: var(--coral); transform: rotate(-8deg); text-shadow: 0 0.6mm 0 #fff, 0 0 2mm rgba(255, 255, 255, 0.9); }
+    .bubble { position: absolute; left: -30mm; bottom: 13mm; padding: 4.4mm 5.6mm; border-radius: 5mm; background: rgba(255, 255, 255, 0.96); box-shadow: 0 3mm 10mm rgba(120, 80, 60, 0.16); font-family: var(--mincho); font-size: 5.4mm; font-weight: 800; line-height: 1.5; letter-spacing: 0.06em; color: var(--ink); }
+    .bubble em { font-style: normal; color: var(--coral-deep); }
+    .bubble::before { content: ""; position: absolute; left: 0; top: 4.4mm; bottom: 4.4mm; width: 0.9mm; border-radius: 1mm; background: var(--coral); }
+
+    .values { position: absolute; right: 14mm; bottom: 11mm; display: flex; gap: 4.2mm; }
+    .value { display: grid; place-items: center; align-content: center; gap: 1.3mm; width: 31mm; height: 31mm; border-radius: 50%; background: #fff; box-shadow: 0 2.5mm 8mm rgba(120, 80, 60, 0.12); text-align: center; position: relative; }
+    .value::after { content: ""; position: absolute; inset: 1.4mm; border-radius: 50%; border: 0.3mm dashed rgba(217, 119, 107, 0.4); }
+    .value svg { width: 9mm; height: 9mm; fill: none; stroke: var(--coral-deep); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+    .value p { font-size: 3.05mm; font-weight: 700; line-height: 1.45; color: var(--ink); }
+
+    .foot { position: absolute; left: 20mm; bottom: 9mm; display: flex; align-items: center; gap: 3mm; font-size: 2.8mm; font-weight: 700; letter-spacing: 0.2em; color: var(--sub); }
+    .foot::before { content: ""; width: 10mm; height: 0.3mm; background: var(--coral); }
+  </style>
+</head>
+<body>
+  <article class="poster" aria-label="第一回 BT-EX フェス">
+    <div class="wash"></div>
+    <div class="dots"></div>
+    <!-- 葉の線画(左上・左下・右) -->
+    <svg class="leaf is-tl" viewBox="0 0 200 200" aria-hidden="true"><path d="M10 6c40 30 70 66 92 112s34 70 40 80"/><path d="M48 34c-4-18 8-34 26-36 2 18-8 32-26 36Z"/><path d="M48 34c18-4 34 6 36 24-18 2-32-6-36-24Z"/><path d="M76 74c-2-20 12-34 30-34 0 20-12 32-30 34Z"/><path d="M76 74c20-2 34 10 34 28-20 0-32-10-34-28Z"/><path d="M100 120c0-20 14-32 32-30-2 20-14 30-32 30Z"/><path d="M100 120c18 2 30 14 28 32-18-2-28-14-28-32Z"/><path d="M28 18c-14-6-26 0-30 12 14 6 26 0 30-12Z"/></svg>
+    <svg class="leaf is-bl" viewBox="0 0 200 200" aria-hidden="true"><path d="M20 196c20-40 34-84 38-128S56 14 52 2"/><path d="M56 60c20-14 42-10 50 6-20 12-40 8-50-6Z"/><path d="M58 100c22-8 42 2 46 18-22 8-40-2-46-18Z"/><path d="M50 140c22-4 40 8 42 24-22 4-40-8-42-24Z"/><path d="M54 60c-20-14-42-8-50 8 20 12 42 8 50-8Z"/><path d="M56 102c-20-12-44-8-52 8 20 12 44 8 52-8Z"/></svg>
+    <svg class="leaf is-r" viewBox="0 0 120 200" aria-hidden="true"><path d="M110 6C80 40 66 86 62 130s-2 56 4 66"/><path d="M84 48c-16-6-32 2-36 16 16 6 32-2 36-16Z"/><path d="M72 92c-16-4-30 6-32 20 16 4 30-6 32-20Z"/><path d="M84 48c6-14 20-20 32-14-6 14-20 20-32 14Z"/></svg>
+
+    <section class="main">
+      <div class="brand"><img src="../../assets/bt-ex5-mark-3d-512.png" alt=""><b>BT-<em>EX5</em></b><span>新潟・東京 紹介者制コミュニティ</span></div>
+      <p class="kicker">第一回</p>
+      <h1 class="title">
+        <span class="title-en">BT-EX</span>
+        <span class="title-ja">フェス</span>
+        <span class="title-fes" aria-hidden="true">Fes</span>
+      </h1>
+      <p class="catch">つながりが、未来を動かす。</p>
+      <div class="when">
+        <p class="date"><b>12/2</b><i>水</i></p>
+        <p class="time"><b>14:30〜16:30</b><span>14:00 受付</span></p>
+      </div>
+      <div class="info">
+        <div class="card"><span class="card-en" aria-hidden="true">Place</span><p class="card-label">会場</p><p class="card-value">銀座 <span class="num">Blossom</span></p></div>
+        <div class="card"><span class="card-en" aria-hidden="true">Fee</span><p class="card-label">参加費</p><p class="card-value"><span class="num">2,200</span><small>円</small></p></div>
+      </div>
+    </section>
+
+    <section class="visual">
+      <div class="arch"><img src="photo.jpg" alt="銀座の夜景と、交流する経営者たち"></div>
+      <p class="arch-script" aria-hidden="true">Ginza</p>
+      <p class="bubble"><em>経営者、事業者</em>の<br>集まる会です！</p>
+    </section>
+
+    <ul class="values" aria-label="この会で得られること" style="list-style:none">
+      <li class="value"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><circle cx="16.5" cy="9" r="2.6"/><path d="M3 19c.6-3.4 3-5.2 6-5.2s5.4 1.8 6 5.2"/><path d="M14.6 14.2c.6-.2 1.2-.3 1.9-.3 2.4 0 4.2 1.5 4.6 4.3"/></svg><p>経営者同士の<br>つながり</p></li>
+      <li class="value"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18h6"/><path d="M10 21h4"/><path d="M12 3a6 6 0 0 0-3.6 10.8c.6.5 1 1.2 1.1 2V16h5v-.2c.1-.8.5-1.5 1.1-2A6 6 0 0 0 12 3Z"/><path d="M12 7.5v3l1.6 1"/></svg><p>新たな<br>ビジネスの創出</p></li>
+      <li class="value"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h16"/><path d="M6.5 16.5v-3"/><path d="M11 16.5v-6"/><path d="M15.5 16.5v-8"/><path d="M5 10.5 10 6l3.5 2.5L19 4"/><path d="M15.5 4H19v3.5"/></svg><p>共に描く<br>未来の可能性</p></li>
+    </ul>
+
+  </article>
+</body>
+</html>
