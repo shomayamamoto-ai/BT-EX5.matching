@@ -120,6 +120,18 @@
     return sec;
   }
 
+  // ---------- やわらかいデザインの見出し(筆記体の英語 + 日本語 + 細い線)。セクションごとに背景を交互に ----------
+  const band = (script, jp, ...children) => h("section", { class: "svx-band" },
+    h("header", { class: "svx-head" }, h("p", { class: "svx-script", "aria-hidden": "true" }, script), h("h3", null, jp), h("i", { class: "svx-rule", "aria-hidden": "true" })),
+    h("div", { class: "svx-body" }, ...children));
+  // 筆記体の英語の見出しの字(この画面を開いたときだけ読みこむ)
+  let fontLoaded = false;
+  const loadScriptFont = () => {
+    if (fontLoaded) return;
+    fontLoaded = true;
+    document.head.append(h("link", { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap" }));
+  };
+
   // ---------- ダッシュボード(記録の「分析」と同じ見た目): 数字のカード・回ごとの推移・内訳 ----------
   const SCORE_COLORS = ["#16865a", "#58b88a", "#c9b28a", "#e0861a", "#c2462a"];
   const INTEREST_COLORS = { "ぜひ入会したい": "#16865a", "詳しく話を聞きたい": "#2c5fb2", "今は考えていない": "#bdb2a6" };
@@ -179,9 +191,11 @@
       ? h("section", { class: "sd-card" }, h("div", { class: "sd-card-head" }, h("h3", null, "入会への興味")),
         C.donut ? C.donut(Object.keys(INTEREST_COLORS).map((k) => ({ label: k, value: list.filter((x) => x.interest === k).length, color: INTEREST_COLORS[k] })), "回答", "件") : bars(countBy(list, (x) => x.interest), n))
       : h("section", { class: "sd-card" }, h("div", { class: "sd-card-head" }, h("h3", null, "所属ユニット")), bars(countBy(list, (x) => x.unit), n));
-    return h("div", { class: "sv-dash" }, kpis,
-      h("div", { class: "sd-row" }, trendCard, scoreCard),
-      h("div", { class: "sd-row is-half" }, progCard, sideCard));
+    return [
+      band("Summary", "数字で見る", h("div", { class: "sv-dash" }, kpis)),
+      band("Trend", "回ごとの推移と内訳", h("div", { class: "sv-dash" }, h("div", { class: "sd-row" }, trendCard, scoreCard))),
+      band("Ranking", kind === "visitor" ? "良かったプログラムと入会への興味" : "良かったプログラムと所属ユニット", h("div", { class: "sv-dash" }, h("div", { class: "sd-row is-half" }, progCard, sideCard))),
+    ];
   }
 
   App.surveyResults = async function () {
@@ -206,17 +220,17 @@
         // 改善のヒント: 「どちらともいえない」以下の回答の理由と、感想・提案
         const low = list.filter((x) => x.score >= 2);
         App.fill(box,
-          h("div", { class: "sv-dash-head" },
+          h("div", { class: "sv-dash-head svx-controls" },
             App.segmented([{ id: "member", label: "BT-EX メンバー", badge: all.filter((x) => x.kind === "member").length }, { id: "visitor", label: "ビジター", badge: all.filter((x) => x.kind === "visitor").length }], kind, (k) => { kind = k; date = ""; draw(); }),
             h("div", { class: "sv-res-tools" }, dateSel, n ? App.btn("CSV で保存", () => csv(list, kind, scores), "ghost small") : null)),
-          n ? dashboard(list, ofKind, date, kind, scores) : null,
-          n ? summarize(list, all, kind, scores) : null,
-          n && kind === "member" && list.some((x) => x.adopt) ? h("section", { class: "sv-res-sec" }, h("h3", null, "自ユニットに取り入れたいこと"),
-            h("ul", { class: "sv-res-quotes" }, list.filter((x) => x.adopt).map((x) => h("li", null, x.adopt, h("small", null, `${x.unit} ${x.last}さん`))))) : null,
-          n ? h("section", { class: "sv-res-sec is-improve" }, h("h3", null, "改善のヒント(「どちらともいえない」以下の回答)"),
+          ...(n ? dashboard(list, ofKind, date, kind, scores) : []),
+          n ? band("Voice", "改善点のまとめ", summarize(list, all, kind, scores)) : null,
+          n && kind === "member" && list.some((x) => x.adopt) ? band("Idea", "自ユニットに取り入れたいこと", h("section", { class: "sv-res-sec" },
+            h("ul", { class: "sv-res-quotes" }, list.filter((x) => x.adopt).map((x) => h("li", null, x.adopt, h("small", null, `${x.unit} ${x.last}さん`)))))) : null,
+          n ? band("Hint", "改善のヒント(「どちらともいえない」以下の回答)", h("section", { class: "sv-res-sec is-improve" },
             low.length ? h("ul", { class: "sv-res-quotes" }, low.map((x) => h("li", null, h("b", null, scores[x.score]), ` ${x.reason}`, x.comment ? h("span", null, ` / ${x.comment}`) : null, h("small", null, `${x.date} ${x.last}さん`))))
-              : h("p", { class: "app-field-hint" }, "いまのところ、低い評価の回答はありません。")) : null,
-          h("section", { class: "sv-res-sec" }, h("h3", null, `回答の一覧(${n}件)`),
+              : h("p", { class: "app-field-hint" }, "いまのところ、低い評価の回答はありません。"))) : null,
+          band("Answers", `回答の一覧(${n}件)`, h("section", { class: "sv-res-sec" },
             n ? h("ul", { class: "sv-res-list" }, list.map((x) => h("li", null,
               h("details", { dataset: { id: x.id } },
                 h("summary", null, h("b", null, `${x.last} ${x.first}`), h("span", null, kind === "member" ? x.unit : x.job), h("em", null, scores[x.score]), h("small", null, x.date)),
@@ -228,7 +242,7 @@
                 App.btn("この回答を消す", async () => {
                   if (!(await App.confirm(`${x.last} ${x.first}さんの回答を消しますか?`, { ok: "消す", danger: true }))) return;
                   if (await App.api("adminDeleteSurvey", { id: x.id })) { all = all.filter((y) => y.id !== x.id); draw(); App.toast("回答を消しました"); }
-                }, "ghost small"))))) : App.empty("まだ回答がありません。定例会の終わりの「定例会のアンケート」の\nスライドの QR コードから答えてもらえます。")));
+                }, "ghost small"))))) : App.empty("まだ回答がありません。定例会の終わりの「定例会のアンケート」の\nスライドの QR コードから答えてもらえます。"))));
       }
       draw();
       // 開いているあいだは、新しい回答が届いたらすぐに出す(5秒ごとに確かめる。変わったときだけ描き直す)
@@ -255,7 +269,12 @@
       }, 5000);
       // 共有サーバーにつながっていない間は、回答は答えた人のスマホの中にしか残らない(ここには届かない)
       const notShared = typeof AuthApi !== "undefined" && !AuthApi.isShared();
-      body.append(h("p", { class: "app-lead sv-res-lead" }, "定例会の終わりに QR コードから答えてもらったアンケートです。\nBT-EX メンバーとビジターで分けて集計します。"), live,
+      loadScriptFont();
+      body.classList.add("svx");
+      body.append(h("header", { class: "svx-hero" },
+        h("p", { class: "svx-script is-big", "aria-hidden": "true" }, "Survey"),
+        h("h2", null, "アンケートの結果"),
+        h("p", { class: "app-lead sv-res-lead" }, "定例会の終わりに QR コードから答えてもらったアンケートです。\nBT-EX メンバーとビジターで分けて集計します。"), live),
         notShared ? h("p", { class: "sv-res-warn tone-warn" }, "いまは共有サーバーにつながっていないため、ほかの方のスマホで答えたアンケートはここに届きません(この端末で答えたものだけが出ます)。共有サーバー(Google Apps Script)の URL を設定すると、全員の回答がここに集まります。") : null, box);
     }, { full: true, noFocus: true });
   };

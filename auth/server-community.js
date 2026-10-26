@@ -812,7 +812,7 @@
         v.contact = c.cleanStr(body.contact, 120);
         v.message = c.cleanStr(body.message, 300);
         if (v.kind === "link") {
-          v.linkTeam = c.cleanStr(body.linkTeam, 60);
+          v.linkTeam = c.cleanStr(body.linkTeam, 100);
           v.linkUp = c.cleanStr(body.linkUp, 40);
           v.linkAdvance = c.cleanStr(body.linkAdvance, 40);
         }
@@ -2821,7 +2821,7 @@
           score: score, program: program, reason: reason, comment: comment,
         };
         if (kind === "member") {
-          r.unit = c.cleanStr(body.unit, 12); r.lineage = c.cleanStr(body.lineage, 60); r.job = c.cleanStr(body.job, 80);
+          r.unit = c.cleanStr(body.unit, 12); r.lineage = c.cleanStr(body.lineage, 100); r.job = c.cleanStr(body.job, 80);
           r.upcre = c.cleanStr(body.upcre, 40); r.adopt = c.cleanStr(body.adopt, 800);
           // アップクリエ氏名は任意(運営の依頼)
           if (!r.unit || !r.lineage || !r.job) return c.fail("INVALID_REQUEST", "必須の項目を入れてください。");

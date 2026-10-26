@@ -7,6 +7,8 @@
   const $ = (id) => document.getElementById(id);
   const token = new URLSearchParams(location.search).get("t") || "";
   let isLink = false;
+  // 所属チーム: 系列 → チームの順に押して選ぶ
+  BtTeams.mount($("v-team"));
   const WEEK = ["日", "月", "火", "水", "木", "金", "土"];
   const AREA = { niigata: "新潟", tokyo: "東京", online: "オンライン", other: "" };
 

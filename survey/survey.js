@@ -22,6 +22,8 @@
   opts($("sv-interest"), INTEREST, "選んでください");
   // 今日の日付(日本時間)
   $("sv-date").value = new Date(Date.now() + 9 * 3600000).toISOString().slice(0, 10);
+  // B.T.内系列名: 系列 → チームの順に押して選ぶ(LINK会員でない方は「LINK会員ではない」)
+  const lineage = BtTeams.mount($("sv-lineage"), { none: "LINK会員ではない", noneValue: "なし" });
   $("sv-program").addEventListener("change", () => { $("sv-program-other").hidden = $("sv-program").value !== "その他"; });
 
   function setKind(k) {
@@ -42,7 +44,7 @@
   const val = (id) => ($(id).value || "").trim();
   function fail(id, msg) {
     $("sv-message").textContent = msg;
-    const el = $(id);
+    const el = typeof id === "string" ? $(id) : id;
     if (el) { el.focus(); el.scrollIntoView({ block: "center", behavior: "smooth" }); }
     return null;
   }
@@ -57,7 +59,8 @@
     if (kind === "member") {
       Object.assign(d, { unit: val("sv-unit"), lineage: val("sv-lineage"), job: val("sv-job-m"), upcre: val("sv-upcre"), adopt: val("sv-adopt") });
       if (!d.unit) return fail("sv-unit", "所属ユニットを選んでください。");
-      if (!d.lineage) return fail("sv-lineage", "B.T.内系列名を入れてください(LINK会員でない方は「なし」)。");
+      const lp = lineage.problem(true);
+      if (lp) return fail(lineage.root, lp === "系列を選んでください。" ? "B.T.内系列名を選んでください(LINK会員でない方は「LINK会員ではない」)。" : lp);
       if (!d.job) return fail("sv-job-m", "職業を入れてください。");
     } else {
       const link = document.querySelector('input[name="sv-link"]:checked');

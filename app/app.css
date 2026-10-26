@@ -3103,3 +3103,59 @@ button.home-welcome-check:active { transform: scale(0.94); }
 .checkin-form.is-shake .ck-display { animation: ck-shake 0.4s ease; }
 @keyframes ck-shake { 20% { transform: translateX(-10px); } 40% { transform: translateX(8px); } 60% { transform: translateX(-5px); } 80% { transform: translateX(3px); } }
 @media (prefers-reduced-motion: reduce) { .checkin-form.is-shake .ck-display { animation: none; } }
+
+/* ===== アンケートの結果: やわらかく上品なデザイン(白いカード・筆記体の英語の見出し・淡い色の帯) ===== */
+.app-sheet-body.svx { --svx-accent: #d9776b; --svx-accent-soft: #fbe9e5; --svx-ink: #4a3b33; --svx-sub: #8a7a70;
+  background: radial-gradient(60% 40% at 0% 0%, rgba(249, 226, 220, 0.55), transparent 70%), radial-gradient(50% 35% at 100% 18%, rgba(232, 240, 226, 0.6), transparent 70%), #fbf8f5;
+  padding-top: 0; color: var(--svx-ink); }
+.svx .svx-script { margin: 0; font-family: "Great Vibes", "Snell Roundhand", "Apple Chancery", cursive; font-weight: 400; font-size: 40px; line-height: 1; color: var(--svx-accent); letter-spacing: 0.01em; }
+.svx .svx-script.is-big { font-size: clamp(54px, 7vw, 86px); }
+/* 上の大きな見出し */
+.svx .svx-hero { text-align: center; padding: clamp(28px, 6vh, 64px) 16px clamp(18px, 3vh, 30px); position: relative; }
+.svx .svx-hero::before, .svx .svx-hero::after { content: ""; position: absolute; top: 50%; width: clamp(40px, 12vw, 140px); height: 1px; background: linear-gradient(90deg, transparent, rgba(217, 119, 107, 0.45)); }
+.svx .svx-hero::before { left: 6%; }
+.svx .svx-hero::after { right: 6%; transform: scaleX(-1); }
+.svx .svx-hero h2 { margin: 6px 0 12px; font-family: var(--serif, "Shippori Mincho", serif); font-size: clamp(20px, 2.4vw, 28px); font-weight: 700; letter-spacing: 0.2em; color: var(--svx-ink); }
+.svx .svx-hero .sv-res-lead { margin: 0 auto 10px; max-width: 34em; text-align: center; color: var(--svx-sub); line-height: 1.9; letter-spacing: 0.04em; }
+.svx .svx-hero .sv-res-live { justify-content: center; margin: 0; color: var(--svx-sub); }
+/* 切りかえ(メンバー・ビジター)と回の選択 */
+.svx .svx-controls { justify-content: center; gap: 12px; margin: 4px auto 6px; }
+.svx .svx-controls .app-seg { max-width: 520px; background: #fff; border-radius: 999px; padding: 5px; box-shadow: 0 6px 18px rgba(120, 80, 60, 0.08); }
+.svx .svx-controls .app-seg button { border-radius: 999px; }
+.svx .svx-controls .app-seg button[aria-selected="true"], .svx .svx-controls .app-seg button.is-on { background: var(--svx-accent) !important; color: #fff !important; box-shadow: 0 6px 14px rgba(217, 119, 107, 0.35); }
+.svx .svx-controls .app-seg button.is-on .app-badge { background: #fff; color: var(--svx-accent); }
+.svx .sv-res-tools select, .svx .sv-res-tools .app-btn { border-radius: 999px; border: 1px solid rgba(217, 119, 107, 0.45); background: #fff; color: var(--svx-ink); }
+.svx .app-btn.ghost { border-radius: 999px; border-color: rgba(217, 119, 107, 0.55); color: var(--svx-accent); background: #fff; }
+.svx .app-btn.ghost:hover { background: var(--svx-accent); color: #fff; }
+/* セクション: 筆記体の英語 + 日本語 + 細い線。背景を交互に淡く */
+.svx .svx-band { margin: 0 -16px; padding: clamp(26px, 5vh, 48px) 16px; }
+.svx .svx-band:nth-of-type(even) { background: rgba(255, 255, 255, 0.65); border-radius: 36px; }
+.svx .sd-line { stroke: var(--svx-accent); }
+.svx .sd-area { fill: var(--svx-accent); opacity: 0.08; }
+.svx .sd-dot { fill: var(--svx-accent); }
+.svx .svx-head { text-align: center; margin-bottom: clamp(16px, 3vh, 26px); }
+.svx .svx-head h3 { margin: 4px 0 0; font-size: 14px; font-weight: 700; letter-spacing: 0.18em; color: var(--svx-ink); }
+.svx .svx-rule { display: block; width: 36px; height: 2px; margin: 12px auto 0; border-radius: 2px; background: var(--svx-accent); opacity: 0.7; }
+.svx .svx-body { max-width: 1180px; margin: 0 auto; }
+/* カード: 白く、角を大きく丸め、影をやわらかく */
+.svx .sd-kpi, .svx .sd-card, .svx .sv-res-sec { border: none; border-radius: 22px; background: #fff; box-shadow: 0 10px 30px rgba(120, 80, 60, 0.08); }
+.svx .sd-kpi { padding: 20px 20px 18px; text-align: center; align-items: center; }
+.svx .sd-kpi-head { justify-content: center; }
+.svx .sd-kpi-val { font-family: var(--serif, "Shippori Mincho", serif); font-size: 34px; color: var(--svx-ink); }
+.svx .sd-kpi-ic { background: var(--svx-accent-soft) !important; color: var(--svx-accent) !important; }
+.svx .sd-delta { justify-content: center; }
+.svx .sd-card { padding: 20px 22px; }
+.svx .sd-card-head h3, .svx .sv-res-sec h3 { font-family: var(--serif, "Shippori Mincho", serif); letter-spacing: 0.08em; color: var(--svx-ink); }
+.svx .sd-tabs { border-radius: 999px; background: #fbf3f1; border-color: transparent; }
+.svx .sd-tabs button { border-radius: 999px; }
+.svx .sd-tabs button.is-on { color: var(--svx-accent); }
+.svx .sv-res-sec { padding: 20px 22px; }
+.svx .sv-res-sec.is-summary, .svx .sv-res-sec.is-improve { background: #fff; }
+.svx .sv-sum-col { border-radius: 16px; }
+.svx .sv-sum-col.is-issue { background: #fdf0ed; }
+.svx .sv-sum-col.is-good { background: #eef6f0; }
+.svx .sv-res-quotes li { background: #fbf6f3; border-radius: 14px; }
+.svx .sv-res-list summary { border-radius: 14px; }
+.svx .sv-bar-track { border-radius: 999px; }
+.svx .sv-bar-track i { border-radius: 999px; background: linear-gradient(90deg, #e9a296, var(--svx-accent)); }
+@media (max-width: 760px) { .svx .svx-hero::before, .svx .svx-hero::after { display: none; } .svx .svx-script { font-size: 34px; } }

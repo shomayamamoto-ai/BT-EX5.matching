@@ -2606,7 +2606,7 @@ const REF_SEED_ANNOUNCEMENTS = [
   {
     seedId: "2026-10-25-update-16",
     cat: "アップデート",
-    rev: 64,
+    rev: 65,
     at: Date.UTC(2026, 9, 25, 4, 0), // 2026/10/25 13:00(日本時間)
     title: "【アップデート】紹介診断に「相手がこう言っていたら」・アンケート・運営タブ など",
     body: [
@@ -2621,7 +2621,8 @@ const REF_SEED_ANNOUNCEMENTS = [
       "・定例会を新しく作るときは、11月4日の回と同じ内容(名前・時間・開催方法・申込締切・参加費・当日の流れ・ご案内)がはじめから入るようにしました。時間は薄く出し、変えるとふつうの濃さになります。どの項目も変えられます。",
       "・定例会を作る画面の「繰り返し」「回数」をなくしました(1回ずつ作ります)。",
       "・用語説明の「リファーラル」を「貢献（リファーラル）」にし、一覧でもポップアップでも必ず1行で出るようにしました(入りきらない画面では文字を少し小さくします)。",
-      "・アンケートのスライドの QR コードの見出し「ビジターの方」を「外部非会員の方」にしました。",
+      "・「アンケートの結果」の画面を、やわらかく上品なデザインにしました(英字の筆記体の見出しと日本語の小見出し、白い角の丸いカード、コーラルピンクの差し色、丸いボタン)。",
+      "・アンケートの「B.T.内系列名」と、ビジター申し込みの「所属チーム」を、文字で入れる形から押して選ぶ形にしました。系列を押すと、その系列のチームと直上の方が出るので押して選びます(一覧にないときは「一覧にない」から文字で入れられます。LINK会員でない方は「LINK会員ではない」を押します)。",
       "・画面の中身を変えずに、読みこむファイルを軽くしました(各ページで読みこむプログラムが約560KB→約140KB)。お試し版でしか使わない仕組みと、共有サーバーだけが使う初期データ(名簿の初期値・お知らせの本文など)を、ふだんのページでは読みこまないようにしました。",
       "・紹介先早見表に移るときの待ち時間を短くしました。前回の名簿ですぐに一覧を出し、最新の名簿は届きしだい入れかえます(約2.5秒→約0.5秒)。",
       "・プレゼンの1人の時間は、BT-EX5 のメンバーだけはじめ1分、ほかの BT-EX の方・ゲスト・ビジターははじめ30秒にしました(前に1分で入れた方も30秒にそろえました。自分で選び直した時間はそのまま)。",
@@ -4781,7 +4782,7 @@ var BtexServerCore = (function () {
         v.contact = c.cleanStr(body.contact, 120);
         v.message = c.cleanStr(body.message, 300);
         if (v.kind === "link") {
-          v.linkTeam = c.cleanStr(body.linkTeam, 60);
+          v.linkTeam = c.cleanStr(body.linkTeam, 100);
           v.linkUp = c.cleanStr(body.linkUp, 40);
           v.linkAdvance = c.cleanStr(body.linkAdvance, 40);
         }
@@ -6790,7 +6791,7 @@ var BtexServerCore = (function () {
           score: score, program: program, reason: reason, comment: comment,
         };
         if (kind === "member") {
-          r.unit = c.cleanStr(body.unit, 12); r.lineage = c.cleanStr(body.lineage, 60); r.job = c.cleanStr(body.job, 80);
+          r.unit = c.cleanStr(body.unit, 12); r.lineage = c.cleanStr(body.lineage, 100); r.job = c.cleanStr(body.job, 80);
           r.upcre = c.cleanStr(body.upcre, 40); r.adopt = c.cleanStr(body.adopt, 800);
           // アップクリエ氏名は任意(運営の依頼)
           if (!r.unit || !r.lineage || !r.job) return c.fail("INVALID_REQUEST", "必須の項目を入れてください。");

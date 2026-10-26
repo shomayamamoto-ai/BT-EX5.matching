@@ -22,3 +22,20 @@
 .visit-done p { font-size: 13.5px; margin-top: 6px; color: #211b16; }
 [hidden] { display: none !important; }
 .visit-msg { white-space: pre-wrap; margin: 10px 0 14px; padding: 12px 14px; border-radius: 12px; background: #f4ede1; font-size: 14px; }
+
+/* B.T. の系列・チームを押して選ぶ(アンケート・ビジター申し込み) */
+.bt-pick { display: grid; gap: 8px; }
+.bt-step { margin: 2px 0 0; font-size: 12.5px; font-weight: 700; color: #8a6d3b; }
+.bt-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.bt-chip { display: inline-flex; flex-direction: column; align-items: flex-start; gap: 1px; min-height: 44px; padding: 7px 12px; border: 1.5px solid #d6c6aa; border-radius: 12px; background: #fff; font: inherit; color: #3b2f24; text-align: left; cursor: pointer; transition: background 0.15s, border-color 0.15s, color 0.15s; }
+.bt-chip-main { font-size: 14px; font-weight: 800; line-height: 1.3; }
+.bt-chip-sub { font-size: 11px; color: #8a7a68; line-height: 1.3; }
+.bt-chip:hover { border-color: #b8975a; }
+.bt-chip.is-on { background: #1a1410; border-color: #1a1410; color: #f6e7c4; box-shadow: 0 4px 12px rgba(18, 12, 8, 0.18); }
+.bt-chip.is-on .bt-chip-sub { color: #d9c49a; }
+.bt-chip:focus-visible { outline: 2px solid #b8975a; outline-offset: 2px; }
+.bt-teams { display: grid; gap: 8px; padding: 10px; border-radius: 14px; background: #f6efe2; }
+.bt-teams[hidden] { display: none; }
+.bt-chips.is-teams { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); }
+.bt-chip-sub { word-break: break-all; }
+.bt-other { width: 100%; min-height: 46px; border: 1.5px solid #d6c6aa; border-radius: 12px; padding: 8px 12px; font: inherit; font-size: 16px; background: #fff; box-sizing: border-box; }

@@ -850,7 +850,7 @@
     if (D.joinSteps) deck("joinsteps", { name: D.joinSteps.title, step: endLabel, cards: D.joinSteps.steps || [], note: D.joinSteps.note || "", noteSpan: D.joinSteps.noteSpan || 2 });
     if (D.survey) {
       const url = (k) => { try { return new URL(`../survey/?k=${k}${ev ? `&e=${encodeURIComponent(ev.id)}` : ""}`, location.href).href; } catch { return ""; } };
-      deck("survey", { name: D.survey.title, step: endLabel, lead: D.survey.lead, urls: [["BT-EX メンバーの方", url("member")], ["外部非会員の方", url("visitor")]] });
+      deck("survey", { name: D.survey.title, step: endLabel, lead: D.survey.lead, urls: [["BT-EX メンバーの方", url("member")], ["ビジターの方", url("visitor")]] });
     }
     if (D.attend) deck("attend", Object.assign({ step: endLabel }, D.attend, { name: D.attend.title, msg: D.attend.lead, lead: "", code: more.code || "" }));
     deck("closing", { name: "本日もありがとうございました", step: "おわり" });
