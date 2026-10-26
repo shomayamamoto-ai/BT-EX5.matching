@@ -42,7 +42,7 @@ const REF_CATEGORY_GROUPS = [
 // (例: 本業がシステム開発でも、Web制作を扱う人は「Web制作」に出る)。
 // その業種の仕事を「自分で作れる」話題だけを入れる(公式LINEの運用・パーソナルブランディング・
 // SEO だけの人が、システム開発・デザイン・Web制作に出ないように)。
-// システム開発は「システム開発・業務効率化」を扱う人(山本さん・栁橋さん)
+// システム開発は「システム開発・業務効率化」を扱う人(山本さん・大小原さん)
 const REF_CATEGORY_TOPICS = {
   "AI研修・AI活用": ["ai", "aitraining"],
   "システム開発": ["efficiency"],
@@ -59,8 +59,12 @@ const REF_CATEGORY_TOPICS = {
 // 前に使っていた業種名(保存済みの名簿は、読み込むときに新しい業種へ置き換える)
 const REF_LEGACY_CATEGORIES = ["IT・Web・クリエイティブ", "音楽・作詞作曲・声"];
 
+// 話題があっても、その業種には出さない人(本人の仕事ではないもの。運営の依頼)
+const REF_CATEGORY_EXCLUDE = { "システム開発": ["m24"] }; // 栁橋 雅也さん
+
 function refInCategory(m, c) {
   if (m.category === c) return true;
+  if ((REF_CATEGORY_EXCLUDE[c] || []).includes(m.id)) return false;
   const topics = REF_CATEGORY_TOPICS[c];
   return !!topics && (m.topics || []).some((t) => topics.includes(t));
 }
