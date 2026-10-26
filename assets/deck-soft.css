@@ -126,7 +126,14 @@
 .pr-run.deck-soft .pr-next p.is-first { color: var(--pd-strong); }
 .pr-run.deck-soft .pr-scale { color: var(--pd-muted); }
 .pr-run.deck-soft .pr-scale span::before { background: rgba(217, 119, 107, 0.5); }
-.pr-run.deck-soft .pr-meter i { --c: #d9776b; opacity: 0.16; }
+/* 残り時間のメーター: 残っているぶんはコーラルではっきり、過ぎたぶんは淡いグレー。終わりぎわはオレンジ → 赤 */
+.pr-run.deck-soft .pr-meter i { --c: #d9776b; background: #ebe1dd; opacity: 1; }
+.pr-run.deck-soft .pr-meter i.is-orange { --c: #e8892a; }
+.pr-run.deck-soft .pr-meter i.is-red { --c: #d64535; }
+.pr-run.deck-soft .pr-meter i.is-on { background: var(--c); box-shadow: 0 3px 8px color-mix(in srgb, var(--c) 35%, transparent); }
+.pr-run.deck-soft .pr-scale { color: #6f5f57; }
+/* 数字は高さのそろった形に(「4:52」の数字が上下にずれて見えないように) */
+.pr-run.deck-soft .pr-sec-num, .pr-run.deck-soft .pr-big-time, .pr-run.deck-soft .pt-clock, .pr-run.deck-soft .pr-break-num { font-variant-numeric: lining-nums tabular-nums; font-feature-settings: "lnum" 1, "tnum" 1; }
 .pr-run.deck-soft .pr-sec small, .pr-run.deck-soft .pr-ask { color: var(--pd-muted); }
 .pr-run.deck-soft .pr-sec-num { color: var(--pd-strong); }
 .pr-run.deck-soft.is-last .pr-sec-num { color: #d9822b; }
