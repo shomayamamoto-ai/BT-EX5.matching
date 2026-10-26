@@ -6,17 +6,17 @@
   <meta name="referrer" content="no-referrer">
   <meta name="robots" content="noindex">
   <title>定例会のアンケート | BT-EX5</title>
-  <link rel="icon" type="image/svg+xml" href="../assets/bt-ex5-mark.svg?v=202610260940">
+  <link rel="icon" type="image/svg+xml" href="../assets/bt-ex5-mark.svg?v=202610260948">
   <meta name="theme-color" content="#faf6f4">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Noto+Sans+JP:wght@400;700;900&display=swap" onload="this.onload=null;this.rel='stylesheet'">
   <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Noto+Sans+JP:wght@400;700;900&display=swap"></noscript>
-  <link rel="stylesheet" href="../auth/auth.css?v=202610260940">
-  <link rel="stylesheet" href="../visit/visit.css?v=202610260940">
-  <link rel="stylesheet" href="survey.css?v=202610260940">
-  <link rel="stylesheet" href="../assets/lux.css?v=202610260940">
-  <link rel="stylesheet" href="../assets/soft.css?v=202610260940">
-  <script src="../assets/ime-guard.js?v=202610260940"></script>
+  <link rel="stylesheet" href="../auth/auth.css?v=202610260948">
+  <link rel="stylesheet" href="../visit/visit.css?v=202610260948">
+  <link rel="stylesheet" href="survey.css?v=202610260948">
+  <link rel="stylesheet" href="../assets/lux.css?v=202610260948">
+  <link rel="stylesheet" href="../assets/soft.css?v=202610260948">
+  <script src="../assets/ime-guard.js?v=202610260948"></script>
 </head>
 <body>
   <main class="auth-main">
@@ -55,13 +55,18 @@
           </fieldset>
         </div>
 
-        <div class="auth-field"><label for="sv-score" id="sv-score-label">BT-EXの仕組みや定例会は、自身やチームメンバーのビジネスを加速させる可能性を感じましたか? <span class="visit-req">必須</span></label><select id="sv-score"></select></div>
-        <div class="auth-field"><label for="sv-program">特に良かったプログラムはなんですか? <span class="visit-req">必須</span></label><select id="sv-program"></select>
+        <h2 class="sv-sec">本日のご感想 <small>ほとんどの質問は、選ぶだけで答えられます</small></h2>
+        <div class="auth-field sv-q"><p class="sv-q-label" id="sv-score-label"><span class="sv-qn"></span><span id="sv-score-text">BT-EXの仕組みや定例会は、自身やチームメンバーのビジネスを加速させる可能性を感じましたか?</span> <span class="visit-req">必須</span></p><div id="sv-score" class="sv-chips is-list" role="radiogroup" aria-labelledby="sv-score-label"></div></div>
+        <div class="auth-field sv-q"><p class="sv-q-label" id="sv-program-label"><span class="sv-qn"></span>特に良かったプログラムはどれですか? <span class="visit-req">必須</span></p><div id="sv-program" class="sv-chips" role="radiogroup" aria-labelledby="sv-program-label"></div>
           <input type="text" id="sv-program-other" maxlength="80" placeholder="その他の内容" hidden></div>
-        <div data-for="member" class="auth-field"><label for="sv-adopt">自ユニットに取り入れたいこと</label><textarea id="sv-adopt" rows="2" maxlength="800"></textarea></div>
-        <div data-for="visitor" class="auth-field" hidden><label for="sv-interest">BT-EX5 への入会に興味はありますか? <span class="visit-req">必須</span></label><select id="sv-interest"></select></div>
-        <div class="auth-field"><label for="sv-reason">上記の回答をした理由を教えてください。 <span class="visit-req">必須</span></label><textarea id="sv-reason" rows="3" maxlength="800"></textarea></div>
-        <div class="auth-field"><label for="sv-comment">本日のBT-EX5の定例会に関して、ご感想・ご質問・ご提案などありましたらご記入ください。 <span class="visit-req">必須</span></label><textarea id="sv-comment" rows="4" maxlength="1200"></textarea></div>
+        <div class="auth-field sv-q"><label for="sv-reason" class="sv-q-label"><span class="sv-qn"></span>そう感じた理由や、印象に残ったことをひとことで <span class="sv-opt">任意</span></label><textarea id="sv-reason" rows="2" maxlength="800"></textarea></div>
+        <div class="auth-field sv-q"><p class="sv-q-label" id="sv-meet-label"><span class="sv-qn"></span><span id="sv-meet-text">今日、紹介や商談につながりそうな出会いはありましたか?</span> <span class="visit-req">必須</span></p><div id="sv-meet" class="sv-chips" role="radiogroup" aria-labelledby="sv-meet-label"></div></div>
+        <div data-for="visitor" class="auth-field sv-q" hidden><p class="sv-q-label" id="sv-interest-label"><span class="sv-qn"></span>BT-EX5 への入会に興味はありますか? <span class="visit-req">必須</span></p><div id="sv-interest" class="sv-chips" role="radiogroup" aria-labelledby="sv-interest-label"></div></div>
+        <div class="auth-field sv-q"><p class="sv-q-label" id="sv-improve-label"><span class="sv-qn"></span>次回もっと良くするなら、どこですか?(いくつでも) <span class="visit-req">必須</span></p><div id="sv-improve" class="sv-chips" role="group" aria-labelledby="sv-improve-label"></div></div>
+        <div class="auth-field sv-q"><p class="sv-q-label" id="sv-fix-label"><span class="sv-qn"></span>いちばん見直してほしいプログラムはありますか? <span class="sv-opt">任意</span></p><div id="sv-fix" class="sv-chips" role="radiogroup" aria-labelledby="sv-fix-label"></div></div>
+        <div class="auth-field sv-q"><p class="sv-q-label" id="sv-length-label"><span class="sv-qn"></span>定例会全体の長さはいかがでしたか? <span class="visit-req">必須</span></p><div id="sv-length" class="sv-chips is-scale" role="radiogroup" aria-labelledby="sv-length-label"></div></div>
+        <div class="auth-field sv-q"><label for="sv-comment" class="sv-q-label"><span class="sv-qn"></span>「次回こうなったら、もっと良くなる」と思うことがあれば教えてください(ご質問・ご感想もどうぞ) <span class="sv-opt">任意</span></label><textarea id="sv-comment" rows="3" maxlength="1200"></textarea></div>
+        <div data-for="member" class="auth-field sv-q"><label for="sv-adopt" class="sv-q-label"><span class="sv-qn"></span>自ユニットに取り入れたいことはありましたか? <span class="sv-opt">任意</span></label><textarea id="sv-adopt" rows="2" maxlength="800" placeholder="例:用語説明のコーナー/タイムマネジメントの見せ方"></textarea></div>
         <input type="text" id="sv-website" class="sv-hp" tabindex="-1" autocomplete="off" aria-hidden="true">
         <p class="visit-note sv-note">ご回答は BT-EX5 の運営だけが見て、<br>定例会をよくするために使います。</p>
         <button type="submit" class="auth-submit" id="sv-submit">送信</button>
@@ -77,9 +82,9 @@
   <footer class="auth-footer">
     <p class="site-copy">© 2026 BT-EX5</p>
   </footer>
-  <script src="../referral/data.js?v=202610260940"></script>
-  <script src="../auth/api.js?v=202610260940"></script>
-  <script src="../assets/bt-teams.js?v=202610260940"></script>
-  <script src="survey.js?v=202610260940"></script>
+  <script src="../referral/data.js?v=202610260948"></script>
+  <script src="../auth/api.js?v=202610260948"></script>
+  <script src="../assets/bt-teams.js?v=202610260948"></script>
+  <script src="survey.js?v=202610260948"></script>
 </body>
 </html>

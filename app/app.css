@@ -3157,3 +3157,7 @@ button.home-welcome-check:active { transform: scale(0.94); }
 .svx .sv-bar-track { border-radius: 999px; }
 .svx .sv-bar-track i { border-radius: 999px; background: linear-gradient(90deg, #e9a296, var(--svx-accent)); }
 @media (max-width: 760px) { .svx .svx-hero::before, .svx .svx-hero::after { display: none; } .svx .svx-script { font-size: 34px; } }
+/* アンケートの結果: 改善点の補足・改善のヒントの選んだ答え */
+.sd-note { margin: 10px 0 0; font-size: 12.5px; color: var(--text-sub); }
+.sv-res-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+.sv-res-tags em { font-style: normal; font-size: 11.5px; font-weight: 700; padding: 1px 8px; border-radius: 999px; background: #fbe9e5; color: #b4554a; }

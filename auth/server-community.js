@@ -2788,6 +2788,10 @@
   // ============================================
   var SURVEY_SCORES = ["とても感じた", "感じた", "どちらともいえない", "あまり感じなかった", "感じなかった"];
   var SURVEY_INTEREST = ["ぜひ入会したい", "詳しく話を聞きたい", "今は考えていない"];
+  // 改善点・時間の長さ・出会い(押して選ぶ質問。改善点を数で集計するため)
+  var SURVEY_IMPROVE = ["時間配分・進行のテンポ", "音声・映像・接続", "説明のわかりやすさ", "商談(ブレイクアウト)の時間・組み合わせ", "プレゼンの長さ・順番", "事前の案内・資料", "参加者どうしの交流", "特になし(このままでよい)"];
+  var SURVEY_LENGTH = ["短い", "ちょうどよい", "長い"];
+  var SURVEY_MEET = { member: ["1on1・商談の約束をした", "これから声をかけたい人がいる", "今回はなかった"], visitor: ["また話したい人がいた", "少しいた", "いなかった"] };
   var SURVEY_MAX = 3000; // 保存しておく回答の数
   var SURVEY_DAY_MAX = 600; // 1日に受け付ける回答の数(いたずら対策)
   BtexServerCore.registerModule({
@@ -2811,14 +2815,22 @@
         var last = c.cleanStr(body.last, 30), first = c.cleanStr(body.first, 30);
         var email = c.cleanStr(body.email, 120);
         var score = SURVEY_SCORES.indexOf(String(body.score || ""));
-        var reason = c.cleanStr(body.reason, 800), comment = c.cleanStr(body.comment, 1200);
+        // 理由・感想は任意(空のときの「(記入なし)」は空に。感想の最後の「【選んだ答え】…」の行は、下で項目として残すので外す)
+        var reason = c.cleanStr(body.reason, 800), comment = c.cleanStr(body.comment, 1400);
+        if (reason === "(記入なし)") reason = "";
+        comment = comment.replace(/\n?【選んだ答え】[^\n]*$/, "").trim().slice(0, 1200);
         var program = c.cleanStr(body.program, 80);
-        if (!date || !last || !first || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || score < 0 || !program || !reason || !comment) {
+        if (!date || !last || !first || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || score < 0 || !program) {
           return c.fail("INVALID_REQUEST", "必須の項目を入れてください。");
         }
+        var improve = (Array.isArray(body.improve) ? body.improve : []).map(String).filter(function (x, i, a) { return SURVEY_IMPROVE.indexOf(x) !== -1 && a.indexOf(x) === i; });
         var r = {
           kind: kind, eventId: c.cleanStr(body.eventId, 40), date: date, last: last, first: first, email: email,
           score: score, program: program, reason: reason, comment: comment,
+          improve: improve,
+          length: SURVEY_LENGTH.indexOf(String(body.length || "")) !== -1 ? String(body.length) : "",
+          meet: SURVEY_MEET[kind].indexOf(String(body.meet || "")) !== -1 ? String(body.meet) : "",
+          fix: c.cleanStr(body.fix, 80),
         };
         if (kind === "member") {
           r.unit = c.cleanStr(body.unit, 12); r.lineage = c.cleanStr(body.lineage, 100); r.job = c.cleanStr(body.job, 80);
@@ -2847,7 +2859,7 @@
         var e = canRead(db, body.sessionToken);
         if (e) return e;
         var list = (db.surveys || []).slice().sort(function (a, b) { return (b.at || 0) - (a.at || 0); });
-        return c.ok({ items: list, scores: SURVEY_SCORES, interests: SURVEY_INTEREST });
+        return c.ok({ items: list, scores: SURVEY_SCORES, interests: SURVEY_INTEREST, improves: SURVEY_IMPROVE, lengths: SURVEY_LENGTH, meets: SURVEY_MEET });
       }
       function adminDeleteSurvey(body) {
         var db = c.ensureDb();

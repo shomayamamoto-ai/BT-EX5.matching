@@ -7,6 +7,30 @@
   "use strict";
   const h = App.h;
   const POINT = [5, 4, 3, 2, 1]; // とても感じた=5 … 感じなかった=1
+  // 押して選ぶ質問(改善点・全体の長さ・出会い)。サーバーから届かないとき(古い版)はこの一覧を使う
+  let IMPROVE = ["時間配分・進行のテンポ", "音声・映像・接続", "説明のわかりやすさ", "商談(ブレイクアウト)の時間・組み合わせ", "プレゼンの長さ・順番", "事前の案内・資料", "参加者どうしの交流", "特になし(このままでよい)"];
+  let LENGTHS = ["短い", "ちょうどよい", "長い"];
+  let MEETS = { member: ["1on1・商談の約束をした", "これから声をかけたい人がいる", "今回はなかった"], visitor: ["また話したい人がいた", "少しいた", "いなかった"] };
+  const NO_IMPROVE = () => IMPROVE[IMPROVE.length - 1];
+  // 回答をそろえる: 古い版の共有サーバーでは、選んだ答えが感想の最後の「【選んだ答え】…」の行にだけ残るので、そこから読み取る。
+  // 書く欄が空のときの「(記入なし)」は空にする
+  function norm(x) {
+    const y = Object.assign({}, x);
+    if (y.reason === "(記入なし)") y.reason = "";
+    const m = /\n?【選んだ答え】([^\n]*)$/.exec(String(y.comment || ""));
+    if (m) {
+      y.comment = String(y.comment).slice(0, m.index).trim();
+      const part = (label) => { const r = new RegExp(`${label}: ([^/]*)`).exec(m[1]); return r ? r[1].trim() : ""; };
+      if (!Array.isArray(y.improve) || !y.improve.length) y.improve = part("もっと良くするなら").split("、").filter(Boolean);
+      if (!y.length) y.length = part("全体の長さ");
+      if (!y.meet) y.meet = part("出会い");
+      if (!y.fix) y.fix = part("見直してほしいプログラム");
+    }
+    if (!Array.isArray(y.improve)) y.improve = [];
+    return y;
+  }
+  // 出会いがあった(1つ目・2つ目の答え)
+  const met = (x) => { const list = MEETS[x.kind] || []; return !!x.meet && list.indexOf(x.meet) >= 0 && list.indexOf(x.meet) < 2; };
 
   // 横棒(数の多い順。いちばん多いものを100%として長さを決める)
   function bars(rows, total) {
@@ -21,11 +45,11 @@
 
   function csv(items, kind, scores) {
     const head = kind === "member"
-      ? ["回答日時", "定例会参加日", "姓", "名", "メールアドレス", "所属ユニット", "B.T.内系列名", "職業", "アップクリエ氏名", "可能性を感じたか", "特に良かったプログラム", "自ユニットに取り入れたいこと", "理由", "感想・質問・提案"]
-      : ["回答日時", "定例会参加日", "姓", "名", "メールアドレス", "会社名・職業", "招待者", "LINK会員", "可能性を感じたか", "特に良かったプログラム", "入会への興味", "理由", "感想・質問・提案"];
+      ? ["回答日時", "定例会参加日", "姓", "名", "メールアドレス", "所属ユニット", "B.T.内系列名", "職業", "アップクリエ氏名", "可能性を感じたか", "特に良かったプログラム", "自ユニットに取り入れたいこと", "理由・印象に残ったこと", "出会い", "もっと良くするなら", "見直してほしいプログラム", "全体の長さ", "次回こうなったら・感想"]
+      : ["回答日時", "定例会参加日", "姓", "名", "メールアドレス", "会社名・職業", "招待者", "LINK会員", "可能性を感じたか", "特に良かったプログラム", "入会への興味", "理由・印象に残ったこと", "また話したいメンバー", "もっと良くするなら", "見直してほしいプログラム", "全体の長さ", "次回こうなったら・感想"];
     const row = (x) => (kind === "member"
-      ? [fmtAt(x.at), x.date, x.last, x.first, x.email, x.unit, x.lineage, x.job, x.upcre, scores[x.score], x.program, x.adopt, x.reason, x.comment]
-      : [fmtAt(x.at), x.date, x.last, x.first, x.email, x.job, x.inviter, x.link === "yes" ? "はい" : x.link === "no" ? "いいえ" : "", scores[x.score], x.program, x.interest, x.reason, x.comment]);
+      ? [fmtAt(x.at), x.date, x.last, x.first, x.email, x.unit, x.lineage, x.job, x.upcre, scores[x.score], x.program, x.adopt, x.reason, x.meet, x.improve.join("、"), x.fix, x.length, x.comment]
+      : [fmtAt(x.at), x.date, x.last, x.first, x.email, x.job, x.inviter, x.link === "yes" ? "はい" : x.link === "no" ? "いいえ" : "", scores[x.score], x.program, x.interest, x.reason, x.meet, x.improve.join("、"), x.fix, x.length, x.comment]);
     const esc = (v) => `"${String(v === undefined || v === null ? "" : v).replace(/"/g, '""')}"`;
     const text = [head, ...items.map(row)].map((r) => r.map(esc).join(",")).join("\r\n");
     const a = h("a", { href: URL.createObjectURL(new Blob(["﻿" + text], { type: "text/csv" })), download: `survey-${kind}-${new Date().toISOString().slice(0, 10)}.csv` });
@@ -78,6 +102,30 @@
       (warm / Math.max(1, n) >= 0.5 ? strengths : issues).push(`入会に前向き(ぜひ入会したい+詳しく話を聞きたい)は ${warm}件(${pct(warm)})。前向きな方には早めにフォローを。`);
       const notNow = list.filter((x) => x.interest === "今は考えていない").length;
       if (notNow) issues.push(`「今は考えていない」が ${notNow}件。理由を読み、入会の価値の伝え方を見直しましょう。`);
+    }
+    // もっと良くするなら(押して選んだ改善点)・見直してほしいプログラム・全体の長さ・出会い
+    const answered = list.filter((x) => x.improve.length);
+    if (answered.length) {
+      const imp = countBy(answered.flatMap((x) => x.improve.map((v) => ({ v }))), (o) => (o.v === NO_IMPROVE() ? "" : o.v));
+      const okN = answered.filter((x) => x.improve.includes(NO_IMPROVE())).length;
+      if (imp.length) issues.push(`もっと良くしてほしいところは「${imp.slice(0, 2).map(([k, v]) => `${k}」(${v}件)`).join("・「")}が多くなっています。`);
+      if (okN / answered.length >= 0.5) strengths.push(`「特になし(このままでよい)」が ${okN}件(${Math.round((okN / answered.length) * 100)}%)。いまの形が受け入れられています。`);
+    }
+    const fixes = countBy(list, (x) => x.fix);
+    if (fixes.length) issues.push(`いちばん見直してほしいプログラムは「${fixes[0][0]}」(${fixes[0][1]}件)。`);
+    const lenAns = list.filter((x) => x.length);
+    if (lenAns.length) {
+      const long = lenAns.filter((x) => x.length === "長い").length, short = lenAns.filter((x) => x.length === "短い").length, just = lenAns.length - long - short;
+      const p2 = (v) => Math.round((v / lenAns.length) * 100);
+      if (p2(just) >= 60) strengths.push(`全体の長さは「ちょうどよい」が ${p2(just)}%。`);
+      if (p2(long) >= 25) issues.push(`全体の長さを「長い」と感じた方が ${p2(long)}%。時間の短いプログラムを中心に見直しを。`);
+      if (p2(short) >= 25) issues.push(`全体の長さを「短い」と感じた方が ${p2(short)}%。商談や交流の時間をのばす余地があります。`);
+    }
+    const meetAns = list.filter((x) => x.meet);
+    if (meetAns.length) {
+      const yes = meetAns.filter(met).length, p3 = Math.round((yes / meetAns.length) * 100);
+      const what = kind === "visitor" ? "また話したいメンバーがいた" : "紹介や商談につながりそうな出会いがあった";
+      (p3 >= 60 ? strengths : issues).push(`「${what}」は ${p3}%(${yes}件)。${p3 >= 60 ? "" : "交流・商談の組み合わせ方を工夫しましょう。"}`);
     }
     // 回ごとの変化(同じ種類の回答で、いちばん新しい回と1つ前の回をくらべる)
     const ofKind = all.filter((x) => x.kind === kind);
@@ -164,7 +212,7 @@
       kpi("thanks", "blue", "「感じた」以上", `${pctOf(list, (x) => x.score <= 1)}%`, delta(pctOf(cur, (x) => x.score <= 1), prev ? pctOf(prev, (x) => x.score <= 1) : 0, "pt"), "とても感じた+感じた"),
       kind === "visitor"
         ? kpi("visitor", "teal", "入会に前向き", `${pctOf(list, warm)}%`, delta(pctOf(cur, warm), prev ? pctOf(prev, warm) : 0, "pt"), "ぜひ入会したい+詳しく話を聞きたい")
-        : kpi("one", "violet", "所属ユニットの数", `${new Set(list.map((x) => x.unit).filter(Boolean)).size}`, delta(new Set(cur.map((x) => x.unit)).size, prev ? new Set(prev.map((x) => x.unit)).size : 0, ""), "回答してくれたユニット"));
+        : kpi("one", "violet", "出会いがあった", `${pctOf(list.filter((x) => x.meet), met)}%`, delta(pctOf(cur.filter((x) => x.meet), met), prev ? pctOf(prev.filter((x) => x.meet), met) : 0, "pt"), "1on1・商談の約束+声をかけたい人"));
     // 回ごとの推移(折れ線): 可能性の平均・回答数
     const TREND = [["avg", "可能性の平均", (v) => `${v.toFixed(1)} / 5`], ["count", "回答数", (v) => `${v}件`], ["good", "「感じた」以上", (v) => `${v}%`]];
     let tk = "avg";
@@ -191,8 +239,29 @@
       ? h("section", { class: "sd-card" }, h("div", { class: "sd-card-head" }, h("h3", null, "入会への興味")),
         C.donut ? C.donut(Object.keys(INTEREST_COLORS).map((k) => ({ label: k, value: list.filter((x) => x.interest === k).length, color: INTEREST_COLORS[k] })), "回答", "件") : bars(countBy(list, (x) => x.interest), n))
       : h("section", { class: "sd-card" }, h("div", { class: "sd-card-head" }, h("h3", null, "所属ユニット")), bars(countBy(list, (x) => x.unit), n));
+    // 改善点(押して選んだ答え)
+    const withImp = list.filter((x) => x.improve.length);
+    const okN = withImp.filter((x) => x.improve.includes(NO_IMPROVE())).length;
+    const impRows = countBy(withImp.flatMap((x) => x.improve.map((v) => ({ v }))), (o) => (o.v === NO_IMPROVE() ? "" : o.v));
+    const impCard = h("section", { class: "sd-card" }, h("div", { class: "sd-card-head" }, h("h3", null, "もっと良くするなら(いくつでも)")),
+      impRows.length ? bars(impRows, withImp.length) : h("p", { class: "sd-empty" }, withImp.length ? "改善してほしいところは選ばれていません。" : "この質問の回答はまだありません。"),
+      withImp.length ? h("p", { class: "sd-note" }, `「特になし(このままでよい)」: ${okN}件 / ${withImp.length}件中`) : null);
+    const fixRows = countBy(list, (x) => x.fix);
+    const fixCard = h("section", { class: "sd-card" }, h("div", { class: "sd-card-head" }, h("h3", null, "いちばん見直してほしいプログラム")),
+      fixRows.length ? bars(fixRows.slice(0, 8), list.filter((x) => x.fix).length) : h("p", { class: "sd-empty" }, "選ばれたプログラムはまだありません。"));
+    const LEN_COLORS = { "短い": "#7fa7d6", "ちょうどよい": "#58b88a", "長い": "#e0861a" };
+    const lenList = list.filter((x) => x.length);
+    const lenCard = h("section", { class: "sd-card" }, h("div", { class: "sd-card-head" }, h("h3", null, "定例会全体の長さ")),
+      !lenList.length ? h("p", { class: "sd-empty" }, "この質問の回答はまだありません。")
+        : C.donut ? C.donut(LENGTHS.map((k) => ({ label: k, value: lenList.filter((x) => x.length === k).length, color: LEN_COLORS[k] || "#bdb2a6" })), "回答", "件") : bars(LENGTHS.map((k) => [k, lenList.filter((x) => x.length === k).length]), lenList.length));
+    const meetList = list.filter((x) => x.meet);
+    const MEET_COLORS = ["#16865a", "#58b88a", "#bdb2a6"];
+    const meetCard = h("section", { class: "sd-card" }, h("div", { class: "sd-card-head" }, h("h3", null, kind === "visitor" ? "また話したいメンバーはいたか" : "紹介や商談につながる出会い")),
+      !meetList.length ? h("p", { class: "sd-empty" }, "この質問の回答はまだありません。")
+        : C.donut ? C.donut((MEETS[kind] || []).map((k, i) => ({ label: k, value: meetList.filter((x) => x.meet === k).length, color: MEET_COLORS[i] })), "回答", "件") : bars((MEETS[kind] || []).map((k) => [k, meetList.filter((x) => x.meet === k).length]), meetList.length));
     return [
       band("Summary", "数字で見る", h("div", { class: "sv-dash" }, kpis)),
+      band("Improve", "次回に向けて良くするところ", h("div", { class: "sv-dash" }, h("div", { class: "sd-row is-half" }, impCard, fixCard), h("div", { class: "sd-row is-half" }, lenCard, meetCard))),
       band("Trend", "回ごとの推移と内訳", h("div", { class: "sv-dash" }, h("div", { class: "sd-row" }, trendCard, scoreCard))),
       band("Ranking", kind === "visitor" ? "良かったプログラムと入会への興味" : "良かったプログラムと所属ユニット", h("div", { class: "sv-dash" }, h("div", { class: "sd-row is-half" }, progCard, sideCard))),
     ];
@@ -202,7 +271,10 @@
     const d = await App.api("listSurveys", {});
     if (!d) return;
     const scores = d.scores || [];
-    let all = d.items || [];
+    if (Array.isArray(d.improves)) IMPROVE = d.improves;
+    if (Array.isArray(d.lengths)) LENGTHS = d.lengths;
+    if (d.meets) MEETS = d.meets;
+    let all = (d.items || []).map(norm);
     let kind = "member", date = "";
     App.openSheet("アンケートの結果", (body) => {
       const box = h("div", { class: "sv-res" });
@@ -228,7 +300,8 @@
           n && kind === "member" && list.some((x) => x.adopt) ? band("Idea", "自ユニットに取り入れたいこと", h("section", { class: "sv-res-sec" },
             h("ul", { class: "sv-res-quotes" }, list.filter((x) => x.adopt).map((x) => h("li", null, x.adopt, h("small", null, `${x.unit} ${x.last}さん`)))))) : null,
           n ? band("Hint", "改善のヒント(「どちらともいえない」以下の回答)", h("section", { class: "sv-res-sec is-improve" },
-            low.length ? h("ul", { class: "sv-res-quotes" }, low.map((x) => h("li", null, h("b", null, scores[x.score]), ` ${x.reason}`, x.comment ? h("span", null, ` / ${x.comment}`) : null, h("small", null, `${x.date} ${x.last}さん`))))
+            low.length ? h("ul", { class: "sv-res-quotes" }, low.map((x) => h("li", null, h("b", null, scores[x.score]), x.reason ? ` ${x.reason}` : "", x.comment ? h("span", null, ` / ${x.comment}`) : null,
+              x.improve.length && !x.improve.includes(NO_IMPROVE()) ? h("span", { class: "sv-res-tags" }, x.improve.map((v) => h("em", null, v))) : null, h("small", null, `${x.date} ${x.last}さん`))))
               : h("p", { class: "app-field-hint" }, "いまのところ、低い評価の回答はありません。"))) : null,
           band("Answers", `回答の一覧(${n}件)`, h("section", { class: "sv-res-sec" },
             n ? h("ul", { class: "sv-res-list" }, list.map((x) => h("li", null,
@@ -237,7 +310,7 @@
                 h("dl", null,
                   ...(kind === "member"
                     ? [["メール", x.email], ["系列", x.lineage], ["職業", x.job], ["アップクリエ", x.upcre]]
-                    : [["メール", x.email], ["招待者", x.inviter], ["LINK会員", x.link === "yes" ? "はい" : x.link === "no" ? "いいえ" : "—"], ["入会への興味", x.interest]]).concat([["良かったプログラム", x.program], ["理由", x.reason], ["感想・質問・提案", x.comment]], kind === "member" && x.adopt ? [["取り入れたいこと", x.adopt]] : [])
+                    : [["メール", x.email], ["招待者", x.inviter], ["LINK会員", x.link === "yes" ? "はい" : x.link === "no" ? "いいえ" : "—"], ["入会への興味", x.interest]]).concat([["良かったプログラム", x.program], ["理由・印象に残ったこと", x.reason], [kind === "visitor" ? "また話したいメンバー" : "出会い", x.meet], ["もっと良くするなら", x.improve.join("、")], ["見直してほしいプログラム", x.fix], ["全体の長さ", x.length], ["次回こうなったら・感想", x.comment]], kind === "member" && x.adopt ? [["取り入れたいこと", x.adopt]] : [])
                     .flatMap(([k, v]) => [h("dt", null, k), h("dd", null, v || "—")])),
                 App.btn("この回答を消す", async () => {
                   if (!(await App.confirm(`${x.last} ${x.first}さんの回答を消しますか?`, { ok: "消す", danger: true }))) return;
@@ -260,7 +333,7 @@
         const now = sig(items);
         if (now === last) return;
         const added = items.length - all.length;
-        last = now; all = items;
+        last = now; all = items.map(norm);
         // 開いていた回答の詳しい中身は、描き直したあとも開いたままにする
         const open = new Set([...box.querySelectorAll("details[open]")].map((d) => d.dataset.id));
         draw();

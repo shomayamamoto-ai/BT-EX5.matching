@@ -18,3 +18,23 @@
 #sv-form input[type="date"]::-webkit-date-and-time-value { text-align: left; }
 /* 送信ボタンの上の一文: 2行で中央に */
 #sv-form .sv-note { text-align: center; line-height: 1.7; }
+/* 質問(番号つき)と、押して選ぶボタン */
+.sv-sec { margin: 22px 0 12px; padding-top: 16px; border-top: 1px solid #f0e3de; font-size: 17px; text-align: center; }
+.sv-sec small { display: block; margin-top: 2px; font-size: 12.5px; font-weight: 500; color: #7a6a62; font-family: "Noto Sans JP", sans-serif; letter-spacing: 0.02em; }
+.sv-q { margin-bottom: 18px; }
+.sv-q-label { display: block; margin: 0 0 8px; font-size: 14.5px; font-weight: 700; line-height: 1.6; }
+.sv-qn { display: inline-grid; place-items: center; min-width: 30px; height: 22px; margin-right: 6px; padding: 0 6px; border-radius: 999px; background: #fbe9e5; color: #b4554a; font-size: 12px; font-weight: 800; vertical-align: 1px; }
+.sv-qn:empty { display: none; }
+.sv-opt { font-size: 11.5px; font-weight: 700; color: #7a6a62; background: #f3ece9; border-radius: 999px; padding: 1px 8px; margin-left: 4px; }
+.sv-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.sv-chips.is-scale { display: grid; grid-template-columns: repeat(auto-fit, minmax(88px, 1fr)); }
+.sv-chip { min-height: 44px; padding: 8px 14px; border: 1.5px solid #e6cfc8; border-radius: 999px; background: #fff; font: inherit; font-size: 14px; font-weight: 700; line-height: 1.35; color: #3f322c; cursor: pointer; transition: background 0.15s, border-color 0.15s, color 0.15s, box-shadow 0.15s; }
+.sv-chips.is-scale .sv-chip { padding: 8px 6px; font-size: 13px; }
+.sv-chip:hover { border-color: #d9776b; }
+.sv-chip.is-on { background: linear-gradient(120deg, #dc8073, #b9564c); border-color: transparent; color: #fff; box-shadow: 0 6px 16px rgba(201, 98, 86, 0.28); }
+.sv-chip.is-only:not(.is-on) { border-style: dashed; color: #6f5f57; }
+.sv-chip:focus-visible { outline: 2px solid #b4554a; outline-offset: 2px; }
+#sv-reason::placeholder, #sv-comment::placeholder, #sv-adopt::placeholder { color: #a8968e; font-size: 14px; }
+.sv-chips.is-list { display: grid; grid-template-columns: 1fr; gap: 6px; }
+.sv-chips.is-list .sv-chip { text-align: left; border-radius: 14px; padding: 9px 16px; }
+@media (min-width: 560px) { .sv-chips.is-list { grid-template-columns: repeat(5, 1fr); } .sv-chips.is-list .sv-chip { text-align: center; padding: 8px 6px; font-size: 13px; } }

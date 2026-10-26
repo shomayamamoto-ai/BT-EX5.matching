@@ -2606,7 +2606,7 @@ const REF_SEED_ANNOUNCEMENTS = [
   {
     seedId: "2026-10-25-update-16",
     cat: "アップデート",
-    rev: 67,
+    rev: 68,
     at: Date.UTC(2026, 9, 25, 4, 0), // 2026/10/25 13:00(日本時間)
     title: "【アップデート】紹介診断に「相手がこう言っていたら」・アンケート・運営タブ など",
     body: [
@@ -2623,6 +2623,8 @@ const REF_SEED_ANNOUNCEMENTS = [
       "・用語説明の「リファーラル」を「貢献（リファーラル）」にし、一覧でもポップアップでも必ず1行で出るようにしました(入りきらない画面では文字を少し小さくします)。",
       "・「アンケートの結果」の画面を、やわらかく上品なデザインにしました(英字の筆記体の見出しと日本語の小見出し、白い角の丸いカード、コーラルピンクの差し色、丸いボタン)。",
       "・サイト全体のデザインを、やわらかく上品な見た目に変えました。地はうすいピンクベージュに淡い葉の線画、上の帯と下のメニューは白、差し色はコーラルピンク、ボタンは丸い形、カードは白く角を大きく丸めています。各ページの見出しには、英字の筆記体(Schedule・Record・Board・Referral・Survey など)を添えました。アンケート・ログイン・ビジター申し込み・早見表・紹介診断・全体分析・プロフィールも同じデザインです。定例会のスライドは、会場のスクリーンで見やすいよう、これまでの黒×金のままです。",
+      "・アンケートの質問を、答えやすく、定例会の改善に使いやすい形にしました。ほとんどの質問は押して選ぶだけで答えられます(質問に Q1〜Q9 の番号つき)。新しく「今日、紹介や商談につながりそうな出会いはありましたか?」(ビジターは「また話してみたいメンバーはいましたか?」)、「次回もっと良くするなら、どこですか?(いくつでも)」(時間配分・音声・説明・商談の時間や組み合わせ・プレゼンの長さ・事前の案内・交流/特になし)、「いちばん見直してほしいプログラム」(任意)、「定例会全体の長さ」(短い・ちょうどよい・長い)を聞きます。文を書く欄(理由・次回こうなったら)は任意にし、書き方の例を薄く出しました。",
+      "・「アンケートの結果」に「次回に向けて良くするところ」を足しました(もっと良くしてほしいところの順位、見直してほしいプログラム、全体の長さ、出会いがあったかの割合)。改善点のまとめ(自動)も、これらの数から「どこを直すとよいか」を書き出します。BT-EX メンバーの数字のカードは「出会いがあった」の割合にしました。",
       "・アンケートの「B.T.内系列名」と、ビジター申し込みの「所属チーム」を、文字で入れる形から押して選ぶ形にしました。すべてのチームが系列ごとに「チーム名/直上の方」のボタンで並ぶので、1つ押して選びます(一覧にないときは「一覧にない」から文字で入れられます)。見出しの「(LINK会員のみ回答)」はなくしました。",
       "・画面の中身を変えずに、読みこむファイルを軽くしました(各ページで読みこむプログラムが約560KB→約140KB)。お試し版でしか使わない仕組みと、共有サーバーだけが使う初期データ(名簿の初期値・お知らせの本文など)を、ふだんのページでは読みこまないようにしました。",
       "・紹介先早見表に移るときの待ち時間を短くしました。前回の名簿ですぐに一覧を出し、最新の名簿は届きしだい入れかえます(約2.5秒→約0.5秒)。",
@@ -6759,6 +6761,10 @@ var BtexServerCore = (function () {
   // ============================================
   var SURVEY_SCORES = ["とても感じた", "感じた", "どちらともいえない", "あまり感じなかった", "感じなかった"];
   var SURVEY_INTEREST = ["ぜひ入会したい", "詳しく話を聞きたい", "今は考えていない"];
+  // 改善点・時間の長さ・出会い(押して選ぶ質問。改善点を数で集計するため)
+  var SURVEY_IMPROVE = ["時間配分・進行のテンポ", "音声・映像・接続", "説明のわかりやすさ", "商談(ブレイクアウト)の時間・組み合わせ", "プレゼンの長さ・順番", "事前の案内・資料", "参加者どうしの交流", "特になし(このままでよい)"];
+  var SURVEY_LENGTH = ["短い", "ちょうどよい", "長い"];
+  var SURVEY_MEET = { member: ["1on1・商談の約束をした", "これから声をかけたい人がいる", "今回はなかった"], visitor: ["また話したい人がいた", "少しいた", "いなかった"] };
   var SURVEY_MAX = 3000; // 保存しておく回答の数
   var SURVEY_DAY_MAX = 600; // 1日に受け付ける回答の数(いたずら対策)
   BtexServerCore.registerModule({
@@ -6782,14 +6788,22 @@ var BtexServerCore = (function () {
         var last = c.cleanStr(body.last, 30), first = c.cleanStr(body.first, 30);
         var email = c.cleanStr(body.email, 120);
         var score = SURVEY_SCORES.indexOf(String(body.score || ""));
-        var reason = c.cleanStr(body.reason, 800), comment = c.cleanStr(body.comment, 1200);
+        // 理由・感想は任意(空のときの「(記入なし)」は空に。感想の最後の「【選んだ答え】…」の行は、下で項目として残すので外す)
+        var reason = c.cleanStr(body.reason, 800), comment = c.cleanStr(body.comment, 1400);
+        if (reason === "(記入なし)") reason = "";
+        comment = comment.replace(/\n?【選んだ答え】[^\n]*$/, "").trim().slice(0, 1200);
         var program = c.cleanStr(body.program, 80);
-        if (!date || !last || !first || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || score < 0 || !program || !reason || !comment) {
+        if (!date || !last || !first || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || score < 0 || !program) {
           return c.fail("INVALID_REQUEST", "必須の項目を入れてください。");
         }
+        var improve = (Array.isArray(body.improve) ? body.improve : []).map(String).filter(function (x, i, a) { return SURVEY_IMPROVE.indexOf(x) !== -1 && a.indexOf(x) === i; });
         var r = {
           kind: kind, eventId: c.cleanStr(body.eventId, 40), date: date, last: last, first: first, email: email,
           score: score, program: program, reason: reason, comment: comment,
+          improve: improve,
+          length: SURVEY_LENGTH.indexOf(String(body.length || "")) !== -1 ? String(body.length) : "",
+          meet: SURVEY_MEET[kind].indexOf(String(body.meet || "")) !== -1 ? String(body.meet) : "",
+          fix: c.cleanStr(body.fix, 80),
         };
         if (kind === "member") {
           r.unit = c.cleanStr(body.unit, 12); r.lineage = c.cleanStr(body.lineage, 100); r.job = c.cleanStr(body.job, 80);
@@ -6818,7 +6832,7 @@ var BtexServerCore = (function () {
         var e = canRead(db, body.sessionToken);
         if (e) return e;
         var list = (db.surveys || []).slice().sort(function (a, b) { return (b.at || 0) - (a.at || 0); });
-        return c.ok({ items: list, scores: SURVEY_SCORES, interests: SURVEY_INTEREST });
+        return c.ok({ items: list, scores: SURVEY_SCORES, interests: SURVEY_INTEREST, improves: SURVEY_IMPROVE, lengths: SURVEY_LENGTH, meets: SURVEY_MEET });
       }
       function adminDeleteSurvey(body) {
         var db = c.ensureDb();
