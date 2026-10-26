@@ -146,23 +146,28 @@
           h("label", { class: "app-btn ghost small mt-photo-pick" }, photoIn, "写真をえらぶ"), resetBtn, photoNote));
 
       const busy = (b, on, label) => { b.disabled = on; b.textContent = on ? "作っています…" : label; };
-      const pngBtn = App.btn("画像で保存(PNG)", async () => {
-        const w = frame.contentWindow;
-        if (!w || !w.BtexPoster) { App.toast("見本の読みこみを待ってから、もう一度押してください", "error"); return; }
-        busy(pngBtn, true, "画像で保存(PNG)");
-        try {
-          // 見本の中で画像にして、保存はこの画面で(見本の枠の中からの保存は、ブラウザに止められることがあるため)
-          const dataUrl = await w.BtexPoster.png({ download: false });
-          const blob = await (await fetch(dataUrl)).blob();
-          const href = URL.createObjectURL(blob);
-          const a = h("a", { href, download: w.BtexPoster.fileName("png") });
-          document.body.append(a); a.click(); a.remove();
-          setTimeout(() => URL.revokeObjectURL(href), 60000);
-          App.toast("画像を保存しました");
-        }
-        catch { App.toast("画像にできませんでした。「PDF で保存・印刷」をお使いください", "error"); }
-        finally { busy(pngBtn, false, "画像で保存(PNG)"); }
-      }, "ghost");
+      // 見本の中で作って、保存はこの画面で(見本の枠の中からの保存は、ブラウザに止められることがあるため)
+      const saveBtn = (label, cls, kindOf) => {
+        const b = App.btn(label, async () => {
+          const w = frame.contentWindow;
+          if (!w || !w.BtexPoster) { App.toast("見本の読みこみを待ってから、もう一度押してください", "error"); return; }
+          busy(b, true, label);
+          try {
+            const blob = kindOf === "pdf"
+              ? await w.BtexPoster.pdf({ download: false })
+              : await (await fetch(await w.BtexPoster.png({ download: false }))).blob();
+            const href = URL.createObjectURL(blob);
+            const a = h("a", { href, download: w.BtexPoster.fileName(kindOf) });
+            document.body.append(a); a.click(); a.remove();
+            setTimeout(() => URL.revokeObjectURL(href), 60000);
+            App.toast(kindOf === "pdf" ? "PDF を保存しました" : "画像を保存しました");
+          } catch { App.toast("作れませんでした。少し待ってから、もう一度押してください", "error"); }
+          finally { busy(b, false, label); }
+        }, cls);
+        return b;
+      };
+      const pdfBtn = saveBtn("PDF で保存", "primary", "pdf");
+      const pngBtn = saveBtn("画像で保存(PNG)", "ghost", "png");
 
       el.append(
         App.section("ポスターを作る",
@@ -176,10 +181,10 @@
               App.field("参加費", f.fee, "数字だけなら「2,200円」の形になります"),
               App.field("写真", photoField, "アーチの中の写真を入れかえられます(横より縦長の写真が合います)"),
               h("div", { class: "app-btn-row mt-actions" },
-                App.btn("PDF で保存・印刷", () => window.open(params({ print: "1" }), "_blank", "noopener"), "primary"),
+                pdfBtn,
                 pngBtn,
                 h("a", { class: "app-btn ghost", href: params(), target: "_blank", rel: "noopener", onclick: (e) => { e.currentTarget.href = params(); } }, "ポスターだけを開く")),
-              h("p", { class: "app-field-hint" }, "PDF は、開いた画面の「印刷」で「PDF として保存」を選ぶと保存できます(用紙は A4・横)。")),
+              h("p", { class: "app-field-hint" }, "PDF・画像は、A4 横(297mm × 210mm)ちょうどの大きさで保存します。印刷するときは「実際のサイズ(100%)」を選んでください。")),
             h("div", { class: "mt-preview" }, frame))),
         App.section("これまでの資料",
           h("ul", { class: "app-list mt-files" },

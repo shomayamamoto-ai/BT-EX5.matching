@@ -11,7 +11,7 @@
          print=1 で開くと印刷(PDF で保存)の画面を出す / png=1 で画像(PNG)を保存する / embed=1 はアプリの中の見本用 -->
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Great+Vibes&family=Noto+Sans+JP:wght@500;700;900&family=Shippori+Mincho:wght@500;700;800&display=swap">
   <style>
-    @page { size: 297mm 210mm; margin: 0; }
+    @page { size: A4 landscape; margin: 0; }
     :root {
       --coral: #d9776b; --coral-deep: #b4554a; --coral-soft: #fbe9e5; --blush: #faf5f2;
       --ink: #3a2c26; --sub: #75645b; --sage: #8fae96; --line: rgba(196, 98, 90, 0.22);
@@ -322,12 +322,50 @@
       }).then(function (list) { return list.join("\n"); }).catch(function () { return ""; });
     }
 
+    // A4 横(297mm × 210mm)ちょうどの大きさ: 画像は 300dpi で 3508 × 2480 ピクセル、PDF は 841.89 × 595.28 pt
+    var A4PX = { canvasWidth: 3508, canvasHeight: 2480, pixelRatio: 1 };
+    var A4PT = [841.89, 595.28];
+    // JPEG の画像1枚を、A4 横の1ページいっぱいに置いた PDF にする
+    function jpegToPdf(bytes) {
+      var enc = new TextEncoder(), parts = [], len = 0, offsets = [];
+      function push(x) { var b = typeof x === "string" ? enc.encode(x) : x; parts.push(b); len += b.length; }
+      function obj(n, body) { offsets[n] = len; push(n + " 0 obj\n"); body(); push("\nendobj\n"); }
+      var W = A4PT[0], H = A4PT[1];
+      push("%PDF-1.4\n%\u00e2\u00e3\u00cf\u00d3\n");
+      obj(1, function () { push("<< /Type /Catalog /Pages 2 0 R >>"); });
+      obj(2, function () { push("<< /Type /Pages /Kids [3 0 R] /Count 1 >>"); });
+      obj(3, function () { push("<< /Type /Page /Parent 2 0 R /MediaBox [0 0 " + W + " " + H + "] /Resources << /XObject << /Im0 4 0 R >> >> /Contents 5 0 R >>"); });
+      obj(4, function () {
+        push("<< /Type /XObject /Subtype /Image /Width " + A4PX.canvasWidth + " /Height " + A4PX.canvasHeight + " /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length " + bytes.length + " >>\nstream\n");
+        push(bytes); push("\nendstream");
+      });
+      var content = "q " + W + " 0 0 " + H + " 0 0 cm /Im0 Do Q";
+      obj(5, function () { push("<< /Length " + content.length + " >>\nstream\n" + content + "\nendstream"); });
+      var xref = len;
+      push("xref\n0 6\n0000000000 65535 f \n");
+      for (var i = 1; i <= 5; i++) push(("000000000" + offsets[i]).slice(-10) + " 00000 n \n");
+      push("trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n" + xref + "\n%%EOF");
+      return new Blob(parts, { type: "application/pdf" });
+    }
+
     // 印刷(PDF で保存)・画像(PNG)で保存
     function fileName(ext) { return "bt-ex5-" + (kind === "fes" ? "fes" : "teireikai") + (no > 0 ? "-" + no : "") + "-" + (v("date") || "poster") + "." + ext; }
     window.BtexPoster = {
       print: function () { ready.then(function () { window.print(); }); },
       // opts.download: false のときは保存せずに画像(data URL)だけ返す(アプリの見本から使うとき、保存はアプリ側で)
       fileName: fileName,
+      // A4 横ちょうどの PDF(1ページ)。opts.download: false のときは保存せずに Blob を返す
+      pdf: function (opts) {
+        return window.BtexPoster.png({ download: false, jpeg: true }).then(function (url) {
+          var bin = atob(url.split(",")[1]), bytes = new Uint8Array(bin.length);
+          for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+          var blob = jpegToPdf(bytes);
+          if (!opts || opts.download !== false) {
+            var a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = fileName("pdf"); document.body.appendChild(a); a.click(); a.remove();
+          }
+          return blob;
+        });
+      },
       // 写真を入れかえる(アプリの「資料」から。null で元の写真に戻す)
       setPhoto: function (url) { setPhoto(url); layout(); },
       png: function (opts) {
@@ -347,15 +385,17 @@
           var warm = safari
             ? window.htmlToImage.toPng($("poster"), Object.assign({}, o, { pixelRatio: 0.4 })).then(function () { return window.htmlToImage.toPng($("poster"), Object.assign({}, o, { pixelRatio: 0.4 })); })
             : Promise.resolve();
-          return warm.then(function () { return window.htmlToImage.toPng($("poster"), Object.assign({}, o, { pixelRatio: 3.125 })); }).then(function (url) {
+          var fmt = opts && opts.jpeg ? "toJpeg" : "toPng";
+          return warm.then(function () { return window.htmlToImage[fmt]($("poster"), Object.assign({}, o, A4PX, { quality: 0.92 })); }).then(function (url) {
             stage.style.transform = keep;
-            if (!opts || opts.download !== false) { var a = document.createElement("a"); a.href = url; a.download = fileName("png"); document.body.appendChild(a); a.click(); a.remove(); }
+            if (!opts || opts.download !== false) { var a = document.createElement("a"); a.href = url; a.download = fileName(opts && opts.jpeg ? "jpg" : "png"); document.body.appendChild(a); a.click(); a.remove(); }
             return url;
           }, function (e) { stage.style.transform = keep; throw e; });
         });
       },
     };
     if (q.get("print") === "1") window.BtexPoster.print();
+    if (q.get("pdf") === "1") window.BtexPoster.pdf().catch(function () { alert("PDF にできませんでした。"); });
     if (q.get("png") === "1") window.BtexPoster.png().catch(function () { alert("画像にできませんでした。「PDF で保存・印刷」をお使いください。"); });
   })();
   </script>
