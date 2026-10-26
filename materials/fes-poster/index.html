@@ -98,6 +98,10 @@
 
     .foot { position: absolute; left: 20mm; bottom: 9mm; display: flex; align-items: center; gap: 3mm; font-size: 2.8mm; font-weight: 700; letter-spacing: 0.2em; color: var(--sub); }
     .foot::before { content: ""; width: 10mm; height: 0.3mm; background: var(--coral); }
+    /* 「BT-EX」の「-」は、書体の斜めの線ではなく、まっすぐな横棒に。「!」もまっすぐな形(ゴシック)に */
+    .hy { display: inline-block; width: 0.3em; height: 0.075em; margin: 0 0.04em 0 0.03em; vertical-align: 0.3em; border-radius: 0.02em; background: currentColor; }
+    .title-en .hy { background: #33251f; }
+    .ex { font-family: var(--sans); font-weight: 900; font-style: normal; margin-left: 0.05em; }
   </style>
 </head>
 <body>
@@ -113,7 +117,7 @@
       <div class="brand"><img src="../../assets/bt-ex5-mark-3d-512.png" alt=""><b>BT-<em>EX5</em></b><span>新潟・東京 紹介者制コミュニティ</span></div>
       <p class="kicker">第一回</p>
       <h1 class="title">
-        <span class="title-en">BT-EX</span>
+        <span class="title-en">BT<span class="hy" aria-hidden="true"></span>EX</span>
         <span class="title-ja">フェス</span>
         <span class="title-fes" aria-hidden="true">Fes</span>
       </h1>
@@ -131,7 +135,7 @@
     <section class="visual">
       <div class="arch"><img src="photo.jpg" alt="銀座の夜景と、交流する経営者たち"></div>
       <p class="arch-script" aria-hidden="true">Ginza</p>
-      <p class="bubble"><em>経営者、事業者</em>の<br>集まる会です！</p>
+      <p class="bubble"><em>経営者、事業者</em>の<br>集まる会です<span class="ex">!</span></p>
     </section>
 
     <ul class="values" aria-label="この会で得られること" style="list-style:none">

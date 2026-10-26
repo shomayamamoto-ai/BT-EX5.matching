@@ -130,6 +130,10 @@
     .illust-leaf { position: absolute; width: 30mm; fill: none; stroke: #e2a497; stroke-width: 1; opacity: 0.7; }
     .illust-leaf.is-a { left: -4mm; top: 46mm; }
     .illust-leaf.is-b { right: -6mm; top: 30mm; transform: scaleX(-1); stroke: #93b59b; }
+    /* 「BT-EX」の「-」は、書体の斜めの線ではなく、まっすぐな横棒に。「!」もまっすぐな形(ゴシック)に */
+    .hy { display: inline-block; width: 0.3em; height: 0.075em; margin: 0 0.04em 0 0.03em; vertical-align: 0.3em; border-radius: 0.02em; background: currentColor; }
+    .title-en .hy { background: #33251f; }
+    .ex { font-family: var(--sans); font-weight: 900; font-style: normal; margin-left: 0.05em; }
   </style>
 </head>
 <body>
@@ -221,7 +225,7 @@
     var C = kind === "fes" ? {
       en: "BT-EX", ja: "フェス", script: "Fes", catchText: "つながりが、未来を動かす。",
       arch: '<img src="../fes-poster/photo.jpg" alt="銀座の夜景と、交流する経営者たち">', archScript: "Welcome",
-      bubble: "<em>経営者、事業者</em>の<br>集まる会です！",
+      bubble: "<em>経営者、事業者</em>の<br>集まる会です<span class=\"ex\">!</span>",
       values: [["people", "経営者同士の<br>つながり"], ["bulb", "新たな<br>ビジネスの創出"], ["chart", "共に描く<br>未来の可能性"]],
     } : {
       en: "BT-EX5", ja: "定例会", script: "Meeting", catchText: "日本海側最大のマーケット 新潟⇔東京",
@@ -231,10 +235,11 @@
         + '<path class="plane" transform="translate(150 40) rotate(8) scale(0.9)" d="M-12 0 L10 -3 L14 0 L10 3 Z M-2 -1 L-6 -10 L-2 -10 L4 -1 Z M-2 1 L-6 10 L-2 10 L4 1 Z M-10 -1 L-13 -5 L-11 -5 L-7 -1 Z M-10 1 L-13 5 L-11 5 L-7 1 Z"/>'
         + '<text x="40" y="136" text-anchor="middle">新潟</text><text x="260" y="136" text-anchor="middle">東京</text><text class="en" x="40" y="94" text-anchor="middle">Niigata</text><text class="en" x="260" y="94" text-anchor="middle">Tokyo</text></svg></div>',
       archScript: "Welcome",
-      bubble: "<em>新潟と東京の経営者</em>が<br>集まる会です！",
+      bubble: "<em>新潟と東京の経営者</em>が<br>集まる会です<span class=\"ex\">!</span>",
       values: [["calendar", "月2回の<br>定例会"], ["route", "会員拡大活動<br>&amp; 市場取り活動"], ["talk", "1on1<br>ミーティング"]],
     };
-    $("titleEn").textContent = C.en;
+    $("titleEn").innerHTML = esc(C.en).replace("-", '<span class="hy" aria-hidden="true"></span>');
+    $("titleEn").setAttribute("aria-label", C.en);
     $("titleJa").textContent = C.ja;
     $("titleScript").textContent = C.script;
     $("catch").textContent = C.catchText;
