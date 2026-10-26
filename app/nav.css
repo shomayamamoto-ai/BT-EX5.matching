@@ -5,7 +5,7 @@
 body.has-app-tabs { padding-bottom: calc(var(--app-tabs-h) + env(safe-area-inset-bottom, 0px)); }
 .app-tabs {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 45;
-  display: grid; grid-template-columns: repeat(6, minmax(0, 1fr));
+  display: grid; grid-template-columns: repeat(var(--tab-n, 6), minmax(0, 1fr));
   height: calc(var(--app-tabs-h) + env(safe-area-inset-bottom, 0px)); padding-bottom: env(safe-area-inset-bottom, 0px);
   background: rgba(255, 255, 255, 0.96); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
   border-top: 1px solid #e6dccb;
