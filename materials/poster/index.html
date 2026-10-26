@@ -135,6 +135,10 @@
     .hy { display: inline-block; width: 0.3em; height: 0.075em; margin: 0 0.04em 0 0.03em; vertical-align: 0.3em; border-radius: 0.02em; background: currentColor; }
     .title-en .hy { background: #33251f; }
     .ex { font-family: var(--sans); font-weight: 900; font-style: normal; margin-left: 0.05em; }
+    /* 画像にするとき: 1段目は写真を隠す / 3段目は写真に重なるもの(吹き出し・筆記体)だけ */
+    .is-shot-base img { visibility: hidden !important; }
+    .poster.is-shot-top { visibility: hidden; background: transparent !important; }
+    .poster.is-shot-top .bubble, .poster.is-shot-top .arch-script { visibility: visible; }
   </style>
 </head>
 <body>
@@ -348,6 +352,48 @@
       return new Blob(parts, { type: "application/pdf" });
     }
 
+    // ポスターの中の写真・ロゴを、キャンバスに直接描く(角の丸み・object-fit・object-position も合わせる)
+    function drawImages(g, poster, k) {
+      var pr = poster.getBoundingClientRect();
+      var imgs = [].slice.call(poster.querySelectorAll("img")).filter(function (im) { return im.offsetWidth && getComputedStyle(im).display !== "none"; });
+      return imgs.reduce(function (chain, el) {
+        return chain.then(function () {
+          return new Promise(function (res) {
+            var im = new Image();
+            im.onload = function () { res(im); };
+            im.onerror = function () { res(null); };
+            im.src = el.currentSrc || el.src;
+          });
+        }).then(function (im) {
+          if (!im) return;
+          var cs = getComputedStyle(el), r = el.getBoundingClientRect();
+          var x = (r.left - pr.left) * k, y = (r.top - pr.top) * k, w = r.width * k, h = r.height * k;
+          var rad = ["borderTopLeftRadius", "borderTopRightRadius", "borderBottomRightRadius", "borderBottomLeftRadius"].map(function (key) {
+            var v = String(cs[key]).split(" ")[0];
+            var n = /%$/.test(v) ? parseFloat(v) / 100 * r.width : parseFloat(v) || 0;
+            return Math.min(n * k, w / 2, h / 2);
+          });
+          g.save();
+          g.beginPath();
+          g.moveTo(x + rad[0], y);
+          g.arcTo(x + w, y, x + w, y + h, rad[1]);
+          g.arcTo(x + w, y + h, x, y + h, rad[2]);
+          g.arcTo(x, y + h, x, y, rad[3]);
+          g.arcTo(x, y, x + w, y, rad[0]);
+          g.closePath();
+          g.clip();
+          var fit = cs.objectFit, iw = im.naturalWidth, ih = im.naturalHeight;
+          if (fit === "cover" || fit === "contain") {
+            var sc = fit === "cover" ? Math.max(w / iw, h / ih) : Math.min(w / iw, h / ih);
+            var dw = iw * sc, dh = ih * sc;
+            var pos = String(cs.objectPosition || "50% 50%").split(" ").map(function (v) { return /%$/.test(v) ? parseFloat(v) / 100 : 0.5; });
+            g.drawImage(im, x + (w - dw) * pos[0], y + (h - dh) * (pos[1] === undefined ? 0.5 : pos[1]), dw, dh);
+          } else g.drawImage(im, x, y, w, h);
+          g.restore();
+        });
+      }, Promise.resolve());
+    }
+
     // 印刷(PDF で保存)・画像(PNG)で保存
     function fileName(ext) { return "bt-ex5-" + (kind === "fes" ? "fes" : "teireikai") + (no > 0 ? "-" + no : "") + "-" + (v("date") || "poster") + "." + ext; }
     window.BtexPoster = {
@@ -377,19 +423,31 @@
         }).then(function () {
           return usedFontCSS();
         }).then(function (fontCSS) {
-          var stage = $("stage"), keep = stage.style.transform;
+          var stage = $("stage"), keep = stage.style.transform, poster = $("poster");
           stage.style.transform = "";
-          var o = { backgroundColor: "#faf5f2", fontEmbedCSS: fontCSS || undefined };
-          // iPhone・Mac の Safari は、1回目に写真が入らないことがある。小さく2回描いてから本番を描く
-          var safari = /^((?!chrome|android|crios|fxios|edg).)*safari/i.test(navigator.userAgent);
-          var warm = safari
-            ? window.htmlToImage.toPng($("poster"), Object.assign({}, o, { pixelRatio: 0.4 })).then(function () { return window.htmlToImage.toPng($("poster"), Object.assign({}, o, { pixelRatio: 0.4 })); })
-            : Promise.resolve();
-          var fmt = opts && opts.jpeg ? "toJpeg" : "toPng";
-          return warm.then(function () { return window.htmlToImage[fmt]($("poster"), Object.assign({}, o, A4PX, { quality: 0.92 })); }).then(function (url) {
+          var o = { fontEmbedCSS: fontCSS || undefined };
+          var H = window.htmlToImage;
+          // Safari は、画像にするとき写真(img)を描かないことがある。そこで
+          //   1) 写真を隠して、地・文字だけを描く → 2) 写真はこの画面で直接描きこむ → 3) 写真に重なる吹き出し・筆記体を上に重ねる
+          // の3段で作る(どのブラウザでも同じ仕上がりになる)
+          function layer(cls, bg) {
+            poster.classList.add(cls);
+            return H.toCanvas(poster, Object.assign({}, o, A4PX, bg ? { backgroundColor: bg } : {})).then(function (c) { poster.classList.remove(cls); return c; }, function (e) { poster.classList.remove(cls); throw e; });
+          }
+          function finish(url) {
             stage.style.transform = keep;
             if (!opts || opts.download !== false) { var a = document.createElement("a"); a.href = url; a.download = fileName(opts && opts.jpeg ? "jpg" : "png"); document.body.appendChild(a); a.click(); a.remove(); }
             return url;
+          }
+          var base;
+          return layer("is-shot-base", "#faf5f2").then(function (c) {
+            base = c;
+            return drawImages(base.getContext("2d"), poster, base.width / poster.offsetWidth);
+          }).then(function () {
+            return layer("is-shot-top", null);
+          }).then(function (top) {
+            base.getContext("2d").drawImage(top, 0, 0);
+            return finish(opts && opts.jpeg ? base.toDataURL("image/jpeg", 0.92) : base.toDataURL("image/png"));
           }, function (e) { stage.style.transform = keep; throw e; });
         });
       },
