@@ -284,5 +284,13 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--sf-coral-deep)
 .cal-now-time { background: linear-gradient(180deg, #e9a296 0%, #c4625a 60%, #9c4640 100%) !important; -webkit-background-clip: text !important; background-clip: text !important; }
 .cal-now-next { color: var(--sf-coral-deep) !important; }
 
+/* プレゼンの画面の「アンケートの結果を見る」・運営会議の日付 */
+.pr-survey-btn { background: linear-gradient(135deg, #e48a7d, #b9564c) !important; color: #fff !important; box-shadow: 0 10px 24px rgba(201, 98, 86, 0.3) !important; }
+.pr-survey-ic { background: #fff !important; color: var(--sf-coral-deep) !important; }
+.ops-date { background: var(--grad) !important; color: #fff !important; }
+.ops-date small { color: #ffe6e0 !important; }
+.pr-survey-go { color: #fff !important; }
+.pr-survey-btn small { color: #ffe6e0 !important; }
+
 @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
 @media print { body { background: #fff !important; } }

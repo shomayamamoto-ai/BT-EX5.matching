@@ -172,3 +172,43 @@
 .pr-run.deck-soft.is-edu .pd-car-btn { background: rgba(255, 255, 255, 0.85); }
 .pr-run.deck-soft.is-edu .pd-car-foot { background: rgba(255, 255, 255, 0.9); color: var(--pd-strong); box-shadow: 0 4px 12px rgba(120, 80, 60, 0.12); }
 .pr-run.deck-soft.is-edu .pd-car-foot * { color: var(--pd-strong); }
+
+/* ---------- 用語説明のポップアップ: 白いカードにコーラル ---------- */
+.pr-run.deck-soft .pd-gloss-item:hover, .pr-run.deck-soft .pd-gloss-item:focus-visible { background: #fdf4f1; border-color: var(--pd-gold-soft); }
+.pr-run.deck-soft .pd-gloss-item.is-on { background: var(--sf-coral-soft); border-color: var(--sf-coral); }
+.pr-run.deck-soft .pd-gloss-pop { background: rgba(250, 240, 236, 0.62); }
+.pr-run.deck-soft .pd-gloss-card {
+  border-color: rgba(217, 119, 107, 0.25);
+  background: radial-gradient(120% 140% at 0% 0%, rgba(242, 196, 186, 0.35), transparent 55%), linear-gradient(180deg, #ffffff, #fdf5f2);
+  box-shadow: 0 30px 80px rgba(120, 70, 60, 0.22);
+}
+.pr-run.deck-soft .pd-gloss-card::before { content: "Glossary"; position: absolute; top: clamp(14px, 3svh, 30px); right: clamp(60px, 7vw, 90px); font-family: var(--sf-script); font-size: clamp(28px, min(3.6vw, 6svh), 56px); line-height: 1; color: rgba(217, 119, 107, 0.45); pointer-events: none; }
+.pr-run.deck-soft .pd-gloss-no { color: var(--pd-muted); }
+.pr-run.deck-soft .pd-gloss-term { color: var(--pd-gold); }
+.pr-run.deck-soft .pd-gloss-text { color: var(--pd-strong); }
+.pr-run.deck-soft .pd-gloss-close { background: #fff; border-color: rgba(217, 119, 107, 0.3); color: var(--pd-gold); }
+.pr-run.deck-soft .pd-gloss-close:hover { background: var(--sf-coral-soft); }
+
+/* ---------- 休憩(確認のカード・休憩中の画面) ---------- */
+.pr-run.deck-soft .pr-break:not(.is-hacked) { background: rgba(250, 240, 236, 0.78); }
+.pr-run.deck-soft .pr-break-card { background: linear-gradient(180deg, #ffffff, #fdf1ed); color: var(--pd-strong); box-shadow: 0 30px 80px rgba(120, 70, 60, 0.22); }
+.pr-run.deck-soft .pr-break-mug { background: linear-gradient(180deg, #eea596, #c25d53); }
+.pr-run.deck-soft .pr-break-mug::after { border-color: #d27a6e; }
+.pr-run.deck-soft .pr-break-cup i { background: rgba(194, 93, 83, 0.3); }
+.pr-run.deck-soft .pr-break-kicker { color: var(--pd-gold); }
+.pr-run.deck-soft .pr-break-text { color: #6f5f57; }
+.pr-run.deck-soft .pr-break-btn { border-color: rgba(217, 119, 107, 0.45); color: var(--pd-gold); background: #fff; }
+.pr-run.deck-soft .pr-break-btn.is-main, .pr-run.deck-soft .pr-break-load .pr-break-btn.is-main { border: 0; background: linear-gradient(120deg, #dc8073, #b9564c); color: #fff; box-shadow: 0 10px 24px rgba(201, 98, 86, 0.32); }
+.pr-run.deck-soft .pr-break-btn:focus-visible { outline-color: var(--sf-coral); }
+.pr-run.deck-soft .pr-break-load { color: var(--pd-strong); }
+.pr-run.deck-soft .pr-break-dots i { background: var(--sf-coral); }
+.pr-run.deck-soft .pr-break-now { color: var(--pd-gold); }
+.pr-run.deck-soft .pr-break-now::before { content: "Break time"; display: block; margin-bottom: 4px; font-family: var(--sf-script); font-size: clamp(30px, 4vw, 48px); font-weight: 400; letter-spacing: 0; color: var(--sf-coral); }
+.pr-run.deck-soft .pr-break-num { color: var(--pd-strong); }
+.pr-run.deck-soft .pr-break-bar { background: rgba(217, 119, 107, 0.16); }
+.pr-run.deck-soft .pr-break-bar i { background: linear-gradient(90deg, #eea596, #c25d53); }
+.pr-run.deck-soft .pr-break-tip { color: var(--pd-text); }
+.pr-run.deck-soft .pr-break-hint { color: var(--pd-muted); }
+
+/* 出席コードのやり方の動画(大きく出したとき) */
+.pr-run.deck-soft .pd-attend-video.is-zoom, .pr-run.deck-soft .pd-attend-video.is-zoom video { background: #f6eeea; }
