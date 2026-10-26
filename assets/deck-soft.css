@@ -161,7 +161,11 @@
 .pr-run.deck-soft .pt-bar-now { box-shadow: 0 0 0 2px #fff, 0 0 8px var(--pt-c); }
 .pr-run.deck-soft .pt-start, .pr-run.deck-soft .pr-time.is-v2 .pt-start { background: #fff; border-color: var(--pd-gold-soft); color: var(--pd-strong); color-scheme: light; }
 .pr-run.deck-soft .pt2-row.is-now { color: #2f6fc9; }
-.pr-run.deck-soft .pr-time.is-v2 { --pt-c: #1f9d5c; }
+/* 早い・遅れの札: 淡い色の地に、はっきりした色の文字(白い画面でも読みやすく) */
+.pr-run.deck-soft .pr-time, .pr-run.deck-soft .pr-time.is-v2 { --pt-c: #6f5f57; --pt-soft: #f3ece9; --pt-glow: rgba(111, 95, 87, 0.08); }
+.pr-run.deck-soft .pr-time[data-state="early"], .pr-run.deck-soft .pr-time.is-v2[data-state="early"] { --pt-c: #17804a; --pt-soft: #e2f3e9; --pt-glow: rgba(23, 128, 74, 0.1); }
+.pr-run.deck-soft .pr-time[data-state="late"], .pr-run.deck-soft .pr-time.is-v2[data-state="late"] { --pt-c: #c23a2b; --pt-soft: #fde4df; --pt-glow: rgba(194, 58, 43, 0.12); }
+.pr-run.deck-soft .pr-time.is-v2 .pt2-badge, .pr-run.deck-soft .pr-time.is-v2[data-state="late"] .pt2-badge { background: var(--pt-soft); color: var(--pt-c); border: 1px solid color-mix(in srgb, var(--pt-c) 35%, transparent); }
 .pr-run.deck-soft .pr-time[data-state="late"] .pt-eta { color: #d64535; }
 .pr-run.deck-soft .pr-time[data-state="early"] .pt-eta { color: #1f9d5c; }
 .pr-run.deck-soft .is-floatable.is-dragging { box-shadow: 0 24px 60px rgba(120, 80, 60, 0.3), 0 0 0 1px var(--pd-gold-soft); }
