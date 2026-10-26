@@ -183,7 +183,7 @@
     // はじめの値(何も渡さずに開いたとき)
     var DEF = {
       fes: { no: "1", date: "2026-12-02", start: "14:30", end: "16:30", open: "14:00", place: "銀座 Blossom", fee: "2,200円" },
-      regular: { no: "", date: "2026-11-04", start: "13:00", end: "15:00", open: "", place: "オンライン(Google Meet)", fee: "会員 無料" },
+      regular: { no: "8", date: "2026-11-14", start: "20:00", end: "22:00", open: "", place: "オンライン(Zoom)", fee: "会員 無料" },
     }[kind];
     function v(k) { var x = q.has(k) ? q.get(k) : DEF[k]; return String(x == null ? "" : x).trim(); }
     var $ = function (id) { return document.getElementById(id); };
