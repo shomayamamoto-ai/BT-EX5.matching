@@ -16,10 +16,26 @@ var BtexTheme = (function () {
     document.documentElement.classList.toggle("theme-classic", classic);
     var links = document.querySelectorAll('link[data-theme="soft"]');
     for (var i = 0; i < links.length; i++) links[i].disabled = classic;
+    swapMarks();
     var meta = document.querySelector('meta[name="theme-color"]');
     if (meta) meta.setAttribute("content", classic ? "#1a0f0c" : "#faf6f4");
   }
+  // ロゴマーク: やわらかいデザインでは、黒い四角の画像ではなく、金の輪だけの絵(SVG)を白い角丸の上に出す。
+  // 元の黒×金に戻すと、元の画像に戻す
+  function swapMarks() {
+    var imgs = document.querySelectorAll("img.brand-mark");
+    for (var i = 0; i < imgs.length; i++) {
+      var im = imgs[i];
+      if (!im.getAttribute("data-classic-src")) im.setAttribute("data-classic-src", im.getAttribute("src"));
+      var classicSrc = im.getAttribute("data-classic-src");
+      var softSrc = classicSrc.replace(/bt-ex5-mark-3d-\d+\.png/, "bt-ex5-mark.svg");
+      var want = site === "classic" ? classicSrc : softSrc;
+      if (im.getAttribute("src") !== want) im.setAttribute("src", want);
+      im.classList.toggle("is-soft-mark", site !== "classic");
+    }
+  }
   apply();
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", swapMarks);
   return {
     site: function () { return site; },
     setSite: function (v) { site = v === "classic" ? "classic" : "soft"; write(KEY, site); apply(); },

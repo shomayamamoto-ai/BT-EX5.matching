@@ -100,7 +100,14 @@ h1, h2, h3, .app-h1, .app-h2 { color: var(--sf-ink); }
 }
 .app-top .brand-name, .ref-header .brand-name { color: var(--sf-ink) !important; }
 .app-top .brand-sub, .ref-header .brand-sub { color: #b07a70 !important; }
+/* ロゴの横の「BT-EX5」: 「EX5」は金ではなくコーラルのグラデーションに。下の一言もローズの色に(どのページでも) */
+.brand-name { color: var(--sf-ink) !important; }
+.brand-name em { background: linear-gradient(100deg, #e48a7d 0%, #c25d53 55%, #b4554a 100%) !important; -webkit-background-clip: text !important; background-clip: text !important; -webkit-text-fill-color: transparent !important; }
+.brand-sub { color: #b07a70 !important; }
+.brand-light .brand-name { color: #fff !important; }
 .brand-mark { box-shadow: 0 0 0 1px rgba(217, 119, 107, 0.25), 0 4px 12px rgba(120, 80, 60, 0.18) !important; }
+/* 金の輪だけのロゴ(assets/theme.js が切りかえる)を、白から淡いピンクの角丸の上に */
+.brand-mark.is-soft-mark { background: linear-gradient(150deg, #ffffff 0%, #fdf1ed 100%) !important; padding: 3px !important; box-shadow: 0 0 0 1px rgba(217, 119, 107, 0.3), 0 4px 12px rgba(120, 80, 60, 0.12) !important; }
 .app-bell, .app-search-btn, .nav-search, .nav-bell { color: #7a665d !important; }
 .app-search-btn:hover, .app-bell:hover, .nav-search:hover, .nav-bell:hover { background: var(--sf-coral-soft) !important; color: var(--sf-coral-deep) !important; }
 .ref-header-link { color: var(--sf-sub) !important; }
