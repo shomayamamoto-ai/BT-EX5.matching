@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex">
+  <title>BT-EX5 定例会のお誘い画像</title>
+  <!-- BT-EX5 の定例会へのお誘い画像(掲示板・SNS 用。縦 4:5、1080 × 1350 を 2倍の 2160 × 2700 ピクセルで保存)。
+       アプリの「資料」から開く。URL の ? のあとで中身を渡す:
+         d1・d2=YYYY-MM-DD(2つ目はなくてよい)、s1・e1・s2・e2=HH:MM、mode=online(オンライン)/ offline(会場で)、place=会場、
+         contact=1(「参加したい方は◯◯までお声がけを」の欄を出す)/ 0(出さない)、name=声がけ先のお名前
+         png=1 で開くと画像(PNG)を保存する / embed=1 はアプリの中の見本用 -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,700&family=Noto+Sans+JP:wght@500;700;900&family=Shippori+Mincho:wght@700;800&display=swap">
+  <style>
+    :root { --ink:#33251f; --coral:#d9776a; --deep:#b4544a; --cream:#faf6f4; --sub:#7a645c;
+      --mincho:"Shippori Mincho","Noto Serif CJK JP",serif; --sans:"Noto Sans JP","Noto Sans CJK JP",sans-serif; --num:"Cormorant Garamond","Shippori Mincho",serif; }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    html, body { background:#e9e2de; }
+    body { font-family:var(--sans); color:var(--ink); }
+    .stage-wrap { padding:16px; display:flex; justify-content:center; overflow:hidden; }
+    .stage { width:1080px; height:1350px; transform-origin:0 0; flex:none; }
+    body.is-embed { background:transparent; }
+    body.is-embed .stage-wrap { padding:0; justify-content:flex-start; }
+    .card { position:relative; width:1080px; height:1350px; overflow:hidden; background:
+      radial-gradient(120% 70% at 100% 0%, #f8dcd5 0%, rgba(248,220,213,0) 60%),
+      radial-gradient(90% 60% at 0% 100%, #f3e3d8 0%, rgba(243,227,216,0) 60%), var(--cream);
+      box-shadow:0 10px 40px rgba(90,40,30,.15); }
+    body.is-embed .card { box-shadow:none; }
+    .leaf { position:absolute; right:-30px; top:30px; width:300px; opacity:.55; }
+    .wrap { position:absolute; inset:56px 64px 48px; display:flex; flex-direction:column; }
+    .wrap > * { flex-shrink:0; }
+    .brand { display:flex; align-items:center; gap:14px; }
+    .brand .mk { width:58px; height:58px; border-radius:16px; background:#fff; box-shadow:0 4px 14px rgba(180,84,74,.18); display:grid; place-items:center; }
+    .brand .mk img { width:40px; height:40px; }
+    .brand b { font:900 30px/1 var(--sans); letter-spacing:.04em; }
+    .brand b span { color:var(--coral); }
+    .brand small { margin-left:6px; font:700 17px/1 var(--sans); color:var(--deep); letter-spacing:.24em; }
+    .en { margin-top:24px; font:italic 700 46px/1 var(--num); color:var(--coral); letter-spacing:.01em; }
+    h1 { margin-top:10px; font:800 62px/1.28 var(--mincho); letter-spacing:.02em; }
+    h1 em { font-style:normal; color:var(--deep); background:linear-gradient(transparent 70%, rgba(217,119,106,.22) 70%); }
+    .lead { margin-top:16px; font:500 22px/1.65 var(--sans); color:var(--sub); }
+    .lead b { color:var(--ink); }
+    .stage2 { position:relative; height:420px; margin-top:28px; }
+    .screen { position:absolute; left:0; top:12px; width:705px; border-radius:18px; overflow:hidden; background:#fff;
+      box-shadow:0 26px 60px rgba(90,40,30,.22), 0 0 0 1px rgba(90,40,30,.08); }
+    .screen .bar { height:26px; background:#f2e9e5; display:flex; align-items:center; gap:7px; padding:0 12px; }
+    .screen .bar i { width:10px; height:10px; border-radius:50%; background:#e6cfc8; }
+    .screen img { display:block; width:705px; height:396.5625px; border-radius:0 0 18px 18px; }
+    .phone { position:absolute; right:0; top:0; width:244px; height:420px; border-radius:38px; background:#2c211d; padding:10px;
+      box-shadow:0 30px 60px rgba(90,40,30,.3); }
+    .phone img { display:block; width:224px; height:400px; border-radius:29px; object-fit:cover; object-position:0 0; background:#fff; }
+    .feats { margin-top:30px; display:grid; grid-template-columns:1fr 1fr; gap:14px 18px; }
+    .f { display:flex; gap:14px; align-items:center; padding:14px 18px; background:rgba(255,255,255,.82); border-radius:18px; box-shadow:0 0 0 1px rgba(180,84,74,.12); }
+    .f .n { flex:none; width:40px; height:40px; border-radius:50%; display:grid; place-items:center; background:linear-gradient(140deg,#e48a7d,#b9564c); color:#fff; font:normal 700 22px/1 var(--num); }
+    .f b { display:block; font:900 20px/1.35 var(--sans); white-space:nowrap; }
+    .f span { display:block; margin-top:3px; font:500 15px/1.5 var(--sans); color:var(--sub); }
+    .foot { margin-top:auto; padding-top:20px; display:flex; align-items:stretch; gap:18px; }
+    .when { flex:1; min-width:0; border-radius:22px; background:linear-gradient(135deg,#d9776a,#b4544a); color:#fff; padding:20px 26px; display:flex; flex-direction:column; justify-content:center; }
+    .when p { font:700 17px/1.3 var(--sans); letter-spacing:.2em; opacity:.92; white-space:nowrap; overflow:hidden; }
+    .when ul { list-style:none; margin-top:12px; display:flex; gap:26px; }
+    .when li { font:700 19px/1.2 var(--sans); white-space:nowrap; }
+    .when li b { font:700 40px/1 var(--num); letter-spacing:.01em; margin-right:4px; font-variant-numeric:lining-nums; }
+    .when li small { display:block; margin-top:6px; font:500 17px/1 var(--sans); opacity:.92; }
+    .card.no-contact .when { padding:22px 34px; }
+    .card.no-contact .when li b { font-size:48px; }
+    .card.no-contact .when ul { gap:44px; }
+    .cta { width:300px; border-radius:22px; background:#fff; padding:18px 22px; box-shadow:0 0 0 1px rgba(180,84,74,.2); display:flex; flex-direction:column; justify-content:center; }
+    .card.no-contact .cta { display:none; }
+    /* 「お声がけを」の欄がないときは、参加の決まりを日時の欄の下に出す */
+    .when-note { display:none; margin-top:14px; font:500 15px/1.4 var(--sans); opacity:.92; }
+    .card.no-contact .when-note { display:block; }
+    .cta b { font:800 25px/1.4 var(--mincho); color:var(--deep); }
+    .cta span { margin-top:6px; font:500 14px/1.5 var(--sans); color:var(--sub); }
+    /* 画像にするとき: 写真・ロゴは隠して地と文字を描き、写真はあとから直接描きこむ(Safari で写真が抜けないように) */
+    .is-shot-base img { visibility:hidden !important; }
+  </style>
+</head>
+<body>
+  <div class="stage-wrap" id="wrap"><div class="stage" id="stage">
+  <article class="card" id="card">
+    <svg class="leaf" viewBox="0 0 200 260" fill="none" stroke="#e3a79d" stroke-width="2" aria-hidden="true"><path d="M40 250 C 80 180, 120 120, 190 10"/><path d="M95 150 c 30 -40 70 -40 90 -30 c -30 20 -60 30 -90 30z"/><path d="M120 100 c 10 -40 40 -60 60 -60 c -10 30 -30 50 -60 60z"/><path d="M75 185 c -40 -10 -60 -40 -60 -60 c 30 10 50 30 60 60z"/><path d="M110 120 c -30 -20 -40 -50 -35 -70 c 20 20 35 40 35 70z"/></svg>
+    <div class="wrap">
+      <div class="brand"><span class="mk"><img src="../../assets/bt-ex5-mark.svg?v=202610312335" alt=""></span><b>BT-<span>EX5</span></b><small>新潟 ⇔ 東京</small></div>
+      <p class="en">Join our regular meeting</p>
+      <h1>紹介が<em>仕組みで</em>生まれる、<br>BT-EX5 の定例会へ。</h1>
+      <p class="lead">定例会のスライドも、紹介先さがしも、<b>BT-EX5 専用のシステム</b>で動いています。<br>ぜひ一度、見に来てください。</p>
+      <div class="stage2">
+        <div class="screen"><div class="bar"><i></i><i></i><i></i></div><img src="slide.jpg" alt=""></div>
+        <div class="phone"><img src="phone.jpg" alt=""></div>
+      </div>
+      <div class="feats">
+        <div class="f"><i class="n">1</i><div><b>相談を入れるだけで紹介先がわかる</b><span>紹介先早見表。声でも、質問に答えても探せます</span></div></div>
+        <div class="f"><i class="n">2</i><div><b>顔写真と紹介文が大きく出るプレゼン</b><span>残り時間はメーターでひと目。次の人も表示</span></div></div>
+        <div class="f"><i class="n">3</i><div><b>「理想」と「現在」の時刻で進行管理</b><span>進み・遅れを秒まで出して、時間どおりに</span></div></div>
+        <div class="f"><i class="n">4</i><div><b>マイル・出欠・アンケートもアプリで</b><span>紹介の記録と分析まで、スマホで完結</span></div></div>
+      </div>
+      <div class="foot">
+        <div class="when"><p id="whenHead"></p><ul id="dates"></ul><span class="when-note">※ 参加には、アップクリエとアドバンスリーダーの許可が必要です</span></div>
+        <div class="cta"><b id="ctaHead"></b><span>※ 参加には、アップクリエと<br>アドバンスリーダーの許可が必要です</span></div>
+      </div>
+    </div>
+  </article>
+  </div></div>
+
+  <script>
+  (function () {
+    "use strict";
+    var q = new URLSearchParams(location.search);
+    // はじめの値(2026年11月の2回・オンライン・声がけの欄あり)
+    var DEF = { d1: "2026-11-04", s1: "13:00", e1: "15:00", d2: "2026-11-14", s2: "20:00", e2: "22:00", mode: "online", place: "", contact: "1", name: "山本" };
+    function v(k) { var x = q.has(k) ? q.get(k) : DEF[k]; return String(x == null ? "" : x).trim(); }
+    var $ = function (id) { return document.getElementById(id); };
+    function esc(t) { return String(t).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+    var WD = ["日", "月", "火", "水", "木", "金", "土"];
+    function dateHtml(d, s, e) {
+      var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(d);
+      if (!m) return "";
+      var wd = WD[new Date(+m[1], +m[2] - 1, +m[3]).getDay()];
+      var time = s ? s + (e ? "〜" + e : "〜") : "";
+      return "<li><b>" + (+m[2]) + "/" + (+m[3]) + "</b>(" + wd + ")" + (time ? "<small>" + esc(time) + "</small>" : "") + "</li>";
+    }
+    var dates = [dateHtml(v("d1"), v("s1"), v("e1")), dateHtml(v("d2"), v("s2"), v("e2"))].filter(Boolean);
+    $("dates").innerHTML = dates.join("");
+    var offline = v("mode") === "offline";
+    var how = offline ? (v("place") ? "会場:" + v("place") : "会場で開催") : "オンライン";
+    $("whenHead").textContent = "次回の定例会(" + how + ")";
+    var contact = v("contact") !== "0";
+    $("card").classList.toggle("no-contact", !contact);
+    $("ctaHead").innerHTML = "参加したい方は<br>" + (v("name") ? esc(v("name")) + "までお声がけを" : "お気軽にお声がけを");
+    document.title = "BT-EX5 定例会のお誘い画像";
+
+    // 長い会場名は、枠に入るまで小さくする
+    function fit(el, min) {
+      el.style.fontSize = "";
+      var size = parseFloat(getComputedStyle(el).fontSize), guard = 0;
+      while (el.scrollWidth > el.clientWidth + 1 && size > min && guard++ < 60) { size *= 0.95; el.style.fontSize = size + "px"; }
+    }
+    var embed = q.get("embed") === "1";
+    document.body.classList.toggle("is-embed", embed);
+    function scale() {
+      var stage = $("stage"), wrap = $("wrap");
+      var avail = embed ? window.innerWidth : Math.max(200, window.innerWidth - 32);
+      var s = Math.min(1, avail / 1080);
+      stage.style.transform = s < 1 ? "scale(" + s + ")" : "";
+      wrap.style.height = s < 1 ? (1350 * s + (embed ? 0 : 32)) + "px" : "";
+      stage.style.marginRight = s < 1 ? (1080 * s - 1080) + "px" : "";
+    }
+    function layout() { fit($("whenHead"), 11); scale(); }
+    window.addEventListener("resize", scale);
+    var ready = (document.fonts ? document.fonts.ready : Promise.resolve()).then(function () {
+      return Promise.all([].slice.call(document.images).map(function (im) { return im.decode ? im.decode().catch(function () {}) : null; }));
+    }).then(function () { layout(); });
+    layout();
+
+    // 画像にするときの文字の形: 使っている文字の入った分(unicode-range)だけを読みこんで埋めこむ
+    function usedFontCSS() {
+      var link = document.querySelector('link[href^="https://fonts.googleapis.com"]');
+      if (!link) return Promise.resolve("");
+      var cps = [];
+      Array.from($("card").textContent + "0123456789:/〜()").forEach(function (ch) { var c = ch.codePointAt(0); if (cps.indexOf(c) < 0) cps.push(c); });
+      function hit(range) {
+        return range.split(",").some(function (r) {
+          r = r.trim().replace(/^U\+/i, "");
+          var ab = r.split("-"), a = ab[0], b = ab[1];
+          if (a.indexOf("?") >= 0) { b = a.replace(/\?/g, "F"); a = a.replace(/\?/g, "0"); }
+          var lo = parseInt(a, 16), hi = parseInt(b || a, 16);
+          return cps.some(function (c) { return c >= lo && c <= hi; });
+        });
+      }
+      return fetch(link.href).then(function (r) { return r.text(); }).then(function (css) {
+        var blocks = (css.match(/@font-face\s*\{[^}]*\}/g) || []).filter(function (b) {
+          var m = /unicode-range:\s*([^;]+);/.exec(b);
+          return !m || hit(m[1]);
+        });
+        return Promise.all(blocks.map(function (b) {
+          var u = /url\(([^)]+)\)/.exec(b);
+          if (!u) return b;
+          return fetch(u[1].replace(/["']/g, "")).then(function (r) { return r.blob(); }).then(function (blob) {
+            return new Promise(function (res) { var fr = new FileReader(); fr.onload = function () { res(b.replace(u[0], "url(" + fr.result + ")")); }; fr.readAsDataURL(blob); });
+          });
+        }));
+      }).then(function (list) { return list.join("\n"); }).catch(function () { return ""; });
+    }
+
+    // 写真・ロゴを、キャンバスに直接描く(角の丸み・object-fit・object-position も合わせる)
+    function drawImages(g, card, k) {
+      var pr = card.getBoundingClientRect();
+      var imgs = [].slice.call(card.querySelectorAll("img")).filter(function (im) { return im.offsetWidth; });
+      return imgs.reduce(function (chain, el) {
+        return chain.then(function () {
+          return new Promise(function (res) {
+            var im = new Image();
+            im.onload = function () { res(im); };
+            im.onerror = function () { res(null); };
+            im.src = el.currentSrc || el.src;
+          });
+        }).then(function (im) {
+          if (!im) return;
+          var cs = getComputedStyle(el), r = el.getBoundingClientRect();
+          var x = (r.left - pr.left) * k, y = (r.top - pr.top) * k, w = r.width * k, h = r.height * k;
+          var rad = ["borderTopLeftRadius", "borderTopRightRadius", "borderBottomRightRadius", "borderBottomLeftRadius"].map(function (key) {
+            var n = parseFloat(String(cs[key]).split(" ")[0]) || 0;
+            return Math.min(n * k, w / 2, h / 2);
+          });
+          g.save();
+          g.beginPath();
+          g.moveTo(x + rad[0], y);
+          g.arcTo(x + w, y, x + w, y + h, rad[1]);
+          g.arcTo(x + w, y + h, x, y + h, rad[2]);
+          g.arcTo(x, y + h, x, y, rad[3]);
+          g.arcTo(x, y, x + w, y, rad[0]);
+          g.closePath();
+          g.clip();
+          var iw = im.naturalWidth || w, ih = im.naturalHeight || h;
+          if (cs.objectFit === "cover") {
+            var sc = Math.max(w / iw, h / ih);
+            var pos = String(cs.objectPosition || "50% 50%").split(" ").map(function (p) { return /%$/.test(p) ? parseFloat(p) / 100 : parseFloat(p) === 0 ? 0 : 0.5; });
+            g.drawImage(im, x + (w - iw * sc) * pos[0], y + (h - ih * sc) * (pos[1] === undefined ? 0.5 : pos[1]), iw * sc, ih * sc);
+          } else g.drawImage(im, x, y, w, h);
+          g.restore();
+        });
+      }, Promise.resolve());
+    }
+
+    var PX = { canvasWidth: 2160, canvasHeight: 2700, pixelRatio: 1 };
+    function fileName(ext) { return "bt-ex5-teireikai-oshirase-" + (v("d1") || "image") + (contact ? "" : "-nocontact") + "." + ext; }
+    window.BtexInvite = {
+      fileName: fileName,
+      // opts.download: false のときは保存せずに画像(data URL)だけ返す(アプリの見本から使うとき、保存はアプリ側で)
+      png: function (opts) {
+        return ready.then(function () {
+          return new Promise(function (res, rej) {
+            if (window.htmlToImage) return res();
+            var s = document.createElement("script"); s.src = "../../assets/vendor/html-to-image.js"; s.onload = res; s.onerror = rej; document.head.appendChild(s);
+          });
+        }).then(function () {
+          return usedFontCSS();
+        }).then(function (fontCSS) {
+          var stage = $("stage"), keep = stage.style.transform, card = $("card");
+          stage.style.transform = "";
+          card.classList.add("is-shot-base");
+          var done = function () { card.classList.remove("is-shot-base"); stage.style.transform = keep; };
+          var base;
+          return window.htmlToImage.toCanvas(card, Object.assign({ fontEmbedCSS: fontCSS || undefined, backgroundColor: "#faf6f4" }, PX)).then(function (c) {
+            card.classList.remove("is-shot-base");
+            base = c;
+            return drawImages(base.getContext("2d"), card, base.width / card.offsetWidth);
+          }).then(function () {
+            done();
+            var url = base.toDataURL("image/png");
+            if (!opts || opts.download !== false) { var a = document.createElement("a"); a.href = url; a.download = fileName("png"); document.body.appendChild(a); a.click(); a.remove(); }
+            return url;
+          }, function (e) { done(); throw e; });
+        });
+      },
+    };
+    if (q.get("png") === "1") window.BtexInvite.png().catch(function () { alert("画像にできませんでした。少し待ってから、もう一度お試しください。"); });
+  })();
+  </script>
+</body>
+</html>

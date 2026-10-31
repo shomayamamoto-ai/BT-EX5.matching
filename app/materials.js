@@ -1,6 +1,7 @@
 // ============================================
 // app/materials.js — 資料(全員が使える)
 // ポスター(A4 横)を、回・日時・会場・参加費を入れるだけで作る。BT-EX フェス用と定例会用。
+// 定例会のお誘い画像(縦 4:5。掲示板・SNS 用)も、日時・開催方法を入れて作る(materials/invite/ のページ)
 // 見本はこの画面の中に出し、「PDF で保存・印刷」「画像で保存」でそのまま使える(materials/poster/ のページを開く)
 // ============================================
 (function () {
@@ -27,6 +28,72 @@
     fes: { no: "1", date: "2026-12-02", start: "14:30", end: "16:30", open: "14:00", place: "銀座 Blossom", fee: "2,200円" },
     regular: { no: "", date: "2026-11-14", start: "20:00", end: "22:00", open: "", place: ONLINE, fee: "会員 無料" },
   };
+
+  // 定例会のお誘い画像(掲示板・SNS 用。縦 4:5)。日時(2回まで)・オンラインか会場か・「お声がけを」の欄のあり/なしを変えて何度でも使える
+  const INVITE = "../materials/invite/";
+  function inviteSection(upcoming) {
+    const regular = upcoming.filter((e) => e.kind !== "special").slice(0, 2);
+    const f = {
+      d1: h("input", { type: "date" }), s1: h("input", { type: "time" }), e1: h("input", { type: "time" }),
+      d2: h("input", { type: "date" }), s2: h("input", { type: "time" }), e2: h("input", { type: "time" }),
+      place: h("input", { type: "text", maxlength: "30", placeholder: "例:銀座 Blossom" }),
+      name: h("input", { type: "text", maxlength: "12", placeholder: "例:山本" }),
+    };
+    regular.forEach((e, i) => { f[`d${i + 1}`].value = e.date || ""; f[`s${i + 1}`].value = e.start || ""; f[`e${i + 1}`].value = e.end || ""; });
+    const first = regular[0];
+    let mode = first && !(first.online || first.meet) && first.place ? "offline" : "online";
+    if (mode === "offline") f.place.value = first.place;
+    let contact = "1";
+    // 声がけ先は、使う人の名字(はじめの値。変えられる)
+    f.name.value = String((App.session && App.session.displayName) || "").trim().split(/\s+/)[0] || "";
+    const params = (extra) => {
+      const q = new URLSearchParams({ mode, contact });
+      Object.entries(f).forEach(([k, input]) => q.set(k, input.value.trim()));
+      Object.entries(extra || {}).forEach(([k, v]) => q.set(k, v));
+      return `${INVITE}?${q}`;
+    };
+    const frame = h("iframe", { class: "mt-frame is-portrait", title: "お誘い画像の見本", loading: "lazy" });
+    let timer = 0;
+    const refresh = () => { clearTimeout(timer); timer = setTimeout(() => { frame.src = params({ embed: "1" }); }, 250); };
+    Object.values(f).forEach((input) => input.addEventListener("input", refresh));
+    const placeField = App.field("会場", f.place, "画像には「次回の定例会(会場:◯◯)」と出ます");
+    const nameField = App.field("声がけ先のお名前", f.name, "「参加したい方は◯◯までお声がけを」の◯◯。空なら「お気軽にお声がけを」");
+    const drawMode = () => { placeField.hidden = mode !== "offline"; nameField.hidden = contact !== "1"; };
+    const modeToggle = App.toggle([{ id: "online", label: "オンライン" }, { id: "offline", label: "会場で(対面)" }], mode, (v) => { mode = v; drawMode(); refresh(); });
+    const contactToggle = App.toggle([{ id: "1", label: "あり" }, { id: "0", label: "なし" }], contact, (v) => { contact = v; drawMode(); refresh(); });
+    const label = "画像で保存(PNG)";
+    const saveBtn = App.btn(label, async () => {
+      const w = frame.contentWindow;
+      if (!w || !w.BtexInvite) { App.toast("見本の読みこみを待ってから、もう一度押してください", "error"); return; }
+      saveBtn.disabled = true; saveBtn.textContent = "作っています…";
+      try {
+        const blob = await (await fetch(await w.BtexInvite.png({ download: false }))).blob();
+        const href = URL.createObjectURL(blob);
+        const a = h("a", { href, download: w.BtexInvite.fileName("png") });
+        document.body.append(a); a.click(); a.remove();
+        setTimeout(() => URL.revokeObjectURL(href), 60000);
+        App.toast("画像を保存しました");
+      } catch { App.toast("作れませんでした。少し待ってから、もう一度押してください", "error"); }
+      finally { saveBtn.disabled = false; saveBtn.textContent = label; }
+    }, "primary");
+    drawMode();
+    refresh();
+    return App.section("定例会のお誘い画像(掲示板・SNS)",
+      h("p", { class: "app-field-hint mt-hint" }, "システムの画面を見せて、定例会に誘う画像です(縦長 4:5)。日時・開催方法を変えて、何度でも使えます。"),
+      h("div", { class: "mt-maker" },
+        h("div", { class: "mt-form" },
+          h("div", { class: "app-grid2 mt-times" }, App.field("1回目の日にち", f.d1), App.field("はじまり", f.s1), App.field("おわり", f.e1)),
+          h("div", { class: "app-grid2 mt-times" }, App.field("2回目(任意)", f.d2), App.field("はじまり", f.s2), App.field("おわり", f.e2)),
+          App.field("開催方法", modeToggle),
+          placeField,
+          App.field("「参加したい方は…お声がけを」の欄", contactToggle, "なしにすると、日時の欄が横いっぱいになります"),
+          nameField,
+          h("div", { class: "app-btn-row mt-actions" },
+            saveBtn,
+            h("a", { class: "app-btn ghost", href: params(), target: "_blank", rel: "noopener", onclick: (e) => { e.currentTarget.href = params(); } }, "画像だけを開く")),
+          h("p", { class: "app-field-hint" }, "2160 × 2700 ピクセルの PNG で保存します。2回目の日にちを空にすると、1回分だけ出ます。")),
+        h("div", { class: "mt-preview is-portrait" }, frame)));
+  }
 
   App.views.materials = {
     title: "資料",
@@ -186,6 +253,7 @@
                 h("a", { class: "app-btn ghost", href: params(), target: "_blank", rel: "noopener", onclick: (e) => { e.currentTarget.href = params(); } }, "ポスターだけを開く")),
               h("p", { class: "app-field-hint" }, "PDF・画像は、A4 横(297mm × 210mm)ちょうどの大きさで保存します。印刷するときは「実際のサイズ(100%)」を選んでください。")),
             h("div", { class: "mt-preview" }, frame))),
+        inviteSection(upcoming),
         App.section("これまでの資料",
           h("ul", { class: "app-list mt-files" },
             h("li", null, h("a", { class: "app-row", href: "../materials/fes-poster/bt-ex-fes-poster-a4.pdf", target: "_blank", rel: "noopener" },
