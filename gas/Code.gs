@@ -953,7 +953,7 @@ const BTEX_DECK = {
       "所属ユニットの出席は月1回以上\n月2回のうち1回は他ユニットの\n出席もカウントとする",
       "無断欠席・遅刻早退は禁止\n《(2回の遅刻、早退で1回欠席扱い)》",
       "最低年《12回》は自ユニットに出席すること",
-      "同一人物のビジター参加は2回までとする\n＊BT-EXフェスは何度でも参加可能",
+      "同一人物のビジター参加は2回までとする\n※BT-EXフェスは何度でも参加可能",
     ],
     note: "規定に関しては必要に応じて6ヶ月タームで見直しの合議を設ける",
     // 数字で見る約束(規定の前のスライド)。[数字, 説明]
@@ -1040,7 +1040,7 @@ const BTEX_DECK = {
       { head: "1on1", text: "メンバー同士が1対1で\nお互いの事業や紹介してほしい人を\n深く知るミーティング" },
       { head: "貢献（リファーラル）", text: "メンバーへのお仕事の紹介" },
       { head: "ありがとうマイル", text: "紹介で仕事が決まったら\n紹介してくれた人へ\n成約金額を感謝として送る(1円＝1マイル)" },
-      { head: "ビジター", text: "見学で定例会に参加する方\n(同じ方の参加は2回まで)\n＊BT-EXフェスは何度でも参加可能" },
+      { head: "ビジター", text: "見学で定例会に参加する方\n(同じ方の参加は2回まで)\n※BT-EXフェスは何度でも参加可能" },
       { head: "アップクリエ", text: "LINK で自分をサポートしてくれているメンバー" },
       { head: "系列", text: "B.T. の中のグループ" },
       { head: "出席コード", text: "定例会で画面に出る4桁のコード\nbt-ex.jp で入れると出席になる" },
@@ -1161,24 +1161,33 @@ function refAliasPhotos(list) {
   return list;
 }
 
-// 代表・役職・役割と、その基礎ポイント(大きいほど上に出る)
-// - マーク: 名前の下に表示する(kind: leader=代表 / post=役職 / role=役割)
+// チーム代表・正式ランク・役職・役割のマークと、その基礎ポイント(大きいほど上に出る)
+// - マーク: 名前の下に表示する。種類ごとに色と形を変える(1人に何枚でも)
+//   team = チーム代表(Team Bloom∞🌸 や Over などのチームの代表。BT-EX5 の代表ではない)/ rank = 正式ランク
+//   post = 役職 / role = 役割(BT-EX 内の役割。BT-EX5代表・副代表もここ)
 // - 紹介診断: 話題かキーワードが合った人の点数に足す(合わない人を上げることはしない)
 // - 検索・診断の前の一覧: 利用者本人を先頭にしたうえで、この点数の高い順。ほかは日替わり
 const REF_BASE_POINTS = {
-  m16: { points: 10, kind: "leader", role: "BT-EX5代表 / プライムリンカー" },
-  m09: { points: 9, kind: "leader", role: "BT-EX5代表" },
-  m22: { points: 8, kind: "post", role: "甲信越コミュニティ統括班長" },
-  m02: { points: 7, kind: "role", role: "LINKセレモニーメイン司会" },
-  m14: { points: 6, kind: "leader", role: "BT-EX5副代表" }, // 代表と同じ金の枠・王冠(運営の依頼)
-  yamamoto: { points: 5, kind: "role", role: "本システム開発者" },
+  m16: { points: 10, roles: [{ kind: "team", role: "Team Bloom∞🌸 代表" }, { kind: "rank", role: "プライムリンカー" }, { kind: "role", role: "BT-EX5代表" }] },
+  m14: { points: 9, roles: [{ kind: "role", role: "BT-EX5副代表" }] },
+  m22: { points: 8, roles: [{ kind: "post", role: "甲信越コミュニティ統括班長" }] },
+  m02: { points: 7, roles: [{ kind: "role", role: "LINKセレモニーメイン司会" }] },
+  m09: { points: 6, roles: [{ kind: "team", role: "Over 代表" }] },
+  yamamoto: { points: 5, roles: [{ kind: "role", role: "本システム開発者" }] },
 };
-const REF_ROLE_KINDS = { leader: "代表", post: "役職", role: "役割" };
+const REF_ROLE_KINDS = { team: "チーム代表", rank: "正式ランク", post: "役職", role: "役割" };
 function refBasePoints(id) {
   return (REF_BASE_POINTS[id] && REF_BASE_POINTS[id].points) || 0;
 }
+// その人のマーク(チーム代表 → 正式ランク → 役職 → 役割 の順)
+function refRolesOf(id) {
+  const order = Object.keys(REF_ROLE_KINDS);
+  return ((REF_BASE_POINTS[id] && REF_BASE_POINTS[id].roles) || []).slice()
+    .sort((a, b) => order.indexOf(a.kind) - order.indexOf(b.kind));
+}
+// いちばん上のマーク1つ(古い呼び出し用)
 function refRoleOf(id) {
-  return REF_BASE_POINTS[id] || null;
+  return refRolesOf(id)[0] || null;
 }
 
 // 紹介に効く項目(重要な順)。足りない項目は管理者ページの「お願い文」と、
@@ -1527,7 +1536,7 @@ const REF_SEED_MEMBERS = [
     business: "サポートメニュー:マインドコーチング(心のブレーキを外し、自分らしく進めるマインドを育てる)/自分軸・価値観整理/起業初心者向けビジネスコンサル(何から始めればいいかを一緒に整理し、形にする)/ビジネスマインド講座/コミュニケーション講座(伝える力・聴く力を磨き、信頼される関係を築く)/オンライン・リアルセミナー開催(全国オンライン対応・新潟リアル開催あり・少人数セミナー)。オンラインコーチング(個人・法人)。話すだけで頭の中が整理でき、モヤモヤが晴れて次の一歩が見えるようになります。マインド・メンタル系のセミナー・講座・講演(自己肯定感・やる気・モチベーション・コミュニケーション)。研修やセミナーの前に入れる、場をほぐすコミュニケーションのワークもお伝えできます。",
     customers: "個人事業主/起業家/一般の社会人",
     wants: "考えを整理したい・気軽に話せる相談相手がほしい経営者の方/社内向けのセミナー・研修を探している会社の方/マインドを整えて自己肯定感を上げたい方",
-    triggers: ["人生迷子", "セミナージプシー", "人間関係に悩んでいる", "アロマ講座", "女性起業家のイベント", "頑張っているのに満たされない", "自分の軸がわからない", "想いをうまく言葉にできない", "行動したいのに不安で止まる", "自分らしい働き方を見つけたい", "人と比べて苦しくなる", "起業したばかりで何から始めればいいか分からない", "社内のコミュニケーションを良くしたい", "自己肯定感を上げたい", "やる気・モチベーションが下がっている", "モチベーションを上げたい", "セミナーの壁打ち相手がほしい", "セミナーにフィードバックがほしい", "相談相手がほしい", "頭の中を整理したい", "モヤモヤしている", "社内向けのセミナーを探している", "研修の前のアイスブレイク"],
+    triggers: ["思考の整理", "マインド", "コミュニケーション", "人生迷子", "セミナージプシー", "人間関係に悩んでいる", "アロマ講座", "女性起業家のイベント", "頑張っているのに満たされない", "自分の軸がわからない", "想いをうまく言葉にできない", "行動したいのに不安で止まる", "自分らしい働き方を見つけたい", "人と比べて苦しくなる", "起業したばかりで何から始めればいいか分からない", "社内のコミュニケーションを良くしたい", "自己肯定感を上げたい", "やる気・モチベーションが下がっている", "モチベーションを上げたい", "セミナーの壁打ち相手がほしい", "セミナーにフィードバックがほしい", "相談相手がほしい", "頭の中を整理したい", "モヤモヤしている", "社内向けのセミナーを探している", "研修の前のアイスブレイク"],
     note: "年間400名以上と個別セッションを実施、3ヶ月で新規61件・成約率55%の実績。「会うだけで元気になる」と言われ、10分で打ち解けることから別名【コミュ力おばけ】。人生迷子さんや、成長したい経営者・個人事業主の方へ、まずは自分軸を整えることからサポート。新潟県在住・全国オンライン対応(新潟・長野のご縁も歓迎)。公式LINE に登録すると「価値観のズレ」チェックシート(PDF)を無料でもらえる。誰とでもすぐ仲良くなれる「コミュ力おばけ」が強み。話すだけで思考が整理でき、モヤモヤを解消できます。マインドセットが得意なので、研修・セミナーの前に入れるコミュニケーションのワークもお伝えできます。\n講師紹介より:人生迷子やセミナージプシーの方へマインドの整え方を教えています。コミュニケーションの達人:コミュニケーションや人間関係では悩んだことがなく、人との交流が得意。その人の個性を活かした日常から使えるコミュ力をお伝えしています。コーチングの専門家:コーチとはクライアントの目指すゴールまで一緒に進むガイド役。コーチングで大切にしているのはお互いの信頼関係と諦めない心です。\n経歴:アロマアドバイザー、パーソナルカラー色彩心理インストラクター、ISD個性心理学アドバイザー、ハーブトリートメントアドバイザー、YCSコーチングプログラム終了生、初起業者向けのアドバイスサポート、女性起業家イベント主催運営、アロマ講座プロデュース。",
     face: "新潟",
     faceAreas: ["niigata"],
@@ -1706,6 +1715,8 @@ const REF_SEED_REVISIONS = [
   // 本人の依頼で、山本 捷真の「こんな話が出たら」の「公式LINEを作りたい」をいちばん最後に(プレゼンの画面には、代わりに次の言葉が出る)
   { rev: "2026-10-yamamoto-line-last", ids: ["yamamoto"], fields: ["triggers"], force: true },
   // 本人の新しい資料(フライコアの事業案内・子ども達への体験の活動)で、栁橋 雅也さんを充実させ、資料を入れかえる(編集済みでも置き換える)
+  // 運営の依頼で、こばねぇさんの「こんな話が出たら」の先頭に「思考の整理」「マインド」「コミュニケーション」を入れる(ほかの言葉はそのまま)
+  { rev: "2026-10-kobane-triggers-first", ids: ["m22"], fields: ["triggers"], addTriggers: ["思考の整理", "マインド", "コミュニケーション"], triggersFirst: true },
   { rev: "2026-10-yanagibashi-flycore", ids: ["m24"], fields: ["company", "business", "wants", "customers", "triggers", "topics", "links"], force: true },
 ];
 
@@ -2690,7 +2701,7 @@ const REF_SEED_ANNOUNCEMENTS = [
   {
     seedId: "2026-10-25-update-16",
     cat: "アップデート",
-    rev: 76,
+    rev: 77,
     at: Date.UTC(2026, 9, 25, 4, 0), // 2026/10/25 13:00(日本時間)
     title: "【アップデート】紹介診断に「相手がこう言っていたら」・アンケート・運営タブ など",
     body: [
@@ -2698,6 +2709,13 @@ const REF_SEED_ANNOUNCEMENTS = [
       "",
       "■ 今回",
       "【大切なお知らせ】共有サーバーにつなぎました。これからは、アンケート・紹介の記録・定例会の出欠・掲示板などが、全員で同じデータになります(つなぐ前に各スマホの中だけに入っていたデータは移りません)。",
+      "・掲示板の投稿に、写真を4枚まで付けられるようにしました(写真だけの投稿もできます。押すと大きく見られます)。",
+      "・紹介のページに「BT-EX に誘うときの決まり」を入れました(BT メンバーであること/ビジター参加のときもアップクリエの許可をもらうこと/BT-EX への参加はアドバンスリーダーの許可が必須。使い方ガイドにも同じ内容があります)。",
+      "・名前の下のマークを「チーム代表」(金・王冠)「正式ランク」(紫・宝石)「役職」(赤・盾)「役割」(紺・星。BT-EX 内の役割)の4種類に分け、色と形を変えました。1人に何枚でも付きます(桜羽 李果さん: Team Bloom∞🌸 代表・プライムリンカー・BT-EX5代表/大場 雅俊さん: Over 代表/三村 隆さん: BT-EX5副代表 など)。",
+      "・こばねぇさんの「こんな話が出たら」の先頭に「思考の整理」「マインド」「コミュニケーション」を入れました。",
+      "・用語説明の「ありがとうマイル」で「(1円=1マイル)」が途中で折り返さないようにし、カードの下が切れないようにしました。「＊BT-EXフェスは何度でも参加可能」の「＊」を「※」にしました。",
+      "・定例会のスライドを開いたときに、スライド全体が右に寄ることがあったのを直しました。",
+      "・早見表などをすぐ開いたとき(新しいタブ・ホーム画面のアイコンから)に、下のタブに「プレゼン」「運営」が出ないことがあったのを直しました(一度アプリを開くと、この端末に覚えます)。",
       "・掲示板と予定は、開いたままでも、ほかのメンバーの新しい投稿・コメント・予定の追加や変更が15秒ほどで自動で出るようにしました(入力中は、入力が終わってから出ます)。",
       "・「アンケートの結果」を全画面で開くようにし、記録の「分析」と同じ見やすいダッシュボードにしました(回答数・可能性の平均・「感じた」以上・入会に前向きの数字のカードと前回からの増減、回ごとの推移の折れ線、5段階と入会への興味のドーナツ、良かったプログラムの順位)。",
       "・プレゼンの画面の「アンケートの結果」を、グラフの絵つきの目立つボタン(「アンケートの結果を見る」)にしました。",
@@ -3133,7 +3151,12 @@ var BtexServerCore = (function () {
           // addTriggers: 編集済みのメンバーにも、「こんな話が出たら」の言葉をないものだけ足す(ほかの言葉はそのまま)
           if (Array.isArray(r.addTriggers)) {
             next.triggers = (Array.isArray(next.triggers) ? next.triggers : []).slice();
-            r.addTriggers.forEach(function (t) { if (next.triggers.indexOf(t) === -1) next.triggers.push(t); });
+            if (r.triggersFirst) {
+              // triggersFirst: 足す言葉を先頭に並べる(もうある言葉も先頭へ動かす)
+              next.triggers = r.addTriggers.slice().concat(next.triggers.filter(function (t) { return r.addTriggers.indexOf(t) === -1; }));
+            } else {
+              r.addTriggers.forEach(function (t) { if (next.triggers.indexOf(t) === -1) next.triggers.push(t); });
+            }
           }
           if (r.addTopics && Array.isArray(next.topics)) {
             next.topics = next.topics.concat((seedMember.topics || []).filter(function (t) {
@@ -5658,7 +5681,7 @@ var BtexServerCore = (function () {
         return {
           id: p.id, by: p.by, byName: nameOf(w.db, p.by), cat: p.cat, body: p.body, at: p.at,
           likes: (p.likes || []).length, liked: (p.likes || []).indexOf(w.id) !== -1,
-          canDelete: p.by === w.id || w.isAdmin, canEdit: p.by === w.id, editedAt: p.editedAt || 0,
+          canDelete: p.by === w.id || w.isAdmin, canEdit: p.by === w.id, editedAt: p.editedAt || 0, images: (p.images || []).length,
           comments: (p.comments || []).map(function (cm) {
             return { id: cm.id, by: cm.by, byName: nameOf(w.db, cm.by), body: cm.body, at: cm.at, canDelete: cm.by === w.id || w.isAdmin, canEdit: cm.by === w.id, edited: !!cm.editedAt };
           }),
@@ -5783,13 +5806,62 @@ var BtexServerCore = (function () {
         if (body.markSeen !== false) { s.board = c.nowMs(); c.saveDb(w.db); }
         return c.ok({ items: items, cats: BOARD_CATS });
       }
+      // 掲示板の写真(1投稿4枚まで)。名簿の本体とは別の置き場所(写真と同じ env.blobs)に、
+      // 1マスに入る大きさ(45,000文字)ずつ分けて入れる。投稿には枚数と分けた数だけを持つ
+      var POST_IMG_MAX = 4, POST_IMG_CHARS = 450000, POST_IMG_CHUNK = 45000;
+      function pblobGet(db, key) {
+        if (c.blobs) return c.blobs.get(key) || "";
+        return (db.photoBlobs && db.photoBlobs[key]) || "";
+      }
+      function pblobSet(db, key, value) {
+        if (c.blobs) { c.blobs.set(key, value); return; }
+        if (!db.photoBlobs) db.photoBlobs = {};
+        if (value) db.photoBlobs[key] = value; else delete db.photoBlobs[key];
+      }
+      function cleanPostImages(list) {
+        if (!Array.isArray(list)) return [];
+        var out = [];
+        for (var i = 0; i < list.length && out.length < POST_IMG_MAX; i++) {
+          var v = String(list[i] || "");
+          if (!v) continue;
+          if (v.length > POST_IMG_CHARS || !/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+\/=]+$/.test(v)) return null;
+          out.push(v);
+        }
+        return out;
+      }
+      function savePostImages(db, pid, images) {
+        return images.map(function (v, i) {
+          var n = Math.ceil(v.length / POST_IMG_CHUNK);
+          for (var k = 0; k < n; k++) pblobSet(db, "post:" + pid + ":" + i + ":" + k, v.slice(k * POST_IMG_CHUNK, (k + 1) * POST_IMG_CHUNK));
+          return { n: n };
+        });
+      }
+      function dropPostImages(db, p) {
+        (p.images || []).forEach(function (m, i) { for (var k = 0; k < m.n; k++) pblobSet(db, "post:" + p.id + ":" + i + ":" + k, ""); });
+      }
+      function getPostImage(body) {
+        var w = who(body);
+        if (w.error) return w.error;
+        var p = c.find(w.db.posts, function (x) { return x.id === body.postId; });
+        var i = Number(body.i) || 0;
+        var m = p && (p.images || [])[i];
+        if (!m) return c.fail("NOT_FOUND");
+        var data = "";
+        for (var k = 0; k < m.n; k++) data += pblobGet(w.db, "post:" + p.id + ":" + i + ":" + k);
+        return c.ok({ data: data });
+      }
       function createPost(body) {
         var w = who(body);
         if (w.error) return w.error;
         var text = cleanText(body.body, 2000);
-        if (!text) return c.fail("INVALID_REQUEST", "本文を入れてください。");
+        var images = cleanPostImages(body.images);
+        if (images === null) return c.fail("INVALID_REQUEST", "写真が大きすぎるか、形式が読めません。別の写真でお試しください。");
+        if (!text && !images.length) return c.fail("INVALID_REQUEST", "本文を入れてください。");
         var p = { id: newId("p_"), by: w.id, cat: oneOf(body.cat === "雑談" ? "告知" : body.cat, BOARD_CATS, "告知"), body: text, at: c.nowMs(), likes: [], comments: [] };
+        if (images.length) p.images = savePostImages(w.db, p.id, images);
         w.db.posts.push(p);
+        // 古い投稿を消すときは、その写真も消す
+        if (w.db.posts.length > LIMITS.posts) w.db.posts.slice(0, w.db.posts.length - LIMITS.posts).forEach(function (old) { dropPostImages(w.db, old); });
         trim(w.db.posts, LIMITS.posts);
         c.saveDb(w.db);
         return c.ok({ item: postView(w, p) });
@@ -5799,6 +5871,7 @@ var BtexServerCore = (function () {
         if (w.error) return w.error;
         var p = c.find(w.db.posts, function (x) { return x.id === body.id; });
         if (!p || (p.by !== w.id && !w.isAdmin)) return c.fail("NOT_FOUND");
+        dropPostImages(w.db, p);
         w.db.posts = w.db.posts.filter(function (x) { return x.id !== p.id; });
         c.saveDb(w.db);
         return c.ok({});
@@ -6575,7 +6648,7 @@ var BtexServerCore = (function () {
           adminSaveAnnouncement: adminSaveAnnouncement, adminDeleteAnnouncement: adminDeleteAnnouncement, adminRemindAnnouncement: adminRemindAnnouncement,
           listTasks: listTasks, saveTask: saveTask, toggleTask: toggleTask, deleteTask: deleteTask,
           listBoard: listBoard, createPost: createPost, editPost: editPost, editComment: editComment, deletePost: deletePost, commentPost: commentPost,
-          deleteComment: deleteComment, likePost: likePost,
+          deleteComment: deleteComment, likePost: likePost, getPostImage: getPostImage,
           sendFeedback: sendFeedback, listMyFeedback: listMyFeedback, adminListFeedback: adminListFeedback, adminUpdateFeedback: adminUpdateFeedback,
           pushConfig: pushConfig, savePushSubscription: savePushSubscription, deletePushSubscription: deletePushSubscription, pushPeek: pushPeek,
         },
@@ -6761,7 +6834,7 @@ var BtexServerCore = (function () {
           db.cleanups.push("deck-visitor-fes-1");
           var cfg5 = readCfg(db);
           if (cfg5) {
-            var OLD_V = "見学で定例会に参加する方\n(同じ方の参加は2回まで)", NEW_V = OLD_V + "\n＊BT-EXフェスは何度でも参加可能";
+            var OLD_V = "見学で定例会に参加する方\n(同じ方の参加は2回まで)", NEW_V = OLD_V + "\n※BT-EXフェスは何度でも参加可能";
             var addFes = function (v) {
               if (typeof v === "string") return flatText(v) === flatText(OLD_V) ? NEW_V : v;
               if (Array.isArray(v)) return v.map(addFes);
@@ -6783,7 +6856,7 @@ var BtexServerCore = (function () {
               if (typeof v === "string") {
                 var f = v.replace(/\s/g, "");
                 if (f === "ビジターとの1on1は招待者を通す") return "ビジターとの1on1は招待者を《必ず》通す";
-                if (f === "同一人物のビジター参加は2回までとする") return "同一人物のビジター参加は2回までとする\n＊BT-EXフェスは何度でも参加可能";
+                if (f === "同一人物のビジター参加は2回までとする") return "同一人物のビジター参加は2回までとする\n※BT-EXフェスは何度でも参加可能";
                 if (f === "今後、新潟・東京各月でリアル定例会も開催予定") return "今後、新潟・東京各月でリアル定例会も開催予定\n＊LINKの公式スケジュールによってはスケジュールの変更あり";
                 return v;
               }
@@ -6827,6 +6900,21 @@ var BtexServerCore = (function () {
             if (cfg8["glossary.items"]) cfg8["glossary.items"] = renameRef(cfg8["glossary.items"]);
             if (cfg8.glossary) renameRef(cfg8.glossary);
             writeCfg(db, cfg8);
+          }
+          changed = true;
+        }
+        // 「＊BT-EXフェスは何度でも参加可能」の「＊」を米印「※」に(運営の依頼。2026年10月)。前に保存した文も書きかえる
+        if (db.cleanups.indexOf("deck-kome-1") === -1) {
+          db.cleanups.push("deck-kome-1");
+          var cfg9 = readCfg(db);
+          if (cfg9) {
+            var toKome = function (v) {
+              if (typeof v === "string") return v.replace(/[＊*]\s*(BT[-−‐]EXフェスは何度でも参加可能)/g, "※$1");
+              if (Array.isArray(v)) return v.map(toKome);
+              if (v && typeof v === "object") { Object.keys(v).forEach(function (k) { v[k] = toKome(v[k]); }); return v; }
+              return v;
+            };
+            writeCfg(db, toKome(cfg9));
           }
           changed = true;
         }

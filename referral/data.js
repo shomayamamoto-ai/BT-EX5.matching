@@ -945,7 +945,7 @@ const BTEX_DECK = {
       "所属ユニットの出席は月1回以上\n月2回のうち1回は他ユニットの\n出席もカウントとする",
       "無断欠席・遅刻早退は禁止\n《(2回の遅刻、早退で1回欠席扱い)》",
       "最低年《12回》は自ユニットに出席すること",
-      "同一人物のビジター参加は2回までとする\n＊BT-EXフェスは何度でも参加可能",
+      "同一人物のビジター参加は2回までとする\n※BT-EXフェスは何度でも参加可能",
     ],
     note: "規定に関しては必要に応じて6ヶ月タームで見直しの合議を設ける",
     // 数字で見る約束(規定の前のスライド)。[数字, 説明]
@@ -1032,7 +1032,7 @@ const BTEX_DECK = {
       { head: "1on1", text: "メンバー同士が1対1で\nお互いの事業や紹介してほしい人を\n深く知るミーティング" },
       { head: "貢献（リファーラル）", text: "メンバーへのお仕事の紹介" },
       { head: "ありがとうマイル", text: "紹介で仕事が決まったら\n紹介してくれた人へ\n成約金額を感謝として送る(1円＝1マイル)" },
-      { head: "ビジター", text: "見学で定例会に参加する方\n(同じ方の参加は2回まで)\n＊BT-EXフェスは何度でも参加可能" },
+      { head: "ビジター", text: "見学で定例会に参加する方\n(同じ方の参加は2回まで)\n※BT-EXフェスは何度でも参加可能" },
       { head: "アップクリエ", text: "LINK で自分をサポートしてくれているメンバー" },
       { head: "系列", text: "B.T. の中のグループ" },
       { head: "出席コード", text: "定例会で画面に出る4桁のコード\nbt-ex.jp で入れると出席になる" },
@@ -1153,24 +1153,33 @@ function refAliasPhotos(list) {
   return list;
 }
 
-// 代表・役職・役割と、その基礎ポイント(大きいほど上に出る)
-// - マーク: 名前の下に表示する(kind: leader=代表 / post=役職 / role=役割)
+// チーム代表・正式ランク・役職・役割のマークと、その基礎ポイント(大きいほど上に出る)
+// - マーク: 名前の下に表示する。種類ごとに色と形を変える(1人に何枚でも)
+//   team = チーム代表(Team Bloom∞🌸 や Over などのチームの代表。BT-EX5 の代表ではない)/ rank = 正式ランク
+//   post = 役職 / role = 役割(BT-EX 内の役割。BT-EX5代表・副代表もここ)
 // - 紹介診断: 話題かキーワードが合った人の点数に足す(合わない人を上げることはしない)
 // - 検索・診断の前の一覧: 利用者本人を先頭にしたうえで、この点数の高い順。ほかは日替わり
 const REF_BASE_POINTS = {
-  m16: { points: 10, kind: "leader", role: "BT-EX5代表 / プライムリンカー" },
-  m09: { points: 9, kind: "leader", role: "BT-EX5代表" },
-  m22: { points: 8, kind: "post", role: "甲信越コミュニティ統括班長" },
-  m02: { points: 7, kind: "role", role: "LINKセレモニーメイン司会" },
-  m14: { points: 6, kind: "leader", role: "BT-EX5副代表" }, // 代表と同じ金の枠・王冠(運営の依頼)
-  yamamoto: { points: 5, kind: "role", role: "本システム開発者" },
+  m16: { points: 10, roles: [{ kind: "team", role: "Team Bloom∞🌸 代表" }, { kind: "rank", role: "プライムリンカー" }, { kind: "role", role: "BT-EX5代表" }] },
+  m14: { points: 9, roles: [{ kind: "role", role: "BT-EX5副代表" }] },
+  m22: { points: 8, roles: [{ kind: "post", role: "甲信越コミュニティ統括班長" }] },
+  m02: { points: 7, roles: [{ kind: "role", role: "LINKセレモニーメイン司会" }] },
+  m09: { points: 6, roles: [{ kind: "team", role: "Over 代表" }] },
+  yamamoto: { points: 5, roles: [{ kind: "role", role: "本システム開発者" }] },
 };
-const REF_ROLE_KINDS = { leader: "代表", post: "役職", role: "役割" };
+const REF_ROLE_KINDS = { team: "チーム代表", rank: "正式ランク", post: "役職", role: "役割" };
 function refBasePoints(id) {
   return (REF_BASE_POINTS[id] && REF_BASE_POINTS[id].points) || 0;
 }
+// その人のマーク(チーム代表 → 正式ランク → 役職 → 役割 の順)
+function refRolesOf(id) {
+  const order = Object.keys(REF_ROLE_KINDS);
+  return ((REF_BASE_POINTS[id] && REF_BASE_POINTS[id].roles) || []).slice()
+    .sort((a, b) => order.indexOf(a.kind) - order.indexOf(b.kind));
+}
+// いちばん上のマーク1つ(古い呼び出し用)
 function refRoleOf(id) {
-  return REF_BASE_POINTS[id] || null;
+  return refRolesOf(id)[0] || null;
 }
 
 // 紹介に効く項目(重要な順)。足りない項目は管理者ページの「お願い文」と、

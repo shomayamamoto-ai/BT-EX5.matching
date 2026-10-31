@@ -152,7 +152,8 @@
   }
   // 代表・役職・役割のマーク(早見表と同じ形)
   const ROLE_PATHS = {
-    leader: "M2 11.5h12L15 4.5l-3.6 2.7L8 2 4.6 7.2 1 4.5z",
+    team: "M2 11.5h12L15 4.5l-3.6 2.7L8 2 4.6 7.2 1 4.5z",
+    rank: "M4 1.5h8L15 5.5 8 14.5 1 5.5z",
     post: "M8 1.2 14 3.6v4.1c0 3.5-2.6 6.1-6 7.1-3.4-1-6-3.6-6-7.1V3.6z",
     role: "m8 1.4 1.9 4.1 4.5.5-3.4 3 1 4.4L8 11.2l-4 2.2 1-4.4-3.4-3 4.5-.5z",
   };
@@ -160,7 +161,7 @@
     const NS = "http://www.w3.org/2000/svg";
     const svg = document.createElementNS(NS, "svg"); svg.setAttribute("viewBox", "0 0 16 16"); svg.setAttribute("aria-hidden", "true");
     const path = document.createElementNS(NS, "path"); path.setAttribute("d", ROLE_PATHS[r.kind] || ROLE_PATHS.role); svg.append(path);
-    return h("span", { class: `pr-role is-${r.kind}` }, svg, r.role);
+    return h("span", { class: `pr-role is-${r.kind}`, title: `${(typeof REF_ROLE_KINDS !== "undefined" && REF_ROLE_KINDS[r.kind]) || ""}:${r.role}` }, svg, r.role);
   }
   // 小さく出す顔写真(一覧の丸・自分の写真)は、運営が用意した写真なら小さい版(thumbs/)を使う(読み込みを軽く)
   const SMALL_FACE = /^(pr-card-face|pr-row-face|pr-me-face|pd-staff-face)$/;
@@ -193,7 +194,7 @@
         key, kind: "member", memberId: id, name: m.name, kana: m.kana || "", photo: photos[id] || "",
         catch: m.company || m.category || "", team: m.team || "",
         area: areaLine(m), wants: clip(m.wants, 240), wantsRank: (m.wantsRank || []).slice(0, 5), triggers: (m.triggers || []).slice(0, 24),
-        role: typeof refRoleOf === "function" ? refRoleOf(id) : null,
+        roles: typeof refRolesOf === "function" ? refRolesOf(id) : [],
       };
     }
     return null;
@@ -1795,12 +1796,23 @@
           App.fill(pop, h("div", { class: "pd-gloss-card", key: String(seq.i) },
             h("p", { class: "pd-gloss-no" }, `${two(seq.i)} / ${two(items.length)}`),
             h("p", { class: "pd-gloss-term" }, x.head),
-            h("p", { class: "pd-gloss-text" }, ...lines(x.text || "")),
+            // かっこの中(「(1円＝1マイル)」など)は途中で折り返さない
+            h("p", { class: "pd-gloss-text" }, ...String(x.text || "").split("\n").flatMap((t, k) => [k ? h("br") : null,
+              ...t.split(/([(（][^)）]*[)）])/).map((seg, j) => (j % 2 ? h("span", { class: "pd-nowrap" }, seg) : seg))]).filter((v) => v !== null && v !== "")),
             h("button", { type: "button", class: "pd-gloss-close", "aria-label": "閉じる", onclick: () => seq.show(0) }, lineIcon("close"))));
           pop.hidden = false;
           // 言葉は1行で出す(入りきらないときは文字を小さくする)
           const term = pop.querySelector(".pd-gloss-term");
           if (term && term.scrollWidth > term.clientWidth) term.style.fontSize = `${parseFloat(getComputedStyle(term).fontSize) * (term.clientWidth / term.scrollWidth) * 0.98}px`;
+          // カードが画面(下の流れの帯の上まで)に入りきらないときは、説明の文字を小さくして下まで見えるようにする
+          const card = pop.querySelector(".pd-gloss-card"), text = pop.querySelector(".pd-gloss-text");
+          if (card && text) {
+            const room = () => pop.clientHeight - parseFloat(getComputedStyle(pop).paddingTop) - parseFloat(getComputedStyle(pop).paddingBottom);
+            for (let guard = 0; guard < 30 && card.offsetHeight > room(); guard++) {
+              text.style.fontSize = `${parseFloat(getComputedStyle(text).fontSize) * 0.93}px`;
+              if (term) term.style.fontSize = `${parseFloat(getComputedStyle(term).fontSize) * 0.97}px`;
+            }
+          }
         } };
         pop.addEventListener("click", (e) => { if (e.target === pop) seq.show(0); });
         const wrap = h("div", { class: "pd-gl-seq" }, h("dl", { class: "pd-gloss" }, cells), pop);
@@ -1957,7 +1969,8 @@
         const need = bottom - br.top, room = sr.bottom - br.top;
         if (need > room && room > 0) {
           const k = Math.max(0.55, (room / need) * 0.97);
-          body.style.transformOrigin = "50% 0";
+          // 左はし(題と同じ位置)を動かさずに縮める(まん中を軸にすると、中身が右に寄って見えるため)
+          body.style.transformOrigin = "0 0";
           body.style.transform = `scale(${k.toFixed(3)})`;
         }
         return;
@@ -2080,7 +2093,7 @@
           h("div", { class: "pr-body" },
             h("p", { class: "pr-teamname" },
               h("span", null, p.kind === "visitor" ? "ビジター" : p.kind === "guest" ? "ゲスト" : p.kind === "other" ? (p.unit ? `BT-EX${p.unit} メンバー` : "BT-EX メンバー") : p.team || ""),
-              p.role ? roleBadge(p.role) : null),
+              ...(p.roles || []).map(roleBadge)),
             nameEl(p.name, "h2", "pr-name", h("small", null, "さん"), !solo),
             // フリガナは BT-EX5 のメンバーだけ(ほかの BT-EX・ゲスト・ビジターの方は出さない)
             p.kana && p.kind === "member" ? h("p", { class: "pr-kana" }, p.kana) : null,

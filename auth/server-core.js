@@ -304,7 +304,12 @@ var BtexServerCore = (function () {
           // addTriggers: 編集済みのメンバーにも、「こんな話が出たら」の言葉をないものだけ足す(ほかの言葉はそのまま)
           if (Array.isArray(r.addTriggers)) {
             next.triggers = (Array.isArray(next.triggers) ? next.triggers : []).slice();
-            r.addTriggers.forEach(function (t) { if (next.triggers.indexOf(t) === -1) next.triggers.push(t); });
+            if (r.triggersFirst) {
+              // triggersFirst: 足す言葉を先頭に並べる(もうある言葉も先頭へ動かす)
+              next.triggers = r.addTriggers.slice().concat(next.triggers.filter(function (t) { return r.addTriggers.indexOf(t) === -1; }));
+            } else {
+              r.addTriggers.forEach(function (t) { if (next.triggers.indexOf(t) === -1) next.triggers.push(t); });
+            }
           }
           if (r.addTopics && Array.isArray(next.topics)) {
             next.topics = next.topics.concat((seedMember.topics || []).filter(function (t) {

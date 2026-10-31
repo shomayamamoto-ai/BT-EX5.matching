@@ -1007,6 +1007,8 @@ const App = (function () {
     } catch { /* noop */ }
     session = data;
     try { sessionStorage.setItem("btex5-my-name", data.displayName || ""); sessionStorage.setItem("btex5-present", canPresent() ? "1" : "0"); } catch { /* noop */ }
+    // 早見表などを、アプリを通らずにすぐ開いたとき(新しいタブ・ホーム画面のアイコン)も下のタブにプレゼン・運営が出るように、この端末にも覚える
+    try { localStorage.setItem("btex5-present", canPresent() ? "1" : "0"); } catch { /* noop */ }
     // 前回の名簿があればそれですぐ開き、新しい名簿は届きしだい入れかえる(届くまで待たない)
     let cachedMembers = null;
     try { cachedMembers = JSON.parse(localStorage.getItem(MEMBERS_CACHE) || "null"); } catch { /* noop */ }

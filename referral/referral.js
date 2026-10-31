@@ -444,7 +444,8 @@
 
   // 代表・役職・役割のマーク(data.js の REF_BASE_POINTS)
   const ROLE_ICONS = {
-    leader: '<path d="M2 11.5h12L15 4.5l-3.6 2.7L8 2 4.6 7.2 1 4.5z"/>',
+    team: '<path d="M2 11.5h12L15 4.5l-3.6 2.7L8 2 4.6 7.2 1 4.5z"/>',
+    rank: '<path d="M4 1.5h8L15 5.5 8 14.5 1 5.5z"/>',
     post: '<path d="M8 1.2 14 3.6v4.1c0 3.5-2.6 6.1-6 7.1-3.4-1-6-3.6-6-7.1V3.6z"/>',
     role: '<path d="m8 1.4 1.9 4.1 4.5.5-3.4 3 1 4.4L8 11.2l-4 2.2 1-4.4-3.4-3 4.5-.5z"/>',
   };
@@ -464,13 +465,15 @@
   }
 
   function roleMark(id, compact) {
-    const r = refRoleOf(id);
-    if (!r) return "";
-    // 「役職」「役割」などの区分の言葉は出さず、マーク(色・形)と肩書きだけを出す
-    return `<span class="ref-role ref-role-${r.kind}${compact ? " compact" : ""}" title="${escapeHtml(r.role)}">`
+    const rs = refRolesOf(id);
+    if (!rs.length) return "";
+    // 区分の言葉(チーム代表・役職など)は出さず、マーク(色・形)と肩書きだけを出す。区分は押さえたときの説明に
+    const one = (r) => `<span class="ref-role ref-role-${r.kind}${compact ? " compact" : ""}" title="${escapeHtml(`${REF_ROLE_KINDS[r.kind] || ""}:${r.role}`)}">`
       + `<svg viewBox="0 0 16 16" aria-hidden="true">${ROLE_ICONS[r.kind] || ROLE_ICONS.role}</svg>`
       + `<span class="ref-role-text">${escapeHtml(r.role).replace(/ ?\/ ?/g, " /<wbr>")}</span></span>`;
+    return rs.length === 1 ? one(rs[0]) : `<span class="ref-roles">${rs.map(one).join("")}</span>`;
   }
+
 
   // 一覧の並び順は日替わり(だれもが上に表示される日があるように)。同じ日は同じ順
   function dailyOrder(list) {

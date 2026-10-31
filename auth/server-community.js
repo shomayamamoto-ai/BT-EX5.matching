@@ -1591,7 +1591,7 @@
         return {
           id: p.id, by: p.by, byName: nameOf(w.db, p.by), cat: p.cat, body: p.body, at: p.at,
           likes: (p.likes || []).length, liked: (p.likes || []).indexOf(w.id) !== -1,
-          canDelete: p.by === w.id || w.isAdmin, canEdit: p.by === w.id, editedAt: p.editedAt || 0,
+          canDelete: p.by === w.id || w.isAdmin, canEdit: p.by === w.id, editedAt: p.editedAt || 0, images: (p.images || []).length,
           comments: (p.comments || []).map(function (cm) {
             return { id: cm.id, by: cm.by, byName: nameOf(w.db, cm.by), body: cm.body, at: cm.at, canDelete: cm.by === w.id || w.isAdmin, canEdit: cm.by === w.id, edited: !!cm.editedAt };
           }),
@@ -1716,13 +1716,62 @@
         if (body.markSeen !== false) { s.board = c.nowMs(); c.saveDb(w.db); }
         return c.ok({ items: items, cats: BOARD_CATS });
       }
+      // 掲示板の写真(1投稿4枚まで)。名簿の本体とは別の置き場所(写真と同じ env.blobs)に、
+      // 1マスに入る大きさ(45,000文字)ずつ分けて入れる。投稿には枚数と分けた数だけを持つ
+      var POST_IMG_MAX = 4, POST_IMG_CHARS = 450000, POST_IMG_CHUNK = 45000;
+      function pblobGet(db, key) {
+        if (c.blobs) return c.blobs.get(key) || "";
+        return (db.photoBlobs && db.photoBlobs[key]) || "";
+      }
+      function pblobSet(db, key, value) {
+        if (c.blobs) { c.blobs.set(key, value); return; }
+        if (!db.photoBlobs) db.photoBlobs = {};
+        if (value) db.photoBlobs[key] = value; else delete db.photoBlobs[key];
+      }
+      function cleanPostImages(list) {
+        if (!Array.isArray(list)) return [];
+        var out = [];
+        for (var i = 0; i < list.length && out.length < POST_IMG_MAX; i++) {
+          var v = String(list[i] || "");
+          if (!v) continue;
+          if (v.length > POST_IMG_CHARS || !/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+\/=]+$/.test(v)) return null;
+          out.push(v);
+        }
+        return out;
+      }
+      function savePostImages(db, pid, images) {
+        return images.map(function (v, i) {
+          var n = Math.ceil(v.length / POST_IMG_CHUNK);
+          for (var k = 0; k < n; k++) pblobSet(db, "post:" + pid + ":" + i + ":" + k, v.slice(k * POST_IMG_CHUNK, (k + 1) * POST_IMG_CHUNK));
+          return { n: n };
+        });
+      }
+      function dropPostImages(db, p) {
+        (p.images || []).forEach(function (m, i) { for (var k = 0; k < m.n; k++) pblobSet(db, "post:" + p.id + ":" + i + ":" + k, ""); });
+      }
+      function getPostImage(body) {
+        var w = who(body);
+        if (w.error) return w.error;
+        var p = c.find(w.db.posts, function (x) { return x.id === body.postId; });
+        var i = Number(body.i) || 0;
+        var m = p && (p.images || [])[i];
+        if (!m) return c.fail("NOT_FOUND");
+        var data = "";
+        for (var k = 0; k < m.n; k++) data += pblobGet(w.db, "post:" + p.id + ":" + i + ":" + k);
+        return c.ok({ data: data });
+      }
       function createPost(body) {
         var w = who(body);
         if (w.error) return w.error;
         var text = cleanText(body.body, 2000);
-        if (!text) return c.fail("INVALID_REQUEST", "本文を入れてください。");
+        var images = cleanPostImages(body.images);
+        if (images === null) return c.fail("INVALID_REQUEST", "写真が大きすぎるか、形式が読めません。別の写真でお試しください。");
+        if (!text && !images.length) return c.fail("INVALID_REQUEST", "本文を入れてください。");
         var p = { id: newId("p_"), by: w.id, cat: oneOf(body.cat === "雑談" ? "告知" : body.cat, BOARD_CATS, "告知"), body: text, at: c.nowMs(), likes: [], comments: [] };
+        if (images.length) p.images = savePostImages(w.db, p.id, images);
         w.db.posts.push(p);
+        // 古い投稿を消すときは、その写真も消す
+        if (w.db.posts.length > LIMITS.posts) w.db.posts.slice(0, w.db.posts.length - LIMITS.posts).forEach(function (old) { dropPostImages(w.db, old); });
         trim(w.db.posts, LIMITS.posts);
         c.saveDb(w.db);
         return c.ok({ item: postView(w, p) });
@@ -1732,6 +1781,7 @@
         if (w.error) return w.error;
         var p = c.find(w.db.posts, function (x) { return x.id === body.id; });
         if (!p || (p.by !== w.id && !w.isAdmin)) return c.fail("NOT_FOUND");
+        dropPostImages(w.db, p);
         w.db.posts = w.db.posts.filter(function (x) { return x.id !== p.id; });
         c.saveDb(w.db);
         return c.ok({});
@@ -2508,7 +2558,7 @@
           adminSaveAnnouncement: adminSaveAnnouncement, adminDeleteAnnouncement: adminDeleteAnnouncement, adminRemindAnnouncement: adminRemindAnnouncement,
           listTasks: listTasks, saveTask: saveTask, toggleTask: toggleTask, deleteTask: deleteTask,
           listBoard: listBoard, createPost: createPost, editPost: editPost, editComment: editComment, deletePost: deletePost, commentPost: commentPost,
-          deleteComment: deleteComment, likePost: likePost,
+          deleteComment: deleteComment, likePost: likePost, getPostImage: getPostImage,
           sendFeedback: sendFeedback, listMyFeedback: listMyFeedback, adminListFeedback: adminListFeedback, adminUpdateFeedback: adminUpdateFeedback,
           pushConfig: pushConfig, savePushSubscription: savePushSubscription, deletePushSubscription: deletePushSubscription, pushPeek: pushPeek,
         },
@@ -2694,7 +2744,7 @@
           db.cleanups.push("deck-visitor-fes-1");
           var cfg5 = readCfg(db);
           if (cfg5) {
-            var OLD_V = "見学で定例会に参加する方\n(同じ方の参加は2回まで)", NEW_V = OLD_V + "\n＊BT-EXフェスは何度でも参加可能";
+            var OLD_V = "見学で定例会に参加する方\n(同じ方の参加は2回まで)", NEW_V = OLD_V + "\n※BT-EXフェスは何度でも参加可能";
             var addFes = function (v) {
               if (typeof v === "string") return flatText(v) === flatText(OLD_V) ? NEW_V : v;
               if (Array.isArray(v)) return v.map(addFes);
@@ -2716,7 +2766,7 @@
               if (typeof v === "string") {
                 var f = v.replace(/\s/g, "");
                 if (f === "ビジターとの1on1は招待者を通す") return "ビジターとの1on1は招待者を《必ず》通す";
-                if (f === "同一人物のビジター参加は2回までとする") return "同一人物のビジター参加は2回までとする\n＊BT-EXフェスは何度でも参加可能";
+                if (f === "同一人物のビジター参加は2回までとする") return "同一人物のビジター参加は2回までとする\n※BT-EXフェスは何度でも参加可能";
                 if (f === "今後、新潟・東京各月でリアル定例会も開催予定") return "今後、新潟・東京各月でリアル定例会も開催予定\n＊LINKの公式スケジュールによってはスケジュールの変更あり";
                 return v;
               }
@@ -2760,6 +2810,21 @@
             if (cfg8["glossary.items"]) cfg8["glossary.items"] = renameRef(cfg8["glossary.items"]);
             if (cfg8.glossary) renameRef(cfg8.glossary);
             writeCfg(db, cfg8);
+          }
+          changed = true;
+        }
+        // 「＊BT-EXフェスは何度でも参加可能」の「＊」を米印「※」に(運営の依頼。2026年10月)。前に保存した文も書きかえる
+        if (db.cleanups.indexOf("deck-kome-1") === -1) {
+          db.cleanups.push("deck-kome-1");
+          var cfg9 = readCfg(db);
+          if (cfg9) {
+            var toKome = function (v) {
+              if (typeof v === "string") return v.replace(/[＊*]\s*(BT[-−‐]EXフェスは何度でも参加可能)/g, "※$1");
+              if (Array.isArray(v)) return v.map(toKome);
+              if (v && typeof v === "object") { Object.keys(v).forEach(function (k) { v[k] = toKome(v[k]); }); return v; }
+              return v;
+            };
+            writeCfg(db, toKome(cfg9));
           }
           changed = true;
         }

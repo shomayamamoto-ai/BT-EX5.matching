@@ -209,6 +209,49 @@
     return h("div", { class: "post-body-wrap" }, body, more);
   }
 
+  // 写真を小さくする(長い辺 maxSide・JPEG)。大きすぎるときは、さらに小さく・粗くする
+  function shrinkImage(file, maxSide = 1600) {
+    return new Promise((res, rej) => {
+      const img = new Image();
+      img.onload = () => {
+        let side = maxSide, q = 0.85, url = "";
+        for (let k = 0; k < 6; k++) {
+          const r = Math.min(1, side / Math.max(img.naturalWidth, img.naturalHeight));
+          const c = h("canvas", { width: Math.round(img.naturalWidth * r), height: Math.round(img.naturalHeight * r) });
+          const g = c.getContext("2d");
+          g.fillStyle = "#fff"; g.fillRect(0, 0, c.width, c.height);
+          g.drawImage(img, 0, 0, c.width, c.height);
+          url = c.toDataURL("image/jpeg", q);
+          if (url.length <= 440000) break;
+          side = Math.round(side * 0.8); q = Math.max(0.6, q - 0.08);
+        }
+        URL.revokeObjectURL(img.src);
+        res(url);
+      };
+      img.onerror = rej;
+      img.src = URL.createObjectURL(file);
+    });
+  }
+  // 投稿の写真: 一覧を開いてから、1枚ずつ取りに行く(この画面を開いているあいだは覚えておく)
+  const imgCache = new Map();
+  function postImages(p) {
+    if (!p.images) return null;
+    const box = h("div", { class: `post-imgs is-${Math.min(p.images, 4)}` });
+    for (let i = 0; i < p.images; i++) {
+      const key = `${p.id}:${i}`;
+      const img = h("img", { alt: `${p.byName}さんの投稿の写真${i + 1}`, loading: "lazy" });
+      const cell = h("button", { type: "button", class: "post-img is-loading", "aria-label": "写真を大きく見る", onclick: () => {
+        if (!img.src) return;
+        App.openSheet("写真", (b) => b.append(h("img", { class: "post-img-full", src: img.src, alt: img.alt })), { full: true });
+      } }, img);
+      box.append(cell);
+      const show = (data) => { img.src = data; cell.classList.remove("is-loading"); };
+      if (imgCache.has(key)) show(imgCache.get(key));
+      else App.api("getPostImage", { postId: p.id, i }, { quiet: true }).then((d) => { if (d && d.data) { imgCache.set(key, d.data); show(d.data); } else cell.classList.add("is-missing"); });
+    }
+    return box;
+  }
+
   function postCard(p) {
     const card = h("article", { class: `post${p.isNew ? " is-new" : ""}`, id: `post-${p.id}` });
     function draw() {
@@ -219,6 +262,7 @@
           App.chip(p.cat, p.cat === "紹介依頼" ? "warn" : p.cat === "成約・お礼" ? "good" : "info"),
           p.isNew ? h("span", { class: "ann-dot" }, "新着") : null),
         clampBody(p),
+        postImages(p),
         h("div", { class: "post-actions" },
           h("button", { type: "button", class: `post-like${p.liked ? " is-on" : ""}`, "aria-pressed": p.liked ? "true" : "false", onclick: async () => {
             const d = await App.api("likePost", { id: p.id });
@@ -328,16 +372,36 @@
       const drawChips = () => chips.replaceChildren(...cats.map((c) => h("button", { type: "button", class: `app-pill${c === picked ? " is-on" : ""}`, onclick: () => { picked = c; drawChips(); } }, c)));
       drawChips();
       const text = App.draft("board", h("textarea", { rows: "6", maxlength: "2000", placeholder: "例:〇〇で困っている知り合いがいます。△△に詳しい方いませんか?" }));
+      // 写真(4枚まで)。送る前に小さくする(長い辺 1600px・JPEG)
+      const images = [];
+      const thumbs = h("div", { class: "post-img-picks" });
+      const drawThumbs = () => thumbs.replaceChildren(...images.map((src, i) => h("span", { class: "post-img-pick" },
+        h("img", { src, alt: `写真${i + 1}` }),
+        h("button", { type: "button", class: "post-img-del", "aria-label": `写真${i + 1}を外す`, onclick: () => { images.splice(i, 1); drawThumbs(); } }, "×"))));
+      const fileIn = h("input", { type: "file", accept: "image/*", multiple: true, class: "post-img-input", onchange: async () => {
+        const files = [...(fileIn.files || [])];
+        fileIn.value = "";
+        for (const f of files) {
+          if (images.length >= 4) { App.toast("写真は4枚までです", "error"); break; }
+          try { images.push(await shrinkImage(f)); } catch { App.toast("写真を読みこめませんでした", "error"); }
+        }
+        drawThumbs();
+      } });
+      const photoField = h("div", { class: "post-img-field" }, thumbs,
+        h("label", { class: "app-btn ghost small post-img-add" }, fileIn, "＋ 写真を追加(4枚まで)"));
+      const sendBtn = h("button", { type: "submit", class: "app-btn primary wide" }, "投稿する");
       body.append(h("form", { class: "app-form", onsubmit: async (e) => {
         e.preventDefault();
-        if (!text.value.trim()) { App.fieldError(text, "本文を入れてください。"); return; }
-        const d = await App.api("createPost", { cat: picked, body: text.value });
+        if (!text.value.trim() && !images.length) { App.fieldError(text, "本文を入れてください。"); return; }
+        sendBtn.disabled = true;
+        const d = await App.api("createPost", { cat: picked, body: text.value, images });
+        sendBtn.disabled = false;
         if (!d) return;
         App.clearDraft("board");
         close();
         App.toast("投稿しました");
         App.go("board");
-      } }, App.field("種類", chips), App.field("本文", mentionWrap(text), "「@名前」と書くと、その人に通知が届きます"), h("button", { type: "submit", class: "app-btn primary wide" }, "投稿する")));
+      } }, App.field("種類", chips), App.field("本文", mentionWrap(text), "「@名前」と書くと、その人に通知が届きます"), App.field("写真", photoField, "チラシや写真を載せられます"), sendBtn));
     }, { confirmClose: () => false });
   }
 })();

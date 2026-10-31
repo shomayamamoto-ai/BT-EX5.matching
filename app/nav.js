@@ -37,7 +37,8 @@
     }
     // プレゼンのタブは、アプリで使える人だと分かっているときだけ出す
     let presentOk = false;
-    try { presentOk = sessionStorage.getItem("btex5-present") === "1"; } catch { /* noop */ }
+    // タブの控えがない(早見表などをすぐ開いた)ときは、この端末に覚えたものを使う
+    try { presentOk = (sessionStorage.getItem("btex5-present") || localStorage.getItem("btex5-present")) === "1"; } catch { /* noop */ }
     const tabs = TABS.filter((t) => (t.id !== "present" && t.id !== "ops") || presentOk);
     nav.style.setProperty("--tab-n", String(tabs.length));
     nav.replaceChildren(...tabs.map((t) => {
