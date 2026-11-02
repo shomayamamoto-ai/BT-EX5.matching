@@ -175,6 +175,15 @@
         // 入っていない値がつながって保存された「null」「nullnull」などの文字を、一度だけ消す
         // (ログイン・通知の登録・鍵などは触らない)
         if (!Array.isArray(db.cleanups)) { db.cleanups = []; changed = true; }
+        // 運営の依頼(2026年11月2日): 菅野 節子さんは 11月4日の定例会を休む予定ではないので、4日の「欠席」を外す(一度だけ。未回答に戻す)
+        if (db.cleanups.indexOf("rsvp-kanno-1104-1") === -1) {
+          db.cleanups.push("rsvp-kanno-1104-1");
+          changed = true;
+          var kanno = c.find(db.referralMembers || [], function (m) { return m.id === "m12" || String(m.name || "").replace(/\s+/g, "") === "菅野節子"; });
+          (db.events || []).forEach(function (ev) {
+            if (kanno && ev.date === "2026-11-04" && ev.rsvps && ev.rsvps[kanno.id] === "no") delete ev.rsvps[kanno.id];
+          });
+        }
         if (db.cleanups.indexOf("nullish-1") === -1) {
           db.cleanups.push("nullish-1");
           changed = true;

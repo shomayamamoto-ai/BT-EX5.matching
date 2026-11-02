@@ -3229,3 +3229,10 @@ button.home-welcome-check:active { transform: scale(0.94); }
 .evd-fixable { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .evd-fixable > .app-row { flex: 1 1 260px; min-width: 0; }
 .evd-fix { flex: none; max-width: 100%; padding: 6px 10px; border-radius: 10px; border: 1px solid var(--line, rgba(180, 84, 74, 0.25)); background: #fff; font-size: 13px; color: inherit; }
+/* 資料: マスコット(3D)の入口 */
+.mt-mascot { display: grid; gap: 0; border-radius: 18px; overflow: hidden; background: #1c1b1d; color: #f3ebe0; text-decoration: none; box-shadow: 0 10px 30px rgba(60, 30, 20, 0.18); }
+@media (min-width: 900px) { .mt-mascot { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); align-items: center; } }
+.mt-mascot img { display: block; width: 100%; height: auto; aspect-ratio: 16 / 10; object-fit: cover; }
+.mt-mascot-text { display: grid; gap: 8px; padding: 18px 20px 20px; justify-items: start; }
+.mt-mascot-text b { font-family: "Shippori Mincho", serif; font-size: 22px; letter-spacing: 0.06em; }
+.mt-mascot-text small { font-size: 13px; line-height: 1.7; color: rgba(243, 235, 224, 0.75); }
