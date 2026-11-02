@@ -1161,5 +1161,14 @@ const App = (function () {
     presentOwners: () => PRESENT_OWNERS.slice(),
     badgeCount: (k) => badges[k] || 0,
     siteUrl: (path) => new URL(path, location.href).href,
+    // いま開いているアプリの版(?v= の数字。例 202611020352)
+    version: () => MY_VERSION,
+    // 最新の版にする: この端末に保存したページ・データの控え(サービスワーカーの保存)を消して、読み直す。ログインはそのまま
+    async refreshApp() {
+      try { if (window.caches) for (const k of await caches.keys()) if (k !== "btex5-push") await caches.delete(k); } catch { /* noop */ }
+      try { if (navigator.serviceWorker) for (const r of await navigator.serviceWorker.getRegistrations()) await r.update().catch(() => null); } catch { /* noop */ }
+      try { localStorage.removeItem("btex5-view-cache"); } catch { /* noop */ }
+      location.replace(`${location.pathname}?r=${Date.now()}${location.hash}`);
+    },
   };
 })();

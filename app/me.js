@@ -67,6 +67,15 @@
         AuthSession.clearToken();
         location.replace("../login/");
       }, "ghost wide")));
+      // アプリの版(更新が出ないときに確かめる)と、最新の版にするボタン
+      {
+        const v = App.version ? App.version() : "";
+        const vText = /^\d{12}$/.test(v) ? `${v.slice(0, 4)}/${Number(v.slice(4, 6))}/${Number(v.slice(6, 8))} ${v.slice(8, 10)}:${v.slice(10, 12)}` : v || "—";
+        el.append(h("div", { class: "me-version" },
+          h("p", null, `アプリの版:${vText}`),
+          App.btn("最新の版にする", () => App.refreshApp(), "ghost small"),
+          h("small", null, "名簿や新しい画面が出ないときに押してください。この端末に保存した古い画面を消して、開き直します(ログインはそのまま)。")));
+      }
       el.append(h("p", { class: "me-expire" }, `このログインは ${new Date(s.expiresAt).toLocaleString("ja-JP", { month: "numeric", day: "numeric", weekday: "short", hour: "numeric", minute: "2-digit" })} まで有効です(そのあとは、もう一度ログイン)`));
 
       if (parts[0] === "password") passwordForm();
