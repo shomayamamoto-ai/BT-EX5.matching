@@ -136,6 +136,10 @@
     .title-en .hy { background: #33251f; }
     .ex { font-family: var(--sans); font-weight: 900; font-style: normal; margin-left: 0.05em; }
     /* 画像にするとき: 1段目は写真を隠す / 3段目は写真に重なるもの(吹き出し・筆記体)だけ */
+    /* マスコット(台座なし): ときめ(トキ)はアーチの右上にとまり、つなぐ(新幹線)はアーチの下のあいたところを走る */
+    .mascot { position: absolute; z-index: 3; display: block; height: auto; pointer-events: none; filter: drop-shadow(0 1.6mm 2mm rgba(90, 40, 30, 0.2)); }
+    .mascot.is-toki { right: 2mm; top: 6mm; width: 56mm; }
+    .mascot.is-train { left: 207mm; top: 132mm; width: 44mm; }
     .is-shot-base img { visibility: hidden !important; }
     .poster.is-shot-top { visibility: hidden; background: transparent !important; }
     .poster.is-shot-top .bubble, .poster.is-shot-top .arch-script { visibility: visible; }
@@ -176,6 +180,8 @@
     </section>
 
     <ul class="values" id="values" style="list-style:none"></ul>
+    <img class="mascot is-toki" src="../mascot/toki-l.png" alt="" width="1077" height="608">
+    <img class="mascot is-train" src="../mascot/train-l.png" alt="" width="854" height="674">
   </article>
   </div></div>
 

@@ -68,7 +68,10 @@
 
   // ---------- レンダラー・カメラ ----------
   const canvas = document.getElementById("c");
-  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, preserveDrawingBuffer: true });
+  // bare=1: 台座なし・背景なし(すき通し)で、キャラクターだけを出す(資料のポスター・お誘い画像に使う切り抜き用)
+  const bare = q.get("bare") === "1";
+  if (bare) document.documentElement.style.background = document.body.style.background = "transparent";
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, preserveDrawingBuffer: true, alpha: bare });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -105,6 +108,7 @@
   }
   let soft = q.get("bg") === "soft";
   function applyBg() {
+    if (bare) { scene.background = null; floor.visible = false; return; }
     scene.background = bgTexture(soft);
     floor.material.opacity = soft ? 0.2 : 0.45;
     document.body.classList.toggle("is-soft", soft);
@@ -562,6 +566,18 @@
     else { const u = chars[m].userData; name.innerHTML = `${u.name}<small>${u.sub}</small>`; }
   }
   setMode(mode);
+  // 台座なし: 台座(と枝・線路)を隠し、キャラクターがちょうど入る位置にカメラを置く
+  if (bare) {
+    document.body.classList.add("is-embed");
+    document.querySelectorAll(".brand, .labels").forEach((e) => { e.style.display = "none"; });
+    Object.values(chars).forEach((c) => { c.userData.parts.pedestal.visible = false; });
+    spin = false;
+    const box = new THREE.Box3();
+    [toki, train].filter((c) => c.visible).forEach((c) => box.expandByObject(c));
+    const ctr = box.getCenter(new THREE.Vector3()), size = box.getSize(new THREE.Vector3()).length();
+    const dir = (mode === "train" ? V(0.5, 0.32, 1) : V(0.25, 0.12, 1)).normalize();
+    controls.target.copy(ctr); camera.position.copy(ctr).addScaledVector(dir, size * 1.25);
+  }
   document.querySelectorAll("[data-c]").forEach((b) => b.addEventListener("click", () => setMode(b.dataset.c)));
   const explodeBtn = document.getElementById("explodeBtn"), spinBtn = document.getElementById("spinBtn");
   explodeBtn.setAttribute("aria-pressed", String(explodeOn));

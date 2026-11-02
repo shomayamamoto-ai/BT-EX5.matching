@@ -27,6 +27,10 @@
       box-shadow:0 10px 40px rgba(90,40,30,.15); }
     body.is-embed .card { box-shadow:none; }
     .leaf { position:absolute; right:-30px; top:30px; width:300px; opacity:.55; }
+    /* マスコット(台座なし): 右上の、見出しの横のあいたところに。ときめ(トキ)が上、つなぐ(新幹線)がその下 */
+    .mascot { position:absolute; display:block; pointer-events:none; filter:drop-shadow(0 14px 18px rgba(90,40,30,.18)); }
+    .mascot.is-toki { right:34px; top:34px; width:280px; height:auto; }
+    .mascot.is-train { right:40px; top:222px; width:176px; height:auto; }
     .wrap { position:absolute; inset:56px 64px 48px; display:flex; flex-direction:column; }
     .wrap > * { flex-shrink:0; }
     .brand { display:flex; align-items:center; gap:14px; }
@@ -79,8 +83,10 @@
   <div class="stage-wrap" id="wrap"><div class="stage" id="stage">
   <article class="card" id="card">
     <svg class="leaf" viewBox="0 0 200 260" fill="none" stroke="#e3a79d" stroke-width="2" aria-hidden="true"><path d="M40 250 C 80 180, 120 120, 190 10"/><path d="M95 150 c 30 -40 70 -40 90 -30 c -30 20 -60 30 -90 30z"/><path d="M120 100 c 10 -40 40 -60 60 -60 c -10 30 -30 50 -60 60z"/><path d="M75 185 c -40 -10 -60 -40 -60 -60 c 30 10 50 30 60 60z"/><path d="M110 120 c -30 -20 -40 -50 -35 -70 c 20 20 35 40 35 70z"/></svg>
+    <img class="mascot is-toki" src="toki-l.png" alt="" width="1077" height="608">
+    <img class="mascot is-train" src="train-l.png" alt="" width="854" height="674">
     <div class="wrap">
-      <div class="brand"><span class="mk"><img src="../../assets/bt-ex5-mark.svg?v=202611020455" alt=""></span><b>BT-<span>EX5</span></b><small>新潟 ⇔ 東京</small></div>
+      <div class="brand"><span class="mk"><img src="../../assets/bt-ex5-mark.svg?v=202611020504" alt=""></span><b>BT-<span>EX5</span></b><small>新潟 ⇔ 東京</small></div>
       <p class="en">Join our regular meeting</p>
       <h1>紹介が<em>仕組みで</em>生まれる、<br>BT-EX5 の定例会へ。</h1>
       <p class="lead">定例会のスライドも、紹介先さがしも、<b>BT-EX5 専用のシステム</b>で動いています。<br>ぜひ一度、見に来てください。</p>
