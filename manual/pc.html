@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="robots" content="noindex">
+  <meta name="theme-color" content="#faf6f4">
+  <title>BT-EX5 使い方マニュアル(パソコン版)</title>
+  <!-- BT-EX5 会員サイトの使い方マニュアル(絵と動画つき)。だれでも分かるように、よく使う順に並べる。
+       絵は tools ではなく、デモの画面をスマホの大きさで撮ったもの(manual/img)。動画は manual/video(mp4・音なし) -->
+  <link rel="icon" type="image/svg+xml" href="../assets/bt-ex5-mark.svg?v=202611021827">
+  <link rel="apple-touch-icon" href="../assets/icon-180.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@1,600&family=Noto+Sans+JP:wght@400;500;700;900&family=Shippori+Mincho:wght@700;800&display=swap">
+  <link rel="stylesheet" href="manual.css?v=202611021827">
+</head>
+<body>
+  <header class="top">
+    <div class="wrap">
+      <a class="back" href="./" data-back aria-label="戻る"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg><span>戻る</span></a>
+      <a class="brand" href="./"><img src="../assets/bt-ex5-mark.svg?v=202611021827" alt=""><b>BT-<span>EX5</span></b></a>
+      <a class="swap" href="sp.html">スマホ版へ</a>
+      <a class="open" href="../app/">アプリを開く</a>
+    </div>
+  </header>
+
+  <main class="wrap is-pc">
+    <section class="hero">
+      <p class="en">How to use</p>
+      <h1>BT-EX5 使い方マニュアル<br><small style="font-size:.55em;color:var(--deep)">パソコン版</small></h1>
+      <p>はじめての方でも、上から順に読めば使えるようにまとめました。絵の中の<b>赤い丸の番号</b>が、クリックするところです。▶ のついた動画は、押すと実際の操作が流れます(音は出ません)。</p>
+      <div class="legend"><span><i>1</i>クリックするところ・見るところ</span><span><b style="color:#22314f">▶ 動画</b> で操作の流れ</span></div>
+    </section>
+
+    <nav aria-label="もくじ">
+      <ol class="toc">
+        <li><a href="#start"><span class="n">1</span><span><b>はじめに(ログイン)</b><small>最初の1回だけ</small></span></a></li>
+        <li><a href="#home"><span class="n">2</span><span><b>ホーム画面に追加</b><small>アプリのように使う</small></span></a></li>
+        <li><a href="#tabs"><span class="n">3</span><span><b>画面の見方</b><small>下のタブ・ベル・マイページ</small></span></a></li>
+        <li><a href="#search"><span class="n">4</span><span><b>紹介先を探す</b><small>早見表・紹介診断</small></span></a></li>
+        <li><a href="#events"><span class="n">5</span><span><b>定例会の出欠</b><small>予定・出席・欠席</small></span></a></li>
+        <li><a href="#log"><span class="n">6</span><span><b>紹介・マイル・1on1 を記録</b><small>記録</small></span></a></li>
+        <li><a href="#board"><span class="n">7</span><span><b>掲示板</b><small>投稿・写真・コメント</small></span></a></li>
+        <li><a href="#me"><span class="n">8</span><span><b>マイページ</b><small>プロフィール・通知・最新の版</small></span></a></li>
+        <li><a href="#materials"><span class="n">9</span><span><b>資料</b><small>ポスター・お誘い画像</small></span></a></li>
+        <li><a href="#staff"><span class="n">10</span><span><b>運営の方へ</b><small>プレゼンの進行</small></span></a></li>
+        <li><a href="#faq"><span class="n">?</span><span><b>困ったとき</b><small>よくある質問</small></span></a></li>
+      </ol>
+    </nav>
+
+    <!-- 1 はじめに -->
+    <section class="chap" id="start">
+      <div class="chap-head"><span class="chap-no">1</span><div><h2>はじめに(ログイン)</h2><p class="what">BT-EX5 のメンバー専用です。最初の1回だけ、ログインします。</p></div></div>
+      <div class="step">
+        <figure class="shot"><div class="browser"><img src="img/pc/01-login.jpg" alt="ログインの画面" loading="lazy" width="1920" height="1200"></div><figcaption>ログインの画面</figcaption></figure>
+        <div>
+          <h3>お名前を選んで、パスワードを入れる</h3>
+          <ol>
+            <li><b>お名前</b>の欄を押して、一覧から自分の名前を選びます。</li>
+            <li><b>パスワード</b>を入れます。まだ自分のパスワードを決めていない方は、運営から聞いた<b>コミュニティの共通パスコード</b>を入れてください。</li>
+            <li><span class="btnlike">ログイン</span> を押します。「ログイン状態を保持する」にチェックがあれば、30日間はログインしたままです。</li>
+            <li>はじめての方・パスワードを忘れた方は、いちばん下の「招待コード」から入れます(招待コードは運営から届きます)。</li>
+          </ol>
+          <p class="tip">ログインしたら、ホームの「<b>はじめての方へ</b>」に、やることが7つ並びます。上から順に押していけば、準備が終わります。まずは<b>自分専用のパスワード</b>を決めておくと安心です。</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2 すぐ開けるようにする -->
+    <section class="chap" id="home">
+      <div class="chap-head"><span class="chap-no">2</span><div><h2>すぐ開けるようにする</h2><p class="what">ブックマークか、アプリとしての追加をしておくと、次から1回のクリックで開けます。</p></div></div>
+      <div class="howto">
+        <section>
+          <h4>Mac(Safari)</h4>
+          <ol>
+            <li>Safari で会員サイトを開きます。</li>
+            <li>上のメニューの「<b>ファイル</b>」→「<b>Dock に追加</b>」を押します。</li>
+            <li>「追加」を押すと、画面の下の Dock に BT-EX5 のアイコンができます。</li>
+          </ol>
+          <p style="margin:8px 0 0;font-size:14px;color:var(--sub)">「Dock に追加」がないときは、⌘+D でブックマークに入れてください。</p>
+        </section>
+        <section>
+          <h4>Windows・Mac(Chrome・Edge)</h4>
+          <ol>
+            <li>Chrome か Edge で会員サイトを開きます。</li>
+            <li>アドレスの欄の右にある <b>インストール</b>のアイコン(画面に↓の形)を押します。見つからないときは、右上の <b>︙</b> →「キャスト、保存、共有」→「<b>ページをアプリとしてインストール</b>」(Edge は「アプリ」→「このサイトをアプリとしてインストール」)。</li>
+            <li>「インストール」を押すと、デスクトップやスタートメニューにアイコンができます。</li>
+          </ol>
+        </section>
+      </div>
+      <p class="tip">ブックマークだけでも使えます。Ctrl+D(Mac は ⌘+D)で、いま開いているページをブックマークに入れられます。</p>
+    </section>
+
+    <!-- 3 画面の見方 -->
+    <section class="chap" id="tabs">
+      <div class="chap-head"><span class="chap-no">3</span><div><h2>画面の見方</h2><p class="what">画面の下のタブで画面を切りかえます。右上のベルでお知らせ、丸い名前のボタンでマイページです。</p></div></div>
+      <div class="step">
+        <figure class="shot"><div class="browser"><img src="img/pc/02-home.jpg" alt="ホームの画面" loading="lazy" width="1920" height="1200"></div><figcaption>パソコンで開いたところ</figcaption></figure>
+        <div>
+          <ol>
+            <li><b>下のタブ</b>:押すと、それぞれの画面に切りかわります(下の表)。赤い数字は、見ていないものの数です。</li>
+            <li><b>ベル</b>:自分に関係するお知らせ(紹介が届いた・コメントが付いた など)が見られます。</li>
+            <li><b>丸い名前のボタン</b>:マイページ。プロフィールや通知の設定はここから。</li>
+          </ol>
+          <ul class="tabs">
+            <li><b>早見表</b>聞いた相談から、紹介先のメンバーを探す</li>
+            <li><b>記録</b>紹介・ありがとうマイル・1on1 を記録する、分析を見る</li>
+            <li><b>予定</b>定例会の日程と出欠、カレンダー</li>
+            <li><b>資料</b>ポスター・お誘い画像を作る</li>
+            <li><b>掲示板</b>紹介のお願い・告知・お礼を投稿する</li>
+            <li><b>プレゼン</b>定例会のスライド進行<br><span class="only">運営だけ</span></li>
+            <li><b>運営</b>運営会議・議事録<br><span class="only">運営だけ</span></li>
+          </ul>
+          <p class="tip">パソコンでは、画面の幅いっぱいに大きく表示されます。文字が小さいときは、Ctrl と + (Mac は ⌘ と +)で拡大できます。</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4 紹介先を探す -->
+    <section class="chap" id="search">
+      <div class="chap-head"><span class="chap-no">4</span><div><h2>紹介先を探す <span class="tab-chip">早見表</span></h2><p class="what">「こんな人を探している」と聞いたら、その言葉を入れるだけで、合うメンバーがわかります。</p></div></div>
+      <div class="step">
+        <figure class="shot"><div class="browser"><img src="img/pc/03-ref-ask.jpg" alt="早見表の相談を入れるところ" loading="lazy" width="1920" height="1200"></div><figcaption>早見表のいちばん上</figcaption></figure>
+        <div>
+          <h3>聞いた相談を、そのまま入れる</h3>
+          <ol>
+            <li>赤い枠に、聞いた相談をそのまま入れます(例:「新潟で飲食店を開業予定。集客と採用に困っている」)。<b>話して入力</b>を押すと、パソコンのマイクで声でも入れられます。</li>
+            <li><span class="btnlike is-ghost">紹介先を探す</span> を押します。</li>
+            <li>言葉が浮かばないときは、「<b>質問に答えて探す</b>」(紹介診断・3問)を押します。</li>
+          </ol>
+          <div class="movie"><span class="movie-tag">動画:相談を入れて紹介先を探す(14秒)</span>
+            <div class="browser"><video poster="video/pc/v1-ask.jpg" controls playsinline muted preload="none" width="1280" height="800"><source src="video/pc/v1-ask.mp4" type="video/mp4"><source src="video/pc/v1-ask.webm" type="video/webm"></video></div>
+          </div>
+        </div>
+      </div>
+      <div class="step is-rev">
+        <figure class="shot"><div class="browser"><img src="img/pc/04-ref-result.jpg" alt="紹介先の候補" loading="lazy" width="1920" height="1200"></div><figcaption>探した結果</figcaption></figure>
+        <div>
+          <h3>結果の見方</h3>
+          <ul class="plain">
+            <li>上に「<b>この組み合わせで、まとめて解決できます</b>」と、悩みごとに合うメンバーが並びます。</li>
+            <li>その下に、合う順にメンバーのカードが出ます。右の % は、どれくらい合うかの目安です。</li>
+            <li><span class="btnlike">チームの紹介文をコピー</span> を押すと、相手に送る紹介文がコピーされます。LINE などに貼り付けて送れます。</li>
+          </ul>
+        </div>
+      </div>
+      <div class="step">
+        <figure class="shot"><div class="browser"><img src="img/pc/05-ref-diag.jpg" alt="紹介診断の質問" loading="lazy" width="1920" height="1200"></div><figcaption>紹介診断(3問)</figcaption></figure>
+        <div>
+          <h3>質問に答えて探す(紹介診断)</h3>
+          <ol>
+            <li>「相手がこう言っていたら」などの言葉から、いちばん近いものを押します。</li>
+          </ol>
+          <p>3問に答えると、合うメンバーが出ます。15秒ほどで終わります。</p>
+        </div>
+      </div>
+      <div class="step is-rev">
+        <figure class="shot"><div class="browser"><img src="img/pc/07-ref-detail.jpg" alt="メンバーの詳細" loading="lazy" width="1920" height="1200"></div><figcaption>名前を押すと出る詳細</figcaption></figure>
+        <div>
+          <h3>メンバーのくわしい内容を見る</h3>
+          <ul class="plain">
+            <li>カードの<b>名前</b>を押すと、仕事の内容・求める紹介・こんな話が出たら、が全部見られます。</li>
+            <li>下の <span class="btnlike">紹介文をコピー</span> で、この人を紹介する文がコピーされます。「この人を共有」で LINE などに送れます。</li>
+            <li>カードの右上の ☆ を押すと「お気に入り」になり、マイページにも並びます。</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5 定例会の出欠 -->
+    <section class="chap" id="events">
+      <div class="chap-head"><span class="chap-no">5</span><div><h2>定例会の出欠 <span class="tab-chip">予定</span></h2><p class="what">定例会ごとに、出席か欠席かを必ず登録してください。</p></div></div>
+      <div class="step">
+        <figure class="shot"><div class="browser"><img src="img/pc/08-events.jpg" alt="予定の画面" loading="lazy" width="1920" height="1200"></div><figcaption>予定の画面</figcaption></figure>
+        <div>
+          <h3>出席・欠席を押す</h3>
+          <ol>
+            <li>その日の定例会のカードで <span class="btnlike is-ghost">出席する</span> か <span class="btnlike is-ghost">欠席する</span> を押します。欠席のときは「◯月◯日の定例会を欠席にしますか?」と確かめてから登録します。</li>
+            <li>「<b>詳細・出欠の一覧</b>」で、当日の流れ・参加リンク・ほかのメンバーの出欠が見られます。</li>
+          </ol>
+          <p class="tip">オンラインの定例会は、Google Meet に参加した時間で自動で出席がつきます。会場の定例会は、受付の QR コードを読むか、4桁の出席コードを入れます。</p>
+          <div class="movie"><span class="movie-tag">動画:出席を登録して、詳細を見る(10秒)</span>
+            <div class="browser"><video poster="video/pc/v2-rsvp.jpg" controls playsinline muted preload="none" width="1280" height="800"><source src="video/pc/v2-rsvp.mp4" type="video/mp4"><source src="video/pc/v2-rsvp.webm" type="video/webm"></video></div>
+          </div>
+        </div>
+      </div>
+      <div class="step is-rev">
+        <figure class="shot"><div class="browser"><img src="img/pc/09-event-detail.jpg" alt="定例会の詳細" loading="lazy" width="1920" height="1200"></div><figcaption>定例会の詳細</figcaption></figure>
+        <div>
+          <h3>まちがえて押したとき</h3>
+          <ul class="plain">
+            <li>申込締切までは、詳細の画面で何度でも押し直せます。同じボタンをもう一度押すと取り消しになります。</li>
+            <li>締切を過ぎたあとは、運営に伝えてください。運営が直せます。</li>
+            <li><b>カレンダーに追加</b>を押すと、Google カレンダーや iPhone のカレンダーに入ります。</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6 記録 -->
+    <section class="chap" id="log">
+      <div class="chap-head"><span class="chap-no">6</span><div><h2>紹介・マイル・1on1 を記録する <span class="tab-chip">記録</span></h2><p class="what">紹介した・お礼をした・1on1 をした、を記録すると、相手に届き、あとで分析にも出ます。</p></div></div>
+      <div class="step">
+        <figure class="shot"><div class="browser"><img src="img/pc/10-log.jpg" alt="記録の画面" loading="lazy" width="1920" height="1200"></div><figcaption>記録の画面</figcaption></figure>
+        <div>
+          <ol>
+            <li>上の切りかえで「<b>紹介</b>」「<b>ありがとうマイル</b>」「<b>1on1</b>」「ランキング」「分析」を選びます。</li>
+            <li>それぞれの <span class="btnlike">＋ 紹介を記録する</span> などのボタンから記録します。</li>
+          </ol>
+        </div>
+      </div>
+      <div class="step is-rev">
+        <figure class="shot"><div class="browser"><img src="img/pc/11-log-ref-form.jpg" alt="紹介を記録" loading="lazy" width="1920" height="1200"></div><figcaption>紹介を記録</figcaption></figure>
+        <div>
+          <h3>紹介を記録する</h3>
+          <ol>
+            <li>「紹介先のメンバー」に名前を入れて、一覧から選びます(ひらがなでも探せます)。</li>
+            <li>「紹介した方」に、紹介したお客様の会社名・お名前を入れます。</li>
+            <li>「どんな相談か」を書いて、<span class="btnlike">記録して知らせる</span> を押します。紹介先のメンバーに届きます。</li>
+          </ol>
+          <div class="movie"><span class="movie-tag">動画:紹介を記録する(14秒)</span>
+            <div class="browser"><video poster="video/pc/v3-referral.jpg" controls playsinline muted preload="none" width="1280" height="800"><source src="video/pc/v3-referral.mp4" type="video/mp4"><source src="video/pc/v3-referral.webm" type="video/webm"></video></div>
+          </div>
+        </div>
+      </div>
+      <div class="step">
+        <figure class="shot"><div class="browser"><img src="img/pc/12-log-miles-form.jpg" alt="ありがとうを送る" loading="lazy" width="1920" height="1200"></div><figcaption>ありがとうを送る</figcaption></figure>
+        <div>
+          <h3>ありがとうマイルを送る</h3>
+          <p>紹介で仕事が決まったら、紹介してくれた人にお礼を送ります。</p>
+          <ol>
+            <li>お礼を送る相手(紹介してくれた人)を選びます。</li>
+            <li>成約金額を入れます(<b>1円 = 1マイル</b>)。わかる範囲で大丈夫です。0円でも送れます。</li>
+            <li>ひとことを書いて <span class="btnlike">送る</span> を押します。</li>
+          </ol>
+        </div>
+      </div>
+      <div class="step is-rev">
+        <figure class="shot"><div class="browser"><img src="img/pc/13-log-1on1-form.jpg" alt="1on1 を予定・記録する" loading="lazy" width="1920" height="1200"></div><figcaption>1on1 を予定・記録する</figcaption></figure>
+        <div>
+          <h3>1on1 を予定・記録する</h3>
+          <ol>
+            <li>相手を選びます。ほかの BT-EX の方とも記録できます(相手の欄の上で、ユニットを選びます)。</li>
+            <li>日付・時刻・場所(または Google Meet)を入れて保存します。</li>
+            <li>「相手に送る文をコピー」で、日時の入った案内を LINE などで送れます。終わったら「実施した」を押します。</li>
+          </ol>
+        </div>
+      </div>
+    </section>
+
+    <!-- 7 掲示板 -->
+    <section class="chap" id="board">
+      <div class="chap-head"><span class="chap-no">7</span><div><h2>掲示板 <span class="tab-chip">掲示板</span></h2><p class="what">紹介のお願い、イベントの告知、成約のお礼などを、メンバー全員に届けられます。</p></div></div>
+      <div class="step">
+        <figure class="shot"><div class="browser"><img src="img/pc/14-board.jpg" alt="掲示板" loading="lazy" width="1920" height="1200"></div><figcaption>掲示板</figcaption></figure>
+        <div>
+          <ol>
+            <li><span class="btnlike">＋ 投稿する</span> を押すと、書く画面が開きます。</li>
+          </ol>
+          <ul class="plain">
+            <li>ほかの人の投稿には、「いいね」やコメントができます。</li>
+            <li>本文に「@お名前」と書くと、その人に通知が届きます。</li>
+          </ul>
+          <div class="movie"><span class="movie-tag">動画:投稿を書く(11秒)</span>
+            <div class="browser"><video poster="video/pc/v4-board.jpg" controls playsinline muted preload="none" width="1280" height="800"><source src="video/pc/v4-board.mp4" type="video/mp4"><source src="video/pc/v4-board.webm" type="video/webm"></video></div>
+          </div>
+        </div>
+      </div>
+      <div class="step is-rev">
+        <figure class="shot"><div class="browser"><img src="img/pc/15-board-form.jpg" alt="掲示板に投稿" loading="lazy" width="1920" height="1200"></div><figcaption>投稿を書く画面</figcaption></figure>
+        <div>
+          <h3>写真も付けられます</h3>
+          <ol>
+            <li>「<b>写真を追加(4枚まで)</b>」を押すと、スマホの写真を選べます。チラシや会場の写真などにどうぞ。</li>
+          </ol>
+          <p>種類(紹介依頼/イベント・募集/成約・お礼/質問)を選んで、本文を書いて <span class="btnlike">投稿する</span> を押します。</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 8 マイページ -->
+    <section class="chap" id="me">
+      <div class="chap-head"><span class="chap-no">8</span><div><h2>マイページ</h2><p class="what">右上の丸い名前のボタンから開きます。自分のプロフィールや設定はここにまとまっています。</p></div></div>
+      <div class="step">
+        <figure class="shot"><div class="browser"><img src="img/pc/16-me.jpg" alt="マイページ" loading="lazy" width="1920" height="1200"></div><figcaption>マイページ</figcaption></figure>
+        <div>
+          <h3>プロフィールを入れる</h3>
+          <ul class="plain">
+            <li>「<b>プロフィール・1on1シートを編集</b>」で、仕事の内容・求める紹介・こんな話が出たら、を入れます。たくさん入れるほど、早見表で見つけてもらいやすくなります。</li>
+            <li>時間がないときは「<b>かんたんプロフィール(3つの質問)</b>」で1分で入れられます。</li>
+            <li>「ほかのメンバーからの見え方」で、早見表の自分のカードを確かめられます。</li>
+            <li>「<b>通知・設定</b>」で、通知をオンにできます。文字を大きくすることもできます。</li>
+          </ul>
+          <div class="movie"><span class="movie-tag">動画:マイページを見る(8秒)</span>
+            <div class="browser"><video poster="video/pc/v5-me.jpg" controls playsinline muted preload="none" width="1280" height="800"><source src="video/pc/v5-me.mp4" type="video/mp4"><source src="video/pc/v5-me.webm" type="video/webm"></video></div>
+          </div>
+        </div>
+      </div>
+      <div class="step is-rev">
+        <figure class="shot"><div class="browser"><img src="img/pc/17-me-bottom.jpg" alt="最新の版にする" loading="lazy" width="1920" height="1200"></div><figcaption>マイページのいちばん下</figcaption></figure>
+        <div>
+          <h3>新しい画面が出ないときは「最新の版にする」</h3>
+          <ol>
+            <li>名簿や新しい機能が出ないときは、マイページのいちばん下の <span class="btnlike is-ghost">最新の版にする</span> を押します。ログインはそのままです。</li>
+          </ol>
+          <p>「アプリの版」に出ている日時で、いま開いている版がわかります。</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 9 資料 -->
+    <section class="chap" id="materials">
+      <div class="chap-head"><span class="chap-no">9</span><div><h2>資料を作る <span class="tab-chip">資料</span></h2><p class="what">定例会や BT-EX フェスのポスター、掲示板・SNS で使えるお誘い画像を作れます。</p></div></div>
+      <div class="step">
+        <figure class="shot"><div class="browser"><img src="img/pc/18-materials.jpg" alt="資料の画面" loading="lazy" width="1920" height="1200"></div><figcaption>資料の画面</figcaption></figure>
+        <div>
+          <ul class="plain">
+            <li><b>ポスターを作る</b>:種類(BT-EX フェス/定例会)を選ぶと、いちばん近い予定の日時・会場・参加費が入ります。変えたいところだけ直して、<span class="btnlike">PDF で保存</span> か「画像で保存」。A4 横で印刷できます。</li>
+            <li><b>定例会のお誘い画像</b>:日時(2回まで)・オンラインか会場か・「参加したい方は◯◯までお声がけを」の欄のあり/なしを選んで、画像で保存します。</li>
+            <li><b>マスコット(3D)</b>:BT-EX5 のマスコット「ときめ」と「つなぐ」を、指で回して見られます。</li>
+          </ul>
+          <p class="tip is-warn">BT-EX に人を誘うときは、<b>BT メンバーであること</b>、ビジター参加のときも<b>アップクリエの許可</b>、BT-EX への参加は<b>アドバンスリーダーの許可が必須</b>です。むやみに誘わず、ご本人の意思とチームのアドバンスの許可を確かめてください。</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 10 運営 -->
+    <section class="chap" id="staff">
+      <div class="chap-head"><span class="chap-no">10</span><div><h2>運営の方へ <span class="tab-chip">プレゼン</span></h2><p class="what">運営メンバーには「プレゼン」「運営」のタブが出ます。</p></div></div>
+      <div class="step">
+        <figure class="shot"><div class="browser"><img src="img/pc/19-present.jpg" alt="プレゼンの画面" loading="lazy" width="1920" height="1200"></div><figcaption>プレゼンの画面</figcaption></figure>
+        <div>
+          <h3>定例会のスライドを進める</h3>
+          <ol>
+            <li>「定例会」で、その日の定例会を選びます。</li>
+            <li>出る人を、話す順番に押して選びます(「全員」でまとめて選べます。ほかの BT-EX やゲストも足せます)。</li>
+            <li>「<b>定例会をはじめる</b>」で、オープニングムービーから始まります。会場のスクリーンや Meet の画面共有にそのまま映せます。</li>
+          </ol>
+          <ul class="plain">
+            <li>スライドは、画面の右下の「進む」「戻る」か、キーボードの → ← で進めます。右上の一覧から、好きな所へ飛べます。</li>
+            <li>左上の時間の枠で、「理想」と「現在」の時刻、進み・遅れがわかります。</li>
+            <li>出欠は、定例会の詳細のメンバー一覧から直せます(「出欠を直す」)。</li>
+          </ul>
+          <p class="tip">定例会の進行は、パソコンをプロジェクターや大きな画面につなぐか、Google Meet で「画面を共有」して使うのがおすすめです。キーボードの → で次へ、← で前へ、Esc で止まります。</p>
+          <div class="movie"><span class="movie-tag">動画:出る人を選んで、スライドを進める(24秒)</span>
+            <div class="browser"><video poster="video/pc/v6-present.jpg" controls playsinline muted preload="none" width="1280" height="800"><source src="video/pc/v6-present.mp4" type="video/mp4"><source src="video/pc/v6-present.webm" type="video/webm"></video></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 困ったとき -->
+    <section class="chap faq" id="faq">
+      <div class="chap-head"><span class="chap-no">?</span><div><h2>困ったとき</h2><p class="what">よくある質問です。解決しないときは、マイページの「バグ・要望を送る」から運営に送れます。</p></div></div>
+      <details><summary>ログインできない</summary><p>お名前を正しく選んでいるか、パスワードの大文字・小文字を確かめてください。パスワードを忘れたときは、ログインの画面の「はじめての方・パスワードを忘れた方(招待コード)」から入れます。招待コードは運営にお問い合わせください。</p></details>
+      <details><summary>新しい名簿や機能が出てこない</summary><p>スマホに前の画面が残っていることがあります。マイページのいちばん下の「最新の版にする」を押してください。Ctrl+Shift+R(Mac は ⌘+Shift+R)で読み直しても直ります。</p></details>
+      <details><summary>通知が届かない</summary><p>マイページの「通知・設定」で、通知をオンにしてください。ブラウザに「通知を許可しますか?」と出たら「許可」を押します。パソコンの「設定」で、ブラウザの通知が切れていないかも確かめてください。</p></details>
+      <details><summary>欠席をまちがえて押した</summary><p>申込締切までは、同じ定例会の「出席する」を押せば直ります。締切を過ぎたときは、運営に伝えてください(運営が直せます)。</p></details>
+      <details><summary>自分のカードの内容を直したい</summary><p>マイページの「プロフィール・1on1シートを編集」から直せます。保存すると、すぐに早見表のカードに反映されます。</p></details>
+      <details><summary>文字が小さくて読みにくい</summary><p>画面の上の「あ」のボタン、またはマイページの「通知・設定」で、文字を大きくできます。</p></details>
+      <details><summary>スマホでも使える?</summary><p>使えます。同じお名前・パスワードでログインしてください。スマホの使い方は「スマホ版のマニュアル」にあります。</p></details>
+    </section>
+
+    <footer class="foot">
+      <div class="links"><a href="../app/">アプリを開く</a><a href="../referral/">紹介先早見表</a><a href="../app/#help">よくある質問(アプリ内)</a><a href="sp.html">スマホ版のマニュアル</a></div>
+      <p>© 2026 BT-EX5 ・ 新潟 ⇔ 東京 紹介者制コミュニティ</p>
+    </footer>
+  </main>
+  <button type="button" class="to-top" aria-label="いちばん上へ"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 14l6-6 6 6"/></svg><span>上へ</span></button>
+  <script src="manual.js?v=202611021827"></script>
+</body>
+</html>
