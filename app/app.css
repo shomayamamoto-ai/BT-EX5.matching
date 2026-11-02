@@ -3240,14 +3240,3 @@ button.home-welcome-check:active { transform: scale(0.94); }
 .me-version { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px 12px; margin: 18px 0 4px; text-align: center; }
 .me-version p { margin: 0; font-size: 13px; color: var(--text-sub, #7a645c); }
 .me-version small { flex-basis: 100%; font-size: 12px; color: var(--text-sub, #7a645c); }
-/* 区切りのスライド: 大きな番号の右に、マスコット(ときめ・つなぐ)と名前のボタン */
-.pd-no-row { display: flex; align-items: flex-end; gap: clamp(10px, 2vw, 34px); }
-.pd-mascots { display: flex; align-items: flex-end; gap: clamp(8px, 1.4vw, 24px); padding-bottom: clamp(2px, 0.6svh, 8px); }
-.pd-mascot { margin: 0; display: grid; justify-items: center; gap: clamp(4px, 0.8svh, 10px); }
-.pd-mascot img { display: block; width: auto; filter: drop-shadow(0 8px 12px rgba(60, 30, 20, 0.22)); }
-.pd-mascot.is-toki img { height: clamp(52px, min(8vw, 14svh), 136px); }
-.pd-mascot.is-train img { height: clamp(44px, min(6.4vw, 11svh), 108px); }
-/* 名前のボタン(マスコットの下) */
-.mascot-tag { display: inline-flex; align-items: center; justify-content: center; padding: 0.32em 1.05em 0.38em; border-radius: 999px; background: linear-gradient(135deg, #e48a7d, #b9564c); color: #fff; font-family: "Shippori Mincho", "Noto Serif CJK JP", serif; font-weight: 800; font-size: clamp(12px, min(1.25vw, 2.1svh), 20px); letter-spacing: 0.12em; line-height: 1.2; white-space: nowrap; box-shadow: 0 4px 10px rgba(180, 84, 74, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.35); }
-.pr-run:not(.deck-soft) .mascot-tag { background: linear-gradient(135deg, #e7c27a, #b98a3e); color: #1c1408; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.4); }
-@media (max-width: 760px) { .pd-mascot.is-train { display: none; } }

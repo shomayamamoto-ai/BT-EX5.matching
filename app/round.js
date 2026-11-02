@@ -1606,11 +1606,6 @@
                   at[i].min ? h("small", null, `${at[i].min}分`) : st.sub ? h("small", null, st.sub) : null))))));
       }
       if (p.type === "section") {
-        // マスコット(台座なし): 大きな番号の右に、ときめ(トキ)とつなぐ(新幹線)。下に名前のボタン
-        const mascots = () => h("div", { class: "pd-mascots", "aria-hidden": "true" },
-          [["toki", "ときめ"], ["train", "つなぐ"]].map(([k, n]) => h("figure", { class: `pd-mascot is-${k}` },
-            h("img", { src: `../materials/mascot/${k}.png`, alt: "", decoding: "async" }),
-            h("figcaption", { class: "mascot-tag" }, n))));
         // 区切り: 左に大きな番号と題、右に流れの一覧(いまの所が光る)
         if (!p.no) {
           // 番号のない区切り(規定など): ほかの区切りと同じく左にそろえる
@@ -1621,7 +1616,7 @@
         }
         return h("div", { class: `pd pd-section${p.name.length > 10 ? " is-long-title" : ""}` },
           h("div", Object.assign({ class: "pd-section-main" }, enAttr(p.name)),
-            h("div", { class: "pd-no-row" }, h("p", { class: "pd-no", "aria-hidden": "true" }, two(p.no)), mascots()),
+            h("p", { class: "pd-no", "aria-hidden": "true" }, two(p.no)),
             h("h2", { class: "pd-display" }, ...softBreaks(p.name)),
             p.sub ? h("p", { class: "pd-sub" }, p.sub) : null),
           p.steps && p.steps.length > 1 ? agendaList(true) : null);
