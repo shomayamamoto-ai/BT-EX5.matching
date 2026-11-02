@@ -297,6 +297,8 @@
           party: hasParty.getValue() === "yes" ? { enabled: true, place: partyPlace.value.trim(), fee: partyFee.value.trim(), time: partyTime.value } : { enabled: false },
           kind: kind.getValue(), doors: doors.value, capacity: Number(capacity.value) || 0,
         };
+        // 日にちを変えると、出欠の回答はリセットされる(前の日への「欠席」などを持ちこさない)
+        if (ev && ev.date !== f.date.value && (ev.yesCount || ev.noCount) && !(await App.confirm("日にちを変えると、この定例会の出欠の回答はリセットされます(新しい日にちで、もう一度答えてもらいます)。変えますか?", { ok: "変える" }))) return;
         save.disabled = true;
         const d = await App.api("adminSaveEvent", { event: payload, dates: [] });
         save.disabled = false;
@@ -440,9 +442,11 @@
         onclick: async () => {
           const payload = { eventId: ev.id };
           payload[field] = cur === val ? "" : val;
+          // 欠席は、どの日の定例会かを確かめてから(別の日のカードの押しまちがいを防ぐ)
+          if (field === "answer" && payload.answer === "no" && !(await App.confirm(`${App.fmtDateLong(ev.date)}の定例会を「欠席」にしますか?`, { ok: "欠席にする" }))) return;
           const r = await App.api("rsvpEvent", payload);
           if (!r) return;
-          App.toast(field === "answer" ? (r.event.myRsvp === "yes" ? "出席で申し込みました" : r.event.myRsvp === "no" ? "欠席で登録しました" : "取り消しました") : "懇親会の出欠を登録しました");
+          App.toast(field === "answer" ? `${App.fmtDate(ev.date)}の定例会を${r.event.myRsvp === "yes" ? "出席で申し込みました" : r.event.myRsvp === "no" ? "欠席で登録しました" : "取り消しました"}` : "懇親会の出欠を登録しました");
           App.route();
         },
       }, cur === val ? `✓ ${label}` : label)));
@@ -469,6 +473,20 @@
       d.isAdmin ? App.btn("受付・出欠の管理", () => App.go(`events/manage/${ev.id}`), "ghost small") : null,
       d.isAdmin || canPlan() ? App.btn("日時・内容を編集", () => eventForm(ev), "ghost small") : null));
 
+    // 運営(管理者・プレゼンを任された人)は、メンバーの出欠の回答を直せる(押しまちがい・口頭で聞いた出欠など)
+    const fixable = !ev.past && (d.isAdmin || canPlan());
+    const rsvpFix = (m) => {
+      const sel = h("select", { class: "evd-fix", "aria-label": `${m.name}さんの出欠を直す`, onchange: async () => {
+        const label = sel.value === "yes" ? "出席" : sel.value === "no" ? "欠席" : "未回答";
+        if (!(await App.confirm(`${m.name}さんの${App.fmtDateLong(ev.date)}の出欠を「${label}」に直しますか?`, { ok: "直す" }))) { sel.value = m.rsvp || ""; return; }
+        const r = await App.api("adminSetRsvp", { id: ev.id, memberId: m.id, answer: sel.value });
+        if (!r) { sel.value = m.rsvp || ""; return; }
+        App.toast(`${m.name}さんを「${label}」に直しました`);
+        App.route();
+      } }, [["yes", "出席"], ["no", "欠席"], ["", "未回答"]].map(([v, t]) => h("option", { value: v }, `出欠を直す:${t}`)));
+      sel.value = m.rsvp || "";
+      return sel;
+    };
     // メンバーの出欠一覧(出席・欠席・未回答に分けて)
     const groups = [
       { label: "出席", tone: "good", list: d.members.filter((m) => m.rsvp === "yes" || m.attended) },
@@ -480,11 +498,12 @@
         h("p", { class: `evd-group-head tone-${g.tone}` }, `${g.label}(${g.list.length}名)`, g.note ? h("small", null, ` ${g.note}`) : null),
         h("ul", { class: "app-list evd-members" }, g.list.map((m, i) => {
           const st = memberStatus(m);
-          return h("li", { class: m.isMe ? "is-me" : "" }, h("a", { class: "app-row", href: App.profileHref(m.id) },
+          return h("li", { class: `${m.isMe ? "is-me" : ""}${fixable ? " evd-fixable" : ""}` }, h("a", { class: "app-row", href: App.profileHref(m.id) },
             h("span", { class: "evd-no" }, String(i + 1)),
             h("span", { class: "app-row-main" }, h("b", null, m.name, m.isMe ? "(あなた)" : ""), h("small", null, [m.team, m.category].filter(Boolean).join(" ・ ") || "—")),
             App.chip(st.label, st.tone),
-            ev.party ? App.chip(m.party === "yes" ? "懇親会○" : m.party === "no" ? "懇親会×" : "懇親会—", m.party === "yes" ? "good" : "mute") : null));
+            ev.party ? App.chip(m.party === "yes" ? "懇親会○" : m.party === "no" ? "懇親会×" : "懇親会—", m.party === "yes" ? "good" : "mute") : null),
+            fixable && !m.attended ? rsvpFix(m) : null);
         }))))));
 
     // 申込ビジター

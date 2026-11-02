@@ -532,12 +532,14 @@
     function rsvpBtn(answer, label) {
       const on = ev.myRsvp === answer;
       return h("button", { type: "button", class: `ev-rsvp-btn is-${answer}${on ? " is-on" : ""}`, "aria-pressed": on ? "true" : "false", onclick: async () => {
+        // 欠席は、どの日の定例会かを確かめてから(となりのカードの押しまちがいを防ぐ)
+        if (!on && answer === "no" && !(await App.confirm(`${App.fmtDateLong(ev.date)}の定例会を「欠席」にしますか?`, { ok: "欠席にする" }))) return;
         const d = await App.api("rsvpEvent", { eventId: ev.id, answer: on ? "" : answer });
         if (!d) return;
         Object.assign(ev, d.event);
         draw();
         if (onUpdate) onUpdate(ev);
-        App.toast(ev.myRsvp === "yes" ? "出席で登録しました" : ev.myRsvp === "no" ? "欠席で登録しました" : "出欠を取り消しました");
+        App.toast(`${App.fmtDate(ev.date)}の定例会を${ev.myRsvp === "yes" ? "出席で登録しました" : ev.myRsvp === "no" ? "欠席で登録しました" : "取り消しました"}`);
       } }, on ? `✓ ${label.replace("する", "")}` : label);
     }
     card.redraw = draw;

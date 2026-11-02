@@ -32,7 +32,7 @@
 
   BtexServerCore.registerModule({
     mutating: [
-      "rsvpEvent", "checkIn", "adminSaveEvent", "adminDeleteEvent", "adminOpenCheckIn", "adminMarkAttendance",
+      "rsvpEvent", "adminSetRsvp", "checkIn", "adminSaveEvent", "adminDeleteEvent", "adminOpenCheckIn", "adminMarkAttendance",
       "adminSyncMeetAttendance", "adminMapMeetName",
       "createVisitorInvite", "updateVisitor", "visitorApply",
       "reportThanks", "deleteThanks", "save1on1", "delete1on1", "confirm1on1", "muteReferralNudge",
@@ -406,6 +406,20 @@
         return c.ok({ event: eventView(w, e) });
       }
 
+      // 運営(管理者・プレゼンを任された人): メンバーの出欠の回答を直す(押しまちがい・口頭で聞いた出欠など)
+      function adminSetRsvp(body) {
+        var w = planner(body);
+        if (w.error) return w.error;
+        var e = c.find(w.db.events, function (x) { return x.id === body.id; });
+        if (!e || !member(w.db, body.memberId)) return c.fail("NOT_FOUND");
+        var answer = oneOf(body.answer, ["yes", "no", ""], "");
+        e.rsvps = e.rsvps || {};
+        if (answer) e.rsvps[body.memberId] = answer; else delete e.rsvps[body.memberId];
+        if (answer === "no" && e.partyRsvps && e.partyRsvps[body.memberId]) e.partyRsvps[body.memberId] = "no";
+        c.saveDb(w.db);
+        return c.ok({ event: eventView(w, e) });
+      }
+
       // 出席コード: 定例会の当日、管理者が受付を開いている間だけ受け付ける
       function checkIn(body) {
         var w = who(body);
@@ -490,6 +504,8 @@
           if (next.area !== "online") x.meetUrl = "";
         };
         if (e) {
+          // 日にちを変えたら、前の日にちへの出欠の回答は持ちこさない(別の日の「欠席」が新しい日に残らないように)
+          if (e.date !== next.date && next.date >= today()) { e.rsvps = {}; e.partyRsvps = {}; }
           Object.keys(next).forEach(function (k) { e[k] = next[k]; });
           applyMeet(e);
           syncEventCalendar(w.db, e);
@@ -2547,7 +2563,7 @@
           getHome: getHome, getActivity: getActivity, adminDashboard: adminDashboard, adminExport: adminExport,
           listEvents: listEvents, getEvent: getEvent, rsvpEvent: rsvpEvent, checkIn: checkIn,
           adminSaveEvent: adminSaveEvent, adminDeleteEvent: adminDeleteEvent, adminSaveMinutes: adminSaveMinutes, adminOpenCheckIn: adminOpenCheckIn,
-          adminEventDetail: adminEventDetail, adminMarkAttendance: adminMarkAttendance,
+          adminEventDetail: adminEventDetail, adminMarkAttendance: adminMarkAttendance, adminSetRsvp: adminSetRsvp,
           adminSyncMeetAttendance: adminSyncMeetAttendance, adminMapMeetName: adminMapMeetName,
           createVisitorInvite: createVisitorInvite, listMyVisitors: listMyVisitors, updateVisitor: updateVisitor,
           visitorInfo: visitorInfo, visitorApply: visitorApply,
