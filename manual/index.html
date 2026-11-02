@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="robots" content="noindex">
+  <meta name="theme-color" content="#faf6f4">
+  <title>BT-EX5 使い方マニュアル</title>
+  <!-- BT-EX5 会員サイトの使い方マニュアル(絵と動画つき)。だれでも分かるように、よく使う順に並べる。
+       絵は tools ではなく、デモの画面をスマホの大きさで撮ったもの(manual/img)。動画は manual/video(mp4・音なし) -->
+  <link rel="icon" type="image/svg+xml" href="../assets/bt-ex5-mark.svg?v=202611021333">
+  <link rel="apple-touch-icon" href="../assets/icon-180.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@1,600&family=Noto+Sans+JP:wght@400;500;700;900&family=Shippori+Mincho:wght@700;800&display=swap">
+  <style>
+    :root {
+      --bg: #faf6f4; --card: #ffffff; --ink: #3a2a24; --sub: #7a645c; --line: rgba(180, 110, 90, 0.18);
+      --coral: #d9776a; --deep: #b4544a; --soft: #fbe9e5; --gold: #c99a4e; --mark: #e8473b; --ok: #2e7d5b;
+      --mincho: "Shippori Mincho", "Noto Serif CJK JP", serif; --sans: "Noto Sans JP", "Noto Sans CJK JP", system-ui, sans-serif; --en: "Cormorant Garamond", serif;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; scroll-padding-top: 76px; }
+    body { margin: 0; background: var(--bg); color: var(--ink); font: 400 16px/1.85 var(--sans); -webkit-text-size-adjust: 100%; }
+    img, video { max-width: 100%; display: block; }
+    a { color: var(--deep); }
+    .wrap { width: min(1080px, 100% - 32px); margin: 0 auto; }
+
+    /* 上の帯 */
+    .top { position: sticky; top: 0; z-index: 20; background: rgba(250, 246, 244, 0.92); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
+    .top .wrap { display: flex; align-items: center; gap: 12px; height: 60px; }
+    .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--ink); }
+    .brand img { width: 34px; height: 34px; padding: 5px; border-radius: 10px; background: #fff; box-shadow: 0 2px 8px rgba(180, 84, 74, 0.15); }
+    .brand b { font: 900 18px/1 var(--sans); letter-spacing: 0.03em; }
+    .brand b span { color: var(--coral); }
+    .top .open { margin-left: auto; padding: 9px 16px; border-radius: 999px; background: linear-gradient(135deg, #e48a7d, #b9564c); color: #fff; font-weight: 700; font-size: 14px; text-decoration: none; white-space: nowrap; box-shadow: 0 4px 12px rgba(180, 84, 74, 0.28); }
+
+    /* 表紙 */
+    .hero { padding: 44px 0 26px; text-align: center; }
+    .hero .en { margin: 0; font: italic 600 clamp(34px, 7vw, 56px)/1 var(--en); color: var(--coral); }
+    .hero h1 { margin: 10px 0 0; font: 800 clamp(26px, 5.4vw, 40px)/1.35 var(--mincho); letter-spacing: 0.04em; }
+    .hero p { margin: 14px auto 0; max-width: 40em; color: var(--sub); }
+    .legend { display: inline-flex; flex-wrap: wrap; justify-content: center; gap: 8px 16px; margin-top: 16px; padding: 10px 16px; border-radius: 14px; background: #fff; box-shadow: 0 0 0 1px var(--line); font-size: 14px; color: var(--sub); }
+    .legend i { display: inline-grid; place-items: center; width: 22px; height: 22px; margin-right: 6px; border-radius: 50%; background: var(--mark); color: #fff; font: 800 13px/1 var(--sans); font-style: normal; vertical-align: -5px; }
+
+    /* 目次 */
+    .toc { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; margin: 8px 0 10px; padding: 0; list-style: none; counter-reset: toc; }
+    .toc a { display: flex; align-items: center; gap: 12px; height: 100%; padding: 12px 14px; border-radius: 16px; background: #fff; box-shadow: 0 0 0 1px var(--line); color: var(--ink); text-decoration: none; transition: transform .15s, box-shadow .15s; }
+    .toc a:hover { transform: translateY(-2px); box-shadow: 0 0 0 1px var(--coral), 0 8px 18px rgba(180, 84, 74, 0.12); }
+    .toc .n { flex: none; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: var(--soft); color: var(--deep); font: 800 15px/1 var(--mincho); }
+    .toc b { display: block; font-size: 15px; line-height: 1.35; }
+    .toc small { display: block; font-size: 12px; line-height: 1.4; color: var(--sub); }
+
+    /* 章 */
+    .chap { margin: 34px 0; padding: clamp(20px, 4vw, 40px); border-radius: 28px; background: var(--card); box-shadow: 0 1px 0 var(--line), 0 14px 40px rgba(90, 40, 30, 0.06); }
+    .chap-head { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 8px; }
+    .chap-no { flex: none; display: grid; place-items: center; width: 52px; height: 52px; border-radius: 16px; background: linear-gradient(140deg, #e48a7d, #b9564c); color: #fff; font: 800 22px/1 var(--mincho); box-shadow: 0 6px 14px rgba(180, 84, 74, 0.28); }
+    .chap h2 { margin: 2px 0 0; font: 800 clamp(22px, 4vw, 30px)/1.35 var(--mincho); letter-spacing: 0.03em; }
+    .chap .what { margin: 2px 0 0; color: var(--sub); font-size: 15px; }
+    .tab-chip { display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px; border-radius: 999px; background: var(--soft); color: var(--deep); font-size: 13px; font-weight: 700; white-space: nowrap; }
+
+    /* 手順(絵と説明の組) */
+    .step { display: grid; grid-template-columns: minmax(0, 300px) minmax(0, 1fr); gap: clamp(18px, 4vw, 44px); align-items: start; margin-top: 28px; }
+    .step + .step { padding-top: 28px; border-top: 1px dashed var(--line); }
+    .step.is-rev { grid-template-columns: minmax(0, 1fr) minmax(0, 300px); }
+    .step.is-rev .shot { order: 2; }
+    .shot { margin: 0; justify-self: center; width: 100%; max-width: 300px; }
+    .phone { position: relative; padding: 9px; border-radius: 34px; background: #2c211d; box-shadow: 0 18px 40px rgba(60, 30, 20, 0.22); }
+    .phone img, .phone video { width: 100%; height: auto; border-radius: 26px; background: #fff; }
+    .shot figcaption { margin-top: 8px; text-align: center; font-size: 13px; color: var(--sub); }
+    .step h3 { margin: 0 0 6px; font: 800 20px/1.45 var(--mincho); }
+    .step ol { margin: 10px 0 0; padding: 0; list-style: none; counter-reset: s; }
+    .step ol li { position: relative; margin: 10px 0; padding-left: 38px; counter-increment: s; }
+    .step ol li::before { content: counter(s); position: absolute; left: 0; top: 2px; display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: var(--mark); color: #fff; font: 800 14px/1 var(--sans); box-shadow: 0 2px 6px rgba(232, 71, 59, 0.35); }
+    .step ul.plain { margin: 10px 0 0; padding-left: 1.2em; }
+    .step ul.plain li { margin: 4px 0; }
+    .btnlike { display: inline-block; padding: 1px 10px; border-radius: 999px; background: linear-gradient(135deg, #e48a7d, #b9564c); color: #fff; font-size: 0.9em; font-weight: 700; white-space: nowrap; }
+    .btnlike.is-ghost { background: #fff; color: var(--deep); box-shadow: inset 0 0 0 1px rgba(180, 84, 74, 0.45); }
+    .tip { margin: 14px 0 0; padding: 12px 14px 12px 44px; position: relative; border-radius: 14px; background: #fff8e9; color: #5d4a22; font-size: 15px; }
+    .tip::before { content: "💡"; position: absolute; left: 14px; top: 11px; }
+    .tip.is-warn { background: #fdecea; color: #7b2c24; }
+    .tip.is-warn::before { content: "⚠️"; }
+
+    /* 動画 */
+    .movie { margin-top: 16px; }
+    .movie-tag { display: inline-flex; align-items: center; gap: 6px; margin-bottom: 8px; padding: 3px 12px; border-radius: 999px; background: #22314f; color: #fff; font-size: 13px; font-weight: 700; }
+    .movie-tag::before { content: "▶"; font-size: 11px; }
+
+    /* ホーム画面に追加 */
+    .howto { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; margin-top: 12px; }
+    .howto section { padding: 16px 18px; border-radius: 18px; background: var(--bg); box-shadow: 0 0 0 1px var(--line); }
+    .howto h4 { margin: 0 0 6px; font-size: 16px; }
+    .howto ol { margin: 0; padding-left: 1.3em; }
+    .ico { display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 7px; background: #fff; box-shadow: 0 0 0 1px var(--line); vertical-align: -7px; }
+    .ico svg { width: 16px; height: 16px; fill: none; stroke: #2a6fdb; stroke-width: 2; }
+
+    /* 下のタブの説明 */
+    .tabs { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; margin: 12px 0 0; padding: 0; list-style: none; }
+    .tabs li { padding: 12px; border-radius: 16px; background: var(--bg); box-shadow: 0 0 0 1px var(--line); font-size: 14px; line-height: 1.55; }
+    .tabs b { display: block; margin-bottom: 2px; font-size: 15px; color: var(--deep); }
+    .tabs .only { display: inline-block; margin-top: 4px; padding: 0 8px; border-radius: 999px; background: #22314f; color: #fff; font-size: 11px; }
+
+    /* よくある質問 */
+    .faq details { border-radius: 16px; background: var(--bg); box-shadow: 0 0 0 1px var(--line); margin: 10px 0; }
+    .faq summary { cursor: pointer; padding: 14px 44px 14px 16px; font-weight: 700; list-style: none; position: relative; }
+    .faq summary::-webkit-details-marker { display: none; }
+    .faq summary::after { content: "＋"; position: absolute; right: 16px; top: 12px; color: var(--deep); font-size: 18px; }
+    .faq details[open] summary::after { content: "−"; }
+    .faq details p { margin: 0; padding: 0 16px 16px; color: var(--sub); }
+
+    .foot { margin: 40px 0 60px; text-align: center; color: var(--sub); font-size: 14px; }
+    .foot .links { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-bottom: 14px; }
+    .foot .links a { padding: 10px 18px; border-radius: 999px; background: #fff; box-shadow: 0 0 0 1px var(--line); text-decoration: none; font-weight: 700; }
+
+    @media (max-width: 760px) {
+      .step, .step.is-rev { grid-template-columns: minmax(0, 1fr); }
+      .step.is-rev .shot { order: 0; }
+      .shot { max-width: 270px; }
+      .chap { border-radius: 22px; }
+      .top .open { padding: 8px 12px; font-size: 13px; }
+    }
+    @media print {
+      .top { position: static; }
+      .chap { break-inside: auto; box-shadow: none; border: 1px solid var(--line); }
+      .step { break-inside: avoid; }
+      .movie { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <header class="top">
+    <div class="wrap">
+      <a class="brand" href="../app/"><img src="../assets/bt-ex5-mark.svg?v=202611021333" alt=""><b>BT-<span>EX5</span></b></a>
+      <a class="open" href="../app/">アプリを開く</a>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="hero">
+      <p class="en">How to use</p>
+      <h1>BT-EX5 使い方マニュアル</h1>
+      <p>はじめての方でも、上から順に読めば使えるようにまとめました。絵の中の<b>赤い丸の番号</b>が、押すところです。▶ のついた動画は、押すと実際の操作が流れます(音は出ません)。</p>
+      <div class="legend"><span><i>1</i>押すところ・見るところ</span><span><b style="color:#22314f">▶ 動画</b> で操作の流れ</span></div>
+    </section>
+
+    <nav aria-label="もくじ">
+      <ol class="toc">
+        <li><a href="#start"><span class="n">1</span><span><b>はじめに(ログイン)</b><small>最初の1回だけ</small></span></a></li>
+        <li><a href="#home"><span class="n">2</span><span><b>ホーム画面に追加</b><small>アプリのように使う</small></span></a></li>
+        <li><a href="#tabs"><span class="n">3</span><span><b>画面の見方</b><small>下のタブ・ベル・マイページ</small></span></a></li>
+        <li><a href="#search"><span class="n">4</span><span><b>紹介先を探す</b><small>早見表・紹介診断</small></span></a></li>
+        <li><a href="#events"><span class="n">5</span><span><b>定例会の出欠</b><small>予定・出席・欠席</small></span></a></li>
+        <li><a href="#log"><span class="n">6</span><span><b>紹介・マイル・1on1 を記録</b><small>記録</small></span></a></li>
+        <li><a href="#board"><span class="n">7</span><span><b>掲示板</b><small>投稿・写真・コメント</small></span></a></li>
+        <li><a href="#me"><span class="n">8</span><span><b>マイページ</b><small>プロフィール・通知・最新の版</small></span></a></li>
+        <li><a href="#materials"><span class="n">9</span><span><b>資料</b><small>ポスター・お誘い画像</small></span></a></li>
+        <li><a href="#staff"><span class="n">10</span><span><b>運営の方へ</b><small>プレゼンの進行</small></span></a></li>
+        <li><a href="#faq"><span class="n">?</span><span><b>困ったとき</b><small>よくある質問</small></span></a></li>
+      </ol>
+    </nav>
+
+    <!-- 1 はじめに -->
+    <section class="chap" id="start">
+      <div class="chap-head"><span class="chap-no">1</span><div><h2>はじめに(ログイン)</h2><p class="what">BT-EX5 のメンバー専用です。最初の1回だけ、ログインします。</p></div></div>
+      <div class="step">
+        <figure class="shot"><div class="phone"><img src="img/01-login.jpg" alt="ログインの画面" loading="lazy" width="780" height="1688"></div><figcaption>ログインの画面</figcaption></figure>
+        <div>
+          <h3>お名前を選んで、パスワードを入れる</h3>
+          <ol>
+            <li><b>お名前</b>の欄を押して、一覧から自分の名前を選びます。</li>
+            <li><b>パスワード</b>を入れます。まだ自分のパスワードを決めていない方は、運営から聞いた<b>コミュニティの共通パスコード</b>を入れてください。</li>
+            <li><span class="btnlike">ログイン</span> を押します。「ログイン状態を保持する」にチェックがあれば、30日間はログインしたままです。</li>
+            <li>はじめての方・パスワードを忘れた方は、いちばん下の「招待コード」から入れます(招待コードは運営から届きます)。</li>
+          </ol>
+          <p class="tip">ログインしたら、ホームの「<b>はじめての方へ</b>」に、やることが7つ並びます。上から順に押していけば、準備が終わります。まずは<b>自分専用のパスワード</b>を決めておくと安心です。</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2 ホーム画面に追加 -->
+    <section class="chap" id="home">
+      <div class="chap-head"><span class="chap-no">2</span><div><h2>スマホのホーム画面に追加する</h2><p class="what">アイコンを押すだけで開けるようになります。ふつうのアプリと同じように使えて、通知も受け取れます。</p></div></div>
+      <div class="howto">
+        <section>
+          <h4>iPhone(Safari)</h4>
+          <ol>
+            <li>Safari で会員サイトを開きます。</li>
+            <li>画面の下(または上)の <span class="ico" aria-label="共有"><svg viewBox="0 0 24 24"><path d="M12 3v12M7 8l5-5 5 5M5 12v8h14v-8"/></svg></span> 共有ボタンを押します。</li>
+            <li>下にずらして「<b>ホーム画面に追加</b>」を押します。</li>
+            <li>右上の「<b>追加</b>」を押すと、BT-EX5 のアイコンができます。</li>
+          </ol>
+        </section>
+        <section>
+          <h4>Android(Chrome)</h4>
+          <ol>
+            <li>Chrome で会員サイトを開きます。</li>
+            <li>右上の <b>︙</b>(点が3つ)を押します。</li>
+            <li>「<b>ホーム画面に追加</b>」(または「アプリをインストール」)を押します。</li>
+            <li>「追加」を押すと、アイコンができます。</li>
+          </ol>
+        </section>
+      </div>
+      <p class="tip">iPhone で通知を受け取るには、<b>ホーム画面に追加したアイコンから開いて</b>、マイページの「通知・設定」で通知をオンにしてください(Safari のままでは通知が届きません)。</p>
+    </section>
+
+    <!-- 3 画面の見方 -->
+    <section class="chap" id="tabs">
+      <div class="chap-head"><span class="chap-no">3</span><div><h2>画面の見方</h2><p class="what">いちばん下のタブで画面を切りかえます。上のベルでお知らせ、丸い名前のボタンでマイページです。</p></div></div>
+      <div class="step">
+        <figure class="shot"><div class="phone"><img src="img/02-home.jpg" alt="ホームの画面" loading="lazy" width="780" height="1688"></div><figcaption>アプリを開いたところ</figcaption></figure>
+        <div>
+          <ol>
+            <li><b>下のタブ</b>:押すと、それぞれの画面に切りかわります(下の表)。赤い数字は、見ていないものの数です。</li>
+            <li><b>ベル</b>:自分に関係するお知らせ(紹介が届いた・コメントが付いた など)が見られます。</li>
+            <li><b>丸い名前のボタン</b>:マイページ。プロフィールや通知の設定はここから。</li>
+          </ol>
+          <ul class="tabs">
+            <li><b>早見表</b>聞いた相談から、紹介先のメンバーを探す</li>
+            <li><b>記録</b>紹介・ありがとうマイル・1on1 を記録する、分析を見る</li>
+            <li><b>予定</b>定例会の日程と出欠、カレンダー</li>
+            <li><b>資料</b>ポスター・お誘い画像を作る</li>
+            <li><b>掲示板</b>紹介のお願い・告知・お礼を投稿する</li>
+            <li><b>プレゼン</b>定例会のスライド進行<br><span class="only">運営だけ</span></li>
+            <li><b>運営</b>運営会議・議事録<br><span class="only">運営だけ</span></li>
+          </ul>
+          <p class="tip">タブが多いときは、横にずらすと残りが出ます。</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4 紹介先を探す -->
+    <section class="chap" id="search">
+      <div class="chap-head"><span class="chap-no">4</span><div><h2>紹介先を探す <span class="tab-chip">早見表</span></h2><p class="what">「こんな人を探している」と聞いたら、その言葉を入れるだけで、合うメンバーがわかります。</p></div></div>
+      <div class="step">
+        <figure class="shot"><div class="phone"><img src="img/03-ref-ask.jpg" alt="早見表の相談を入れるところ" loading="lazy" width="780" height="1688"></div><figcaption>早見表のいちばん上</figcaption></figure>
+        <div>
+          <h3>聞いた相談を、そのまま入れる</h3>
+          <ol>
+            <li>赤い枠に、聞いた相談をそのまま入れます(例:「新潟で飲食店を開業予定。集客と採用に困っている」)。<b>話して入力</b>を押すと、声でも入れられます。</li>
+            <li><span class="btnlike is-ghost">紹介先を探す</span> を押します。</li>
+            <li>言葉が浮かばないときは、「<b>質問に答えて探す</b>」(紹介診断・3問)を押します。</li>
+          </ol>
+          <div class="movie"><span class="movie-tag">動画:相談を入れて紹介先を探す(10秒)</span>
+            <div class="phone" style="max-width:300px"><video poster="video/v1-ask.jpg" controls playsinline muted preload="none" width="540" height="1168"><source src="video/v1-ask.mp4" type="video/mp4"><source src="video/v1-ask.webm" type="video/webm"></video></div>
+          </div>
+        </div>
+      </div>
+      <div class="step is-rev">
+        <figure class="shot"><div class="phone"><img src="img/04-ref-result.jpg" alt="紹介先の候補" loading="lazy" width="780" height="1688"></div><figcaption>探した結果</figcaption></figure>
+        <div>
+          <h3>結果の見方</h3>
+          <ul class="plain">
+            <li>上に「<b>この組み合わせで、まとめて解決できます</b>」と、悩みごとに合うメンバーが並びます。</li>
+            <li>その下に、合う順にメンバーのカードが出ます。右の % は、どれくらい合うかの目安です。</li>
+            <li><span class="btnlike">チームの紹介文をコピー</span> を押すと、相手に送る紹介文がコピーされます。LINE などに貼り付けて送れます。</li>
+          </ul>
+        </div>
+      </div>
+      <div class="step">
+        <figure class="shot"><div class="phone"><img src="img/05-ref-diag.jpg" alt="紹介診断の質問" loading="lazy" width="780" height="1688"></div><figcaption>紹介診断(3問)</figcaption></figure>
+        <div>
+          <h3>質問に答えて探す(紹介診断)</h3>
+          <ol>
+            <li>「相手がこう言っていたら」などの言葉から、いちばん近いものを押します。</li>
+          </ol>
+          <p>3問に答えると、合うメンバーが出ます。15秒ほどで終わります。</p>
+        </div>
+      </div>
+      <div class="step is-rev">
+        <figure class="shot"><div class="phone"><img src="img/07-ref-detail.jpg" alt="メンバーの詳細" loading="lazy" width="780" height="1688"></div><figcaption>名前を押すと出る詳細</figcaption></figure>
+        <div>
+          <h3>メンバーのくわしい内容を見る</h3>
+          <ul class="plain">
+            <li>カードの<b>名前</b>を押すと、仕事の内容・求める紹介・こんな話が出たら、が全部見られます。</li>
+            <li>下の <span class="btnlike">紹介文をコピー</span> で、この人を紹介する文がコピーされます。「この人を共有」で LINE などに送れます。</li>
+            <li>カードの右上の ☆ を押すと「お気に入り」になり、マイページにも並びます。</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5 定例会の出欠 -->
+    <section class="chap" id="events">
+      <div class="chap-head"><span class="chap-no">5</span><div><h2>定例会の出欠 <span class="tab-chip">予定</span></h2><p class="what">定例会ごとに、出席か欠席かを必ず登録してください。</p></div></div>
+      <div class="step">
+        <figure class="shot"><div class="phone"><img src="img/08-events.jpg" alt="予定の画面" loading="lazy" width="780" height="1688"></div><figcaption>予定の画面</figcaption></figure>
+        <div>
+          <h3>出席・欠席を押す</h3>
+          <ol>
+            <li>その日の定例会のカードで <span class="btnlike is-ghost">出席する</span> か <span class="btnlike is-ghost">欠席する</span> を押します。欠席のときは「◯月◯日の定例会を欠席にしますか?」と確かめてから登録します。</li>
+            <li>「<b>詳細・出欠の一覧</b>」で、当日の流れ・参加リンク・ほかのメンバーの出欠が見られます。</li>
+          </ol>
+          <p class="tip">オンラインの定例会は、Google Meet に参加した時間で自動で出席がつきます。会場の定例会は、受付の QR コードを読むか、4桁の出席コードを入れます。</p>
+          <div class="movie"><span class="movie-tag">動画:出席を登録して、詳細を見る(7秒)</span>
+            <div class="phone" style="max-width:300px"><video poster="video/v2-rsvp.jpg" controls playsinline muted preload="none" width="540" height="1168"><source src="video/v2-rsvp.mp4" type="video/mp4"><source src="video/v2-rsvp.webm" type="video/webm"></video></div>
+          </div>
+        </div>
+      </div>
+      <div class="step is-rev">
+        <figure class="shot"><div class="phone"><img src="img/09-event-detail.jpg" alt="定例会の詳細" loading="lazy" width="780" height="1688"></div><figcaption>定例会の詳細</figcaption></figure>
+        <div>
+          <h3>まちがえて押したとき</h3>
+          <ul class="plain">
+            <li>申込締切までは、詳細の画面で何度でも押し直せます。同じボタンをもう一度押すと取り消しになります。</li>
+            <li>締切を過ぎたあとは、運営に伝えてください。運営が直せます。</li>
+            <li><b>カレンダーに追加</b>を押すと、Google カレンダーや iPhone のカレンダーに入ります。</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6 記録 -->
+    <section class="chap" id="log">
+      <div class="chap-head"><span class="chap-no">6</span><div><h2>紹介・マイル・1on1 を記録する <span class="tab-chip">記録</span></h2><p class="what">紹介した・お礼をした・1on1 をした、を記録すると、相手に届き、あとで分析にも出ます。</p></div></div>
+      <div class="step">
+        <figure class="shot"><div class="phone"><img src="img/10-log.jpg" alt="記録の画面" loading="lazy" width="780" height="1688"></div><figcaption>記録の画面</figcaption></figure>
+        <div>
+          <ol>
+            <li>上の切りかえで「<b>紹介</b>」「<b>ありがとうマイル</b>」「<b>1on1</b>」「ランキング」「分析」を選びます。</li>
+            <li>それぞれの <span class="btnlike">＋ 紹介を記録する</span> などのボタンから記録します。</li>
+          </ol>
+        </div>
+      </div>
+      <div class="step is-rev">
+        <figure class="shot"><div class="phone"><img src="img/11-log-ref-form.jpg" alt="紹介を記録" loading="lazy" width="780" height="1688"></div><figcaption>紹介を記録</figcaption></figure>
+        <div>
+          <h3>紹介を記録する</h3>
+          <ol>
+            <li>「紹介先のメンバー」に名前を入れて、一覧から選びます(ひらがなでも探せます)。</li>
+            <li>「紹介した方」に、紹介したお客様の会社名・お名前を入れます。</li>
+            <li>「どんな相談か」を書いて、<span class="btnlike">記録して知らせる</span> を押します。紹介先のメンバーに届きます。</li>
+          </ol>
+          <div class="movie"><span class="movie-tag">動画:紹介を記録する(13秒)</span>
+            <div class="phone" style="max-width:300px"><video poster="video/v3-referral.jpg" controls playsinline muted preload="none" width="540" height="1168"><source src="video/v3-referral.mp4" type="video/mp4"><source src="video/v3-referral.webm" type="video/webm"></video></div>
+          </div>
+        </div>
+      </div>
+      <div class="step">
+        <figure class="shot"><div class="phone"><img src="img/12-log-miles-form.jpg" alt="ありがとうを送る" loading="lazy" width="780" height="1688"></div><figcaption>ありがとうを送る</figcaption></figure>
+        <div>
+          <h3>ありがとうマイルを送る</h3>
+          <p>紹介で仕事が決まったら、紹介してくれた人にお礼を送ります。</p>
+          <ol>
+            <li>お礼を送る相手(紹介してくれた人)を選びます。</li>
+            <li>成約金額を入れます(<b>1円 = 1マイル</b>)。わかる範囲で大丈夫です。0円でも送れます。</li>
+            <li>ひとことを書いて <span class="btnlike">送る</span> を押します。</li>
+          </ol>
+        </div>
+      </div>
+      <div class="step is-rev">
+        <figure class="shot"><div class="phone"><img src="img/13-log-1on1-form.jpg" alt="1on1 を予定・記録する" loading="lazy" width="780" height="1688"></div><figcaption>1on1 を予定・記録する</figcaption></figure>
+        <div>
+          <h3>1on1 を予定・記録する</h3>
+          <ol>
+            <li>相手を選びます。ほかの BT-EX の方とも記録できます(相手の欄の上で、ユニットを選びます)。</li>
+            <li>日付・時刻・場所(または Google Meet)を入れて保存します。</li>
+            <li>「相手に送る文をコピー」で、日時の入った案内を LINE などで送れます。終わったら「実施した」を押します。</li>
+          </ol>
+        </div>
+      </div>
+    </section>
+
+    <!-- 7 掲示板 -->
+    <section class="chap" id="board">
+      <div class="chap-head"><span class="chap-no">7</span><div><h2>掲示板 <span class="tab-chip">掲示板</span></h2><p class="what">紹介のお願い、イベントの告知、成約のお礼などを、メンバー全員に届けられます。</p></div></div>
+      <div class="step">
+        <figure class="shot"><div class="phone"><img src="img/14-board.jpg" alt="掲示板" loading="lazy" width="780" height="1688"></div><figcaption>掲示板</figcaption></figure>
+        <div>
+          <ol>
+            <li><span class="btnlike">＋ 投稿する</span> を押すと、書く画面が開きます。</li>
+          </ol>
+          <ul class="plain">
+            <li>ほかの人の投稿には、「いいね」やコメントができます。</li>
+            <li>本文に「@お名前」と書くと、その人に通知が届きます。</li>
+          </ul>
+          <div class="movie"><span class="movie-tag">動画:投稿を書く(7秒)</span>
+            <div class="phone" style="max-width:300px"><video poster="video/v4-board.jpg" controls playsinline muted preload="none" width="540" height="1168"><source src="video/v4-board.mp4" type="video/mp4"><source src="video/v4-board.webm" type="video/webm"></video></div>
+          </div>
+        </div>
+      </div>
+      <div class="step is-rev">
+        <figure class="shot"><div class="phone"><img src="img/15-board-form.jpg" alt="掲示板に投稿" loading="lazy" width="780" height="1688"></div><figcaption>投稿を書く画面</figcaption></figure>
+        <div>
+          <h3>写真も付けられます</h3>
+          <ol>
+            <li>「<b>写真を追加(4枚まで)</b>」を押すと、スマホの写真を選べます。チラシや会場の写真などにどうぞ。</li>
+          </ol>
+          <p>種類(紹介依頼/イベント・募集/成約・お礼/質問)を選んで、本文を書いて <span class="btnlike">投稿する</span> を押します。</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 8 マイページ -->
+    <section class="chap" id="me">
+      <div class="chap-head"><span class="chap-no">8</span><div><h2>マイページ</h2><p class="what">右上の丸い名前のボタンから開きます。自分のプロフィールや設定はここにまとまっています。</p></div></div>
+      <div class="step">
+        <figure class="shot"><div class="phone"><img src="img/16-me.jpg" alt="マイページ" loading="lazy" width="780" height="1688"></div><figcaption>マイページ</figcaption></figure>
+        <div>
+          <h3>プロフィールを入れる</h3>
+          <ul class="plain">
+            <li>「<b>プロフィール・1on1シートを編集</b>」で、仕事の内容・求める紹介・こんな話が出たら、を入れます。たくさん入れるほど、早見表で見つけてもらいやすくなります。</li>
+            <li>時間がないときは「<b>かんたんプロフィール(3つの質問)</b>」で1分で入れられます。</li>
+            <li>「ほかのメンバーからの見え方」で、早見表の自分のカードを確かめられます。</li>
+            <li>「<b>通知・設定</b>」で、スマホへの通知をオンにできます。文字を大きくすることもできます。</li>
+          </ul>
+          <div class="movie"><span class="movie-tag">動画:マイページを見る(9秒)</span>
+            <div class="phone" style="max-width:300px"><video poster="video/v5-me.jpg" controls playsinline muted preload="none" width="540" height="1168"><source src="video/v5-me.mp4" type="video/mp4"><source src="video/v5-me.webm" type="video/webm"></video></div>
+          </div>
+        </div>
+      </div>
+      <div class="step is-rev">
+        <figure class="shot"><div class="phone"><img src="img/17-me-bottom.jpg" alt="最新の版にする" loading="lazy" width="780" height="1688"></div><figcaption>マイページのいちばん下</figcaption></figure>
+        <div>
+          <h3>新しい画面が出ないときは「最新の版にする」</h3>
+          <ol>
+            <li>名簿や新しい機能が出ないときは、マイページのいちばん下の <span class="btnlike is-ghost">最新の版にする</span> を押します。ログインはそのままです。</li>
+          </ol>
+          <p>「アプリの版」に出ている日時で、いま開いている版がわかります。</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 9 資料 -->
+    <section class="chap" id="materials">
+      <div class="chap-head"><span class="chap-no">9</span><div><h2>資料を作る <span class="tab-chip">資料</span></h2><p class="what">定例会や BT-EX フェスのポスター、掲示板・SNS で使えるお誘い画像を作れます。</p></div></div>
+      <div class="step">
+        <figure class="shot"><div class="phone"><img src="img/18-materials.jpg" alt="資料の画面" loading="lazy" width="780" height="1688"></div><figcaption>資料の画面</figcaption></figure>
+        <div>
+          <ul class="plain">
+            <li><b>ポスターを作る</b>:種類(BT-EX フェス/定例会)を選ぶと、いちばん近い予定の日時・会場・参加費が入ります。変えたいところだけ直して、<span class="btnlike">PDF で保存</span> か「画像で保存」。A4 横で印刷できます。</li>
+            <li><b>定例会のお誘い画像</b>:日時(2回まで)・オンラインか会場か・「参加したい方は◯◯までお声がけを」の欄のあり/なしを選んで、画像で保存します。</li>
+            <li><b>マスコット(3D)</b>:BT-EX5 のマスコット「ときめ」と「つなぐ」を、指で回して見られます。</li>
+          </ul>
+          <p class="tip is-warn">BT-EX に人を誘うときは、<b>BT メンバーであること</b>、ビジター参加のときも<b>アップクリエの許可</b>、BT-EX への参加は<b>アドバンスリーダーの許可が必須</b>です。むやみに誘わず、ご本人の意思とチームのアドバンスの許可を確かめてください。</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 10 運営 -->
+    <section class="chap" id="staff">
+      <div class="chap-head"><span class="chap-no">10</span><div><h2>運営の方へ <span class="tab-chip">プレゼン</span></h2><p class="what">運営メンバーには「プレゼン」「運営」のタブが出ます。</p></div></div>
+      <div class="step">
+        <figure class="shot"><div class="phone"><img src="img/19-present.jpg" alt="プレゼンの画面" loading="lazy" width="780" height="1688"></div><figcaption>プレゼンの画面</figcaption></figure>
+        <div>
+          <h3>定例会のスライドを進める</h3>
+          <ol>
+            <li>「定例会」で、その日の定例会を選びます。</li>
+            <li>出る人を、話す順番に押して選びます(「全員」でまとめて選べます。ほかの BT-EX やゲストも足せます)。</li>
+            <li>「<b>定例会をはじめる</b>」で、オープニングムービーから始まります。会場のスクリーンや Meet の画面共有にそのまま映せます。</li>
+          </ol>
+          <ul class="plain">
+            <li>スライドは、画面の右下の「進む」「戻る」か、キーボードの → ← で進めます。右上の一覧から、好きな所へ飛べます。</li>
+            <li>左上の時間の枠で、「理想」と「現在」の時刻、進み・遅れがわかります。</li>
+            <li>出欠は、定例会の詳細のメンバー一覧から直せます(「出欠を直す」)。</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 困ったとき -->
+    <section class="chap faq" id="faq">
+      <div class="chap-head"><span class="chap-no">?</span><div><h2>困ったとき</h2><p class="what">よくある質問です。解決しないときは、マイページの「バグ・要望を送る」から運営に送れます。</p></div></div>
+      <details><summary>ログインできない</summary><p>お名前を正しく選んでいるか、パスワードの大文字・小文字を確かめてください。パスワードを忘れたときは、ログインの画面の「はじめての方・パスワードを忘れた方(招待コード)」から入れます。招待コードは運営にお問い合わせください。</p></details>
+      <details><summary>新しい名簿や機能が出てこない</summary><p>スマホに前の画面が残っていることがあります。マイページのいちばん下の「最新の版にする」を押してください。ホーム画面のアイコンから開いている場合は、アプリを一度上にスワイプして閉じてから開き直しても直ります。</p></details>
+      <details><summary>通知が届かない</summary><p>iPhone は、ホーム画面に追加したアイコンから開いて、マイページの「通知・設定」で通知をオンにしてください。スマホの「設定」で、ブラウザやアプリの通知が切れていないかも確かめてください。</p></details>
+      <details><summary>欠席をまちがえて押した</summary><p>申込締切までは、同じ定例会の「出席する」を押せば直ります。締切を過ぎたときは、運営に伝えてください(運営が直せます)。</p></details>
+      <details><summary>自分のカードの内容を直したい</summary><p>マイページの「プロフィール・1on1シートを編集」から直せます。保存すると、すぐに早見表のカードに反映されます。</p></details>
+      <details><summary>文字が小さくて読みにくい</summary><p>画面の上の「あ」のボタン、またはマイページの「通知・設定」で、文字を大きくできます。</p></details>
+      <details><summary>パソコンでも使える?</summary><p>使えます。同じお名前・パスワードでログインしてください。プレゼンの進行や資料づくりは、パソコンの大きな画面が便利です。</p></details>
+    </section>
+
+    <footer class="foot">
+      <div class="links"><a href="../app/">アプリを開く</a><a href="../referral/">紹介先早見表</a><a href="../app/#help">よくある質問(アプリ内)</a></div>
+      <p>© 2026 BT-EX5 ・ 新潟 ⇔ 東京 紹介者制コミュニティ</p>
+    </footer>
+  </main>
+  <script>
+    // 動画は、ひとつ再生したら、ほかの動画は止める
+    document.querySelectorAll("video").forEach(function (v) {
+      v.addEventListener("play", function () { document.querySelectorAll("video").forEach(function (o) { if (o !== v) o.pause(); }); });
+    });
+  </script>
+</body>
+</html>

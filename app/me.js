@@ -42,6 +42,7 @@
           menu("#me/install", "スマホのホーム画面に追加", "アプリのようにすぐ開けます"),
           typeof BtexTheme !== "undefined" ? menu("#me/design", "デザインの切りかえ", `いま: サイト ${BtexTheme.site() === "classic" ? "元の黒×金" : "やわらかいデザイン"}・スライド ${BtexTheme.deck() === "classic" ? "元の黒×金" : "やわらかいデザイン"}`) : null),
         group("サポート",
+          menu("../manual/", "使い方マニュアル(絵と動画)", "はじめての方へ。ログインから記録・掲示板まで、絵と動画で説明します"),
           menu("#help", "使い方・よくある質問", "できること・だれに何が見えるか・困ったとき"),
           menu("#me/feedback", "バグ・要望を送る", "使いにくいところ・ほしい機能を運営へ")),
         App.isAdmin() ? group("運営",

@@ -221,7 +221,8 @@
     tab: "",
     async render(el) {
       el.append(h("h1", { class: "app-h1" }, "使い方・よくある質問"),
-        h("p", { class: "app-lead" }, "わからないことがあれば、まずここを見てください。解決しないときは、いちばん下から運営に送れます。"));
+        h("p", { class: "app-lead" }, "わからないことがあれば、まずここを見てください。解決しないときは、いちばん下から運営に送れます。"),
+        h("a", { class: "app-btn primary wide help-manual", href: "../manual/" }, "絵と動画の使い方マニュアルを開く"));
       FAQ.forEach(([sec, items]) => {
         el.append(h("section", { class: "app-section help-sec" }, h("h2", { class: "app-h2" }, sec),
           items.map(([q, a]) => h("details", { class: "help-item" }, h("summary", null, q), h("p", null, a)))));
