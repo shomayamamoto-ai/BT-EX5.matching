@@ -139,7 +139,11 @@
     /* マスコット(台座なし): ときめ(トキ)はアーチの右上にとまり、つなぐ(新幹線)はアーチの下のあいたところを走る */
     .mascot { position: absolute; z-index: 3; display: block; height: auto; pointer-events: none; filter: drop-shadow(0 1.6mm 2mm rgba(90, 40, 30, 0.2)); }
     .mascot.is-toki { right: 2mm; top: 6mm; width: 56mm; }
-    .mascot.is-train { left: 207mm; top: 132mm; width: 44mm; }
+    .mascot.is-train { left: 212mm; top: 132mm; width: 35mm; }
+    /* 名前のボタン(マスコットの下) */
+    .mascot-tag { position: absolute; z-index: 3; transform: translateX(-50%); padding: 0.9mm 3.4mm 1.1mm; border-radius: 99mm; background: linear-gradient(135deg, #e48a7d, #b9564c); color: #fff; font-family: var(--mincho); font-weight: 800; font-size: 3.4mm; letter-spacing: 0.14em; line-height: 1.2; white-space: nowrap; box-shadow: 0 0.8mm 2mm rgba(180, 84, 74, 0.32), inset 0 0.2mm 0 rgba(255, 255, 255, 0.35); }
+    .mascot-tag.is-toki { left: 278mm; top: 38.5mm; }
+    .mascot-tag.is-train { left: 230mm; top: 159.5mm; }
     .is-shot-base img { visibility: hidden !important; }
     .poster.is-shot-top { visibility: hidden; background: transparent !important; }
     .poster.is-shot-top .bubble, .poster.is-shot-top .arch-script { visibility: visible; }
@@ -182,6 +186,8 @@
     <ul class="values" id="values" style="list-style:none"></ul>
     <img class="mascot is-toki" src="../mascot/toki-l.png" alt="" width="1077" height="608">
     <img class="mascot is-train" src="../mascot/train-l.png" alt="" width="854" height="674">
+    <span class="mascot-tag is-toki" aria-hidden="true">ときめ</span>
+    <span class="mascot-tag is-train" aria-hidden="true">つなぐ</span>
   </article>
   </div></div>
 
