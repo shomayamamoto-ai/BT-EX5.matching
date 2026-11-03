@@ -187,6 +187,11 @@
     const online = m.online === "all" ? "オンラインは全国対応" : m.online === "partial" ? "打合せはオンライン可" : m.online === "none" ? "対面のみ" : "";
     return [faceTxt ? `${faceTxt}で対面` : "", online].filter(Boolean).join(" ・ ");
   }
+  // ほかの BT-EX の方の顔写真(運営が入れているとき)
+  function otherPhoto(x, small) {
+    const op = x && x.kind === "other" && typeof btexOtherProfile === "function" ? btexOtherProfile(x.unit, x.name) : null;
+    return op && op.photo ? `../${small && op.small ? op.small : op.photo}` : "";
+  }
   // 進行の画面に出す人の情報
   function personOf(key, photos) {
     if (key.startsWith("m:")) {
@@ -312,7 +317,7 @@
       const li = h("li", { class: `round-item pr-row${fixed ? " is-fixed" : ""}`, draggable: fixed ? "false" : "true" },
         h("span", { class: "pr-grip", "aria-hidden": "true" }, "⋮⋮"),
         h("span", { class: "round-no" }, String(i + 1)),
-        face(x.kind === "member" ? photos[x.id] : "", x.name, "pr-row-face"),
+        face(x.kind === "member" ? photos[x.id] : otherPhoto(x, true), x.name, "pr-row-face"),
         h("span", { class: "round-name" }, nameEl(x.name, "b"), x.kind === "visitor" ? App.chip("ビジター", "info") : x.kind === "guest" ? App.chip(`ゲスト・${secLabel(x.sec || 30)}`, "info") : x.kind === "other" ? App.chip(`BT-EX・${secLabel(x.sec || 30)}`, "mute") : null, fixed ? App.chip("順番固定", "warn") : null, x.company ? h("small", null, x.company) : null),
         canPhoto ? h("button", { type: "button", class: "pr-photo-btn", onclick: () => App.choosePhoto(x.id, (url) => { photos[x.id] = url; draw(); }) }, photos[x.id] ? "写真を変える" : "写真を入れる") : null,
         h("span", { class: "round-move" },
@@ -614,7 +619,12 @@
         const p = personOf(k, photos);
         if (p) return p;
         const x = byKey(k);
-        return x ? { key: k, kind: x.kind, name: x.name, kana: x.kana || "", catch: x.unit ? String(x.company || "").replace(/^BT-EX\d+( ・ )?/, "") : x.company, unit: x.unit || 0, photo: "", area: "", wants: "", triggers: [], sec: x.sec || 30 } : null;
+        if (!x) return null;
+        const base = { key: k, kind: x.kind, name: x.name, kana: x.kana || "", catch: x.unit ? String(x.company || "").replace(/^BT-EX\d+( ・ )?/, "") : x.company, unit: x.unit || 0, photo: "", area: "", wants: "", triggers: [], sec: x.sec || 30 };
+        // ほかの BT-EX の方で、くわしい紹介(顔写真・求める紹介など)を運営が入れている方は、BT-EX5 のメンバーと同じように出す
+        const op = x.kind === "other" && typeof btexOtherProfile === "function" ? btexOtherProfile(x.unit, x.name) : null;
+        if (op) Object.assign(base, { photo: op.photo ? `../${op.photo}` : "", catch: [op.company, op.category].filter(Boolean).join("/") || base.catch, team: op.keiretsu || "", wants: clip(op.wantsShort || op.wants, 240), triggers: (op.triggers || []).slice(0, 24) });
+        return base;
       }).filter(Boolean);
       if (withDeck) {
         const D = App.deckData ? App.deckData(deckInfo.config) : {};
