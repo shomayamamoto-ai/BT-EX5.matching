@@ -68,7 +68,7 @@ body.has-app-tabs .ref-toast { bottom: calc(var(--app-tabs-h) + 18px + env(safe-
 
 /* 下のタブは7つ。幅の狭いスマホでは文字を少し小さくして、はみ出さないようにする */
 @media (max-width: 430px) {
-  .app-tab span { font-size: 10.5px; letter-spacing: -0.03em; }
+  .app-tab span { font-size: 11px; letter-spacing: -0.04em; }
   .app-tabs .app-tab .app-badge { left: auto; right: 2px; }
 }
 

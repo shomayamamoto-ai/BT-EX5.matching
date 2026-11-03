@@ -136,7 +136,7 @@ body.tabs-left .app-tabs, body.tabs-right .app-tabs, body.tabs-free .app-tabs, b
   box-shadow: 0 -6px 24px rgba(120, 80, 60, 0.07) !important;
 }
 @media (min-width: 900px) { .app-tabs { border-radius: 999px !important; box-shadow: var(--sf-shadow-lg) !important; } }
-.app-tab { color: #9a8880 !important; }
+.app-tab { color: #7d6a62 !important; } /* 文字が読みやすい濃さに(白地で 5:1) */
 .app-tab.is-on { color: var(--sf-coral-deep) !important; }
 .app-tab.is-on .app-tab-ind { background: var(--sf-coral-soft) !important; box-shadow: none !important; }
 .app-tab:focus-visible .app-tab-ind { box-shadow: 0 0 0 2px var(--sf-coral) !important; }
@@ -217,7 +217,7 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--sf-coral-deep)
 .ref-tag { border-radius: 999px; }
 .ref-tag.me, .ref-card .ref-tag.me, .ref-genre.hit { background: var(--grad) !important; color: #fff !important; }
 .ref-customers span, .ref-label, .inv-rules h3, .tm-arrow { color: var(--sf-coral-deep) !important; }
-.ref-fav { color: #a8928a; }
+.ref-fav { color: #8a756d; }
 .adm-checks label:has(input:checked) { background: var(--grad) !important; border-color: transparent !important; color: #fff !important; }
 
 /* ---------- ログイン・アンケート・ビジター申し込み(カードのページ) ---------- */

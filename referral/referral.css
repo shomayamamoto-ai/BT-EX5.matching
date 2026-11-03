@@ -1543,3 +1543,8 @@ a.ref-btn { display: inline-flex; align-items: center; justify-content: center; 
 
 /* 軽くする: 画面の外にあるメンバーのカードは、見えるところまで来たときに描く(見た目は同じ) */
 .ref-list > .ref-card { content-visibility: auto; contain-intrinsic-size: auto 520px; }
+
+/* UX/UI の見直し(2026年11月): 資料・リンクのバッジ、押せる高さを広げる */
+.ref-link-badges { min-height: 36px; align-items: center; padding: 4px 0; margin-top: 4px; }
+/* 名前のボタンも押せる高さを広げる(見た目はそのまま) */
+.ref-name-btn, .pt-name { min-height: 36px; }

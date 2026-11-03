@@ -206,3 +206,6 @@
 .prof-rank-list li:first-child b { background: linear-gradient(180deg, #e9c77d, #c9993f); color: #2b1d08; }
 .prof-rank-list input { min-width: 0; width: 100%; }
 .prof-rank-list b { height: auto; align-self: stretch; min-height: 32px; }
+
+/* UX/UI の見直し(2026年11月): リンクの「削除」を押しやすく */
+.lk-remove { min-height: 36px; min-width: 40px; padding: 6px 4px; }

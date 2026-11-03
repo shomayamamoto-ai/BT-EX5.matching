@@ -50,12 +50,12 @@
           h("h2", null, "出欠のつけ方"),
           h("p", null, "オンラインの定例会は、Google Meet に参加した時間で自動で出欠がつきます(100分以上で出席、60分以上100分未満は遅刻早退)。出席コードは要りません。"),
           rate);
-      // 受付中・会場の日は出席コードをいちばん上に。ふだんは時計とカレンダーを上に
+      // 受付中・会場の日は出席コードをいちばん上に。
+      // ふだんは「これからの定例会」(出欠のボタン)を先に出し、時計とカレンダーはそのあと(いちばんよく使う出欠をすぐ押せるように)
       if (open || venueSoon) el.append(checkBox);
       const cal = App.calendarPanel(d.events, d.today);
-      el.append(h("section", { class: "cal-panel", "aria-label": "カレンダー" },
-        App.clockCard(upcoming[0], d.today), cal.main, cal.day));
-      if (!(open || venueSoon)) el.append(checkBox);
+      const calPanel = h("section", { class: "cal-panel", "aria-label": "カレンダー" },
+        App.clockCard(upcoming[0], d.today), cal.main, cal.day);
 
       if (canPlan()) el.append(h("div", { class: "app-cta-row" }, App.btn("＋ 定例会の日程を追加", () => newEvent(d.events), "primary wide ev-add-btn")));
 
@@ -75,6 +75,9 @@
             return card;
           }))
           : App.empty("予定されている定例会はまだありません。")));
+
+      el.append(calPanel);
+      if (!(open || venueSoon)) el.append(checkBox);
 
       await renderVisitors(el);
 
