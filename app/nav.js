@@ -44,7 +44,7 @@
     // 記録は、使える人だけ(ほかの方は黒くなって押せない)。分からないときも押せない側にする
     // 予定も同じ
     const flag = (k) => { try { return (sessionStorage.getItem(k) || localStorage.getItem(k)) === "1"; } catch { return false; } };
-    const lockedTab = (id) => (id === "log" && !flag("btex5-log")) || (id === "events" && !flag("btex5-events"));
+    const lockedTab = (id) => (id === "log" && !flag("btex5-log")) || (id === "events" && !flag("btex5-events")) || (id === "materials" && !flag("btex5-materials"));
     nav.replaceChildren(...tabs.map((t) => {
       const a = document.createElement("a");
       if (lockedTab(t.id)) {

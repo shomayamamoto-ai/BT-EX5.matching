@@ -81,6 +81,8 @@ const AuthSession = (function () {
       localStorage.removeItem("btex5-present");
       localStorage.removeItem("btex5-log");
       localStorage.removeItem("btex5-events");
+      localStorage.removeItem("btex5-materials");
+      sessionStorage.removeItem("btex5-materials");
       sessionStorage.removeItem("btex5-events");
       sessionStorage.removeItem("btex5-log");
       sessionStorage.removeItem("btex5-present");

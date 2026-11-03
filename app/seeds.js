@@ -161,6 +161,16 @@
         h("div", { class: "app-btn-row" }, h("a", { class: "app-btn primary", href: "#seeds" }, "紹介のタネを見る"), h("a", { class: "app-btn ghost", href: "#board" }, "掲示板へ"))));
     },
   };
+  // 資料が使えない方が、リンクから資料を開いたとき
+  App.views.materialsLocked = {
+    title: "資料", tab: "materials",
+    async render(el) {
+      el.append(h("section", { class: "app-section locked-box" },
+        h("h1", { class: "app-h1" }, "資料は準備中です"),
+        h("p", { class: "app-lead" }, "ポスター・お誘い画像などの資料は、いまは準備中のため、一部の方だけが使えます。使えるようになったら、お知らせでご案内します。"),
+        h("div", { class: "app-btn-row" }, h("a", { class: "app-btn primary", href: "#board" }, "掲示板へ"))));
+    },
+  };
   // 予定が使えない方が、リンクから予定を開いたとき。会場の QR コード(#events?checkin=1234)の出席だけは受け付ける
   App.views.eventsLocked = {
     title: "予定", tab: "events",

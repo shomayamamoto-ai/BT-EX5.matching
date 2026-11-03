@@ -706,7 +706,7 @@ const App = (function () {
   const canPresent = () => !!(session && PRESENT_OWNERS.includes(session.memberId));
   // 記録(紹介・マイル・1on1・分析)は、いまは山本 捷真・小林 末季(こばねぇ)だけ(運営の依頼。ほかの方は、下のタブが黒くなって押せない)
   // 予定も同じ(2026年11月の運営の依頼)。使えない方は、下のタブが黒くなって押せず、アプリを開くと掲示板から始まる
-  const LIMITED_TABS = ["log", "events"];
+  const LIMITED_TABS = ["log", "events", "materials"]; // 資料も(2026年11月)
   const LIMITED_OWNERS = ["yamamoto", "m22"];
   const canTab = (id) => !LIMITED_TABS.includes(id) || !!(session && LIMITED_OWNERS.includes(session.memberId));
   const canLog = () => canTab("log");
@@ -765,6 +765,7 @@ const App = (function () {
     let view = views[r.view] ? r.view : "home";
     // 記録は、使える人だけ(ほかの方がリンクから開いたときは「準備中」を出す)
     if (view === "log" && !canLog()) view = "logLocked";
+    if (view === "materials" && !canTab("materials")) view = "materialsLocked";
     if (!canTab("events")) {
       if (view === "home") view = "board"; // アプリを開いたときは掲示板から
       else if (view === "events" || view === "invite") view = "eventsLocked";
@@ -1029,6 +1030,7 @@ const App = (function () {
     try { localStorage.setItem("btex5-present", canPresent() ? "1" : "0"); } catch { /* noop */ }
     try { localStorage.setItem("btex5-log", canLog() ? "1" : "0"); sessionStorage.setItem("btex5-log", canLog() ? "1" : "0"); } catch { /* noop */ }
     try { localStorage.setItem("btex5-events", canTab("events") ? "1" : "0"); sessionStorage.setItem("btex5-events", canTab("events") ? "1" : "0"); } catch { /* noop */ }
+    try { localStorage.setItem("btex5-materials", canTab("materials") ? "1" : "0"); sessionStorage.setItem("btex5-materials", canTab("materials") ? "1" : "0"); } catch { /* noop */ }
     // ロゴ(ふだんは予定へ)も、予定が使えない方は掲示板へ
     if (!canTab("events")) { const lg = document.querySelector(".app-logo"); if (lg) { lg.href = "#board"; lg.setAttribute("aria-label", "掲示板"); } }
     // 前回の名簿があればそれですぐ開き、新しい名簿は届きしだい入れかえる(届くまで待たない)
