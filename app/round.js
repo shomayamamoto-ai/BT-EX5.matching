@@ -167,6 +167,9 @@
   const SMALL_FACE = /^(pr-card-face|pr-row-face|pr-me-face|pd-staff-face)$/;
   // 本日の運営メンバーの役(はじめの挨拶のあとのスライド)
   // 3つ目があるのは担当が決まっている役(選べない)。本システム(スライド含む)制作は山本 捷真なので固定
+  // 1分プレゼンの話す順番で、いちばん前に固定する12名(この順番)
+  // 桜羽 李果・三村 隆・あまみや 七音・栁橋 雅也・小林 末季(こばねぇ)・山本 捷真・大場 雅俊・大枝 篤志・床島 良夫・吉澤 美和子・吉原 優・大小原 翔太
+  const PITCH_FIRST = ["m16", "m14", "m02", "m24", "m22", "yamamoto", "m09", "m10", "m08", "m04", "m06", "m29"];
   const STAFF_ROLES = [["facilitator", "ファシリテーター"], ["education", "エデュケーション"], ["system", "スライド進行"], ["breakout", "ブレイクアウトルーム"], ["builder", "本システム（スライド含む）制作", ["yamamoto"]]];
   const thumbOf = (url) => String(url).replace(/assets\/members\/([^/?#]+\.jpg)/, "assets/members/thumbs/$1");
   function face(url, name, cls) {
@@ -305,18 +308,19 @@
     function row(k, i) {
       const x = byKey(k);
       const canPhoto = x.kind === "member" && (App.isAdmin() || (App.session && x.id === App.session.memberId));
-      const li = h("li", { class: "round-item pr-row", draggable: "true" },
+      const fixed = isFixed(k);
+      const li = h("li", { class: `round-item pr-row${fixed ? " is-fixed" : ""}`, draggable: fixed ? "false" : "true" },
         h("span", { class: "pr-grip", "aria-hidden": "true" }, "⋮⋮"),
         h("span", { class: "round-no" }, String(i + 1)),
         face(x.kind === "member" ? photos[x.id] : "", x.name, "pr-row-face"),
-        h("span", { class: "round-name" }, nameEl(x.name, "b"), x.kind === "visitor" ? App.chip("ビジター", "info") : x.kind === "guest" ? App.chip(`ゲスト・${secLabel(x.sec || 30)}`, "info") : x.kind === "other" ? App.chip(`BT-EX・${secLabel(x.sec || 30)}`, "mute") : null, x.company ? h("small", null, x.company) : null),
+        h("span", { class: "round-name" }, nameEl(x.name, "b"), x.kind === "visitor" ? App.chip("ビジター", "info") : x.kind === "guest" ? App.chip(`ゲスト・${secLabel(x.sec || 30)}`, "info") : x.kind === "other" ? App.chip(`BT-EX・${secLabel(x.sec || 30)}`, "mute") : null, fixed ? App.chip("順番固定", "warn") : null, x.company ? h("small", null, x.company) : null),
         canPhoto ? h("button", { type: "button", class: "pr-photo-btn", onclick: () => App.choosePhoto(x.id, (url) => { photos[x.id] = url; draw(); }) }, photos[x.id] ? "写真を変える" : "写真を入れる") : null,
         h("span", { class: "round-move" },
           h("button", { type: "button", "aria-label": `${x.name}さんを上へ`, disabled: i === 0 || groupRank(order[i - 1]) !== groupRank(k), onclick: () => { [order[i - 1], order[i]] = [order[i], order[i - 1]]; draw(); } }, "↑"),
           h("button", { type: "button", "aria-label": `${x.name}さんを下へ`, disabled: i === order.length - 1 || groupRank(order[i + 1]) !== groupRank(k), onclick: () => { [order[i + 1], order[i]] = [order[i], order[i + 1]]; draw(); } }, "↓"),
           h("button", { type: "button", "aria-label": `${x.name}さんを外す`, onclick: () => { order.splice(i, 1); draw(); } }, "×")));
       // パソコン: つかんで動かす
-      li.addEventListener("dragstart", (e) => { dragFrom = i; li.classList.add("is-drag"); try { e.dataTransfer.setData("text/plain", k); e.dataTransfer.effectAllowed = "move"; } catch { /* noop */ } });
+      li.addEventListener("dragstart", (e) => { if (fixed) { e.preventDefault(); return; } dragFrom = i; li.classList.add("is-drag"); try { e.dataTransfer.setData("text/plain", k); e.dataTransfer.effectAllowed = "move"; } catch { /* noop */ } });
       li.addEventListener("dragend", () => { li.classList.remove("is-drag"); dragFrom = -1; });
       li.addEventListener("dragover", (e) => { if (dragFrom >= 0 && groupRank(order[dragFrom]) === groupRank(k)) { e.preventDefault(); li.classList.add("is-over"); } });
       li.addEventListener("dragleave", () => li.classList.remove("is-over"));
@@ -478,9 +482,15 @@
 
     // 話す順番は必ず BT-EX5 のメンバー → ほかの BT-EX(BT-EX1 → BT-EX14 の順)→ ゲスト・ビジター。
     // それぞれの組の中では、押した順・↑↓・つかんで動かす・シャッフル・名前の順で並べかえられる
-    const groupRank = (k) => { const x = byKey(k) || {}; return x.kind === "member" ? 0 : x.kind === "other" ? x.unit || 15 : 100; };
+    // BT-EX5 のメンバーの中でも、決まった12名は、この順番でいちばん前に固定(運営の依頼。2026年11月)。動かせない
+    const groupRank = (k) => {
+      const x = byKey(k) || {};
+      if (x.kind === "member") { const p = PITCH_FIRST.indexOf(x.id); return p >= 0 ? p - 100 : 0; }
+      return x.kind === "other" ? x.unit || 15 : 100;
+    };
+    const isFixed = (k) => groupRank(k) < 0;
     const GROUP_NAMES = { member: "BT-EX5 のメンバー", other: "ほかの BT-EX のメンバー", guest: "ゲスト・ビジター" };
-    const groupOf = (k) => { const r = groupRank(k); return r === 0 ? "member" : r < 100 ? "other" : "guest"; };
+    const groupOf = (k) => { const r = groupRank(k); return r <= 0 ? "member" : r < 100 ? "other" : "guest"; };
     function draw() {
       order = order.map((k, i) => [k, i]).sort((a, b) => groupRank(a[0]) - groupRank(b[0]) || a[1] - b[1]).map(([k]) => k);
       saveOrder();
@@ -656,7 +666,7 @@
               draw();
             }, "ghost small"),
             App.btn("名前の順", () => { order = order.slice().sort((a, b) => byKey(a).name.localeCompare(byKey(b).name, "ja")); draw(); }, "ghost small"))),
-        h("p", { class: "app-field-hint pr-drag-hint" }, "順番は必ず BT-EX5 のメンバー → ほかの BT-EX(BT-EX1 から 14 の順)→ ゲストです。それぞれの中で、パソコンでは行をつかんで、スマホは ↑↓ で動かせます。"),
+        h("p", { class: "app-field-hint pr-drag-hint" }, "順番は必ず BT-EX5 のメンバー → ほかの BT-EX(BT-EX1 から 14 の順)→ ゲストです。BT-EX5 のメンバーのうち「順番固定」の12名は、決まった順番でいちばん前です(動かせません。出ない方は × で外せます)。それぞれの中で、パソコンでは行をつかんで、スマホは ↑↓ で動かせます。"),
         listEl, total,
         h("p", { class: "round-label" }, "1人の時間"), perRow,
         h("div", { class: "pr-auto" },
