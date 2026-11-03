@@ -148,6 +148,17 @@
         onclick: () => App.go(`board${c.id ? `?cat=${encodeURIComponent(c.id)}` : ""}`),
       }, c.label))));
     const items = d.items.filter((p) => !filter || p.cat === filter);
+    // あなたが力になれそうな紹介依頼(ここ60日、ほかの人の投稿で、あなたが合いそうな上位3名に入るもの)
+    const me = App.session.memberId;
+    const since = Date.now() - 60 * 864e5;
+    const forMe = items.filter((p) => p.cat === "紹介依頼" && p.by !== me && (!p.at || new Date(p.at).getTime() >= since)
+      && askMatches(p.body, { exclude: [p.by] }).some((x) => x.m.id === me));
+    if (forMe.length) el.append(h("button", { type: "button", class: "board-forme", onclick: () => {
+      const card = document.getElementById(`post-${forMe[0].id}`);
+      if (!card) return;
+      card.scrollIntoView({ block: "center", behavior: "smooth" });
+      card.classList.add("is-focus"); setTimeout(() => card.classList.remove("is-focus"), 2400);
+    } }, h("b", null, `あなたが力になれそうな紹介依頼が ${forMe.length} 件あります`), h("small", null, "あなたの仕事の内容から選びました。押すとその投稿へ移ります")));
     if (!items.length) { el.append(App.empty("まだ投稿がありません。紹介のお願いやイベントの告知、成約のお礼などを気軽にどうぞ。", h("a", { class: "app-btn primary small", href: "#board?new" }, "＋ 投稿する"))); }
     // 掲示板の中を探す(本文・名前・コメント)
     const q = h("input", { type: "search", class: "board-search", placeholder: "掲示板を検索(例:税理士・イベント)", "aria-label": "掲示板を検索" });
@@ -252,6 +263,58 @@
     return box;
   }
 
+  // ============================================
+  // 紹介依頼の相談 → 合いそうなメンバー(早見表の「相談アシスタント」と同じ読み取り・一致度)
+  // 外部の AI は使わない。読み取れる言葉がなければ空
+  // ============================================
+  function askMatches(text, opts) {
+    const o = Object.assign({ limit: 3, exclude: [] }, opts);
+    if (typeof RefConsult === "undefined" || typeof RefScoring === "undefined") return [];
+    const t = String(text || "").trim();
+    if (t.length < 6) return [];
+    try {
+      const a = RefConsult.analyze(t);
+      if (!a.groups.length) return [];
+      const ans = RefConsult.toAnswers(a);
+      const pool = (App.members || []).filter((m) => m && m.id && !o.exclude.includes(m.id) && Array.isArray(m.topics));
+      return RefScoring.rankMembers(pool, ans, { limit: o.limit, min: 50, fair: false })
+        .map((x) => ({ m: x.m, score: x.sc.score, label: a.groups.slice(0, 2).map((g) => g.label).join("・") }));
+    } catch { return []; }
+  }
+  App.askMatches = askMatches;
+  const askHref = (text) => `../referral/#ask=${encodeURIComponent(String(text || "").slice(0, 400))}`;
+  const metaOf = (m) => [m.category, m.company].filter(Boolean).join(" ・ ");
+
+  // 紹介依頼の投稿の下に出す「合いそうなメンバー」。コメントで呼ぶ(@名前)と、その人に通知が届く
+  function matchBox(p, comment) {
+    const me = App.session.memberId;
+    const hits = askMatches(p.body, { exclude: [p.by] });
+    if (!hits.length) return null;
+    const mine = hits.some((x) => x.m.id === me);
+    return h("section", { class: `post-match${mine ? " is-mine" : ""}`, "aria-label": "この相談に合いそうなメンバー" },
+      h("p", { class: "post-match-head" }, h("b", null, mine ? "あなたが力になれそうな相談です" : "この相談に合いそうなメンバー"),
+        h("small", null, `読み取ったこと:${hits[0].label}`)),
+      h("ul", null, hits.map((x) => h("li", null,
+        App.avatar(x.m.name, "sm"),
+        h("a", { class: "post-match-name", href: App.profileHref(x.m.id, `board?post=${p.id}`) }, h("b", null, x.m.id === me ? `${x.m.name}(あなた)` : x.m.name), h("small", null, metaOf(x.m))),
+        h("span", { class: "post-match-score", "aria-label": `一致度${x.score}%` }, `${x.score}%`),
+        x.m.id === me ? h("button", { type: "button", class: "post-link", onclick: () => {
+          const msg = "お力になれるかもしれません。くわしく聞かせてください!";
+          if (!comment.value.includes(msg)) comment.value = comment.value ? `${comment.value} ${msg}` : msg;
+          comment.focus(); comment.setSelectionRange(comment.value.length, comment.value.length);
+          comment.closest(".post-comment-form").scrollIntoView({ block: "center", behavior: "smooth" });
+          App.toast("コメント欄に入れました。直して送ってください");
+        } }, "手を挙げる") : h("button", { type: "button", class: "post-link", onclick: () => {
+          const name = String(x.m.name).replace(/\s+/g, "");
+          const tag = `@${name} `;
+          if (!comment.value.includes(tag.trim())) comment.value = `${comment.value}${comment.value && !/\s$/.test(comment.value) ? " " : ""}${tag}`;
+          comment.focus(); comment.setSelectionRange(comment.value.length, comment.value.length);
+          comment.closest(".post-comment-form").scrollIntoView({ block: "center", behavior: "smooth" });
+          App.toast(`${x.m.name}さんの名前を入れました。ひとこと添えて送ってください`);
+        } }, "コメントで呼ぶ")))),
+      h("a", { class: "post-match-more", href: askHref(p.body) }, "早見表でくわしく探す →"));
+  }
+
   function postCard(p) {
     const card = h("article", { class: `post${p.isNew ? " is-new" : ""}`, id: `post-${p.id}` });
     function draw() {
@@ -263,6 +326,7 @@
           p.isNew ? h("span", { class: "ann-dot" }, "新着") : null),
         clampBody(p),
         postImages(p),
+        p.cat === "紹介依頼" ? matchBox(p, comment) : null,
         h("div", { class: "post-actions" },
           h("button", { type: "button", class: `post-like${p.liked ? " is-on" : ""}`, "aria-pressed": p.liked ? "true" : "false", onclick: async () => {
             const d = await App.api("likePost", { id: p.id });
@@ -390,6 +454,19 @@
       const photoField = h("div", { class: "post-img-field" }, thumbs,
         h("label", { class: "app-btn ghost small post-img-add" }, fileIn, "＋ 写真を追加(4枚まで)"));
       const sendBtn = h("button", { type: "submit", class: "app-btn primary wide" }, "投稿する");
+      // 紹介依頼を書いているあいだ、届きそうな人を下に出す(書き方のヒントにもなる)
+      const preview = h("div", { class: "post-match-preview", "aria-live": "polite" });
+      let pvTimer = 0;
+      const drawPreview = () => {
+        if (picked !== "紹介依頼") { preview.replaceChildren(); return; }
+        const hits = askMatches(text.value, { exclude: [App.session.memberId] });
+        preview.replaceChildren(text.value.trim().length < 6 ? h("small", null, "困っていること(例:集客・採用・ホームページ)を書くと、合いそうなメンバーがここに出ます。")
+          : hits.length ? h("p", null, h("small", null, "この内容だと合いそうな人:"), " ", hits.map((x) => h("span", { class: "app-pill is-static" }, x.m.name)))
+          : h("small", null, "まだ合う人を読み取れません。何に困っているか(例:税金の相談、チラシ作り)を書き足してみてください。"));
+      };
+      text.addEventListener("input", () => { clearTimeout(pvTimer); pvTimer = setTimeout(drawPreview, 250); });
+      chips.addEventListener("click", () => setTimeout(drawPreview, 0));
+      drawPreview();
       body.append(h("form", { class: "app-form", onsubmit: async (e) => {
         e.preventDefault();
         if (!text.value.trim() && !images.length) { App.fieldError(text, "本文を入れてください。"); return; }
@@ -401,7 +478,7 @@
         close();
         App.toast("投稿しました");
         App.go("board");
-      } }, App.field("種類", chips), App.field("本文", mentionWrap(text), "「@名前」と書くと、その人に通知が届きます"), App.field("写真", photoField, "チラシや写真を載せられます"), sendBtn));
+      } }, App.field("種類", chips), App.field("本文", mentionWrap(text), "「@名前」と書くと、その人に通知が届きます"), preview, App.field("写真", photoField, "チラシや写真を載せられます"), sendBtn));
     }, { confirmClose: () => false });
   }
 })();

@@ -3311,3 +3311,27 @@ button.home-welcome-check:active { transform: scale(0.94); }
 .pr-xphoto { display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0; }
 .pr-photo-del { min-height: 34px; padding: 0 8px; border: none; background: none; font-size: 12px; font-weight: 700; color: var(--text-sub); text-decoration: underline; cursor: pointer; }
 @media (max-width: 600px) { .pr-xphoto { order: 5; } }
+
+/* 掲示板: 紹介依頼に合いそうなメンバー */
+.post-match { margin-top: 12px; border: 1px solid var(--line); border-radius: 12px; background: #fbf7ef; padding: 10px 12px 8px; }
+.post-match.is-mine { border-color: var(--good); background: var(--good-bg); }
+.post-match-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; margin-bottom: 6px; }
+.post-match-head b { font-size: 13.5px; color: var(--accent-dark); }
+.post-match.is-mine .post-match-head b { color: var(--good); }
+.post-match-head small { font-size: 12px; color: var(--text-sub); }
+.post-match ul { list-style: none; display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px; }
+.post-match li { display: flex; align-items: center; gap: 10px; min-width: 0; min-height: 44px; border-top: 1px dashed var(--line); }
+.post-match li:first-child { border-top: none; }
+.post-match-name { flex: 1; min-width: 0; display: flex; flex-direction: column; color: var(--text); text-decoration: none; padding: 4px 0; }
+.post-match-name b { font-size: 14px; }
+.post-match-name small { font-size: 12px; color: var(--text-sub); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.post-match-score { font-weight: 800; font-size: 13px; color: var(--accent-dark); font-variant-numeric: tabular-nums; }
+.post-match .post-link { color: var(--info); white-space: nowrap; min-height: 36px; }
+.post-match-more { display: inline-flex; align-items: center; min-height: 36px; margin-top: 2px; font-size: 13px; font-weight: 800; color: var(--accent-dark); text-decoration: none; }
+.post-match-preview { margin: -4px 0 4px; }
+.post-match-preview:empty { display: none; }
+.post-match-preview small { font-size: 12.5px; color: var(--text-sub); }
+.post-match-preview .app-pill { margin: 4px 4px 0 0; cursor: default; }
+.board-forme { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; width: 100%; text-align: left; margin: 0 0 10px; padding: 12px 14px; border: 1px solid var(--good); border-radius: 12px; background: var(--good-bg); color: var(--good); cursor: pointer; font: inherit; }
+.board-forme b { font-size: 14px; }
+.board-forme small { font-size: 12px; color: var(--text-sub); }
