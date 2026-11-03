@@ -108,6 +108,36 @@
     } finally { URL.revokeObjectURL(url); }
   }
 
+  // ゲスト・ビジター・ほかの BT-EX の方の顔写真(プレゼンの準備の画面で入れる)。
+  // この端末に覚え、お名前で引くので、次の定例会でも同じ方ならそのまま使える(新しいものから30名まで)
+  const XPHOTO_KEY = "xphotos", XPHOTO_MAX = 30;
+  const xKey = (x) => `${x.kind === "other" ? `o${x.unit || 0}` : "g"}:${String(x.name || "").replace(/\s+/g, "")}`;
+  const xPhotos = () => { try { const m = JSON.parse(store.get(XPHOTO_KEY, "{}")); return m && typeof m === "object" ? m : {}; } catch { return {}; } };
+  const xPhotoOwn = (x) => { const e = xPhotos()[xKey(x)]; return e ? e.d || "" : ""; };
+  function saveXPhoto(x, data) {
+    const m = xPhotos();
+    if (data) m[xKey(x)] = { d: data, at: Date.now() }; else delete m[xKey(x)];
+    const keys = Object.keys(m).sort((a, b2) => m[b2].at - m[a].at);
+    keys.slice(XPHOTO_MAX).forEach((k) => delete m[k]);
+    try { localStorage.setItem(`btex5-round-${XPHOTO_KEY}`, JSON.stringify(m)); return true; } catch { return false; }
+  }
+  function chooseXPhoto(x, done) {
+    const input = h("input", { type: "file", accept: "image/*", style: "display:none" });
+    input.addEventListener("change", async () => {
+      const file = input.files && input.files[0];
+      input.remove();
+      if (!file) return;
+      let photo = null;
+      try { photo = await shrinkPhoto(file); } catch { photo = null; }
+      if (!photo) { App.toast("この画像は読みこめませんでした。JPEG・PNG の写真でお試しください", "error"); return; }
+      if (!saveXPhoto(x, photo)) { App.toast("この端末に保存できませんでした(容量がいっぱいです)", "error"); return; }
+      App.toast(`${x.name}さんの写真を入れました`);
+      if (done) done(photo);
+    });
+    document.body.append(input);
+    input.click();
+  }
+
   // 写真を選んで入れる(自分の写真、または運営がほかの人の写真)。入れたら done(写真の URL)
   App.choosePhoto = function (memberId, done) {
     const isMe = App.session && memberId === App.session.memberId;
@@ -317,9 +347,13 @@
       const li = h("li", { class: `round-item pr-row${fixed ? " is-fixed" : ""}`, draggable: fixed ? "false" : "true" },
         h("span", { class: "pr-grip", "aria-hidden": "true" }, "⋮⋮"),
         h("span", { class: "round-no" }, String(i + 1)),
-        face(x.kind === "member" ? photos[x.id] : otherPhoto(x, true), x.name, "pr-row-face"),
+        face(x.kind === "member" ? photos[x.id] : xPhotoOwn(x) || otherPhoto(x, true), x.name, "pr-row-face"),
         h("span", { class: "round-name" }, nameEl(x.name, "b"), x.kind === "visitor" ? App.chip("ビジター", "info") : x.kind === "guest" ? App.chip(`ゲスト・${secLabel(x.sec || 30)}`, "info") : x.kind === "other" ? App.chip(`BT-EX・${secLabel(x.sec || 30)}`, "mute") : null, fixed ? App.chip("順番固定", "warn") : null, x.company ? h("small", null, x.company) : null),
         canPhoto ? h("button", { type: "button", class: "pr-photo-btn", onclick: () => App.choosePhoto(x.id, (url) => { photos[x.id] = url; draw(); }) }, photos[x.id] ? "写真を変える" : "写真を入れる") : null,
+        // ゲスト・ビジター・ほかの BT-EX の方も、写真を入れられる(この端末に覚える)
+        x.kind !== "member" ? h("span", { class: "pr-xphoto" },
+          h("button", { type: "button", class: "pr-photo-btn", onclick: () => chooseXPhoto(x, () => draw()) }, xPhotoOwn(x) || otherPhoto(x) ? "写真を変える" : "写真を入れる"),
+          xPhotoOwn(x) ? h("button", { type: "button", class: "pr-photo-del", "aria-label": `${x.name}さんの写真を外す`, onclick: () => { saveXPhoto(x, ""); App.toast("写真を外しました"); draw(); } }, "外す") : null) : null,
         h("span", { class: "round-move" },
           h("button", { type: "button", "aria-label": `${x.name}さんを上へ`, disabled: i === 0 || groupRank(order[i - 1]) !== groupRank(k), onclick: () => { [order[i - 1], order[i]] = [order[i], order[i - 1]]; draw(); } }, "↑"),
           h("button", { type: "button", "aria-label": `${x.name}さんを下へ`, disabled: i === order.length - 1 || groupRank(order[i + 1]) !== groupRank(k), onclick: () => { [order[i + 1], order[i]] = [order[i], order[i + 1]]; draw(); } }, "↓"),
@@ -624,6 +658,9 @@
         // ほかの BT-EX の方で、くわしい紹介(顔写真・求める紹介など)を運営が入れている方は、BT-EX5 のメンバーと同じように出す
         const op = x.kind === "other" && typeof btexOtherProfile === "function" ? btexOtherProfile(x.unit, x.name) : null;
         if (op) Object.assign(base, { photo: op.photo ? `../${op.photo}` : "", catch: [op.company, op.category].filter(Boolean).join("/") || base.catch, team: op.keiretsu || "", wants: clip(op.wantsShort || op.wants, 240), triggers: (op.triggers || []).slice(0, 24) });
+        // 準備の画面で入れた写真があれば、それを使う
+        const own = xPhotoOwn(x);
+        if (own) base.photo = own;
         return base;
       }).filter(Boolean);
       if (withDeck) {

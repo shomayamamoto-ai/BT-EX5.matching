@@ -3307,3 +3307,7 @@ button.home-welcome-check:active { transform: scale(0.94); }
 .app-tab.is-locked .app-tab-ind svg [stroke], .app-tab.is-locked .app-tab-ind svg { stroke: currentColor; }
 .locked-box { text-align: center; padding: 30px 16px; }
 .pr-row.is-fixed .pr-grip { visibility: hidden; }
+/* プレゼンの準備: ゲスト・ほかの BT-EX の方の写真 */
+.pr-xphoto { display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0; }
+.pr-photo-del { min-height: 34px; padding: 0 8px; border: none; background: none; font-size: 12px; font-weight: 700; color: var(--text-sub); text-decoration: underline; cursor: pointer; }
+@media (max-width: 600px) { .pr-xphoto { order: 5; } }
