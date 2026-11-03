@@ -98,12 +98,21 @@ h1, h2, h3, .app-h1, .app-h2 { color: var(--sf-ink); }
   border-bottom: 1px solid var(--sf-line) !important;
   box-shadow: 0 6px 24px rgba(120, 80, 60, 0.06) !important;
 }
-.app-top .brand-name, .ref-header .brand-name { color: var(--sf-ink) !important; }
+.app-top .brand-name, .ref-header .brand-name { color: var(--sf-coral) !important; }
 .app-top .brand-sub, .ref-header .brand-sub { color: #b07a70 !important; }
 /* ロゴの横の「BT-EX5」: 「EX5」は金ではなくコーラルのグラデーションに。下の一言もローズの色に(どのページでも) */
-.brand-name { color: var(--sf-ink) !important; }
+.brand-name { color: var(--sf-coral) !important; }
 .brand-name em { background: linear-gradient(100deg, #e48a7d 0%, #c25d53 55%, #b4554a 100%) !important; -webkit-background-clip: text !important; background-clip: text !important; -webkit-text-fill-color: transparent !important; }
 .brand-sub { color: #b07a70 !important; }
+/* ロゴの横の「BT-EX5」も、各画面の頭の英字(Schedule など)と同じ筆記体・コーラルに。下の一言は明朝 */
+.brand-name, .app-top .brand-name, .ref-header .brand-name {
+  font-family: var(--sf-script) !important; font-weight: 400 !important; font-size: 30px !important;
+  letter-spacing: 0.01em !important; line-height: 0.95 !important; color: var(--sf-coral) !important;
+  padding: 0 0.08em 0 0; /* 筆記体の最後の払いが切れないように */
+}
+.brand-name em { font-style: normal !important; background: none !important; -webkit-text-fill-color: currentColor !important; color: inherit !important; }
+.brand-sub { font-family: var(--lux-serif, "Shippori Mincho", serif) !important; font-weight: 700 !important; letter-spacing: 0.16em !important; margin-top: 2px !important; }
+@media (max-width: 420px) { .brand-name, .app-top .brand-name, .ref-header .brand-name { font-size: 27px !important; } }
 .brand-light .brand-name { color: #fff !important; }
 .brand-mark { box-shadow: 0 0 0 1px rgba(217, 119, 107, 0.25), 0 4px 12px rgba(120, 80, 60, 0.18) !important; }
 /* 金の輪だけのロゴ(assets/theme.js が切りかえる)を、白から淡いピンクの角丸の上に */
