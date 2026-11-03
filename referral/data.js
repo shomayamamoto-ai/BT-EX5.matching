@@ -1131,6 +1131,7 @@ const REF_MEMBER_PHOTOS = {
   m03: "assets/members/m03.jpg", // 佐藤 志織
   m04: "assets/members/m04.jpg", // 吉澤 美和子
   m05: "assets/members/m05.jpg", // 大藤 誠
+  m06: "assets/members/m06.jpg", // 吉原 優(2026年11月3日、運営から)
   m08: "assets/members/m08.jpg", // 床島 良夫
   m09: "assets/members/m09-3.jpg", // 大場 雅俊
   m10: "assets/members/m10.jpg", // 大枝 篤志
