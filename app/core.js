@@ -1125,6 +1125,8 @@ const App = (function () {
     // 画面の枠(上の帯・下のメニュー)はすぐ出し、中身は読み込みながら(薄いひな形を出して)表示する
     document.documentElement.classList.remove("guard-pending");
     await route();
+    // はじめてログインしたとき: 使い方ツアー(app/tour.js)
+    if (App.tour) App.tour.maybeStart();
   }
 
   // Excel で文字化けしない CSV(先頭に BOM)。数式として読まれないよう = + - @ で始まる値は ' を付ける。
