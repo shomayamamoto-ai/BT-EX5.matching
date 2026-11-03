@@ -32,7 +32,7 @@
 
   BtexServerCore.registerModule({
     mutating: [
-      "rsvpEvent", "adminSetRsvp", "checkIn", "adminSaveEvent", "adminDeleteEvent", "adminOpenCheckIn", "adminMarkAttendance",
+      "rsvpEvent", "adminSetRsvp", "saveSeed", "deleteSeed", "checkIn", "adminSaveEvent", "adminDeleteEvent", "adminOpenCheckIn", "adminMarkAttendance",
       "adminSyncMeetAttendance", "adminMapMeetName",
       "createVisitorInvite", "updateVisitor", "visitorApply",
       "reportThanks", "deleteThanks", "save1on1", "delete1on1", "confirm1on1", "muteReferralNudge",
@@ -429,6 +429,45 @@
         if (answer === "no" && e.partyRsvps && e.partyRsvps[body.memberId]) e.partyRsvps[body.memberId] = "no";
         c.saveDb(w.db);
         return c.ok({ event: eventView(w, e) });
+      }
+
+      // ---------- 紹介のタネ帳(自分だけが見られるメモ) ----------
+      // 定例会でプレゼンを聞きながら「この人に紹介できそう」を残し、あとで紹介の記録・1on1 にする
+      var SEED_MAX = 300;
+      function seedView(x) { return { id: x.id, toId: x.toId, toName: x.toName || "", note: x.note || "", eventId: x.eventId || "", eventTitle: x.eventTitle || "", eventDate: x.eventDate || "", at: x.at, done: !!x.done }; }
+      function listSeeds(body) {
+        var w = who(body);
+        if (w.error) return w.error;
+        var mine = ((w.db.seeds || {})[w.id] || []).slice().sort(function (a, b) { return b.at - a.at; });
+        return c.ok({ items: mine.map(seedView) });
+      }
+      function saveSeed(body) {
+        var w = who(body);
+        if (w.error) return w.error;
+        var input = body.seed || {};
+        var to = member(w.db, input.toId);
+        if (!to || to.id === w.id) return c.fail("INVALID_REQUEST", "紹介できそうな相手を選んでください。");
+        w.db.seeds = w.db.seeds || {};
+        var list = w.db.seeds[w.id] = w.db.seeds[w.id] || [];
+        var x = input.id ? c.find(list, function (s) { return s.id === input.id; }) : null;
+        if (!x) { x = { id: newId("sd_"), at: c.nowMs() }; list.push(x); }
+        x.toId = to.id; x.toName = to.name;
+        x.note = cleanText(input.note, 400);
+        x.eventId = c.cleanStr(input.eventId, 40); x.eventTitle = c.cleanStr(input.eventTitle, 80); x.eventDate = cleanDate(input.eventDate) || "";
+        x.done = input.done === true;
+        if (list.length > SEED_MAX) list.splice(0, list.length - SEED_MAX);
+        c.saveDb(w.db);
+        return c.ok({ item: seedView(x) });
+      }
+      function deleteSeed(body) {
+        var w = who(body);
+        if (w.error) return w.error;
+        var list = (w.db.seeds || {})[w.id] || [];
+        var next = list.filter(function (s) { return s.id !== body.id; });
+        if (next.length === list.length) return c.fail("NOT_FOUND");
+        w.db.seeds[w.id] = next;
+        c.saveDb(w.db);
+        return c.ok({});
       }
 
       // 出席コード: 定例会の当日、管理者が受付を開いている間だけ受け付ける
@@ -2571,7 +2610,7 @@
         migrate: migrate,
         jobs: { syncMeet: jobSyncMeet, takePushOutbox: jobTakePushOutbox, dropPushSubs: jobDropPushSubs, lineWebhook: jobLineWebhook, takeLineOutbox: jobTakeLineOutbox },
         actions: {
-          getHome: getHome, getActivity: getActivity, adminDashboard: adminDashboard, adminExport: adminExport,
+          getHome: getHome, getActivity: getActivity, listSeeds: listSeeds, saveSeed: saveSeed, deleteSeed: deleteSeed, adminDashboard: adminDashboard, adminExport: adminExport,
           listEvents: listEvents, getEvent: getEvent, rsvpEvent: rsvpEvent, checkIn: checkIn,
           adminSaveEvent: adminSaveEvent, adminDeleteEvent: adminDeleteEvent, adminSaveMinutes: adminSaveMinutes, adminOpenCheckIn: adminOpenCheckIn,
           adminEventDetail: adminEventDetail, adminMarkAttendance: adminMarkAttendance, adminSetRsvp: adminSetRsvp,

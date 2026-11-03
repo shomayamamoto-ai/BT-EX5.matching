@@ -488,6 +488,7 @@
     el.append(card);
 
     el.append(h("div", { class: "app-btn-row" },
+      App.btn("💡 定例会メモ(紹介できそう)", () => App.go(`meeting/${ev.id}`), "primary small"),
       ev.past ? null : App.btn("ビジターを招待", () => App.go(`invite?event=${ev.id}`), "small"),
       d.isAdmin ? App.btn("受付・出欠の管理", () => App.go(`events/manage/${ev.id}`), "ghost small") : null,
       d.isAdmin || canPlan() ? App.btn("日時・内容を編集", () => eventForm(ev), "ghost small") : null));

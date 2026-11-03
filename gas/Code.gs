@@ -2711,7 +2711,7 @@ const REF_SEED_ANNOUNCEMENTS = [
   {
     seedId: "2026-10-25-update-16",
     cat: "アップデート",
-    rev: 97,
+    rev: 98,
     at: Date.UTC(2026, 9, 25, 4, 0), // 2026/10/25 13:00(日本時間)
     title: "【アップデート】紹介診断に「相手がこう言っていたら」・アンケート・運営タブ など",
     body: [
@@ -2719,6 +2719,8 @@ const REF_SEED_ANNOUNCEMENTS = [
       "",
       "■ 今回",
       "【大切なお知らせ】共有サーバーにつなぎました。これからは、アンケート・紹介の記録・定例会の出欠・掲示板などが、全員で同じデータになります(つなぐ前に各スマホの中だけに入っていたデータは移りません)。",
+      "・【新しい機能】紹介のタネ帳: 定例会でプレゼンを聞きながら、「この人に紹介できそう」と思ったら「💡 紹介できそう」を押してメモできます(定例会の詳細の「💡 定例会メモ」、または当日の定例会のカードから)。メモは自分だけが見られ、「紹介のタネ」にたまります。たまっているとホームでお知らせします。",
+      "・下のタブの「記録」は、いまは準備中のため、一部の方だけが使えます(ほかの方は黒く表示され、押せません)。",
       "・使いやすさの見直し: 予定の画面で「これからの定例会」(出席・欠席のボタン)を時計とカレンダーより上に出すようにしました。下のタブの文字を少し大きく濃くし、「閉じる」「詳細・出欠の一覧」「編集」「削除」など文字だけのボタンも指で押しやすい大きさにしました。大小原さんの小さい写真が出ないことがあったのも直しました。",
       "・予定の定例会のカードに、欠席の人もわかるようにしました(「出席予定 ◯名 ・ 欠席 ◯名」と、「欠席:お名前」)。ホームの定例会のカードにも欠席の人数が出ます。",
       "・絵と動画つきの「使い方マニュアル」をつくりました。はじめにパソコン版かスマホ版かを選べます。ログイン・すぐ開けるようにする方法・紹介先の探し方・出欠・記録・掲示板・マイページ・資料・運営の進行まで、押すところに番号を付けた絵と動画で説明しています(パソコン版には、定例会のプレゼン進行の動画もあります)。下まで読むと出る「上へ」のボタンと、左上の「戻る」も付いています。マイページの「サポート」と「使い方・よくある質問」から開けます。",
@@ -4140,7 +4142,7 @@ var BtexServerCore = (function () {
 
   BtexServerCore.registerModule({
     mutating: [
-      "rsvpEvent", "adminSetRsvp", "checkIn", "adminSaveEvent", "adminDeleteEvent", "adminOpenCheckIn", "adminMarkAttendance",
+      "rsvpEvent", "adminSetRsvp", "saveSeed", "deleteSeed", "checkIn", "adminSaveEvent", "adminDeleteEvent", "adminOpenCheckIn", "adminMarkAttendance",
       "adminSyncMeetAttendance", "adminMapMeetName",
       "createVisitorInvite", "updateVisitor", "visitorApply",
       "reportThanks", "deleteThanks", "save1on1", "delete1on1", "confirm1on1", "muteReferralNudge",
@@ -4537,6 +4539,45 @@ var BtexServerCore = (function () {
         if (answer === "no" && e.partyRsvps && e.partyRsvps[body.memberId]) e.partyRsvps[body.memberId] = "no";
         c.saveDb(w.db);
         return c.ok({ event: eventView(w, e) });
+      }
+
+      // ---------- 紹介のタネ帳(自分だけが見られるメモ) ----------
+      // 定例会でプレゼンを聞きながら「この人に紹介できそう」を残し、あとで紹介の記録・1on1 にする
+      var SEED_MAX = 300;
+      function seedView(x) { return { id: x.id, toId: x.toId, toName: x.toName || "", note: x.note || "", eventId: x.eventId || "", eventTitle: x.eventTitle || "", eventDate: x.eventDate || "", at: x.at, done: !!x.done }; }
+      function listSeeds(body) {
+        var w = who(body);
+        if (w.error) return w.error;
+        var mine = ((w.db.seeds || {})[w.id] || []).slice().sort(function (a, b) { return b.at - a.at; });
+        return c.ok({ items: mine.map(seedView) });
+      }
+      function saveSeed(body) {
+        var w = who(body);
+        if (w.error) return w.error;
+        var input = body.seed || {};
+        var to = member(w.db, input.toId);
+        if (!to || to.id === w.id) return c.fail("INVALID_REQUEST", "紹介できそうな相手を選んでください。");
+        w.db.seeds = w.db.seeds || {};
+        var list = w.db.seeds[w.id] = w.db.seeds[w.id] || [];
+        var x = input.id ? c.find(list, function (s) { return s.id === input.id; }) : null;
+        if (!x) { x = { id: newId("sd_"), at: c.nowMs() }; list.push(x); }
+        x.toId = to.id; x.toName = to.name;
+        x.note = cleanText(input.note, 400);
+        x.eventId = c.cleanStr(input.eventId, 40); x.eventTitle = c.cleanStr(input.eventTitle, 80); x.eventDate = cleanDate(input.eventDate) || "";
+        x.done = input.done === true;
+        if (list.length > SEED_MAX) list.splice(0, list.length - SEED_MAX);
+        c.saveDb(w.db);
+        return c.ok({ item: seedView(x) });
+      }
+      function deleteSeed(body) {
+        var w = who(body);
+        if (w.error) return w.error;
+        var list = (w.db.seeds || {})[w.id] || [];
+        var next = list.filter(function (s) { return s.id !== body.id; });
+        if (next.length === list.length) return c.fail("NOT_FOUND");
+        w.db.seeds[w.id] = next;
+        c.saveDb(w.db);
+        return c.ok({});
       }
 
       // 出席コード: 定例会の当日、管理者が受付を開いている間だけ受け付ける
@@ -6679,7 +6720,7 @@ var BtexServerCore = (function () {
         migrate: migrate,
         jobs: { syncMeet: jobSyncMeet, takePushOutbox: jobTakePushOutbox, dropPushSubs: jobDropPushSubs, lineWebhook: jobLineWebhook, takeLineOutbox: jobTakeLineOutbox },
         actions: {
-          getHome: getHome, getActivity: getActivity, adminDashboard: adminDashboard, adminExport: adminExport,
+          getHome: getHome, getActivity: getActivity, listSeeds: listSeeds, saveSeed: saveSeed, deleteSeed: deleteSeed, adminDashboard: adminDashboard, adminExport: adminExport,
           listEvents: listEvents, getEvent: getEvent, rsvpEvent: rsvpEvent, checkIn: checkIn,
           adminSaveEvent: adminSaveEvent, adminDeleteEvent: adminDeleteEvent, adminSaveMinutes: adminSaveMinutes, adminOpenCheckIn: adminOpenCheckIn,
           adminEventDetail: adminEventDetail, adminMarkAttendance: adminMarkAttendance, adminSetRsvp: adminSetRsvp,

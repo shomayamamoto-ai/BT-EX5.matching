@@ -121,9 +121,13 @@
           todo.push(alertLink("#log/1on1", `${f.withName}さんとの 1on1 を「実施」にしました`, "忘れないうちにメモを残しましょう", "is-good"));
         }
       });
+      // 紹介のタネ(定例会でメモした「紹介できそう」)がたまっていたら
+      const seedN = App.Seeds ? await App.Seeds.pendingCount() : 0;
+      if (seedN) todo.push(alertLink(App.canLog && App.canLog() ? "#log/seeds" : "#seeds", `紹介のタネが ${seedN} 件あります`, "定例会でメモした「紹介できそう」を、紹介の記録や 1on1 にしましょう", "is-info"));
       if (!d.me.hasPassword) {
         todo.push(alertLink("#me/password", "あなた専用のパスワードを決めてください", "共通パスコードは近く使えなくなります。1分で終わります", "is-warn"));
       }
+      if (App.canLog && !App.canLog()) { for (let i = todo.length - 1; i >= 0; i--) { const href = todo[i].getAttribute && (todo[i].getAttribute("href") || (todo[i].querySelector && todo[i].querySelector("a[href^='#log']") ? "#log" : "")); if (href && href.startsWith("#log")) todo.splice(i, 1); } }
       const tasks = d.tasks || [];
       const taskList = h("ul", { class: "task-list" }, tasks.map((t) => App.taskRow(t, { showEvent: true, onChange: (x) => {
         if (x.myDone) setTimeout(() => { const li = taskList.querySelector(".task-row.is-done"); if (li) li.remove(); }, 600);
@@ -525,6 +529,7 @@
           ev.meetUrl && !ev.past ? meetButton(ev) : null,
           h("div", { class: "ev-links" },
             h("a", { class: "app-more ev-more", href: `#events/detail/${ev.id}` }, "詳細・出欠の一覧 →"),
+            !ev.past && App.daysUntil(ev.date, today) <= 0 ? h("a", { class: "app-more ev-more ev-memo", href: `#meeting/${ev.id}` }, "💡 定例会メモ") : null,
             ev.past ? null : App.calendarButtons({ uid: ev.id, title: ev.title, date: ev.date, start: ev.start, end: ev.end, place: ev.online ? ev.meetUrl || "オンライン(Google Meet)" : ev.place, body: [ev.meetUrl ? `参加リンク:${ev.meetUrl}` : "", ev.agenda, ev.body].filter(Boolean).join("\n\n") })),
           ev.checkInOpen && !ev.attended && !(opt && opt.noCheckIn) ? checkInForm(ev.id, (e2) => { Object.assign(ev, e2); draw(); if (onUpdate) onUpdate(ev); }) : null,
           card.extra ? card.extra(ev) : null));

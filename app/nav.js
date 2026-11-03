@@ -41,11 +41,18 @@
     try { presentOk = (sessionStorage.getItem("btex5-present") || localStorage.getItem("btex5-present")) === "1"; } catch { /* noop */ }
     const tabs = TABS.filter((t) => (t.id !== "present" && t.id !== "ops") || presentOk);
     nav.style.setProperty("--tab-n", String(tabs.length));
+    // 記録は、使える人だけ(ほかの方は黒くなって押せない)。分からないときも押せない側にする
+    let logOk = false;
+    try { logOk = (sessionStorage.getItem("btex5-log") || localStorage.getItem("btex5-log")) === "1"; } catch { /* noop */ }
     nav.replaceChildren(...tabs.map((t) => {
       const a = document.createElement("a");
-      a.className = `app-tab${t.id === currentTab ? " is-on" : ""}`;
+      if (t.id === "log" && !logOk) {
+        a.className = "app-tab is-locked"; a.setAttribute("aria-disabled", "true"); a.tabIndex = -1; a.title = "記録は準備中です";
+        a.addEventListener("click", (e) => e.preventDefault());
+      }
+      a.className = `app-tab${t.id === currentTab ? " is-on" : ""}${a.getAttribute("aria-disabled") ? " is-locked" : ""}`;
       a.draggable = false;
-      a.href = t.href;
+      if (!a.classList.contains("is-locked")) a.href = t.href;
       if (t.id === currentTab) a.setAttribute("aria-current", "page");
       let svg;
       if (typeof BtexIcons !== "undefined" && BtexIcons.has(TAB_GLYPH[t.id])) svg = BtexIcons.svg(TAB_GLYPH[t.id]);
@@ -66,7 +73,7 @@
       a.append(ind, label);
       const n = t.id === "news" ? badges.announcements || 0 : t.id === "board" ? badges.board || 0
         : t.id === "log" ? badges.inbox || 0 : t.id === "events" ? badges.rsvp || 0 : 0;
-      if (n) {
+      if (n && !a.classList.contains("is-locked")) {
         const b = document.createElement("span");
         b.className = "app-badge";
         b.textContent = n > 99 ? "99+" : String(n);

@@ -79,6 +79,8 @@ const AuthSession = (function () {
       localStorage.removeItem(VERIFY_CACHE);
       localStorage.removeItem("btex5-members-cache");
       localStorage.removeItem("btex5-present");
+      localStorage.removeItem("btex5-log");
+      sessionStorage.removeItem("btex5-log");
       sessionStorage.removeItem("btex5-present");
       localStorage.removeItem("btex5-view-cache");
     } catch {

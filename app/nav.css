@@ -77,3 +77,8 @@ body.has-app-tabs .ref-toast { bottom: calc(var(--app-tabs-h) + 18px + env(safe-
 .ref-header .ref-header-inner { max-width: none; padding-left: 16px; padding-right: 16px; }
 /* 右上のボタンどうしの間をアプリの上の帯(10px)とそろえる */
 @media (min-width: 561px) { .ref-header .ref-header-nav { gap: 10px; } .ref-header .ref-header-link { padding: 0 6px; } }
+/* 記録のタブ(使えない方): 黒くして押せない */
+.app-tab.is-locked { color: #2a211d !important; cursor: not-allowed; }
+.app-tab.is-locked .app-tab-ind { background: #2a211d !important; color: #8d817b !important; box-shadow: none !important; }
+.app-tab.is-locked svg { color: #8d817b; fill: currentColor; }
+.app-tab.is-locked .app-tab-ind svg [stroke], .app-tab.is-locked .app-tab-ind svg { stroke: currentColor; }

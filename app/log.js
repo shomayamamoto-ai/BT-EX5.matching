@@ -11,6 +11,7 @@
     { id: "ref", label: "紹介" },
     { id: "miles", label: "ありがとうマイル" },
     { id: "1on1", label: "1on1" },
+    { id: "seeds", label: "紹介のタネ" },
     { id: "rank", label: "ランキング" },
   ];
 
@@ -27,6 +28,7 @@
       if (tab === "miles") await renderMiles(body, params);
       if (tab === "1on1") await renderOnes(body, params);
       if (tab === "rank") await renderRank(body, params);
+      if (tab === "seeds" && App.renderSeeds) await App.renderSeeds(body, params);
       // 分析: 上に「今月のあなた」、その下に自分の数字のダッシュボード(カード・グラフ)、グラフのあとに「BT-EX5 シグナル・全体の今月」
       if (tab === "stats") {
         const top = h("div", { class: "log-top is-mine" });

@@ -3270,3 +3270,39 @@ button.home-welcome-check:active { transform: scale(0.94); }
 .pr-extra-field em { font-size: 11px; }
 .sd-link { display: inline-flex; align-items: center; min-height: 40px; }
 .home-signal-val small { font-size: max(11px, 0.8em); }
+
+/* ---------- 紹介のタネ帳・定例会メモ ---------- */
+.mtg-ev { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 4px 0 10px; font-weight: 700; }
+.mtg-local { margin: 0 0 10px; }
+.mtg-tools { position: sticky; top: calc(var(--top-h, 56px) + 6px); z-index: 5; margin: 6px 0 12px; }
+.mtg-q { width: 100%; min-height: 46px; padding: 10px 14px; border: 1px solid var(--line); border-radius: 14px; background: #fff; font: inherit; font-size: 16px; box-shadow: 0 6px 18px rgba(120, 60, 40, 0.08); }
+.mtg-grid { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
+.mtg-card { display: grid; gap: 8px; padding: 14px; border-radius: 16px; background: var(--card, #fff); border: 1px solid var(--line); }
+.mtg-card.has-seed { border-color: rgba(217, 119, 107, 0.6); box-shadow: 0 0 0 2px rgba(217, 119, 107, 0.14); }
+.mtg-head { display: flex; align-items: center; gap: 10px; }
+.mtg-name { flex: 1; min-width: 0; display: grid; }
+.mtg-name b { font-size: 16px; }
+.mtg-name small { color: var(--text-sub); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mtg-wants { margin: 0; font-size: 13.5px; line-height: 1.6; }
+.mtg-wants span, .seed-wants b { display: block; font-size: 12px; font-weight: 800; color: var(--accent-dark); }
+.mtg-trig { display: flex; flex-wrap: wrap; gap: 4px; margin: 0; }
+.mtg-trig span { padding: 2px 8px; border-radius: 999px; background: #fbefec; font-size: 12px; color: #7a4a40; }
+.mtg-acts { display: flex; gap: 8px; flex-wrap: wrap; }
+.mtg-seed { position: relative; }
+.mtg-n { display: inline-grid; place-items: center; min-width: 20px; height: 20px; margin-left: 6px; padding: 0 5px; border-radius: 10px; background: #fff; color: var(--accent-dark); font-size: 12px; font-weight: 900; }
+.seed-to { display: flex; align-items: center; gap: 10px; margin: 0 0 6px; font-size: 16px; }
+.seed-wants { margin: 0 0 10px; font-size: 13.5px; }
+.seed-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.seed-row { display: grid; gap: 10px; padding: 14px; border-radius: 16px; background: var(--card, #fff); border: 1px solid var(--line); }
+.seed-row.is-done { opacity: 0.7; }
+.seed-main { display: flex; gap: 10px; align-items: flex-start; }
+.seed-main b { display: block; }
+.seed-note { margin: 4px 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.seed-main small { color: var(--text-sub); font-size: 12px; }
+.seed-acts { display: flex; flex-wrap: wrap; gap: 6px; }
+/* 記録のタブ(使えない方): 黒くして押せない */
+.app-tab.is-locked { color: #2a211d !important; cursor: not-allowed; }
+.app-tab.is-locked .app-tab-ind { background: #2a211d !important; color: #8d817b !important; box-shadow: none !important; }
+.app-tab.is-locked svg { color: #8d817b; fill: currentColor; }
+.app-tab.is-locked .app-tab-ind svg [stroke], .app-tab.is-locked .app-tab-ind svg { stroke: currentColor; }
+.locked-box { text-align: center; padding: 30px 16px; }
