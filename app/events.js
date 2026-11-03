@@ -65,6 +65,7 @@
             const card = App.eventCard(ev, d.today);
             card.extra = (e) => h("div", { class: "ev-extra" },
               e.yesNames.length ? h("p", { class: "ev-names" }, `出席予定:${e.yesNames.join("、")}`) : null,
+              absentLine(e),
               h("div", { class: "ev-actions" },
                 App.btn("ビジターを招待", () => App.go(`invite?event=${e.id}`), "small"),
                 canPlan() ? App.btn("編集", () => editEvent(e.id), "ghost small") : null,
@@ -92,6 +93,21 @@
       if (params.has("invite")) App.go("invite");
     },
   };
+
+  // 欠席の人の名前(共有サーバーが古くて名前が来ないときは、その定例会の出欠一覧から取る)
+  function absentLine(e) {
+    const line = (names) => (names && names.length ? h("p", { class: "ev-names is-absent" }, `欠席:${names.join("、")}`) : null);
+    if (Array.isArray(e.noNames)) return line(e.noNames);
+    if (!e.noCount) return null;
+    const box = h("div");
+    App.api("getEvent", { id: e.id }, { quiet: true }).then((d) => {
+      if (!d) return;
+      const names = d.members.filter((m) => m.rsvp === "no" && !m.attended).map((m) => m.name);
+      const p = line(names);
+      if (p) box.replaceWith(p);
+    });
+    return box;
+  }
 
   async function renderVisitors(el) {
     const d = await App.api("listMyVisitors", {}, { quiet: true });

@@ -518,7 +518,7 @@
           h("p", { class: "ev-meta" }, [ev.start && `${ev.start}${ev.end ? `〜${ev.end}` : ""}${ev.doors ? `(${ev.doors}受付)` : ""}`, ev.online ? "オンライン(Google Meet)" : App.AREA_LABELS[ev.area], ev.online ? "" : ev.place].filter(Boolean).join(" ・ ")),
           ev.fee || ev.capacity ? h("p", { class: "ev-meta" }, [ev.fee && `参加費 ${ev.fee}`, ev.capacity && `定員 ${ev.capacity}名`].filter(Boolean).join(" ・ ")) : null,
           ev.deadline && !ev.past ? h("p", { class: `ev-deadline${ev.deadlinePassed ? " is-closed" : ""}` }, ev.deadlinePassed ? "申込の受付は終了しました" : `申込締切 ${App.fmtStamp(ev.deadline).replace(/(\d+:\d+)/, "$1まで")}`) : null,
-          h("p", { class: "ev-count" }, `出席予定 ${ev.yesCount}名`, ev.visitorCount ? ` ・ ビジター ${ev.visitorCount}名` : "", ev.attended ? h("span", { class: "ev-done" }, ev.late ? "遅刻早退" : "出席済み") : null),
+          h("p", { class: "ev-count" }, `出席予定 ${ev.yesCount}名`, ev.noCount ? ` ・ 欠席 ${ev.noCount}名` : "", ev.visitorCount ? ` ・ ビジター ${ev.visitorCount}名` : "", ev.attended ? h("span", { class: "ev-done" }, ev.late ? "遅刻早退" : "出席済み") : null),
           ev.past || ev.attended || ev.deadlinePassed ? null : h("div", { class: "ev-rsvp", role: "group", "aria-label": "出欠" },
             rsvpBtn("yes", "出席する"), rsvpBtn("no", "欠席する")),
           !ev.past && !ev.myRsvp && !ev.deadlinePassed ? h("p", { class: "ev-must" }, "出席・欠席のどちらかを必ずご登録ください") : null,

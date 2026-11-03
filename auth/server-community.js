@@ -311,6 +311,8 @@
           yesCount: yes.length,
           noCount: Object.keys(rsvps).filter(function (k) { return rsvps[k] === "no"; }).length,
           yesNames: yes.map(function (id) { return nameOf(w.db, id); }),
+          // 欠席の人(事前に「欠席する」を押した人)。出席の記録がある人は出さない
+          noNames: Object.keys(rsvps).filter(function (k) { return rsvps[k] === "no" && (e.attended || []).indexOf(k) === -1; }).map(function (id) { return nameOf(w.db, id); }),
           myRsvp: my,
           attended: (e.attended || []).indexOf(w.id) !== -1,
           late: (e.late || []).indexOf(w.id) !== -1,
