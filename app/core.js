@@ -705,8 +705,11 @@ const App = (function () {
   const PRESENT_OWNERS = ["yamamoto", "m22", "m02", "m16", "m08", "m14", "m09", "m10", "m24", "m04"]; // 山本 捷真・小林 末季(こばねぇ)・あまみや 七音・桜羽 李果・床島 良夫・三村 隆・大場 雅俊・大枝 篤志・栁橋 雅也・吉澤 美和子
   const canPresent = () => !!(session && PRESENT_OWNERS.includes(session.memberId));
   // 記録(紹介・マイル・1on1・分析)は、いまは山本 捷真・小林 末季(こばねぇ)だけ(運営の依頼。ほかの方は、下のタブが黒くなって押せない)
-  const LOG_OWNERS = ["yamamoto", "m22"];
-  const canLog = () => !!(session && LOG_OWNERS.includes(session.memberId));
+  // 予定も同じ(2026年11月の運営の依頼)。使えない方は、下のタブが黒くなって押せず、アプリを開くと掲示板から始まる
+  const LIMITED_TABS = ["log", "events"];
+  const LIMITED_OWNERS = ["yamamoto", "m22"];
+  const canTab = (id) => !LIMITED_TABS.includes(id) || !!(session && LIMITED_OWNERS.includes(session.memberId));
+  const canLog = () => canTab("log");
   let badges = {};
   let current = { view: "", parts: [], params: new URLSearchParams() };
   let cleanup = null;
@@ -762,6 +765,10 @@ const App = (function () {
     let view = views[r.view] ? r.view : "home";
     // 記録は、使える人だけ(ほかの方がリンクから開いたときは「準備中」を出す)
     if (view === "log" && !canLog()) view = "logLocked";
+    if (!canTab("events")) {
+      if (view === "home") view = "board"; // アプリを開いたときは掲示板から
+      else if (view === "events" || view === "invite") view = "eventsLocked";
+    }
     if (cleanup) { try { cleanup(); } catch { /* noop */ } cleanup = null; }
     // 開いていたシートは閉じる(書きかけは下書きに残っている)
     sheetStack.splice(0).forEach((w) => w.remove());
@@ -883,9 +890,9 @@ const App = (function () {
         : t.id === "log" ? badges.inbox || 0
         : t.id === "events" ? badges.rsvp || 0 : 0;
       // 絵は丸い下地(選んでいるタブ: Material 3 のアクティブインジケーター)の中に
-      if (t.id === "log" && !canLog()) {
-        return h("a", { class: "app-tab is-locked", role: "link", "aria-disabled": "true", tabindex: "-1", draggable: "false", dataset: { tab: t.id }, title: "記録は準備中です",
-          onclick: (e) => { e.preventDefault(); toast("記録は、いまは準備中です"); } },
+      if (!canTab(t.id)) {
+        return h("a", { class: "app-tab is-locked", role: "link", "aria-disabled": "true", tabindex: "-1", draggable: "false", dataset: { tab: t.id }, title: `${t.label}は準備中です`,
+          onclick: (e) => { e.preventDefault(); toast(`${t.label}は、いまは準備中です`); } },
           h("span", { class: "app-tab-ind" }, lineGlyph(TAB_GLYPH[t.id]) || icon(t.icon)),
           h("span", null, t.label));
       }
@@ -1021,6 +1028,9 @@ const App = (function () {
     // 早見表などを、アプリを通らずにすぐ開いたとき(新しいタブ・ホーム画面のアイコン)も下のタブにプレゼン・運営が出るように、この端末にも覚える
     try { localStorage.setItem("btex5-present", canPresent() ? "1" : "0"); } catch { /* noop */ }
     try { localStorage.setItem("btex5-log", canLog() ? "1" : "0"); sessionStorage.setItem("btex5-log", canLog() ? "1" : "0"); } catch { /* noop */ }
+    try { localStorage.setItem("btex5-events", canTab("events") ? "1" : "0"); sessionStorage.setItem("btex5-events", canTab("events") ? "1" : "0"); } catch { /* noop */ }
+    // ロゴ(ふだんは予定へ)も、予定が使えない方は掲示板へ
+    if (!canTab("events")) { const lg = document.querySelector(".app-logo"); if (lg) { lg.href = "#board"; lg.setAttribute("aria-label", "掲示板"); } }
     // 前回の名簿があればそれですぐ開き、新しい名簿は届きしだい入れかえる(届くまで待たない)
     let cachedMembers = null;
     try { cachedMembers = JSON.parse(localStorage.getItem(MEMBERS_CACHE) || "null"); } catch { /* noop */ }
@@ -1170,6 +1180,7 @@ const App = (function () {
     isAdmin: () => !!(session && session.user && session.user.isAdmin),
     canPresent,
     canLog,
+    canTab,
     // プレゼン(定例会の進行)を使える人(運営メンバー)
     presentOwners: () => PRESENT_OWNERS.slice(),
     badgeCount: (k) => badges[k] || 0,

@@ -42,12 +42,13 @@
     const tabs = TABS.filter((t) => (t.id !== "present" && t.id !== "ops") || presentOk);
     nav.style.setProperty("--tab-n", String(tabs.length));
     // 記録は、使える人だけ(ほかの方は黒くなって押せない)。分からないときも押せない側にする
-    let logOk = false;
-    try { logOk = (sessionStorage.getItem("btex5-log") || localStorage.getItem("btex5-log")) === "1"; } catch { /* noop */ }
+    // 予定も同じ
+    const flag = (k) => { try { return (sessionStorage.getItem(k) || localStorage.getItem(k)) === "1"; } catch { return false; } };
+    const lockedTab = (id) => (id === "log" && !flag("btex5-log")) || (id === "events" && !flag("btex5-events"));
     nav.replaceChildren(...tabs.map((t) => {
       const a = document.createElement("a");
-      if (t.id === "log" && !logOk) {
-        a.className = "app-tab is-locked"; a.setAttribute("aria-disabled", "true"); a.tabIndex = -1; a.title = "記録は準備中です";
+      if (lockedTab(t.id)) {
+        a.className = "app-tab is-locked"; a.setAttribute("aria-disabled", "true"); a.tabIndex = -1; a.title = `${t.label}は準備中です`;
         a.addEventListener("click", (e) => e.preventDefault());
       }
       a.className = `app-tab${t.id === currentTab ? " is-on" : ""}${a.getAttribute("aria-disabled") ? " is-locked" : ""}`;
@@ -94,7 +95,9 @@
     // ムービーのボタンの絵も、ほかと同じ線のアイコンに
     const mv = document.querySelector(".ref-header .op-movie-btn svg");
     if (mv && lineIcon("play")) mv.replaceWith(lineIcon("play"));
-    if (logo) { logo.href = `${base.pathname}#events`; logo.setAttribute("aria-label", "予定"); }
+    let evOk = false;
+    try { evOk = (sessionStorage.getItem("btex5-events") || localStorage.getItem("btex5-events")) === "1"; } catch { /* noop */ }
+    if (logo) { logo.href = `${base.pathname}#${evOk ? "events" : "board"}`; logo.setAttribute("aria-label", evOk ? "予定" : "掲示板"); }
     // アプリと同じ「検索」(押すとアプリの検索を開く)。ムービーの左に置く
     if (!nav.querySelector(".nav-search")) {
       const sr = document.createElement("a");

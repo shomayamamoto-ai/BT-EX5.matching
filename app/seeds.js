@@ -101,7 +101,7 @@
   // ---------- 定例会メモ(#meeting / #meeting/<定例会のID>) ----------
   App.views.meeting = {
     title: "定例会メモ",
-    tab: "events",
+    get tab() { return App.canTab && !App.canTab("events") ? "board" : "events"; },
     async render(el, parts) {
       const d = await App.api("listEvents", {}, { quiet: true });
       const events = (d && d.events) || [];
@@ -150,7 +150,7 @@
   };
 
   // 紹介のタネ(記録のタブが使えない方も、ここから見られる)
-  App.views.seeds = { title: "紹介のタネ", tab: "events", async render(el) { el.append(h("h1", { class: "app-h1", "data-en": "Seeds" }, "紹介のタネ")); await App.renderSeeds(el); } };
+  App.views.seeds = { title: "紹介のタネ", get tab() { return App.canTab && !App.canTab("events") ? "board" : "events"; }, async render(el) { el.append(h("h1", { class: "app-h1", "data-en": "Seeds" }, "紹介のタネ")); await App.renderSeeds(el); } };
   // 記録が使えない方が、リンクから記録を開いたとき
   App.views.logLocked = {
     title: "記録", tab: "log",
@@ -158,7 +158,23 @@
       el.append(h("section", { class: "app-section locked-box" },
         h("h1", { class: "app-h1" }, "記録は準備中です"),
         h("p", { class: "app-lead" }, "紹介・ありがとうマイル・1on1 の記録は、いまは準備中のため、一部の方だけが使えます。使えるようになったら、お知らせでご案内します。"),
-        h("div", { class: "app-btn-row" }, h("a", { class: "app-btn primary", href: "#seeds" }, "紹介のタネを見る"), h("a", { class: "app-btn ghost", href: "#events" }, "予定に戻る"))));
+        h("div", { class: "app-btn-row" }, h("a", { class: "app-btn primary", href: "#seeds" }, "紹介のタネを見る"), h("a", { class: "app-btn ghost", href: "#board" }, "掲示板へ"))));
+    },
+  };
+  // 予定が使えない方が、リンクから予定を開いたとき。会場の QR コード(#events?checkin=1234)の出席だけは受け付ける
+  App.views.eventsLocked = {
+    title: "予定", tab: "events",
+    async render(el, parts, params) {
+      const code = ((params && params.get("checkin")) || "").replace(/\D/g, "");
+      if (code.length === 4) {
+        history.replaceState(null, "", "#events");
+        const r = await App.api("checkIn", { code });
+        if (r) App.toast(`${r.event.title} に出席しました`);
+      }
+      el.append(h("section", { class: "app-section locked-box" },
+        h("h1", { class: "app-h1" }, "予定は準備中です"),
+        h("p", { class: "app-lead" }, "定例会の予定・出欠は、いまは準備中のため、一部の方だけが使えます。使えるようになったら、お知らせでご案内します。"),
+        h("div", { class: "app-btn-row" }, h("a", { class: "app-btn primary", href: "#meeting" }, "定例会メモを開く"), h("a", { class: "app-btn ghost", href: "#board" }, "掲示板へ"))));
     },
   };
 
