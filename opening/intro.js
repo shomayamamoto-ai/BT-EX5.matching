@@ -13,14 +13,14 @@
   // Chrome・Android は軽い WebM(VP9)を先に、Safari(iPhone・Mac)は確実に再生できる MP4 を先に
   // ムービーは2種類: やわらかいデザインは「新潟と東京をつなぐ」(朱鷺・新幹線・スカイツリーの絵。2026年11月)、
   // 元の黒×金のデザインは、これまでのムービー。定例会のスライドではスライドのデザイン、それ以外はサイトのデザインで選ぶ
-  const V = "3d4", VS = "s2";
+  const V = "3d4", VS = "s3";
   const BIG = Math.max(window.innerWidth, window.innerHeight) >= 1100 && Math.min(window.innerWidth, window.innerHeight) >= 600;
   const SAFARI = /^((?!chrome|chromium|android|crios|fxios).)*safari/i.test(navigator.userAgent);
   // long: 定例会のはじめに流す3分版(BT-EXの紹介・メンバー・スケジュールつき。やわらかいデザインだけ)
   function movie(theme, long) {
     const soft = theme !== "classic";
     const base = `bt-ex5-opening${soft ? (long ? "-soft-3min" : "-soft") : ""}${BIG ? "" : "-720p"}`;
-    const v = soft ? (long ? "m1" : VS) : V;
+    const v = soft ? (long ? "m2" : VS) : V;
     const MP4 = [`../assets/opening/${base}.mp4?v=${v}`, "video/mp4"];
     const WEBM = [`../assets/opening/${base}.webm?v=${v}`, "video/webm"];
     return { sources: SAFARI ? [MP4, WEBM] : [WEBM, MP4], poster: `../assets/opening/${soft ? "poster-soft" : "poster"}.jpg?v=${v}` };
