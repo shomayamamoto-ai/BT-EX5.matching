@@ -194,7 +194,7 @@
     return h("span", { class: `pr-role is-${r.kind}`, title: `${(typeof REF_ROLE_KINDS !== "undefined" && REF_ROLE_KINDS[r.kind]) || ""}:${r.role}` }, svg, r.role);
   }
   // 小さく出す顔写真(一覧の丸・自分の写真)は、運営が用意した写真なら小さい版(thumbs/)を使う(読み込みを軽く)
-  const SMALL_FACE = /^(pr-card-face|pr-row-face|pr-me-face|pd-staff-face)$/;
+  const SMALL_FACE = /^(pr-card-face|pr-row-face|pr-me-face|pd-staff-face|pr-next-photo)$/;
   // 本日の運営メンバーの役(はじめの挨拶のあとのスライド)
   // 3つ目があるのは担当が決まっている役(選べない)。本システム(スライド含む)制作は山本 捷真なので固定
   // 1分プレゼンの話す順番で、いちばん前に固定する12名(この順番)
@@ -828,7 +828,7 @@
     const glossary = (label) => { glossDone = true; deck("glossary", { name: D.glossary.title, step: label, items: D.glossary.items }); };
     deck("movie", { name: "オープニングムービー", step: "オープニング" });
     deck("cover", { name: (ev && ev.title) || "BT-EX5 定例会", step: "定例会", date: ev ? `${App.fmtDateLong ? App.fmtDateLong(ev.date) : ev.date}${ev.start ? ` ${ev.start}〜${ev.end || ""}` : ""}` : "", notes });
-    let pres = false, extra = false, rulesDone = false, raiseDone = false;
+    let pres = false, extra = false, raiseDone = false;
     // 「このような人のお役に立てます」「3つの強み」「それぞれの強み」は、商談(ブレイクアウトルーム)のタイマーのあとに
     const extras = (label) => {
       extra = true;
@@ -838,9 +838,9 @@
         deck("strengths", { name: D.strengths.title, step: label, groups: D.strengths.groups });
       }
     };
-    // ②理念の「仕組みとベネフィット」のあとに、規定(「主な3つの活動」のスライドは運営の依頼で外した。2026年11月)(一般・出席・倫理)とスケジュール
-    const rulesAndSchedule = () => {
-      rulesDone = true;
+    // 規定(一般・出席・倫理)。終わりの挨拶のスケジュールのあと、「本日もありがとうございました」の前に出す
+    // (2026年11月・運営の依頼。前は②理念の「仕組みとベネフィット」のあと。「主な3つの活動」のスライドは外した)
+    const rulesSlides = () => {
       const R = D.rules;
       if (R) {
         deck("section", { no: 0, name: R.title, step: "BT-EXの規定" });
@@ -895,12 +895,10 @@
       if (/理念/.test(st.title) && D.about) {
         deck("about", { name: `${D.name || "BT-EX"}とは`, step: label, paras: D.about, formula: D.formula, center: D.name || "BT-EX" });
         deck("vision", { name: D.name || "BT-EX", step: label, en: D.en, philosophy: D.philosophy, vision: D.vision });
-        // 一覧はカードにして並べる(layout: quad=2×2 / grid=3×3)
+        // 一覧はカードにして並べる(layout: grid=3×3)。「BT-EXの目的」のスライドは運営の依頼で外した(2026年11月)
         const withIcon = (arr, icons) => arr.map((x, i) => Object.assign(x, { icon: (icons || [])[i] || "" }));
-        if (D.purposes) deck("list", { name: `${D.name || "BT-EX"}の目的`, step: label, layout: "quad", lead: "BT-EX が目指す4つのこと", items: withIcon(D.purposes.map((x) => ({ title: x })), D.purposeIcons) });
         if (D.feature) deck("feature", { name: D.feature.title, step: label, lines: D.feature.lines });
         if (D.benefits) deck("list", { name: `${D.name || "BT-EX"}の仕組みとベネフィット`, step: label, layout: "grid", carousel: true, lead: `${D.benefits.length}つの仕組みが、ビジネスを加速させる`, items: withIcon(D.benefits.map((x) => (typeof x === "string" ? { title: x } : { title: x.head, lines: [x.text] })), D.benefitIcons) });
-        rulesAndSchedule();
       }
       if (/プレゼン/.test(st.title) && !pres) {
         pres = true;
@@ -926,7 +924,6 @@
     }
     // 進行表に商談の行がないときは、おわりの前に出す
     if (!extra) extras("BT-EXについて");
-    if (!rulesDone) rulesAndSchedule();
     if (!raiseDone) raises("発表");
     if (hasGloss && !glossDone) { glossary("用語説明"); items.unshift(items.pop()); }
     // 終わりの挨拶: 入会への3ステップ → アンケート(BT-EX メンバー / ビジター) → 出席コード → おわり
@@ -939,6 +936,7 @@
     if (D.attend) deck("attend", Object.assign({ step: endLabel }, D.attend, { name: D.attend.title, msg: D.attend.lead, lead: "", code: more.code || "" }));
     // 出席コードのあとに、もう一度スケジュール(次の定例会の日程を伝えて終わる)
     scheduleSlides(endLabel);
+    rulesSlides();
     deck("closing", { name: "本日もありがとうございました", step: "おわり" });
     // 表紙のあとに「本日の流れ」。どのスライドにも、流れの何番目かと流れの一覧を持たせる
     // (左上の小見出し・区切りのスライドの一覧・下の進行バーに使う)
@@ -1892,7 +1890,8 @@
           }
         } };
         pop.addEventListener("click", (e) => { if (e.target === pop) seq.show(0); });
-        const wrap = h("div", { class: "pd-gl-seq" }, h("dl", { class: "pd-gloss" }, cells), pop);
+        // 言葉が6つ以下のときは、大きなカード(3列×2段)にして画面の空きを使う
+        const wrap = h("div", { class: "pd-gl-seq" }, h("dl", { class: items.length <= 6 ? "pd-gloss is-few" : "pd-gloss" }, cells), pop);
         wrap.car = seq;
         return frame("pd-glossary", wrap);
       }
@@ -1992,6 +1991,12 @@
       });
       // カードの文: 1行が入りきらないときは、同じスライドのカードの文をそろって小さくする
       // 用語説明の言葉(dt)は1行で。入りきらないときは、その言葉だけ小さくする
+      // 1分プレゼンの区切りの「※ 他BT-EX・ビジターの方は 30秒 です」: 1行で出す(入りきらないときは小さくする)
+      el.querySelectorAll(".pd-sec-note").forEach((n) => {
+        n.style.fontSize = "";
+        const room = n.parentElement ? n.parentElement.clientWidth : 0, w = n.getBoundingClientRect().width;
+        if (room > 0 && w > room) n.style.fontSize = `${(parseFloat(getComputedStyle(n).fontSize) * (room / w) * 0.97).toFixed(2)}px`;
+      });
       el.querySelectorAll(".pd-gloss dt").forEach((t) => {
         t.style.fontSize = "";
         if (t.clientWidth > 0 && t.scrollWidth > t.clientWidth) t.style.fontSize = `${(parseFloat(getComputedStyle(t).fontSize) * (t.clientWidth / t.scrollWidth) * 0.97).toFixed(2)}px`;
@@ -2185,11 +2190,16 @@
               p.triggers && p.triggers.length ? h("div", { class: "pr-row-tags" }, h("dt", null, "こんな話が出たら"), h("dd", { class: "pr-tags" }, p.triggers.map((t) => h("span", null, t)))) : null))),
         h("div", { class: "pr-side" },
           face(p.photo, p.name, "pr-photo"),
-          h("div", { class: "pr-next" },
-            nexts.length
-              // 次の方は1人だけ(運営の依頼)
-              ? nexts.slice(0, 1).map((n) => h("p", { class: "is-first" }, h("b", null, "次 ▶ "), `${two(persons.indexOf(n) + 1)} ${n.name}`))
-              : h("p", { class: "is-first" }, h("b", null, "最後の方です")))));
+          // 次の方は1人だけ(運営の依頼)。顔写真・番号・名前・所属を大きめに出して、次の人がひと目でわかるように
+          nexts.length
+            ? (() => { const n = nexts[0]; return h("div", { class: "pr-next is-card" },
+                h("p", { class: "pr-next-label" }, h("span", { "aria-hidden": "true" }, "▶"), "次の方"),
+                h("div", { class: "pr-next-who" },
+                  face(n.photo, n.name, "pr-next-photo"),
+                  h("div", { class: "pr-next-txt" },
+                    h("p", { class: "pr-next-name" }, h("small", null, two(persons.indexOf(n) + 1)), n.name, h("small", null, "さん")),
+                    h("p", { class: "pr-next-team" }, n.kind === "visitor" ? "ビジター" : n.kind === "guest" ? "ゲスト" : n.kind === "other" ? (n.unit ? `BT-EX${n.unit} メンバー` : "BT-EX メンバー") : n.team || "BT-EX5 メンバー")))); })()
+            : h("div", { class: "pr-next is-card is-last" }, h("p", { class: "pr-next-label" }, "最後の方です"))));
       requestAnimationFrame(fitTags);
     }
     const running = () => Boolean(timer);

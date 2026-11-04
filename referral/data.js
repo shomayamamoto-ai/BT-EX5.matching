@@ -931,7 +931,6 @@ const BTEX_DECK = {
   philosophy: "突破から、拡張へ",
   vision: "貢献と成果が循環\nし続ける事業家集団へ", // \n のところで改行して出す(下の目的・ベネフィットも同じ)
   // 理念のあとに続くスライド(BT-EX の資料から)
-  purposes: ["メンバーの事業拡大", "LINK・BT の\n仕組み活用の促進", "メンバーの協業の促進", "BT-EX の拡大"],
   feature: { title: "BT-EX5 の特徴", lines: ["日本海側最大のマーケット", "新潟 ⇔ 東京"] },
   // head は資料の文の要点(カードの見出し)
   benefits: [
@@ -944,10 +943,9 @@ const BTEX_DECK = {
     { head: "信頼の証", text: "BT-EX のメンバーということ自体が\n信頼感につながる" },
   ],
   // カードの絵(並び順に対応。round.js の LINE_ICONS の名前)
-  purposeIcons: ["growth", "link", "users", "widen"],
   benefitIcons: ["target", "mic", "globe", "school", "users", "cart", "shield"],
   // BT-EXとは の式(LINK の市場 × BT のスキル × 3つの強み = BT-EX)
-  formula: [["globe", "LINK の市場"], ["school", "BT のビジネススキル"], ["spark", "BNI・守成クラブ・ニーズマッチの強み"]],
+  formula: [["globe", "LINK の市場"], ["school", "BT のビジネススキル"], ["spark", "他団体の強み"]],
   // ⑤商談の区切りのあとに出すスライド(BT-EX の資料から)
   fits: {
     title: "BT-EXは、このような人のお役に立てます!",
@@ -1063,7 +1061,7 @@ const BTEX_DECK = {
     title: "BT-EX でよく使う言葉",
     items: [
       { head: "BT-EX", text: "LINK や BT の中の BNI・守成クラブ・\nニーズマッチの強みを取り入れた\n事業者コミュニティ" },
-      { head: "ユニット", text: "BT-EX1〜14 の、それぞれの定例会のグループ(BT-EX5 は新潟⇔東京)" },
+      { head: "ユニット", text: "BT-EX1〜14 の\nそれぞれの定例会のグループ\n(BT-EX5 は新潟⇔東京)" },
       { head: "1on1", text: "メンバー同士が1対1で\nお互いの事業や紹介してほしい人を\n深く知るミーティング" },
       { head: "貢献（リファーラル）", text: "メンバーへのお仕事の紹介" },
       { head: "ありがとうマイル", text: "紹介で仕事が決まったら\n紹介してくれた人へ\n成約金額を感謝として送る(1円＝1マイル)" },

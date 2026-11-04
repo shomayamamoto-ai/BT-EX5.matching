@@ -71,7 +71,6 @@
       { path: "about", label: "BT-EXとは(段落は空の行で区切る。段落の中の改行はそのままスライドの改行になります)", type: "paras" },
       { path: "philosophy", label: "理念(改行はそのままスライドの改行になります)", type: "multi" },
       { path: "vision", label: "ビジョン(改行はそのままスライドの改行になります)", type: "multi" },
-      { path: "purposes", label: "目的(空の行で区切る。中の改行はそのままスライドの改行になります)", type: "paras" },
       { path: "feature.lines", label: "BT-EX5 の特徴(1行目が大きな文、2行目は「新潟 ⇔ 東京」のように ⇔ でつなぐと図になります)", type: "lines" },
       { path: "benefits", label: "仕組みとベネフィット(1行目が見出し、続く行が文。空の行で区切る。文の中の改行はそのままスライドの改行になります)", type: "cards" },
     ]],

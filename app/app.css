@@ -3373,3 +3373,30 @@ button.home-welcome-check:active { transform: scale(0.94); }
 /* 1分プレゼンの区切り: 「他BT-EX・ビジターの方は30秒です」を目立つ帯で */
 .pd-sec-note { justify-self: start; display: inline-flex; align-items: center; gap: 0.5em; margin: clamp(6px, 1.4svh, 14px) 0 0; padding: 0.5em 1.1em; border-radius: 999px; background: var(--pd-gold); color: #1a0f0c; font-size: clamp(18px, min(2.4vw, 4svh), 36px); font-weight: 900; letter-spacing: 0.06em; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18); }
 .pd-sec-note-mark { font-size: 0.9em; opacity: 0.85; }
+
+/* 用語説明: 言葉が6つ以下のときは、3列×2段の大きなカードにして画面の空きを使う(2026年11月) */
+@media (min-aspect-ratio: 1/1) and (min-width: 761px) {
+  .pd-gloss.is-few { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(12px, 1.8vw, 28px); grid-auto-rows: minmax(clamp(120px, 22svh, 260px), auto); }
+  .pd-gloss.is-few .pd-gloss-item { display: flex; flex-direction: column; justify-content: center; padding: clamp(16px, 3svh, 36px) clamp(18px, 2vw, 34px); border-radius: 22px; }
+  .pd-gloss.is-few dt { font-size: clamp(22px, min(2.6vw, 4.6svh), 42px); }
+  .pd-gloss.is-few dd { margin-top: clamp(6px, 1.4svh, 16px); font-size: clamp(14px, min(1.45vw, 2.6svh), 22px); line-height: 1.7; }
+}
+/* 1分プレゼンの区切りの注意書きは1行で(入りきらないときは app/round.js の fitDeck が小さくする) */
+.pd-sec-note { white-space: nowrap; font-size: clamp(16px, min(2vw, 3.6svh), 32px); }
+/* 次の方: 「次の方」の札 + 顔写真・番号・名前・所属(ひと目で次の人がわかるように) */
+.pr-next.is-card { display: grid; gap: clamp(6px, 1.1svh, 12px); padding: clamp(10px, 1.6svh, 16px) clamp(12px, 1.4vw, 18px); }
+.pr-next.is-card p { padding-left: 0; white-space: normal; overflow: visible; }
+.pr-next-label { justify-self: start; display: inline-flex; align-items: center; gap: 0.45em; margin: 0; padding: 0.3em 0.9em; border-radius: 999px; background: var(--gold); color: #1a0f0c !important; font-size: clamp(12px, min(1.15vw, 2svh), 16px) !important; font-weight: 900; letter-spacing: 0.08em; line-height: 1.4 !important; }
+.pr-next-label span { font-size: 0.8em; }
+.pr-next-who { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: clamp(8px, 1vw, 14px); }
+.pr-next-who .pr-next-photo { width: clamp(44px, min(4.6vw, 8svh), 72px); height: clamp(44px, min(4.6vw, 8svh), 72px); border-radius: 50%; object-fit: cover; flex: none; font-size: clamp(16px, 1.8vw, 24px); }
+.pr-next-txt { min-width: 0; display: grid; gap: 2px; }
+.pr-next-name { margin: 0; font-size: clamp(17px, min(1.9vw, 3.4svh), 28px) !important; font-weight: 900; line-height: 1.3 !important; color: #fff1d6 !important; overflow: hidden !important; text-overflow: ellipsis; white-space: nowrap !important; }
+.pr-next-name small { font-size: 0.6em; font-weight: 800; margin: 0 0.35em; opacity: 0.75; }
+.pr-next-name small:first-child { margin-left: 0; color: var(--gold); opacity: 1; }
+.pr-next-team { margin: 0; font-size: clamp(11px, min(1vw, 1.8svh), 14px) !important; line-height: 1.4 !important; color: #bfa883 !important; overflow: hidden !important; text-overflow: ellipsis; white-space: nowrap !important; }
+.pr-next.is-last .pr-next-label { background: transparent; color: #fff1d6 !important; padding: 0; }
+.pr-next-who .pr-next-photo.is-initial { display: grid; place-items: center; background: rgba(226, 184, 102, 0.18); color: var(--gold); font-weight: 800; }
+.pr-run.deck-soft .pr-next-who .pr-next-photo.is-initial { background: #fbe4df; color: #c25d53; }
+.pr-next.is-card .pr-next-label { padding: 0.3em 0.95em 0.3em 0.8em; }
+.pr-next.is-card.is-last .pr-next-label { padding: 0; }
