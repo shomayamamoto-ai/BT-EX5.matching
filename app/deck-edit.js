@@ -74,7 +74,6 @@
       { path: "purposes", label: "目的(空の行で区切る。中の改行はそのままスライドの改行になります)", type: "paras" },
       { path: "feature.lines", label: "BT-EX5 の特徴(1行目が大きな文、2行目は「新潟 ⇔ 東京」のように ⇔ でつなぐと図になります)", type: "lines" },
       { path: "benefits", label: "仕組みとベネフィット(1行目が見出し、続く行が文。空の行で区切る。文の中の改行はそのままスライドの改行になります)", type: "cards" },
-      { path: "activities", label: "主な3つの活動(1行目が題、続く行が説明。空の行で区切る)", type: "blocks" },
     ]],
     ["規定とスケジュール", [
       { path: "rules.general", label: "一般規定(1行に1つ。《 》で囲むと強調)", type: "lines" },

@@ -838,7 +838,7 @@
         deck("strengths", { name: D.strengths.title, step: label, groups: D.strengths.groups });
       }
     };
-    // ②理念の「主な3つの活動」のあとに、規定(一般・出席・倫理)とスケジュール
+    // ②理念の「仕組みとベネフィット」のあとに、規定(「主な3つの活動」のスライドは運営の依頼で外した。2026年11月)(一般・出席・倫理)とスケジュール
     const rulesAndSchedule = () => {
       rulesDone = true;
       const R = D.rules;
@@ -895,12 +895,11 @@
       if (/理念/.test(st.title) && D.about) {
         deck("about", { name: `${D.name || "BT-EX"}とは`, step: label, paras: D.about, formula: D.formula, center: D.name || "BT-EX" });
         deck("vision", { name: D.name || "BT-EX", step: label, en: D.en, philosophy: D.philosophy, vision: D.vision });
-        // 一覧はカードにして並べる(layout: quad=2×2 / grid=3×3 / trio=横に3つ)
+        // 一覧はカードにして並べる(layout: quad=2×2 / grid=3×3)
         const withIcon = (arr, icons) => arr.map((x, i) => Object.assign(x, { icon: (icons || [])[i] || "" }));
         if (D.purposes) deck("list", { name: `${D.name || "BT-EX"}の目的`, step: label, layout: "quad", lead: "BT-EX が目指す4つのこと", items: withIcon(D.purposes.map((x) => ({ title: x })), D.purposeIcons) });
         if (D.feature) deck("feature", { name: D.feature.title, step: label, lines: D.feature.lines });
         if (D.benefits) deck("list", { name: `${D.name || "BT-EX"}の仕組みとベネフィット`, step: label, layout: "grid", carousel: true, lead: `${D.benefits.length}つの仕組みが、ビジネスを加速させる`, items: withIcon(D.benefits.map((x) => (typeof x === "string" ? { title: x } : { title: x.head, lines: [x.text] })), D.benefitIcons) });
-        if (D.activities) deck("list", { name: `${D.name || "BT-EX"}の主な3つの活動`, step: label, layout: "trio", items: withIcon(D.activities.map((x) => Object.assign({}, x)), D.activityIcons) });
         rulesAndSchedule();
       }
       if (/プレゼン/.test(st.title) && !pres) {

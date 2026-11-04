@@ -943,16 +943,9 @@ const BTEX_DECK = {
     { head: "市場をフル活用", text: "セールスイベントで\nLINK や BT の市場をフル活用" },
     { head: "信頼の証", text: "BT-EX のメンバーということ自体が\n信頼感につながる" },
   ],
-  activities: [
-    // 「パターン1:」のように「:」で始まる行の続きの行は、「:」のあとにそろえて出す
-    { title: "月2回の定例会", lines: ["パターン1:リアル定例会\n& オンライン定例会", "パターン2:オンライン定例会 2回", "パターン3:リアル定例会 2回"] },
-    { title: "会員拡大活動\n& 市場取り活動", lines: ["メンバーのプレゼンや\nメンバーサイト・\n日頃の 1on1 により\n常に紹介できる人脈を探す活動"] },
-    { title: "1on1 ミーティング", lines: ["定型の 1on1 シートにより\n効果的なビジネスミーティング\nをしていく活動"] },
-  ],
   // カードの絵(並び順に対応。round.js の LINE_ICONS の名前)
   purposeIcons: ["growth", "link", "users", "widen"],
   benefitIcons: ["target", "mic", "globe", "school", "users", "cart", "shield"],
-  activityIcons: ["calendar", "network", "chat"],
   // BT-EXとは の式(LINK の市場 × BT のスキル × 3つの強み = BT-EX)
   formula: [["globe", "LINK の市場"], ["school", "BT のビジネススキル"], ["spark", "BNI・守成クラブ・ニーズマッチの強み"]],
   // ⑤商談の区切りのあとに出すスライド(BT-EX の資料から)
