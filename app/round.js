@@ -829,7 +829,7 @@
     deck("movie", { name: "オープニングムービー", step: "オープニング" });
     deck("cover", { name: (ev && ev.title) || "BT-EX5 定例会", step: "定例会", date: ev ? `${App.fmtDateLong ? App.fmtDateLong(ev.date) : ev.date}${ev.start ? ` ${ev.start}〜${ev.end || ""}` : ""}` : "", notes });
     let pres = false, extra = false, rulesDone = false, raiseDone = false;
-    // 「このような人のお役に立てます」「3つの強み」「それぞれの強み」は、②理念のスケジュールのあとに
+    // 「このような人のお役に立てます」「3つの強み」「それぞれの強み」は、商談(ブレイクアウトルーム)のタイマーのあとに
     const extras = (label) => {
       extra = true;
       if (D.fits) deck("checks", { name: D.fits.title, step: label, items: D.fits.items });
@@ -902,7 +902,6 @@
         if (D.benefits) deck("list", { name: `${D.name || "BT-EX"}の仕組みとベネフィット`, step: label, layout: "grid", carousel: true, lead: "9つの仕組みが、ビジネスを加速させる", items: withIcon(D.benefits.map((x) => (typeof x === "string" ? { title: x } : { title: x.head, lines: [x.text] })), D.benefitIcons) });
         if (D.activities) deck("list", { name: `${D.name || "BT-EX"}の主な3つの活動`, step: label, layout: "trio", items: withIcon(D.activities.map((x) => Object.assign({}, x)), D.activityIcons) });
         rulesAndSchedule();
-        if (!extra) extras(label);
       }
       if (/プレゼン/.test(st.title) && !pres) {
         pres = true;
@@ -917,6 +916,8 @@
         const base = st.title.replace(TIME, "");
         for (let k = 1; k <= times; k++) items.push({ key: `d:t${items.length}`, kind: "timer", name: `${base} ${k}回目`, sub: `${min}分`, sec: min * 60, step: label });
       }
+      // 「このような人のお役に立てます」「3つのコミュニティの強み」「それぞれの強み」は、商談(ブレイクアウトルーム)のあとに(運営の依頼。2026年11月)
+      if (/商談/.test(st.title) && !extra) extras(label);
       if (/実績/.test(st.title) && !raiseDone) raises(label);
     });
     // 進行表にプレゼンの行がないときは、最後の区切りの前に入れる
@@ -2270,7 +2271,7 @@
       if (idx > from && isDeck(p) && p.breakAsk && !breakAsked) { breakAsked = true; askBreak(); }
     }
     // ---------- 休憩のおさそい(商談の区切りのスライドに入ったとき) ----------
-    // 「休む」を押すと1分の休憩の画面。「進む」(または画面のボタン)ですぐに終えられる
+    // 「休む」を押すと3分の休憩の画面。「進む」(または画面のボタン)ですぐに終えられる
     let breakLayer = null, breakTimer = null, breakAsked = false, breakForced = false, breakAsking = false;
     function closeBreak() {
       if (breakForced) { nudgeBreak(); return; }
@@ -2288,7 +2289,7 @@
           h("h2", { class: "pr-break-title" }, "休憩しませんか?"),
           h("p", { class: "pr-break-text" }, "ここから商談がはじまります。", h("br"), "お水を飲んだり、体を伸ばしたりして、ひと息つきましょう"),
           h("div", { class: "pr-break-btns" },
-            h("button", { type: "button", class: "pr-break-btn is-main", onclick: startBreak }, "休む(1分)"),
+            h("button", { type: "button", class: "pr-break-btn is-main", onclick: startBreak }, "休む(3分)"),
             h("button", { type: "button", class: "pr-break-btn", onclick: forceBreak }, "このまま続ける"))));
       box.append(breakLayer);
       breakAsking = true;
@@ -2316,7 +2317,7 @@
           h("p", { class: "pr-hack-kicker" }, "⚠ WARNING ⚠"),
           h("h2", { class: "pr-hack-title", "data-text": "休憩をスキップ\nできません" }, "休憩をスキップ\nできません"),
           h("p", { class: "pr-hack-text" }, "体と頭を守るため、休憩を強制的に実行します。", h("br"), "下のボタンを押してください"),
-          h("button", { type: "button", class: "pr-break-btn is-main pr-hack-btn", onclick: startBreak }, "休む(1分)")));
+          h("button", { type: "button", class: "pr-break-btn is-main pr-hack-btn", onclick: startBreak }, "休む(3分)")));
       breakLayer.querySelector(".pr-hack-btn").focus({ preventScroll: true });
     }
     // 休むしか選べないときに、ほかの操作をしたら、カードをゆらして知らせる
@@ -2334,7 +2335,7 @@
       box.classList.remove("is-break-forced");
       breakLayer.classList.remove("is-hacked");
       breakLayer.setAttribute("aria-label", "休憩中");
-      const TOTAL = 60, until = Date.now() + TOTAL * 1000;
+      const TOTAL = 180, until = Date.now() + TOTAL * 1000; // 休憩は3分(運営の依頼。2026年11月)
       const TIPS = ["お水を一杯どうぞ", "肩をゆっくり回してみましょう", "深呼吸を3回", "次の商談で話したいことを1つ決めておきましょう", "まもなく商談がはじまります"];
       const num = h("b", { class: "pr-break-num" });
       const bar = h("i");
