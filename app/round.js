@@ -2285,7 +2285,7 @@
       if (idx > from && isDeck(p) && p.breakAsk && !breakAsked) { breakAsked = true; askBreak(); }
     }
     // ---------- 休憩のおさそい(商談の区切りのスライドに入ったとき) ----------
-    // 「休む」を押すと3分の休憩の画面。「進む」(または画面のボタン)ですぐに終えられる
+    // 「休む」を押すと1分の休憩の画面。「進む」(または画面のボタン)ですぐに終えられる
     let breakLayer = null, breakTimer = null, breakAsked = false, breakForced = false, breakAsking = false;
     function closeBreak() {
       if (breakForced) { nudgeBreak(); return; }
@@ -2303,7 +2303,7 @@
           h("h2", { class: "pr-break-title" }, "休憩しませんか?"),
           h("p", { class: "pr-break-text" }, "ここから商談がはじまります。", h("br"), "お水を飲んだり、体を伸ばしたりして、ひと息つきましょう"),
           h("div", { class: "pr-break-btns" },
-            h("button", { type: "button", class: "pr-break-btn is-main", onclick: startBreak }, "休む(3分)"),
+            h("button", { type: "button", class: "pr-break-btn is-main", onclick: startBreak }, "休む(1分)"),
             h("button", { type: "button", class: "pr-break-btn", onclick: forceBreak }, "このまま続ける"))));
       box.append(breakLayer);
       breakAsking = true;
@@ -2331,7 +2331,7 @@
           h("p", { class: "pr-hack-kicker" }, "⚠ WARNING ⚠"),
           h("h2", { class: "pr-hack-title", "data-text": "休憩をスキップ\nできません" }, "休憩をスキップ\nできません"),
           h("p", { class: "pr-hack-text" }, "体と頭を守るため、休憩を強制的に実行します。", h("br"), "下のボタンを押してください"),
-          h("button", { type: "button", class: "pr-break-btn is-main pr-hack-btn", onclick: startBreak }, "休む(3分)")));
+          h("button", { type: "button", class: "pr-break-btn is-main pr-hack-btn", onclick: startBreak }, "休む(1分)")));
       breakLayer.querySelector(".pr-hack-btn").focus({ preventScroll: true });
     }
     // 休むしか選べないときに、ほかの操作をしたら、カードをゆらして知らせる
@@ -2349,7 +2349,7 @@
       box.classList.remove("is-break-forced");
       breakLayer.classList.remove("is-hacked");
       breakLayer.setAttribute("aria-label", "休憩中");
-      const TOTAL = 180, until = Date.now() + TOTAL * 1000; // 休憩は3分(運営の依頼。2026年11月)
+      const TOTAL = 60, until = Date.now() + TOTAL * 1000; // 休憩は1分(運営の依頼。2026年11月。前は3分)
       const TIPS = ["お水を一杯どうぞ", "肩をゆっくり回してみましょう", "深呼吸を3回", "次の商談で話したいことを1つ決めておきましょう", "まもなく商談がはじまります"];
       const num = h("b", { class: "pr-break-num" });
       const bar = h("i");
