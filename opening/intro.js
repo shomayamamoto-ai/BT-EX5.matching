@@ -11,10 +11,11 @@
 
   // パソコンなど大きな画面は 1080p、スマホは 720p(どちらも高画質)。
   // Chrome・Android は軽い WebM(VP9)を先に、Safari(iPhone・Mac)は確実に再生できる MP4 を先に
-  // ムービー: いまは金の輪のムービー(3DCG)だけ。やわらかいデザイン用の新しいムービーは作り直し中(2026年11月)。
-  // できたら SOFT に名前を入れると、やわらかいデザインのときにそちらが流れる(theme: スライドではスライドのデザイン、ほかはサイトのデザイン)
+  // ムービーは2種類: やわらかいデザインはマスコットのムービー(SOFT)、元の黒×金は金の輪のムービー。
+  // theme: 定例会のスライドではスライドのデザイン、ほかはサイトのデザインで選ぶ
   const V = "3d4";
-  const SOFT = null; // 例: { base: "bt-ex5-opening-soft", v: "1" }
+  // やわらかいデザイン: マスコットの「ときめ」(トキ)と「つなぐ」(新幹線)のムービー(16秒・3DCG。2026年11月)
+  const SOFT = { base: "bt-ex5-opening-mascot", v: "1" };
   const BIG = Math.max(window.innerWidth, window.innerHeight) >= 1100 && Math.min(window.innerWidth, window.innerHeight) >= 600;
   const SAFARI = /^((?!chrome|chromium|android|crios|fxios).)*safari/i.test(navigator.userAgent);
   function movie(theme) {
