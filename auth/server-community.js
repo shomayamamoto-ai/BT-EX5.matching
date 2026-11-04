@@ -2910,6 +2910,25 @@
           }
           changed = true;
         }
+        // 2026年11月(運営の依頼): 一般規定の「ビジターとの1on1」を「外部ビジター」に。前に保存した見出し・文が元のままなら一度だけ書きかえる
+        if (db.cleanups.indexOf("deck-rule-outside-visitor-1") === -1) {
+          db.cleanups.push("deck-rule-outside-visitor-1");
+          var cfgV = readCfg(db);
+          if (cfgV) {
+            var OLD_VT = "ビジターと1on1をする際は、その招待者を通す、または情報を共有することメンバーと招待者はその責任において(アポの確認や規定の遵守など)ビジターをフォローまたは対応すること";
+            var NEW_VT = "外部ビジターと1on1をする際は、その招待者を通す\nまたは情報を共有すること\nメンバーと招待者はその責任において\n(アポの確認や規定の遵守など)外部ビジターを\nフォローまたは対応すること";
+            var VHEADS = { "ビジターとの1on1は招待者を《必ず》通す": "外部ビジターとの1on1は招待者を《必ず》通す", "ビジターとの1on1は招待者を通す": "外部ビジターとの1on1は招待者を《必ず》通す" };
+            var fixV = function (v) {
+              if (typeof v === "string") return VHEADS[v.trim()] || (flatText(v) === flatText(OLD_VT) ? NEW_VT : v);
+              if (Array.isArray(v)) return v.map(fixV);
+              if (v && typeof v === "object") { Object.keys(v).forEach(function (k) { v[k] = fixV(v[k]); }); return v; }
+              return v;
+            };
+            Object.keys(cfgV).forEach(function (k) { if (/^rules/.test(k)) cfgV[k] = fixV(cfgV[k]); });
+            writeCfg(db, cfgV);
+          }
+          changed = true;
+        }
         // 用語説明のビジター(2026年10月): 「＊BT-EXフェスは何度でも参加可能」を足す。前に保存した説明が元の文のままなら書きかえる
         if (db.cleanups.indexOf("deck-visitor-fes-1") === -1) {
           db.cleanups.push("deck-visitor-fes-1");
