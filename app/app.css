@@ -3400,3 +3400,10 @@ button.home-welcome-check:active { transform: scale(0.94); }
 .pr-run.deck-soft .pr-next-who .pr-next-photo.is-initial { background: #fbe4df; color: #c25d53; }
 .pr-next.is-card .pr-next-label { padding: 0.3em 0.95em 0.3em 0.8em; }
 .pr-next.is-card.is-last .pr-next-label { padding: 0; }
+/* 次の方: いま話している人より目立たないように、控えめに(運営の依頼。2026年11月) */
+.pr-next.is-card { gap: 4px; padding: clamp(8px, 1.2svh, 12px) clamp(10px, 1.2vw, 14px); opacity: 0.82; }
+.pr-next.is-card .pr-next-label { padding: 0; background: none; color: var(--gold) !important; font-size: clamp(10.5px, min(0.95vw, 1.7svh), 13px) !important; font-weight: 800; letter-spacing: 0.12em; }
+.pr-next-who { gap: clamp(6px, 0.8vw, 10px); }
+.pr-next-who .pr-next-photo { width: clamp(30px, min(3vw, 5.4svh), 44px); height: clamp(30px, min(3vw, 5.4svh), 44px); }
+.pr-next-name { font-size: clamp(13px, min(1.25vw, 2.3svh), 18px) !important; font-weight: 800; }
+.pr-next-team { font-size: clamp(10px, min(0.9vw, 1.6svh), 12.5px) !important; }

@@ -234,3 +234,6 @@
 .pr-run.deck-soft .pr-next-name small:first-child { color: #c25d53; }
 .pr-run.deck-soft .pr-next-team { color: var(--pd-muted) !important; }
 .pr-run.deck-soft .pr-next.is-last .pr-next-label { background: transparent; color: var(--pd-strong) !important; }
+.pr-run.deck-soft .pr-next.is-card .pr-next-label { background: none; color: #c25d53 !important; }
+.pr-run.deck-soft .pr-next.is-card { box-shadow: none; }
+.pr-run.deck-soft .pr-next-name { color: var(--pd-text) !important; }
