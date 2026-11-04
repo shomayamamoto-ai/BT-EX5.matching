@@ -113,6 +113,8 @@ h1, h2, h3, .app-h1, .app-h2 { color: var(--sf-ink); }
 .brand-name em { font-style: normal !important; background: none !important; -webkit-text-fill-color: currentColor !important; color: inherit !important; }
 .brand-sub { font-family: var(--lux-serif, "Shippori Mincho", serif) !important; font-weight: 700 !important; letter-spacing: 0.16em !important; margin-top: 2px !important; }
 @media (max-width: 420px) { .brand-name, .app-top .brand-name, .ref-header .brand-name { font-size: 27px !important; } }
+/* 筆記体の数字は小文字の高さしかないので、「5」だけ大きくして「EX」とそろえる */
+.brand-name .brand-num { display: inline-block; font-size: 1.55em; line-height: 0; margin-left: 0.02em; transform: translateY(0.02em); }
 .brand-light .brand-name { color: #fff !important; }
 .brand-mark { box-shadow: 0 0 0 1px rgba(217, 119, 107, 0.25), 0 4px 12px rgba(120, 80, 60, 0.18) !important; }
 /* 金の輪だけのロゴ(assets/theme.js が切りかえる)を、白から淡いピンクの角丸の上に */

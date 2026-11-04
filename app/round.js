@@ -839,12 +839,15 @@
         deck("rules", { name: "出席規定", step: "BT-EXの規定", rows: R.attendance, heads: H.attendance, icons: I.attendance, cols: 2, note: R.note, carousel: true });
         deck("rules", { name: "倫理規定", step: "BT-EXの規定", rows: R.ethics, heads: H.ethics, icons: I.ethics, cols: 3, carousel: true });
       }
-      if (D.schedule) {
-        deck("schedule", { name: D.schedule.title, step: D.schedule.title, lead: D.schedule.lead, rows: D.schedule.rows, note: D.schedule.note });
-        // 次回以降の日程は、予定に入っている定例会から
-        const next = (upcoming || []).filter((e) => !ev || (e.id !== ev.id && (e.date + (e.start || "")) > (ev.date + (ev.start || "")))).slice(0, 4);
-        if (next.length) deck("schedule", { name: D.schedule.title, step: D.schedule.title, lead: "次回以降のスケジュール", rows: next.map((e) => [mdw(e.date), e.start ? `${e.start}-${e.end || ""}` : ""]) });
-      }
+      scheduleSlides(D.schedule && D.schedule.title);
+    };
+    // BT-EX5 スケジュール(月2回の定例会 → 次回以降の日程)。理念のところと、終わりの挨拶の出席コードのあとの2か所で出す
+    const scheduleSlides = (step) => {
+      if (!D.schedule) return;
+      deck("schedule", { name: D.schedule.title, step, lead: D.schedule.lead, rows: D.schedule.rows, note: D.schedule.note });
+      // 次回以降の日程は、予定に入っている定例会から
+      const next = (upcoming || []).filter((e) => !ev || (e.id !== ev.id && (e.date + (e.start || "")) > (ev.date + (ev.start || "")))).slice(0, 4);
+      if (next.length) deck("schedule", { name: D.schedule.title, step, lead: "次回以降のスケジュール", rows: next.map((e) => [mdw(e.date), e.start ? `${e.start}-${e.end || ""}` : ""]) });
     };
     // ⑥LINKのビジネス実績紹介: 入会申し込みフォーム → 挙手のお願い(1on1・リファーラル・招待ビジター → ありがとうマイル → LINK内での実績紹介)
     const raises = (label) => {
@@ -920,6 +923,8 @@
       deck("survey", { name: D.survey.title, step: endLabel, lead: D.survey.lead, urls: [["BT-EX メンバーの方", url("member")], ["ビジターの方", url("visitor")]] });
     }
     if (D.attend) deck("attend", Object.assign({ step: endLabel }, D.attend, { name: D.attend.title, msg: D.attend.lead, lead: "", code: more.code || "" }));
+    // 出席コードのあとに、もう一度スケジュール(次の定例会の日程を伝えて終わる)
+    scheduleSlides(endLabel);
     deck("closing", { name: "本日もありがとうございました", step: "おわり" });
     // 表紙のあとに「本日の流れ」。どのスライドにも、流れの何番目かと流れの一覧を持たせる
     // (左上の小見出し・区切りのスライドの一覧・下の進行バーに使う)

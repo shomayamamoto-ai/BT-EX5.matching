@@ -2805,6 +2805,19 @@
           else if (cfg3 && cfg3.joinSteps && isOld(cfg3.joinSteps.steps)) { delete cfg3.joinSteps.steps; writeCfg(db, cfg3); }
           changed = true;
         }
+        // 入会の3ステップ(2026年11月): Step2 の「BT-EX5 入会」を「BT-EX入会」に。前に保存したステップにあれば、その文字だけ一度だけ書きかえる
+        if (db.cleanups.indexOf("deck-joinsteps-3") === -1) {
+          db.cleanups.push("deck-joinsteps-3");
+          var cfg6 = readCfg(db);
+          var fixJoin = function (v) {
+            if (!Array.isArray(v)) return false;
+            var hit = false;
+            v.forEach(function (x) { if (x && String(x.head || "").replace(/\s/g, "") === "BT-EX5入会") { x.head = "BT-EX入会"; hit = true; } });
+            return hit;
+          };
+          if (cfg6 && (fixJoin(cfg6["joinSteps.steps"]) | fixJoin(cfg6.joinSteps && cfg6.joinSteps.steps))) writeCfg(db, cfg6);
+          changed = true;
+        }
         // 用語説明のビジター(2026年10月): 「＊BT-EXフェスは何度でも参加可能」を足す。前に保存した説明が元の文のままなら書きかえる
         if (db.cleanups.indexOf("deck-visitor-fes-1") === -1) {
           db.cleanups.push("deck-visitor-fes-1");

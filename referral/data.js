@@ -1041,7 +1041,7 @@ const BTEX_DECK = {
     title: "BT-EX5 入会への簡単な3ステップ",
     steps: [
       { head: "LINKへの入会", text: "" },
-      { head: "BT-EX5 入会", text: "" },
+      { head: "BT-EX入会", text: "" },
       { head: "ユニット選択", text: "BT-EX5 を選択" },
     ],
     // カードの外(Step1・Step2 の下)にまとめて出す注意書き。noteSpan は、はじめから何枚目のカードまでにかかるか
