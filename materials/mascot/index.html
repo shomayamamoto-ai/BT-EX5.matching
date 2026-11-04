@@ -277,16 +277,18 @@
     ringAt(ped, branchCurve.getPoint(0.04), V(0.1, 1, 0), 0.085, 0.018, M.gold);
 
     const bird = new THREE.Group(); bird.position.set(-0.05, 2.12, 0); root.add(bird);
-    // 胴(卵形)
+    // 胴(細長い流線形。2026年11月に、丸い卵形からすらりとした形に)
     const body = part("body"); bird.add(body);
-    const torso = new THREE.Group(); torso.scale.set(1.28, 0.92, 0.86); torso.rotation.z = 0.32; torso.position.set(0, 0.42, 0); body.add(torso);
+    const torso = new THREE.Group(); torso.scale.set(1.6, 0.76, 0.72); torso.rotation.z = 0.2; torso.position.set(-0.02, 0.42, 0); body.add(torso);
     mesh(new THREE.SphereGeometry(0.5, 64, 48), E.white, torso);
     // 胴の継ぎ目(金)
     const seam = mesh(new THREE.TorusGeometry(0.5, 0.012, 10, 96), M.gold, torso); seam.rotation.y = Math.PI / 2;
-    // 首の金の輪
-    ringAt(body, V(0.42, 0.78, 0), V(0.6, 0.8, 0), 0.2, 0.022, M.gold);
+    // 首(細く長く、前へ伸びる)と、付け根の金の輪
+    const neckCurve = new THREE.CatmullRomCurve3([V(0.5, 0.58, 0), V(0.68, 0.78, 0), V(0.8, 1.0, 0), V(0.86, 1.14, 0)]);
+    mesh(new THREE.TubeGeometry(neckCurve, 48, 0.135, 28), E.white, body);
+    ringAt(body, neckCurve.getPointAt(0.12), neckCurve.getTangentAt(0.12), 0.172, 0.02, M.gold);
     // のぞき窓と歯車
-    const port = new THREE.Group(); port.position.set(-0.08, 0.36, 0.44); body.add(port);
+    const port = new THREE.Group(); port.position.set(-0.1, 0.38, 0.365); body.add(port);
     ringAt(port, V(0, 0, 0), V(0, 0, 1), 0.085, 0.016, M.gold);
     mesh(new THREE.CircleGeometry(0.08, 32), M.lacquer, port, false).position.z = -0.005;
     const pg = mesh(gearGeo(0.065, 12, 0.012, 5), M.gold, port); pg.position.z = -0.002;
@@ -302,7 +304,7 @@
     const cr = mesh(new THREE.TorusGeometry(0.508 * Math.sin(0.95), 0.014, 10, 96), M.gold, capAxis); cr.rotation.x = Math.PI / 2; cr.position.y = 0.508 * Math.cos(0.95);
 
     // 頭
-    const head = part("head"); head.position.set(0.55, 0.98, 0); bird.add(head);
+    const head = part("head"); head.position.set(0.9, 1.22, 0); head.scale.setScalar(0.84); bird.add(head);
     mesh(new THREE.SphereGeometry(0.3, 64, 48), E.white, head);
     // 朱の顔(くちばしの根元から目のまわり)
     // 目のまわりの朱(左右)と、くちばしの根元の朱。金の縁どり
@@ -337,15 +339,17 @@
     });
     // くちばし(黒漆、先は朱)
     const beak = part("beak"); head.add(beak);
-    const bc = new THREE.CatmullRomCurve3([V(0.24, -0.02, 0), V(0.55, -0.06, 0), V(0.86, -0.2, 0), V(1.06, -0.42, 0)]);
-    mesh(taperTube(bc, 0, 0.86, (u) => 0.072 - 0.05 * u), M.lacquer, beak);
+    // くちばしは長く細く、ゆるやかに下へ反る
+    const bc = new THREE.CatmullRomCurve3([V(0.24, -0.02, 0), V(0.66, -0.06, 0), V(1.06, -0.22, 0), V(1.36, -0.52, 0)]);
+    mesh(taperTube(bc, 0, 0.86, (u) => 0.066 - 0.048 * u), M.lacquer, beak);
     mesh(taperTube(bc, 0.86, 1, (u) => 0.025 * Math.sqrt(Math.max(0, 1 - u * u)) + 0.001), E.red, beak);
     ringAt(beak, bc.getPointAt(0.02), bc.getTangentAt(0.02), 0.074, 0.016, M.gold);
     // 冠羽(後ろ頭のふさふさ)
     const crest = part("crest"); head.add(crest);
     for (let i = 0; i < 9; i++) {
-      const f = feather(crest, 0.5 + (i % 3) * 0.08, 0.075, i % 3 === 0 ? E.white : i % 3 === 1 ? E.pale : E.toki);
-      const a = -0.35 - (i % 3) * 0.28 - Math.floor(i / 3) * 0.04;
+      // 冠羽は長く、後ろへ流れるように
+      const f = feather(crest, 0.72 + (i % 3) * 0.12, 0.07, i % 3 === 0 ? E.white : i % 3 === 1 ? E.pale : E.toki);
+      const a = -0.22 - (i % 3) * 0.2 - Math.floor(i / 3) * 0.04;
       f.position.set(-0.22, 0.2 - (i % 3) * 0.07, (Math.floor(i / 3) - 1) * 0.08);
       f.rotation.set(0, Math.PI + (Math.floor(i / 3) - 1) * 0.28, a);
     }
@@ -362,10 +366,12 @@
         { n: 6, len: 0.62, wid: 0.08, mat: E.toki, y: -0.11, x0: -0.12, dx: -0.08 },
         { n: 5, len: 0.8, wid: 0.075, mat: E.tokiDeep, y: -0.17, x0: -0.36, dx: -0.07 },
       ];
+      // 羽は大きめに(長さ1.6倍・幅1.25倍。運営の依頼で2026年11月に大きくした)
+      const WL = 1.6, WW = 1.25;
       rows.forEach((r, ri) => {
         for (let k = 0; k < r.n; k++) {
-          const f = feather(wing, r.len, r.wid, r.mat);
-          f.position.set(r.x0 + k * r.dx, r.y - k * 0.012, 0.02 * (rows.length - ri) + k * 0.004);
+          const f = feather(wing, r.len * WL, r.wid * WW, r.mat);
+          f.position.set(r.x0 * WW + k * r.dx * WW, r.y * WW - k * 0.012, 0.02 * (rows.length - ri) + k * 0.004);
           f.rotation.set(0, 0, Math.PI - 0.08 - k * 0.025);
         }
       });
@@ -376,10 +382,10 @@
     });
 
     // 尾羽
-    const tail = part("tail"); tail.position.set(-0.62, 0.22, 0); bird.add(tail);
+    const tail = part("tail"); tail.position.set(-0.78, 0.28, 0); bird.add(tail);
     for (let i = 0; i < 7; i++) {
-      const f = feather(tail, 0.55 + (3 - Math.abs(i - 3)) * 0.05, 0.06, i % 2 ? E.toki : E.pale);
-      f.rotation.set(0, (i - 3) * 0.12, Math.PI + 0.5);
+      const f = feather(tail, 0.8 + (3 - Math.abs(i - 3)) * 0.07, 0.06, i % 2 ? E.toki : E.pale);
+      f.rotation.set(0, (i - 3) * 0.1, Math.PI + 0.3);
       f.position.set(0, -0.01 * Math.abs(i - 3), (i - 3) * 0.03);
     }
     const hinge = mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.3, 16), M.gold, tail); hinge.rotation.x = Math.PI / 2;
@@ -425,17 +431,20 @@
     const part = (name, parent = root) => { const p = new THREE.Group(); parent.add(p); parts[name] = p; return p; };
     const ped = part("pedestal"); ped.add(pedestal("SHINKANSEN · TSUNAGU · BT-EX5"));
     // 線路(金のレールと枕木)
-    [-0.24, 0.24].forEach((z) => { const r = mesh(new THREE.BoxGeometry(2.7, 0.04, 0.04), M.gold, ped); r.position.set(0, 0.98, z); });
-    for (let i = 0; i < 11; i++) { const s = mesh(new THREE.BoxGeometry(0.12, 0.035, 0.66), M.wood, ped); s.position.set(-1.25 + i * 0.25, 0.945, 0); }
+    [-0.24, 0.24].forEach((z) => { const r = mesh(new THREE.BoxGeometry(3.2, 0.04, 0.04), M.gold, ped); r.position.set(0, 0.98, z); });
+    for (let i = 0; i < 13; i++) { const s = mesh(new THREE.BoxGeometry(0.12, 0.035, 0.66), M.wood, ped); s.position.set(-1.5 + i * 0.25, 0.945, 0); }
 
-    const L = 2.6, Ln = 1.3, W = 0.42, H = 0.42, C = 0.26;
+    // 形(2026年11月に、低く長く・鼻を長くとがらせた形に。E5系・E7系のような流線形)
+    // L: 全長 / Ln: 先頭の鼻の長さ / W・H: 車体の幅・高さ(半分) / C: 後ろの丸み
+    const L = 3.4, Ln = 1.8, W = 0.4, H = 0.36, C = 0.22;
     function sec(s) {
-      let w = W, h = H, yc = H, n = 3.4;
+      let w = W, h = H, yc = H, n = 3.0;
       if (s < C) { const k = Math.sqrt(Math.max(0, 1 - Math.pow(1 - s / C, 2))); w = W * Math.max(k, 0.001); h = H * Math.max(k, 0.001); yc = H; }
       if (s > L - Ln) {
         const u = (s - (L - Ln)) / Ln;
-        w = W * (1 - 0.8 * Math.pow(u, 1.5)); h = H * (1 - 0.86 * Math.pow(u, 1.05)); yc = h; n = 3.4 - 1.0 * u;
-        if (u > 0.95) { const k = Math.sqrt(Math.max(0, 1 - Math.pow((u - 0.95) / 0.05, 2))); w *= Math.max(k, 0.001); h *= Math.max(k, 0.001); yc = H * (1 - 0.86) ; }
+        // 屋根はなだらかに下がり、鼻の先はうすく低く(下のふちは平らなまま)
+        h = H * (1 - 0.9 * Math.pow(u, 0.85)); w = W * (1 - 0.72 * Math.pow(u, 1.9)); yc = h; n = 3.0 - 0.9 * u;
+        if (u > 0.965) { const k = Math.sqrt(Math.max(0, 1 - Math.pow((u - 0.965) / 0.035, 2))); w *= Math.max(k, 0.001); h *= Math.max(k, 0.001); yc = H * 0.1; }
       }
       return { w, h, yc, n };
     }
@@ -471,15 +480,15 @@
       [Math.PI + 0.1, TAU - 0.1, E.sky], [-0.1, 0, M.copper], [Math.PI, Math.PI + 0.1, M.copper],
       [0, 0.4, E.ivory], [Math.PI - 0.4, Math.PI, E.ivory], [0.4, 0.68, M.glass], [Math.PI - 0.68, Math.PI - 0.4, M.glass],
     ];
-    const train = new THREE.Group(); train.position.y = 1.12; root.add(train);
+    const train = new THREE.Group(); train.position.y = 1.04; root.add(train);
     const body = part("body", train), nose = part("nose", train), roof = part("roof", train);
-    bands.forEach(([a, b, m]) => { mesh(loft(0, S1, a, b, 40, 18), m, body).material.side = THREE.DoubleSide; mesh(loft(S1, L, a, b, 60, 18), m, nose).material.side = THREE.DoubleSide; });
+    bands.forEach(([a, b, m]) => { mesh(loft(0, S1, a, b, 40, 18), m, body).material.side = THREE.DoubleSide; mesh(loft(S1, L, a, b, 140, 24), m, nose).material.side = THREE.DoubleSide; });
     mesh(loft(0, S1, 0.68, Math.PI - 0.68, 40, 24), E.ivory, roof).material.side = THREE.DoubleSide;
     // 先頭の屋根: 運転席の窓(黒いガラス)
-    const uA = S1 + Ln * 0.08, uB = S1 + Ln * 0.42;
+    const uA = S1 + Ln * 0.14, uB = S1 + Ln * 0.44;
     mesh(loft(S1, uA, 0.68, Math.PI - 0.68, 10, 24), E.ivory, nose);
     mesh(loft(uA, uB, 0.68, Math.PI - 0.68, 24, 24), M.glass, nose);
-    mesh(loft(uB, L, 0.68, Math.PI - 0.68, 40, 24), E.ivory, nose);
+    mesh(loft(uB, L, 0.68, Math.PI - 0.68, 90, 24), E.ivory, nose);
     // 金の細い線(窓のふち)
     const pipe = (parent, th, s0, s1) => {
       const pts = []; for (let i = 0; i <= 40; i++) { const s = s0 + (s1 - s0) * (i / 40); const p = P(s, th); pts.push(p.add(V(0, 0, 0).copy(p).setX(0).setY(0).multiplyScalar(0.012))); }
@@ -494,18 +503,19 @@
       ringAt(nose, p.clone().addScaledVector(nrm, 0.005), nrm, 0.055, 0.01, M.gold);
     });
     // パンタグラフ
-    const panto = new THREE.Group(); panto.position.set(-0.55, 2 * H + 0.01, 0); panto.scale.setScalar(0.7); roof.add(panto);
+    const panto = new THREE.Group(); panto.position.set(-0.9, 2 * H + 0.01, 0); panto.scale.setScalar(0.7); roof.add(panto);
     mesh(new THREE.BoxGeometry(0.3, 0.04, 0.22), M.gold, panto).position.y = 0.02;
     const arm1 = mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.3, 8), M.gold, panto); arm1.position.set(0.05, 0.14, 0); arm1.rotation.z = -0.9;
     const arm2 = mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.28, 8), M.gold, panto); arm2.position.set(0.06, 0.32, 0); arm2.rotation.z = 0.9;
     const bar = mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.36, 8), M.gold, panto); bar.position.set(-0.04, 0.42, 0); bar.rotation.x = Math.PI / 2;
     // 中の歯車(分解すると見える)
-    const g1 = mesh(gearGeo(0.24, 20, 0.05), M.brass, body); g1.position.set(-0.4, H, 0);
-    const g2 = mesh(gearGeo(0.15, 14, 0.05, 5), M.gold, body); g2.position.set(-0.05, H + 0.1, 0.02);
+    const g1 = mesh(gearGeo(0.22, 20, 0.05), M.brass, body); g1.position.set(-0.8, H, 0);
+    const g2 = mesh(gearGeo(0.14, 14, 0.05, 5), M.gold, body); g2.position.set(-0.45, H + 0.08, 0.02);
     // 台車(歯車の車輪)
-    const bogie = part("bogie", train);
+    // 台車は車体の下に少し隠す(速そうに見えるように)
+    const bogie = part("bogie", train); bogie.position.y = 0.08;
     const wheels = [];
-    [-0.75, 0.55].forEach((x) => {
+    [-1.1, 0.7].forEach((x) => {
       const frame = mesh(new THREE.BoxGeometry(0.62, 0.08, 0.5), M.lacquer, bogie); frame.position.set(x, 0.02, 0);
       [-0.16, 0.16].forEach((dx) => [-0.26, 0.26].forEach((z) => {
         const wg = mesh(gearGeo(0.13, 16, 0.035, 5), M.gold, bogie); wg.position.set(x + dx, -0.03, z - (z > 0 ? 0 : 0.035)); wheels.push(wg);
@@ -521,7 +531,7 @@
         pedestal: { off: V(0, -0.45, 0), label: ["05", "台座", "PEDESTAL — 線路と文字盤"] },
       },
       gears: ped.children[0].userData.gears, spin: [g1, g2], wheels,
-      idle: (t) => { train.position.y = 1.12 + Math.sin(t * 2.2) * 0.008; },
+      idle: (t) => { train.position.y = 1.04 + Math.sin(t * 2.2) * 0.008; },
     };
     return root;
   }
@@ -548,9 +558,9 @@
   let t = 0, lastF = 1;
   let explodeOn = q.get("explode") === "1", explodeT = explodeOn ? 1 : 0, spin = q.get("spin") !== "0";
   const VIEWS = {
-    toki: { target: V(0, 1.55, 0), pos: V(3.6, 2.9, 6.2) },
+    toki: { target: V(0.2, 1.75, 0), pos: V(3.8, 3.1, 6.8) },
     train: { target: V(0, 1.2, 0), pos: V(3.8, 2.7, 6.0) },
-    both: { target: V(0, 1.45, 0), pos: V(4.6, 3.6, 9.4) },
+    both: { target: V(0, 1.6, 0), pos: V(4.8, 3.7, 10.2) },
   };
   function setMode(m) {
     mode = m;
