@@ -256,7 +256,10 @@
     const today = App.todayKey();
     // 共有サーバーが1時間半に書きかえる前の時刻は、App.api(core.js の fix90)が1時間半にして返す
     const list = await App.api("listEvents", {}, { quiet: true });
-    const upcoming = ((list && list.events) || []).filter((e) => e.date >= today)
+    // 終わった定例会は出さない(日が過ぎたもの・今日でも終わりの時刻を過ぎたもの。運営の依頼。2026年11月)
+    const nowHm = (() => { const d = new Date(); return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`; })();
+    const notOver = (e) => e.date > today || (e.date === today && (!e.end || String(e.end).padStart(5, "0") > nowHm));
+    const upcoming = ((list && list.events) || []).filter(notOver)
       .sort((a, b) => (a.date + (a.start || "")).localeCompare(b.date + (b.start || "")));
     const wanted = params.get("event");
     const ev = (wanted && ((list && list.events) || []).find((e) => e.id === wanted)) || (wanted === "none" ? null : upcoming[0] || null);
@@ -313,7 +316,8 @@
     const saveOrder = () => store.set(saveKey, JSON.stringify(order));
 
     const evSel = h("select", { class: "pr-ev", "aria-label": "定例会", onchange: () => App.go(`present?event=${encodeURIComponent(evSel.value)}`) },
-      upcoming.map((e) => h("option", { value: e.id }, `${App.fmtDate(e.date)} ${e.start || ""} ${e.title}`)),
+      // リンクから終わった定例会を開いたときだけ、その定例会も選べるように残す
+      (ev && !upcoming.includes(ev) ? [ev, ...upcoming] : upcoming).map((e) => h("option", { value: e.id }, `${App.fmtDate(e.date)} ${e.start || ""} ${e.title}${upcoming.includes(e) ? "" : "(終了)"}`)),
       h("option", { value: "none" }, "定例会を選ばない(メンバーから選ぶ)"));
     evSel.value = ev ? ev.id : "none";
 
