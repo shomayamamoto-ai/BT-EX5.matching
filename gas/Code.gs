@@ -930,9 +930,9 @@ const BTEX_DECK = {
   // ②BT-EXの理念
   // 段落ごと。\n のところで改行して出す
   about: [
-    "LINK や BT の中の「BNI」「守成クラブ」「ニーズマッチ」の\nそれぞれの強みを取り入れた事業者コミュニティです",
+    "LINKの最大チームBTのビジネスつながりに特化した事業者コミュニティです",
     "LINK の市場としての価値や\nBT のビジネススキル向上の仕組みの上に成り立っている\n唯一無二のビジネスコミュニティと言えます",
-    "それぞれの強みを掛け合わせることで\n事業主のビジネスや BT の拡大などにおいて\n相乗効果的な発展が見込めます",
+    "他団体の強みを掛け合わせることで\n事業主のビジネスや BT の拡大などにおいて\n相乗効果的な発展が見込めます",
   ],
   name: "BT-EX",
   en: "Breakthrough Expansion",
@@ -1081,16 +1081,10 @@ const BTEX_DECK = {
     items: [
       { head: "BT-EX", text: "LINK や BT の中の BNI・守成クラブ・\nニーズマッチの強みを取り入れた\n事業者コミュニティ" },
       { head: "ユニット", text: "BT-EX1〜14 の、それぞれの定例会のグループ(BT-EX5 は新潟⇔東京)" },
-      { head: "定例会", text: "ユニットごとに月2回ひらく会\nプレゼンや商談で紹介を生み出す" },
-      { head: "LINK", text: "20,000人の市場\n告知やセミナー、テストマーケができる" },
-      { head: "B.T.", text: "ビジネススキル向上の仕組みと\n10,000人の人脈" },
       { head: "1on1", text: "メンバー同士が1対1で\nお互いの事業や紹介してほしい人を\n深く知るミーティング" },
       { head: "貢献（リファーラル）", text: "メンバーへのお仕事の紹介" },
       { head: "ありがとうマイル", text: "紹介で仕事が決まったら\n紹介してくれた人へ\n成約金額を感謝として送る(1円＝1マイル)" },
       { head: "ビジター", text: "見学で定例会に参加する方\n(同じ方の参加は2回まで)\n※BT-EXフェスは何度でも参加可能" },
-      { head: "アップクリエ", text: "LINK で自分をサポートしてくれているメンバー" },
-      { head: "系列", text: "B.T. の中のグループ" },
-      { head: "出席コード", text: "定例会で画面に出る4桁のコード\nbt-ex.jp で入れると出席になる" },
     ],
   },
   // 時間の目安(分)。2時間の定例会のタイムマネジメントに使う(0: オープニング、1〜: 流れの番号)
@@ -2753,7 +2747,7 @@ const REF_SEED_ANNOUNCEMENTS = [
   {
     seedId: "2026-10-25-update-16",
     cat: "アップデート",
-    rev: 122,
+    rev: 123,
     at: Date.UTC(2026, 9, 25, 4, 0), // 2026/10/25 13:00(日本時間)
     title: "【アップデート】紹介診断に「相手がこう言っていたら」・アンケート・運営タブ など",
     body: [
@@ -2768,6 +2762,8 @@ const REF_SEED_ANNOUNCEMENTS = [
       "・定例会のスライドで、「BT-EXは、このような人のお役に立てます!」「3つのコミュニティの強みを、ひとつに」「BT-EXは、LINK、BNI、守成クラブのそれぞれの強み」の3枚を、BT-EXの理念のところから「⑥ブレイクアウトルーム商談」のあと(LINKのビジネス実績紹介の前)に移しました。",
       "・マスコットの形をかっこよくしました。ときめ(トキ)は、すらりとした胴・細く長い首・長いくちばしと冠羽・大きな翼に。つなぐ(新幹線)は、低く長い車体と、長くとがった鼻の流線形にしました(資料の「マスコット」・オープニングムービーとも)。",
       "・【新しいオープニングムービー】BT-EX5 のマスコット「ときめ」(トキ)と「つなぐ」(新幹線)のオープニングムービー(16秒・音あり)をつくりました。ときめが新潟の山の上を羽ばたいて飛び、つなぐが桜の中の金の線路を走って新潟から東京へ。最後に空の金の輪をときめがくぐり、「BT-EX5 新潟と東京をつなぐ、経営者のネットワーク」が出ます。デザインが「やわらかいデザイン」のときに流れます(ログイン画面・上の「ムービー」・定例会のスライドのはじめ)。「元の黒×金」のときは、これまでの金の輪のムービーです。",
+      "・定例会のスライドの「BT-EXとは」を「LINKの最大チームBTのビジネスつながりに特化した事業者コミュニティです」に、3段落目を「他団体の強みを掛け合わせることで」に変えました。「BT-EX でよく使う言葉」から、定例会・LINK・B.T.・アップクリエ・系列・出席コードの6つを外しました。",
+      "・オープニングムービーの画質を上げました。ピントの合っているところ以外をやわらかくぼかし(被写界深度)、光のにじみ・朝日・空気の遠さを足しました。背景は、稜線のある雪山・川・桜並木・窓のある東京のビルと塔に。ときめは金の光の粒を引いて飛び、最後の金の輪も光ります。",
       "・定例会のスライドから「BT-EX の約束」(3件/月・月1回以上・年12回・2回まで)のページをなくしました(規定の中身はそのまま出ます)。",
       "・商談の前の「休憩しませんか?」の休憩を3分にしました(「休む(3分)」)。",
       "・予定の画面とホームの定例会のカードも、11月14日からの回は1時間半の時間(11/14 は 20:00〜21:30)で出るようにしました。",
@@ -7022,6 +7018,36 @@ var BtexServerCore = (function () {
             return hit;
           };
           if (cfg6 && (fixJoin(cfg6["joinSteps.steps"]) | fixJoin(cfg6.joinSteps && cfg6.joinSteps.steps))) writeCfg(db, cfg6);
+          changed = true;
+        }
+        // 2026年11月(運営の依頼): BT-EXとはの1段落目と3段落目(「他団体の強みを掛け合わせることで」)を書きかえ、用語説明から6つの言葉(定例会・LINK・B.T.・アップクリエ・系列・出席コード)を外す。前に保存した内容にも一度だけ
+        if (db.cleanups.indexOf("deck-about-gloss-1") === -1) {
+          db.cleanups.push("deck-about-gloss-1");
+          var cfgA = readCfg(db);
+          if (cfgA) {
+            var OLD_ABOUT = "LINK や BT の中の「BNI」「守成クラブ」「ニーズマッチ」のそれぞれの強みを取り入れた事業者コミュニティです";
+            var NEW_ABOUT = "LINKの最大チームBTのビジネスつながりに特化した事業者コミュニティです";
+            var fixAbout = function (v) {
+              if (typeof v === "string") return flatText(v) === flatText(OLD_ABOUT) ? NEW_ABOUT : v;
+              if (Array.isArray(v)) return v.map(fixAbout);
+              return v;
+            };
+            var OLD_MIX = "それぞれの強みを掛け合わせることで\n事業主のビジネスや BT の拡大などにおいて\n相乗効果的な発展が見込めます";
+            var NEW_MIX = "他団体の強みを掛け合わせることで\n事業主のビジネスや BT の拡大などにおいて\n相乗効果的な発展が見込めます";
+            var fixMix = function (v) {
+              if (typeof v === "string") return flatText(v) === flatText(OLD_MIX) ? NEW_MIX : v;
+              if (Array.isArray(v)) return v.map(fixMix);
+              return v;
+            };
+            if ("about" in cfgA) cfgA.about = fixMix(fixAbout(cfgA.about));
+            var DROP = ["定例会", "LINK", "B.T.", "アップクリエ", "系列", "出席コード"];
+            var dropGloss = function (v) {
+              return Array.isArray(v) ? v.filter(function (x) { return !(x && DROP.indexOf(String(x.head || "").trim()) !== -1); }) : v;
+            };
+            if (cfgA["glossary.items"]) cfgA["glossary.items"] = dropGloss(cfgA["glossary.items"]);
+            if (cfgA.glossary && cfgA.glossary.items) cfgA.glossary.items = dropGloss(cfgA.glossary.items);
+            writeCfg(db, cfgA);
+          }
           changed = true;
         }
         // 用語説明のビジター(2026年10月): 「＊BT-EXフェスは何度でも参加可能」を足す。前に保存した説明が元の文のままなら書きかえる

@@ -2849,6 +2849,36 @@
           if (cfg6 && (fixJoin(cfg6["joinSteps.steps"]) | fixJoin(cfg6.joinSteps && cfg6.joinSteps.steps))) writeCfg(db, cfg6);
           changed = true;
         }
+        // 2026年11月(運営の依頼): BT-EXとはの1段落目と3段落目(「他団体の強みを掛け合わせることで」)を書きかえ、用語説明から6つの言葉(定例会・LINK・B.T.・アップクリエ・系列・出席コード)を外す。前に保存した内容にも一度だけ
+        if (db.cleanups.indexOf("deck-about-gloss-1") === -1) {
+          db.cleanups.push("deck-about-gloss-1");
+          var cfgA = readCfg(db);
+          if (cfgA) {
+            var OLD_ABOUT = "LINK や BT の中の「BNI」「守成クラブ」「ニーズマッチ」のそれぞれの強みを取り入れた事業者コミュニティです";
+            var NEW_ABOUT = "LINKの最大チームBTのビジネスつながりに特化した事業者コミュニティです";
+            var fixAbout = function (v) {
+              if (typeof v === "string") return flatText(v) === flatText(OLD_ABOUT) ? NEW_ABOUT : v;
+              if (Array.isArray(v)) return v.map(fixAbout);
+              return v;
+            };
+            var OLD_MIX = "それぞれの強みを掛け合わせることで\n事業主のビジネスや BT の拡大などにおいて\n相乗効果的な発展が見込めます";
+            var NEW_MIX = "他団体の強みを掛け合わせることで\n事業主のビジネスや BT の拡大などにおいて\n相乗効果的な発展が見込めます";
+            var fixMix = function (v) {
+              if (typeof v === "string") return flatText(v) === flatText(OLD_MIX) ? NEW_MIX : v;
+              if (Array.isArray(v)) return v.map(fixMix);
+              return v;
+            };
+            if ("about" in cfgA) cfgA.about = fixMix(fixAbout(cfgA.about));
+            var DROP = ["定例会", "LINK", "B.T.", "アップクリエ", "系列", "出席コード"];
+            var dropGloss = function (v) {
+              return Array.isArray(v) ? v.filter(function (x) { return !(x && DROP.indexOf(String(x.head || "").trim()) !== -1); }) : v;
+            };
+            if (cfgA["glossary.items"]) cfgA["glossary.items"] = dropGloss(cfgA["glossary.items"]);
+            if (cfgA.glossary && cfgA.glossary.items) cfgA.glossary.items = dropGloss(cfgA.glossary.items);
+            writeCfg(db, cfgA);
+          }
+          changed = true;
+        }
         // 用語説明のビジター(2026年10月): 「＊BT-EXフェスは何度でも参加可能」を足す。前に保存した説明が元の文のままなら書きかえる
         if (db.cleanups.indexOf("deck-visitor-fes-1") === -1) {
           db.cleanups.push("deck-visitor-fes-1");
