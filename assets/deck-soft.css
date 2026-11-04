@@ -225,3 +225,6 @@
 
 /* 出席コードのやり方の動画(大きく出したとき) */
 .pr-run.deck-soft .pd-attend-video.is-zoom, .pr-run.deck-soft .pd-attend-video.is-zoom video { background: #f6eeea; }
+
+/* 1分プレゼンの区切りの「他BT-EX・ビジターは30秒」: コーラルの帯に白い字 */
+.pr-run.deck-soft .pd-sec-note { background: linear-gradient(100deg, #e48a7d 0%, #c25d53 60%, #b4554a 100%); color: #fff; box-shadow: 0 10px 28px rgba(180, 85, 74, 0.28); }

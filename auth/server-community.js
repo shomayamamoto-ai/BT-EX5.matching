@@ -151,6 +151,22 @@
           });
           changed = true;
         }
+        // 2026年11月: 次回(11/5)以降の定例会は1時間半に(12/2 の BT-EXフェスは除く。運営の依頼)。商談は 7分×3 に。
+        // 2時間の回だけ終わりを30分早め、流れの「7分×4」を「7分×3」にする(一度だけ。そのあと運営が直した回はそのまま)
+        if (db.eventSeeds && db.eventSeeds.indexOf("meeting-90min-1") === -1) {
+          db.eventSeeds.push("meeting-90min-1");
+          var toMin90 = function (t) { var m = /^(\d{1,2}):(\d{2})$/.exec(t || ""); return m ? Number(m[1]) * 60 + Number(m[2]) : null; };
+          var fmt90 = function (n) { n = ((n % 1440) + 1440) % 1440; return (n < 600 ? "0" : "") + Math.floor(n / 60) + ":" + (n % 60 < 10 ? "0" : "") + (n % 60); };
+          db.events.forEach(function (ev) {
+            if (ev.kind === "special" || !(ev.date > "2026-11-04") || ev.date === "2026-12-02") return;
+            var a = toMin90(ev.start), b = toMin90(ev.end);
+            var hit = false;
+            if (a !== null && b !== null && (b > a ? b - a : b + 1440 - a) === 120) { ev.end = fmt90(a + 90); hit = true; }
+            if (typeof ev.agenda === "string" && /7\s*分\s*[×xX✕]\s*4/.test(ev.agenda)) { ev.agenda = ev.agenda.replace(/(ブレイクアウトルーム商談[^\n]*?)7\s*分\s*[×xX✕]\s*4/, "$17分×3"); hit = true; }
+            if (hit) syncEventCalendar(db, ev);
+          });
+          changed = true;
+        }
         // はじめの挨拶のあとに「②用語説明」を入れ、そのあとの番号を1つずつ送る(2026年10月。運営の依頼で、すべての定例会)
         if (db.eventSeeds && db.eventSeeds.indexOf("agenda-glossary") === -1) {
           db.eventSeeds.push("agenda-glossary");
@@ -2803,6 +2819,18 @@
           // 保存の形は「joinSteps.steps」(編集画面)と「joinSteps: { steps }」の2通り
           if (cfg3 && isOld(cfg3["joinSteps.steps"])) { delete cfg3["joinSteps.steps"]; writeCfg(db, cfg3); }
           else if (cfg3 && cfg3.joinSteps && isOld(cfg3.joinSteps.steps)) { delete cfg3.joinSteps.steps; writeCfg(db, cfg3); }
+          changed = true;
+        }
+        // スケジュールのスライド(2026年11月): 定例会が1時間半になったので、前に保存した時間が元のままなら書きかえる
+        if (db.cleanups.indexOf("deck-schedule-90min-1") === -1) {
+          db.cleanups.push("deck-schedule-90min-1");
+          var cfg7 = readCfg(db);
+          var OLD_ROWS = JSON.stringify([["第一水曜日", "13:00-15:00"], ["第三土曜日", "20:00-22:00"]]);
+          var NEW_ROWS = [["第一水曜日", "13:00-14:30"], ["第三土曜日", "20:00-21:30"]];
+          var hit7 = false;
+          if (cfg7 && JSON.stringify(cfg7["schedule.rows"]) === OLD_ROWS) { cfg7["schedule.rows"] = NEW_ROWS; hit7 = true; }
+          if (cfg7 && cfg7.schedule && JSON.stringify(cfg7.schedule.rows) === OLD_ROWS) { cfg7.schedule.rows = NEW_ROWS; hit7 = true; }
+          if (hit7) writeCfg(db, cfg7);
           changed = true;
         }
         // 入会の3ステップ(2026年11月): Step2 の「BT-EX5 入会」を「BT-EX入会」に。前に保存したステップにあれば、その文字だけ一度だけ書きかえる

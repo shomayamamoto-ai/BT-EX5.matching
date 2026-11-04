@@ -602,14 +602,16 @@
     let withDeck = store.get("deck", "1") === "1";
     const deckBox = h("input", { type: "checkbox", onchange: () => { withDeck = deckBox.checked; store.set("deck", withDeck ? "1" : "0"); draw(); } });
     deckBox.checked = withDeck;
-    // 商談(ブレイクアウトルーム商談)の1回の時間と回数。はじめは 7分×4回(この端末に覚える)
-    const BO0 = (App.deckData ? App.deckData(deckInfo.config).breakout : null) || { min: 7, times: 4 };
-    const boMin = h("select", { class: "pr-bo-min", "aria-label": "商談の1回の時間(分)", onchange: () => store.set("bo-min", boMin.value) },
+    // 商談(ブレイクアウトルーム商談)の1回の時間と回数(この端末に覚える)
+    // はじめの値は 7分×3回(2026年11月。前の 7分×4回 を覚えた端末も 3回 から始まるよう、覚えておく名前を変えた)
+    const BO0 = (App.deckData ? App.deckData(deckInfo.config).breakout : null) || { min: 7, times: 3 };
+    const boKey = "-v3";
+    const boMin = h("select", { class: "pr-bo-min", "aria-label": "商談の1回の時間(分)", onchange: () => store.set(`bo-min${boKey}`, boMin.value) },
       Array.from({ length: 20 }, (_, i) => i + 1).map((v) => h("option", { value: String(v) }, `${v}分`)));
-    const boTimes = h("select", { class: "pr-bo-times", "aria-label": "商談の回数", onchange: () => store.set("bo-times", boTimes.value) },
+    const boTimes = h("select", { class: "pr-bo-times", "aria-label": "商談の回数", onchange: () => store.set(`bo-times${boKey}`, boTimes.value) },
       Array.from({ length: 6 }, (_, i) => i + 1).map((v) => h("option", { value: String(v) }, `${v}回`)));
-    boMin.value = String(store.get("bo-min", BO0.min) || 7);
-    boTimes.value = String(store.get("bo-times", BO0.times) || 4);
+    boMin.value = String(store.get(`bo-min${boKey}`, BO0.min) || 7);
+    boTimes.value = String(store.get(`bo-times${boKey}`, BO0.times) || BO0.times || 4);
     // 出席コード(定例会ごと。この端末に覚える)。終わりの挨拶の「出席コード」のスライドに大きく出す
     const codeKey = `attcode-${ev ? ev.id : "none"}`;
     const codeIn = h("input", { type: "text", class: "pr-code-in", inputmode: "numeric", maxlength: "8", placeholder: "例: 1506", autocomplete: "off", "aria-label": "出席コード",
@@ -665,8 +667,8 @@
       }).filter(Boolean);
       if (withDeck) {
         const D = App.deckData ? App.deckData(deckInfo.config) : {};
-        App.roundRun(buildDeck(ev, people, photos, upcoming, deckInfo.config, { edu: eduInfo.info, bo: { min: Number(boMin.value) || 7, times: Number(boTimes.value) || 4 }, code: codeIn.value, staff }), per, auto ? gapSec : 0, ev ? ev.title : "BT-EX5 定例会",
-          { deck: true, timing: { plan: eventPlan(ev, D.timeplan), start: eventStartMs(ev), per, gap: auto ? gapSec : 0 } });
+        App.roundRun(buildDeck(ev, people, photos, upcoming, deckInfo.config, { edu: eduInfo.info, bo: { min: Number(boMin.value) || 7, times: Number(boTimes.value) || BO0.times || 4 }, code: codeIn.value, staff }), per, auto ? gapSec : 0, ev ? ev.title : "BT-EX5 定例会",
+          { deck: true, timing: { plan: eventPlan(ev, D.timeplan, D.timeplan90), start: eventStartMs(ev), per, gap: auto ? gapSec : 0 } });
         return;
       }
       if (!people.length) return;
@@ -780,7 +782,16 @@
   }
   // 時間の目安を、登録した定例会の時間(開始〜終了)に合わせる。
   // 長さがちがう回(例: 90分)は、各項目の分を同じ割合でのばす・ちぢめる(合計は定例会の長さにそろえる)
-  function eventPlan(ev, plan) {
+  // 定例会の長さ(分)。わからないときは null
+  function eventLen(ev) {
+    const toMin = (t) => { const m = /^(\d{1,2}):(\d{2})$/.exec(t || ""); return m ? Number(m[1]) * 60 + Number(m[2]) : null; };
+    const a = toMin(ev && ev.start), b = toMin(ev && ev.end);
+    return a === null || b === null ? null : b > a ? b - a : b + 1440 - a;
+  }
+  // 1時間半くらいまでの定例会は、90分の配分(D.timeplan90)を使う(2時間の配分を縮めると、オープニングなどが細かく削れてしまうため)
+  const isShort = (ev) => { const n = eventLen(ev); return n !== null && n <= 100; };
+  function eventPlan(ev, plan, plan90) {
+    if (plan90 && plan90.length && isShort(ev)) plan = plan90;
     const base = (plan || []).map((v) => Math.max(0, Number(v) || 0));
     const total = base.reduce((a, b) => a + b, 0);
     const toMin = (t) => { const m = /^(\d{1,2}):(\d{2})$/.exec(t || ""); return m ? Number(m[1]) * 60 + Number(m[2]) : null; };
@@ -867,7 +878,9 @@
     steps.forEach((st, i) => {
       const label = `${st.no}. ${st.title}`;
       const tm = TIME.exec(st.title);
-      deck("section", { no: st.no, name: tm ? st.title.replace(TIME, "") : st.title, sub: subOf(st, tm), step: label });
+      // 1分プレゼンの区切りには「他BT-EX・ビジターは30秒」を目立つように添える
+      const secNote = /1\s*分\s*プレゼン/.test(st.title) && D.pitchNote ? D.pitchNote : "";
+      deck("section", { no: st.no, name: tm ? st.title.replace(TIME, "") : st.title, sub: subOf(st, tm), step: label, note: secNote });
       // はじめの挨拶の次: 本日の運営メンバー(開始前に選んだ方)
       if (i === 0 && /あいさつ|挨拶/.test(st.title)) {
         const st0 = more.staff || {};
@@ -930,7 +943,7 @@
     // (左上の小見出し・区切りのスライドの一覧・下の進行バーに使う)
     const stepList = steps.map((st) => { const tm = TIME.exec(st.title); return { no: st.no, title: tm ? st.title.replace(TIME, "") : st.title, sub: subOf(st, tm) }; });
     const coverAt = items.findIndex((x) => x.type === "cover");
-    if (stepList.length) items.splice(coverAt + 1, 0, { key: "d:agenda", kind: "deck", type: "agenda", name: "本日の流れ", step: "定例会", plan: eventPlan(ev, D.timeplan), start: (ev && ev.start) || "", end: (ev && ev.end) || "" });
+    if (stepList.length) items.splice(coverAt + 1, 0, { key: "d:agenda", kind: "deck", type: "agenda", name: "本日の流れ", step: "定例会", plan: eventPlan(ev, D.timeplan, D.timeplan90), start: (ev && ev.start) || "", end: (ev && ev.end) || "" });
     let cur = 0;
     items.forEach((it) => {
       if (it.kind === "deck" && it.type === "section" && it.no) cur = it.no;
@@ -1680,7 +1693,8 @@
           h("div", Object.assign({ class: "pd-section-main" }, enAttr(p.name)),
             h("p", { class: "pd-no", "aria-hidden": "true" }, two(p.no)),
             h("h2", { class: "pd-display" }, ...softBreaks(p.name)),
-            p.sub ? h("p", { class: "pd-sub" }, p.sub) : null),
+            p.sub ? h("p", { class: "pd-sub" }, p.sub) : null,
+            p.note ? h("p", { class: "pd-sec-note" }, h("span", { class: "pd-sec-note-mark", "aria-hidden": "true" }, "※"), p.note) : null),
           p.steps && p.steps.length > 1 ? agendaList(true) : null);
       }
       if (p.type === "leader") {
@@ -2171,7 +2185,8 @@
           face(p.photo, p.name, "pr-photo"),
           h("div", { class: "pr-next" },
             nexts.length
-              ? nexts.map((n, i) => h("p", { class: i === 0 ? "is-first" : "" }, i === 0 ? h("b", null, "次 ▶ ") : null, `${two(persons.indexOf(n) + 1)} ${n.name}`))
+              // 次の方は1人だけ(運営の依頼)
+              ? nexts.slice(0, 1).map((n) => h("p", { class: "is-first" }, h("b", null, "次 ▶ "), `${two(persons.indexOf(n) + 1)} ${n.name}`))
               : h("p", { class: "is-first" }, h("b", null, "最後の方です")))));
       requestAnimationFrame(fitTags);
     }

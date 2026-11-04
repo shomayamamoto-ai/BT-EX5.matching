@@ -3369,3 +3369,7 @@ button.home-welcome-check:active { transform: scale(0.94); }
 .tour-close { position: absolute; right: 8px; top: 8px; width: 36px; height: 36px; border: none; border-radius: 50%; background: transparent; color: var(--text-light); font-size: 20px; cursor: pointer; }
 .tour-close:hover { background: var(--bg); }
 @media (prefers-reduced-motion: reduce) { .tour, .tour-hole, .tour-bubble { animation: none; transition: none; } .tour-hole::after { animation: none; } }
+
+/* 1分プレゼンの区切り: 「他BT-EX・ビジターの方は30秒です」を目立つ帯で */
+.pd-sec-note { justify-self: start; display: inline-flex; align-items: center; gap: 0.5em; margin: clamp(6px, 1.4svh, 14px) 0 0; padding: 0.5em 1.1em; border-radius: 999px; background: var(--pd-gold); color: #1a0f0c; font-size: clamp(18px, min(2.4vw, 4svh), 36px); font-weight: 900; letter-spacing: 0.06em; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18); }
+.pd-sec-note-mark { font-size: 0.9em; opacity: 0.85; }
