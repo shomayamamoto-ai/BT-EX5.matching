@@ -899,7 +899,7 @@
         const withIcon = (arr, icons) => arr.map((x, i) => Object.assign(x, { icon: (icons || [])[i] || "" }));
         if (D.purposes) deck("list", { name: `${D.name || "BT-EX"}の目的`, step: label, layout: "quad", lead: "BT-EX が目指す4つのこと", items: withIcon(D.purposes.map((x) => ({ title: x })), D.purposeIcons) });
         if (D.feature) deck("feature", { name: D.feature.title, step: label, lines: D.feature.lines });
-        if (D.benefits) deck("list", { name: `${D.name || "BT-EX"}の仕組みとベネフィット`, step: label, layout: "grid", carousel: true, lead: "9つの仕組みが、ビジネスを加速させる", items: withIcon(D.benefits.map((x) => (typeof x === "string" ? { title: x } : { title: x.head, lines: [x.text] })), D.benefitIcons) });
+        if (D.benefits) deck("list", { name: `${D.name || "BT-EX"}の仕組みとベネフィット`, step: label, layout: "grid", carousel: true, lead: `${D.benefits.length}つの仕組みが、ビジネスを加速させる`, items: withIcon(D.benefits.map((x) => (typeof x === "string" ? { title: x } : { title: x.head, lines: [x.text] })), D.benefitIcons) });
         if (D.activities) deck("list", { name: `${D.name || "BT-EX"}の主な3つの活動`, step: label, layout: "trio", items: withIcon(D.activities.map((x) => Object.assign({}, x)), D.activityIcons) });
         rulesAndSchedule();
       }

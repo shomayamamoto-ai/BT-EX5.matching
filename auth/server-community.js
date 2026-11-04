@@ -2879,6 +2879,19 @@
           }
           changed = true;
         }
+        // 2026年11月(運営の依頼): 仕組みとベネフィットから「リアルな絆」(毎月のリアルな懇親会)と「10,000人の人脈」のカードを外す。前に保存した内容にも一度だけ
+        if (db.cleanups.indexOf("deck-benefit-real-1") === -1) {
+          db.cleanups.push("deck-benefit-real-1");
+          var cfgB = readCfg(db);
+          if (cfgB && Array.isArray(cfgB.benefits)) {
+            cfgB.benefits = cfgB.benefits.filter(function (x) {
+              var head = x && typeof x === "object" ? x.head : String(x || "").split("\n")[0];
+              return ["リアルな絆", "10,000人の人脈"].indexOf(String(head || "").trim()) === -1;
+            });
+            writeCfg(db, cfgB);
+          }
+          changed = true;
+        }
         // 用語説明のビジター(2026年10月): 「＊BT-EXフェスは何度でも参加可能」を足す。前に保存した説明が元の文のままなら書きかえる
         if (db.cleanups.indexOf("deck-visitor-fes-1") === -1) {
           db.cleanups.push("deck-visitor-fes-1");

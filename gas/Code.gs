@@ -947,8 +947,6 @@ const BTEX_DECK = {
     { head: "会中の発信と商談", text: "会中の 1分プレゼン、メインプレゼン、\nテーブル商談、プチマルシェにより\nビジネスを加速させる" },
     { head: "20,000人の市場", text: "会員拡大の仕組みに加え\nLINK の 20,000人の市場で\n告知やセミナー、テストマーケなど使い放題" },
     { head: "スキルの向上", text: "エデュケーションコーナー・\nBT スクール連携により\nビジネススキルの向上" },
-    { head: "10,000人の人脈", text: "系列を超えて、BT 10,000人の中からポジティブな人脈の構築" },
-    { head: "リアルな絆", text: "毎月のリアルな懇親会で\n絆を深くする" },
     { head: "強いチームづくり", text: "深い 1on1 により\n強固なビジネスチームや\nコラボレーションの構築" },
     { head: "市場をフル活用", text: "セールスイベントで\nLINK や BT の市場をフル活用" },
     { head: "信頼の証", text: "BT-EX のメンバーということ自体が\n信頼感につながる" },
@@ -961,7 +959,7 @@ const BTEX_DECK = {
   ],
   // カードの絵(並び順に対応。round.js の LINE_ICONS の名前)
   purposeIcons: ["growth", "link", "users", "widen"],
-  benefitIcons: ["target", "mic", "globe", "school", "network", "heart", "users", "cart", "shield"],
+  benefitIcons: ["target", "mic", "globe", "school", "users", "cart", "shield"],
   activityIcons: ["calendar", "network", "chat"],
   // BT-EXとは の式(LINK の市場 × BT のスキル × 3つの強み = BT-EX)
   formula: [["globe", "LINK の市場"], ["school", "BT のビジネススキル"], ["spark", "BNI・守成クラブ・ニーズマッチの強み"]],
@@ -2747,7 +2745,7 @@ const REF_SEED_ANNOUNCEMENTS = [
   {
     seedId: "2026-10-25-update-16",
     cat: "アップデート",
-    rev: 123,
+    rev: 124,
     at: Date.UTC(2026, 9, 25, 4, 0), // 2026/10/25 13:00(日本時間)
     title: "【アップデート】紹介診断に「相手がこう言っていたら」・アンケート・運営タブ など",
     body: [
@@ -2762,7 +2760,7 @@ const REF_SEED_ANNOUNCEMENTS = [
       "・定例会のスライドで、「BT-EXは、このような人のお役に立てます!」「3つのコミュニティの強みを、ひとつに」「BT-EXは、LINK、BNI、守成クラブのそれぞれの強み」の3枚を、BT-EXの理念のところから「⑥ブレイクアウトルーム商談」のあと(LINKのビジネス実績紹介の前)に移しました。",
       "・マスコットの形をかっこよくしました。ときめ(トキ)は、すらりとした胴・細く長い首・長いくちばしと冠羽・大きな翼に。つなぐ(新幹線)は、低く長い車体と、長くとがった鼻の流線形にしました(資料の「マスコット」・オープニングムービーとも)。",
       "・【新しいオープニングムービー】BT-EX5 のマスコット「ときめ」(トキ)と「つなぐ」(新幹線)のオープニングムービー(16秒・音あり)をつくりました。ときめが新潟の山の上を羽ばたいて飛び、つなぐが桜の中の金の線路を走って新潟から東京へ。最後に空の金の輪をときめがくぐり、「BT-EX5 新潟と東京をつなぐ、経営者のネットワーク」が出ます。デザインが「やわらかいデザイン」のときに流れます(ログイン画面・上の「ムービー」・定例会のスライドのはじめ)。「元の黒×金」のときは、これまでの金の輪のムービーです。",
-      "・定例会のスライドの「BT-EXとは」を「LINKの最大チームBTのビジネスつながりに特化した事業者コミュニティです」に、3段落目を「他団体の強みを掛け合わせることで」に変えました。「BT-EX でよく使う言葉」から、定例会・LINK・B.T.・アップクリエ・系列・出席コードの6つを外しました。",
+      "・定例会のスライドの「BT-EXとは」を「LINKの最大チームBTのビジネスつながりに特化した事業者コミュニティです」に、3段落目を「他団体の強みを掛け合わせることで」に変えました。「BT-EX でよく使う言葉」から、定例会・LINK・B.T.・アップクリエ・系列・出席コードの6つを外しました。「仕組みとベネフィット」から「リアルな絆」と「10,000人の人脈」のカードを外しました(7つの仕組みになりました)。",
       "・オープニングムービーの画質を上げました。ピントの合っているところ以外をやわらかくぼかし(被写界深度)、光のにじみ・朝日・空気の遠さを足しました。背景は、稜線のある雪山・川・桜並木・窓のある東京のビルと塔に。ときめは金の光の粒を引いて飛び、最後の金の輪も光ります。",
       "・定例会のスライドから「BT-EX の約束」(3件/月・月1回以上・年12回・2回まで)のページをなくしました(規定の中身はそのまま出ます)。",
       "・商談の前の「休憩しませんか?」の休憩を3分にしました(「休む(3分)」)。",
@@ -7047,6 +7045,19 @@ var BtexServerCore = (function () {
             if (cfgA["glossary.items"]) cfgA["glossary.items"] = dropGloss(cfgA["glossary.items"]);
             if (cfgA.glossary && cfgA.glossary.items) cfgA.glossary.items = dropGloss(cfgA.glossary.items);
             writeCfg(db, cfgA);
+          }
+          changed = true;
+        }
+        // 2026年11月(運営の依頼): 仕組みとベネフィットから「リアルな絆」(毎月のリアルな懇親会)と「10,000人の人脈」のカードを外す。前に保存した内容にも一度だけ
+        if (db.cleanups.indexOf("deck-benefit-real-1") === -1) {
+          db.cleanups.push("deck-benefit-real-1");
+          var cfgB = readCfg(db);
+          if (cfgB && Array.isArray(cfgB.benefits)) {
+            cfgB.benefits = cfgB.benefits.filter(function (x) {
+              var head = x && typeof x === "object" ? x.head : String(x || "").split("\n")[0];
+              return ["リアルな絆", "10,000人の人脈"].indexOf(String(head || "").trim()) === -1;
+            });
+            writeCfg(db, cfgB);
           }
           changed = true;
         }

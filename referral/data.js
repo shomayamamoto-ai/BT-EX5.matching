@@ -939,8 +939,6 @@ const BTEX_DECK = {
     { head: "会中の発信と商談", text: "会中の 1分プレゼン、メインプレゼン、\nテーブル商談、プチマルシェにより\nビジネスを加速させる" },
     { head: "20,000人の市場", text: "会員拡大の仕組みに加え\nLINK の 20,000人の市場で\n告知やセミナー、テストマーケなど使い放題" },
     { head: "スキルの向上", text: "エデュケーションコーナー・\nBT スクール連携により\nビジネススキルの向上" },
-    { head: "10,000人の人脈", text: "系列を超えて、BT 10,000人の中からポジティブな人脈の構築" },
-    { head: "リアルな絆", text: "毎月のリアルな懇親会で\n絆を深くする" },
     { head: "強いチームづくり", text: "深い 1on1 により\n強固なビジネスチームや\nコラボレーションの構築" },
     { head: "市場をフル活用", text: "セールスイベントで\nLINK や BT の市場をフル活用" },
     { head: "信頼の証", text: "BT-EX のメンバーということ自体が\n信頼感につながる" },
@@ -953,7 +951,7 @@ const BTEX_DECK = {
   ],
   // カードの絵(並び順に対応。round.js の LINE_ICONS の名前)
   purposeIcons: ["growth", "link", "users", "widen"],
-  benefitIcons: ["target", "mic", "globe", "school", "network", "heart", "users", "cart", "shield"],
+  benefitIcons: ["target", "mic", "globe", "school", "users", "cart", "shield"],
   activityIcons: ["calendar", "network", "chat"],
   // BT-EXとは の式(LINK の市場 × BT のスキル × 3つの強み = BT-EX)
   formula: [["globe", "LINK の市場"], ["school", "BT のビジネススキル"], ["spark", "BNI・守成クラブ・ニーズマッチの強み"]],
