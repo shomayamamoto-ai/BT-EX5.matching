@@ -603,6 +603,10 @@
     let withDeck = store.get("deck", "1") === "1";
     const deckBox = h("input", { type: "checkbox", onchange: () => { withDeck = deckBox.checked; store.set("deck", withDeck ? "1" : "0"); draw(); } });
     deckBox.checked = withDeck;
+    // はじめのオープニングムービー: 3分版(定例会がはじまる前に流す)か、14秒版(この端末に覚える。やわらかいデザインのときだけ3分版がある)
+    const movieSel = h("select", { class: "pr-movie-len", "aria-label": "オープニングムービーの長さ", onchange: () => store.set("movie-len", movieSel.value) },
+      h("option", { value: "3" }, "3分版(紹介つき)"), h("option", { value: "14" }, "14秒版"));
+    movieSel.value = store.get("movie-len", "3") === "14" ? "14" : "3";
     // 商談(ブレイクアウトルーム商談)の1回の時間と回数(この端末に覚える)
     // はじめの値は 7分×3回(2026年11月。前の 7分×4回 を覚えた端末も 3回 から始まるよう、覚えておく名前を変えた)
     const BO0 = (App.deckData ? App.deckData(deckInfo.config).breakout : null) || { min: 7, times: 3 };
@@ -668,7 +672,7 @@
       }).filter(Boolean);
       if (withDeck) {
         const D = App.deckData ? App.deckData(deckInfo.config) : {};
-        App.roundRun(buildDeck(ev, people, photos, upcoming, deckInfo.config, { edu: eduInfo.info, bo: { min: Number(boMin.value) || 7, times: Number(boTimes.value) || BO0.times || 4 }, code: codeIn.value, staff }), per, auto ? gapSec : 0, ev ? ev.title : "BT-EX5 定例会",
+        App.roundRun(buildDeck(ev, people, photos, upcoming, deckInfo.config, { edu: eduInfo.info, bo: { min: Number(boMin.value) || 7, times: Number(boTimes.value) || BO0.times || 4 }, code: codeIn.value, staff, movieLong: movieSel.value === "3" }), per, auto ? gapSec : 0, ev ? ev.title : "BT-EX5 定例会",
           { deck: true, timing: { plan: eventPlan(ev, D.timeplan, D.timeplan90), start: eventStartMs(ev), per, gap: auto ? gapSec : 0 } });
         return;
       }
@@ -733,6 +737,7 @@
             return seg;
           })()) : null,
         h("div", { class: "pr-deck-more" },
+          h("label", { class: "pr-deck-field" }, h("span", null, "はじめのオープニングムービー"), movieSel, h("small", null, "3分版は BT-EXの紹介・メンバー・スケジュールつき。元の黒×金のスライドでは、これまでのムービー")),
           h("label", { class: "pr-deck-field" }, h("span", null, "ブレイクアウトルーム商談(テーブル商談)"), h("span", { class: "pr-bo" }, boMin, h("b", null, "×"), boTimes)),
           h("label", { class: "pr-deck-field" }, h("span", null, "出席コード(4桁)"), codeIn, h("small", null, "終わりの挨拶の「出席コード」のスライドに大きく出ます")),
           h("div", { class: "pr-deck-field is-staff" }, h("span", null, "本日の運営メンバー"), h("small", null, "はじめの挨拶のあとのスライドに出ます。役ごとに、担当の方を押して選んでください(もう一度押すと外します。複数選べます)"), staffBox)),
@@ -826,7 +831,7 @@
     const hasGloss = D.glossary && (D.glossary.items || []).length;
     let glossDone = false;
     const glossary = (label) => { glossDone = true; deck("glossary", { name: D.glossary.title, step: label, items: D.glossary.items }); };
-    deck("movie", { name: "オープニングムービー", step: "オープニング" });
+    deck("movie", { name: "オープニングムービー", step: "オープニング", long: !!more.movieLong });
     deck("cover", { name: (ev && ev.title) || "BT-EX5 定例会", step: "定例会", date: ev ? `${App.fmtDateLong ? App.fmtDateLong(ev.date) : ev.date}${ev.start ? ` ${ev.start}〜${ev.end || ""}` : ""}` : "", notes });
     let pres = false, extra = false, rulesDone = false, raiseDone = false;
     // 「このような人のお役に立てます」「3つの強み」「それぞれの強み」は、商談(ブレイクアウトルーム)のタイマーのあとに
@@ -2112,7 +2117,7 @@
       if (!window.BtexIntro || moviePlaying) { if (!window.BtexIntro) go(idx + 1); return; }
       moviePlaying = true;
       const at = idx;
-      window.BtexIntro.open({ sound: true, zIndex: 400, theme: typeof BtexTheme !== "undefined" && BtexTheme.deck ? BtexTheme.deck() : "soft", onClose: () => { moviePlaying = false; if (!done && idx === at) go(at + 1); } });
+      window.BtexIntro.open({ sound: true, zIndex: 400, long: !!(people[idx] && people[idx].long), theme: typeof BtexTheme !== "undefined" && BtexTheme.deck ? BtexTheme.deck() : "soft", onClose: () => { moviePlaying = false; if (!done && idx === at) go(at + 1); } });
     }
     function drawSlide() {
       const p = people[idx];

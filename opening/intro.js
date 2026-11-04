@@ -16,10 +16,11 @@
   const V = "3d4", VS = "s2";
   const BIG = Math.max(window.innerWidth, window.innerHeight) >= 1100 && Math.min(window.innerWidth, window.innerHeight) >= 600;
   const SAFARI = /^((?!chrome|chromium|android|crios|fxios).)*safari/i.test(navigator.userAgent);
-  function movie(theme) {
+  // long: 定例会のはじめに流す3分版(BT-EXの紹介・メンバー・スケジュールつき。やわらかいデザインだけ)
+  function movie(theme, long) {
     const soft = theme !== "classic";
-    const base = `bt-ex5-opening${soft ? "-soft" : ""}${BIG ? "" : "-720p"}`;
-    const v = soft ? VS : V;
+    const base = `bt-ex5-opening${soft ? (long ? "-soft-3min" : "-soft") : ""}${BIG ? "" : "-720p"}`;
+    const v = soft ? (long ? "m1" : VS) : V;
     const MP4 = [`../assets/opening/${base}.mp4?v=${v}`, "video/mp4"];
     const WEBM = [`../assets/opening/${base}.webm?v=${v}`, "video/webm"];
     return { sources: SAFARI ? [MP4, WEBM] : [WEBM, MP4], poster: `../assets/opening/${soft ? "poster-soft" : "poster"}.jpg?v=${v}` };
@@ -35,7 +36,7 @@
     box.className = "op-intro";
     box.setAttribute("role", "dialog");
     box.setAttribute("aria-label", "BT-EX5 オープニングムービー(画面を押すとスキップ)");
-    const mv = movie((opts && opts.theme) || siteTheme());
+    const mv = movie((opts && opts.theme) || siteTheme(), !!(opts && opts.long));
     box.innerHTML = `
       <video class="op-intro-video" poster="${mv.poster}" playsinline preload="auto">
         ${mv.sources.map(([src, type]) => `<source src="${src}" type="${type}">`).join("")}
@@ -70,8 +71,21 @@
     });
     video.addEventListener("ended", () => { current.classList.add("is-ending"); setTimeout(close, 450); });
     // どの形式も再生できなかったとき(最後の source のエラー)は閉じる
-    const lastSource = video.querySelector("source:last-of-type");
-    if (lastSource) lastSource.addEventListener("error", close);
+    // 3分版が読めないとき(まだ置いていない・通信が切れた など)は、14秒版に切りかえる。それも読めなければ閉じる
+    let fellBack = !(opts && opts.long);
+    const watchLast = () => {
+      const last = video.querySelector("source:last-of-type");
+      if (!last) return;
+      last.addEventListener("error", () => {
+        if (fellBack) { close(); return; }
+        fellBack = true;
+        const sm = movie((opts && opts.theme) || siteTheme(), false);
+        video.poster = sm.poster;
+        video.innerHTML = sm.sources.map(([src, type]) => `<source src="${src}" type="${type}">`).join("");
+        watchLast(); video.load(); start(video.muted).catch(close);
+      });
+    };
+    watchLast();
 
     function start(muted) {
       setMuted(muted);
