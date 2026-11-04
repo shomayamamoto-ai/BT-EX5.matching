@@ -11,19 +11,19 @@
 
   // パソコンなど大きな画面は 1080p、スマホは 720p(どちらも高画質)。
   // Chrome・Android は軽い WebM(VP9)を先に、Safari(iPhone・Mac)は確実に再生できる MP4 を先に
-  // ムービーは2種類: やわらかいデザインは「新潟と東京をつなぐ」(朱鷺・新幹線・スカイツリーの絵。2026年11月)、
-  // 元の黒×金のデザインは、これまでのムービー。定例会のスライドではスライドのデザイン、それ以外はサイトのデザインで選ぶ
-  const V = "3d4", VS = "s3";
+  // ムービー: いまは金の輪のムービー(3DCG)だけ。やわらかいデザイン用の新しいムービーは作り直し中(2026年11月)。
+  // できたら SOFT に名前を入れると、やわらかいデザインのときにそちらが流れる(theme: スライドではスライドのデザイン、ほかはサイトのデザイン)
+  const V = "3d4";
+  const SOFT = null; // 例: { base: "bt-ex5-opening-soft", v: "1" }
   const BIG = Math.max(window.innerWidth, window.innerHeight) >= 1100 && Math.min(window.innerWidth, window.innerHeight) >= 600;
   const SAFARI = /^((?!chrome|chromium|android|crios|fxios).)*safari/i.test(navigator.userAgent);
-  // long: 定例会のはじめに流す3分版(BT-EXの紹介・メンバー・スケジュールつき。やわらかいデザインだけ)
-  function movie(theme, long) {
-    const soft = theme !== "classic";
-    const base = `bt-ex5-opening${soft ? (long ? "-soft-3min" : "-soft") : ""}${BIG ? "" : "-720p"}`;
-    const v = soft ? (long ? "m2" : VS) : V;
+  function movie(theme) {
+    const soft = theme !== "classic" && SOFT;
+    const base = `${soft ? SOFT.base : "bt-ex5-opening"}${BIG ? "" : "-720p"}`;
+    const v = soft ? SOFT.v : V;
     const MP4 = [`../assets/opening/${base}.mp4?v=${v}`, "video/mp4"];
     const WEBM = [`../assets/opening/${base}.webm?v=${v}`, "video/webm"];
-    return { sources: SAFARI ? [MP4, WEBM] : [WEBM, MP4], poster: `../assets/opening/${soft ? "poster-soft" : "poster"}.jpg?v=${v}` };
+    return { sources: SAFARI ? [MP4, WEBM] : [WEBM, MP4], poster: `../assets/opening/${soft ? `${SOFT.base}-poster` : "poster"}.jpg?v=${v}` };
   }
   const siteTheme = () => { try { return window.BtexTheme && BtexTheme.site ? BtexTheme.site() : "soft"; } catch { return "soft"; } };
   const script = document.currentScript;
@@ -36,7 +36,7 @@
     box.className = "op-intro";
     box.setAttribute("role", "dialog");
     box.setAttribute("aria-label", "BT-EX5 オープニングムービー(画面を押すとスキップ)");
-    const mv = movie((opts && opts.theme) || siteTheme(), !!(opts && opts.long));
+    const mv = movie((opts && opts.theme) || siteTheme());
     box.innerHTML = `
       <video class="op-intro-video" poster="${mv.poster}" playsinline preload="auto">
         ${mv.sources.map(([src, type]) => `<source src="${src}" type="${type}">`).join("")}
@@ -71,21 +71,8 @@
     });
     video.addEventListener("ended", () => { current.classList.add("is-ending"); setTimeout(close, 450); });
     // どの形式も再生できなかったとき(最後の source のエラー)は閉じる
-    // 3分版が読めないとき(まだ置いていない・通信が切れた など)は、14秒版に切りかえる。それも読めなければ閉じる
-    let fellBack = !(opts && opts.long);
-    const watchLast = () => {
-      const last = video.querySelector("source:last-of-type");
-      if (!last) return;
-      last.addEventListener("error", () => {
-        if (fellBack) { close(); return; }
-        fellBack = true;
-        const sm = movie((opts && opts.theme) || siteTheme(), false);
-        video.poster = sm.poster;
-        video.innerHTML = sm.sources.map(([src, type]) => `<source src="${src}" type="${type}">`).join("");
-        watchLast(); video.load(); start(video.muted).catch(close);
-      });
-    };
-    watchLast();
+    const lastSource = video.querySelector("source:last-of-type");
+    if (lastSource) lastSource.addEventListener("error", close);
 
     function start(muted) {
       setMuted(muted);
