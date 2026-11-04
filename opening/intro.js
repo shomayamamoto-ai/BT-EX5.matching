@@ -11,13 +11,20 @@
 
   // パソコンなど大きな画面は 1080p、スマホは 720p(どちらも高画質)。
   // Chrome・Android は軽い WebM(VP9)を先に、Safari(iPhone・Mac)は確実に再生できる MP4 を先に
-  const V = "3d4";
+  // ムービーは2種類: やわらかいデザインは「新潟と東京をつなぐ」(朱鷺・新幹線・スカイツリーの絵。2026年11月)、
+  // 元の黒×金のデザインは、これまでのムービー。定例会のスライドではスライドのデザイン、それ以外はサイトのデザインで選ぶ
+  const V = "3d4", VS = "s1";
   const BIG = Math.max(window.innerWidth, window.innerHeight) >= 1100 && Math.min(window.innerWidth, window.innerHeight) >= 600;
   const SAFARI = /^((?!chrome|chromium|android|crios|fxios).)*safari/i.test(navigator.userAgent);
-  const base = BIG ? "bt-ex5-opening" : "bt-ex5-opening-720p";
-  const MP4 = [`../assets/opening/${base}.mp4?v=${V}`, "video/mp4"];
-  const WEBM = [`../assets/opening/${base}.webm?v=${V}`, "video/webm"];
-  const SOURCES = SAFARI ? [MP4, WEBM] : [WEBM, MP4];
+  function movie(theme) {
+    const soft = theme !== "classic";
+    const base = `bt-ex5-opening${soft ? "-soft" : ""}${BIG ? "" : "-720p"}`;
+    const v = soft ? VS : V;
+    const MP4 = [`../assets/opening/${base}.mp4?v=${v}`, "video/mp4"];
+    const WEBM = [`../assets/opening/${base}.webm?v=${v}`, "video/webm"];
+    return { sources: SAFARI ? [MP4, WEBM] : [WEBM, MP4], poster: `../assets/opening/${soft ? "poster-soft" : "poster"}.jpg?v=${v}` };
+  }
+  const siteTheme = () => { try { return window.BtexTheme && BtexTheme.site ? BtexTheme.site() : "soft"; } catch { return "soft"; } };
   const script = document.currentScript;
   let box = null;
 
@@ -28,9 +35,10 @@
     box.className = "op-intro";
     box.setAttribute("role", "dialog");
     box.setAttribute("aria-label", "BT-EX5 オープニングムービー(画面を押すとスキップ)");
+    const mv = movie((opts && opts.theme) || siteTheme());
     box.innerHTML = `
-      <video class="op-intro-video" poster="../assets/opening/poster.jpg?v=${V}" playsinline preload="auto">
-        ${SOURCES.map(([src, type]) => `<source src="${src}" type="${type}">`).join("")}
+      <video class="op-intro-video" poster="${mv.poster}" playsinline preload="auto">
+        ${mv.sources.map(([src, type]) => `<source src="${src}" type="${type}">`).join("")}
       </video>
       <button type="button" class="op-intro-btn primary op-intro-skip" data-op="skip">スキップ</button>
       <button type="button" class="op-intro-btn op-intro-sound" data-op="sound"></button>

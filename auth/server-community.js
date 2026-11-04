@@ -361,6 +361,7 @@
             return out;
           });
         return c.ok({
+          meeting90: true, // 1時間半の定例会に書きかえ済みの共有サーバー(アプリ側で時刻を直さなくてよい)
           event: eventView(w, e), members: members, visitors: visitors, isAdmin: w.isAdmin,
           minutes: e.minutes ? { text: e.minutes.text, at: e.minutes.at, byName: nameOf(w.db, e.minutes.by), annId: e.minutes.annId || "" } : null,
         });
@@ -408,7 +409,7 @@
           .filter(function (e) { return e.date >= from; })
           .sort(function (a, b) { return (a.date + a.start).localeCompare(b.date + b.start); })
           .map(function (e) { return eventView(w, e); });
-        return c.ok({ events: events, today: today(), calendar: !!c.calendar });
+        return c.ok({ events: events, today: today(), calendar: !!c.calendar, meeting90: true });
       }
 
       function rsvpEvent(body) {
@@ -2300,6 +2301,7 @@
           .sort(function (a, b) { return (a.due || "9999").localeCompare(b.due || "9999") || a.at - b.at; })
           .map(function (tk) { return taskView(db, tk, w.id); });
         return c.ok({
+          meeting90: true,
           tasks: myTasks,
           spotlight: spotlight,
           me: { id: w.id, name: w.me.name, team: w.me.team || "", isAdmin: w.isAdmin, hasPassword: !!w.user.pw, goals: w.user.goals || null },

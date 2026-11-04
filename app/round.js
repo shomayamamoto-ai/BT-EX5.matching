@@ -252,19 +252,10 @@
     App.go(opts.eventId ? `present?event=${encodeURIComponent(opts.eventId)}` : "present");
   };
 
-  // 2026年11月: 11/5 以降の定例会は1時間半(12/2 の BT-EXフェスは除く)。共有サーバーがまだ2時間のままでも、
-  // スライド(次回以降のスケジュール・本日の流れ・タイムマネジメント)では1時間半として扱う
-  function as90(e) {
-    if (!e || e.kind === "special" || !(e.date > "2026-11-04") || e.date === "2026-12-02" || eventLen(e) !== 120) return e;
-    const m = /^(\d{1,2}):(\d{2})$/.exec(e.start || "");
-    const n = (Number(m[1]) * 60 + Number(m[2]) + 90) % 1440;
-    return Object.assign({}, e, { end: `${String(Math.floor(n / 60)).padStart(2, "0")}:${String(n % 60).padStart(2, "0")}`,
-      agenda: typeof e.agenda === "string" ? e.agenda.replace(/(ブレイクアウトルーム商談[^\n]*?)7\s*分\s*[×xX✕]\s*4/, "$17分×3") : e.agenda });
-  }
   async function renderSetup(el, params, parts) {
     const today = App.todayKey();
-    const list0 = await App.api("listEvents", {}, { quiet: true });
-    const list = list0 ? Object.assign({}, list0, { events: (list0.events || []).map(as90) }) : list0;
+    // 共有サーバーが1時間半に書きかえる前の時刻は、App.api(core.js の fix90)が1時間半にして返す
+    const list = await App.api("listEvents", {}, { quiet: true });
     const upcoming = ((list && list.events) || []).filter((e) => e.date >= today)
       .sort((a, b) => (a.date + (a.start || "")).localeCompare(b.date + (b.start || "")));
     const wanted = params.get("event");
@@ -2120,7 +2111,7 @@
       if (!window.BtexIntro || moviePlaying) { if (!window.BtexIntro) go(idx + 1); return; }
       moviePlaying = true;
       const at = idx;
-      window.BtexIntro.open({ sound: true, zIndex: 400, onClose: () => { moviePlaying = false; if (!done && idx === at) go(at + 1); } });
+      window.BtexIntro.open({ sound: true, zIndex: 400, theme: typeof BtexTheme !== "undefined" && BtexTheme.deck ? BtexTheme.deck() : "soft", onClose: () => { moviePlaying = false; if (!done && idx === at) go(at + 1); } });
     }
     function drawSlide() {
       const p = people[idx];
