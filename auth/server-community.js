@@ -2893,6 +2893,23 @@
           }
           changed = true;
         }
+        // 2026年11月(運営の依頼): 用語説明の「BT-EX」の説明の「BNI・守成クラブ・ニーズマッチ」を「他のビジネス団体」に。前に保存した説明が元の文のままなら一度だけ書きかえる
+        if (db.cleanups.indexOf("deck-gloss-btex-1") === -1) {
+          db.cleanups.push("deck-gloss-btex-1");
+          var cfgG = readCfg(db);
+          if (cfgG) {
+            var OLD_BTEX = "LINK や BT の中の BNI・守成クラブ・ニーズマッチの強みを取り入れた事業者コミュニティ";
+            var NEW_BTEX = "LINK や BT の中の\n他のビジネス団体の強みを取り入れた\n事業者コミュニティ";
+            var fixBtex = function (v) {
+              if (Array.isArray(v)) return v.map(function (x) { if (x && typeof x === "object" && typeof x.text === "string" && flatText(x.text) === flatText(OLD_BTEX)) x.text = NEW_BTEX; return x; });
+              return v;
+            };
+            if (cfgG["glossary.items"]) cfgG["glossary.items"] = fixBtex(cfgG["glossary.items"]);
+            if (cfgG.glossary && cfgG.glossary.items) cfgG.glossary.items = fixBtex(cfgG.glossary.items);
+            writeCfg(db, cfgG);
+          }
+          changed = true;
+        }
         // 用語説明のビジター(2026年10月): 「＊BT-EXフェスは何度でも参加可能」を足す。前に保存した説明が元の文のままなら書きかえる
         if (db.cleanups.indexOf("deck-visitor-fes-1") === -1) {
           db.cleanups.push("deck-visitor-fes-1");

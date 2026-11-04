@@ -1060,7 +1060,7 @@ const BTEX_DECK = {
   glossary: {
     title: "BT-EX でよく使う言葉",
     items: [
-      { head: "BT-EX", text: "LINK や BT の中の BNI・守成クラブ・\nニーズマッチの強みを取り入れた\n事業者コミュニティ" },
+      { head: "BT-EX", text: "LINK や BT の中の\n他のビジネス団体の強みを取り入れた\n事業者コミュニティ" },
       { head: "ユニット", text: "BT-EX1〜14 の\nそれぞれの定例会のグループ\n(BT-EX5 は新潟⇔東京)" },
       { head: "1on1", text: "メンバー同士が1対1で\nお互いの事業や紹介してほしい人を\n深く知るミーティング" },
       { head: "貢献（リファーラル）", text: "メンバーへのお仕事の紹介" },
