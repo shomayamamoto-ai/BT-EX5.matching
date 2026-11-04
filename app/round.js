@@ -844,7 +844,7 @@
       const R = D.rules;
       if (R) {
         deck("section", { no: 0, name: R.title, step: "BT-EXの規定" });
-        if (R.kpis && R.kpis.length) deck("kpis", { name: "BT-EX の約束", step: "BT-EXの規定", items: R.kpis });
+        // 「BT-EX の約束」(3件/月・月1回以上 など数字のページ)は出さない(運営の依頼。2026年11月)
         // 規定は1つずつのスライドに、絵・番号・見出しつきのカードで出す(文はそのまま)
         const H = R.heads || {}, I = R.icons || {};
         deck("rules", { name: "一般規定", step: "BT-EXの規定", rows: R.general, heads: H.general, icons: I.general, cols: 3, carousel: true });
