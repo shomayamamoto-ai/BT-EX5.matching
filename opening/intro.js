@@ -13,7 +13,7 @@
   // Chrome・Android は軽い WebM(VP9)を先に、Safari(iPhone・Mac)は確実に再生できる MP4 を先に
   // ムービーは2種類: やわらかいデザインは「新潟と東京をつなぐ」(朱鷺・新幹線・スカイツリーの絵。2026年11月)、
   // 元の黒×金のデザインは、これまでのムービー。定例会のスライドではスライドのデザイン、それ以外はサイトのデザインで選ぶ
-  const V = "3d4", VS = "s1";
+  const V = "3d4", VS = "s2";
   const BIG = Math.max(window.innerWidth, window.innerHeight) >= 1100 && Math.min(window.innerWidth, window.innerHeight) >= 600;
   const SAFARI = /^((?!chrome|chromium|android|crios|fxios).)*safari/i.test(navigator.userAgent);
   function movie(theme) {
