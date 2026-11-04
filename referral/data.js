@@ -1151,7 +1151,7 @@ function refMergeNewMembers(list) {
 const REF_MEMBER_PHOTOS = {
   yamamoto: "assets/members/yamamoto.jpg",
   // 2026年10月、運営から受け取った顔写真
-  m02: "assets/members/m02.jpg", // あまみや 七音
+  m02: "assets/members/m02-2.jpg", // あまみや 七音(2026年11月、文字入りの写真に差し替え)
   m03: "assets/members/m03.jpg", // 佐藤 志織
   m04: "assets/members/m04.jpg", // 吉澤 美和子
   m05: "assets/members/m05.jpg", // 大藤 誠
