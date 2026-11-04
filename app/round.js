@@ -2055,8 +2055,9 @@
         const need = bottom - br.top, room = sr.bottom - br.top;
         if (need > room && room > 0) {
           const k = Math.max(0.55, (room / need) * 0.97);
-          // 左はし(題と同じ位置)を動かさずに縮める(まん中を軸にすると、中身が右に寄って見えるため)
-          body.style.transformOrigin = "0 0";
+          // 左はし(題と同じ位置)を動かさずに縮める(まん中を軸にすると、中身が右に寄って見えるため)。
+          // まん中にそろえたスライド(挙手のお願いなど)は、縮めてもまん中の線がほかのスライドと同じになるよう、まん中を軸にする
+          body.style.transformOrigin = el.classList.contains("is-centered") ? "50% 0" : "0 0";
           body.style.transform = `scale(${k.toFixed(3)})`;
         }
         return;
