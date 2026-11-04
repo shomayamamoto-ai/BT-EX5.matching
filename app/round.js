@@ -886,14 +886,15 @@
       // 1分プレゼンの区切りには「他BT-EX・ビジターは30秒」を目立つように添える
       const secNote = /1\s*分\s*プレゼン/.test(st.title) && D.pitchNote ? D.pitchNote : "";
       deck("section", { no: st.no, name: tm ? st.title.replace(TIME, "") : st.title, sub: subOf(st, tm), step: label, note: secNote });
-      // はじめの挨拶の次: 本日の運営メンバー(開始前に選んだ方)
-      if (i === 0 && /あいさつ|挨拶/.test(st.title)) {
-        const st0 = more.staff || {};
-        deck("staff", { name: "本日の運営メンバー", step: label, roles: STAFF_ROLES.map(([key, role, fixed]) => ({ role, fixed: !!fixed, people: (fixed || st0[key] || []).map((id) => App.memberById(id)).filter(Boolean).map((m) => ({ name: m.name, photo: (photos && photos[m.id]) || "" })) })) });
-      }
+      // はじめの挨拶の次: 代表の紹介
       if (i === 0 && /あいさつ|挨拶/.test(st.title) && D.leader) {
         const m = App.memberById(D.leader.memberId);
         if (m) deck("leader", { name: m.name, step: label, photo: (photos && photos[m.id]) || "", leader: D.leader });
+      }
+      // 代表の紹介の次: 本日の運営メンバー(開始前に選んだ方)。2026年11月、運営の依頼で代表の紹介 → 運営メンバーの順に
+      if (i === 0 && /あいさつ|挨拶/.test(st.title)) {
+        const st0 = more.staff || {};
+        deck("staff", { name: "本日の運営メンバー", step: label, roles: STAFF_ROLES.map(([key, role, fixed]) => ({ role, fixed: !!fixed, people: (fixed || st0[key] || []).map((id) => App.memberById(id)).filter(Boolean).map((m) => ({ name: m.name, photo: (photos && photos[m.id]) || "" })) })) });
       }
       if (/用語/.test(st.title) && hasGloss && !glossDone) glossary(label);
       if (/理念/.test(st.title) && D.about) {
