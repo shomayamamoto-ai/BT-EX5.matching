@@ -2777,6 +2777,7 @@
         ["定例会で画面に出る4桁のコードbt-ex.jp で入れると出席になる", "定例会で画面に出る4桁のコード\nbt-ex.jp で入れると出席になる"],
         ["BT-EXメンバーは、LINKの会員規約に準ずるものとする", "BT-EXメンバーは、LINKの会員規約に\n準ずるものとする"],
         ["メンバーにも、その先の大切なご縁にも、いつも誠実な気持ちで向き合います", "メンバーにも、その先の大切なご縁にも\nいつも誠実な気持ちで向き合います"],
+        ["安心して選んでいただけるように、誠実なサービスと分かりやすい価格を大切にします", "安心して選んでいただけるように、誠実な\nサービスと分かりやすい価格を大切にします"],
       ];
       // 改行・読点・句点・空白の入れ方がちがうだけの同じ文も、指定の形にそろえる
       function flatText(t) { return String(t).replace(/[\s、。,]/g, ""); }
@@ -2796,8 +2797,8 @@
           if (cfg && "timeplan" in cfg) { delete cfg.timeplan; writeCfg(db, cfg); }
           changed = true;
         }
-        if (db.cleanups.indexOf("deck-text-breaks-5") === -1) {
-          db.cleanups.push("deck-text-breaks-5");
+        if (db.cleanups.indexOf("deck-text-breaks-6") === -1) {
+          db.cleanups.push("deck-text-breaks-6");
           var cfg2 = readCfg(db);
           if (cfg2) {
             breakTexts(cfg2);

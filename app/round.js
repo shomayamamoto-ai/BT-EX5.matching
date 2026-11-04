@@ -860,9 +860,9 @@
         deck("rules", { name: "出席規定", step: "BT-EXの規定", rows: R.attendance, heads: H.attendance, icons: I.attendance, cols: 2, note: R.note, carousel: true });
         deck("rules", { name: "倫理規定", step: "BT-EXの規定", rows: R.ethics, heads: H.ethics, icons: I.ethics, cols: 3, carousel: true });
       }
-      scheduleSlides(D.schedule && D.schedule.title);
     };
-    // BT-EX5 スケジュール(月2回の定例会 → 次回以降の日程)。理念のところと、終わりの挨拶の出席コードのあとの2か所で出す
+    // BT-EX5 スケジュール(月2回の定例会 → 次回以降の日程)。終わりの挨拶の出席コードのあとにだけ出す
+    // (2026年11月。前は理念の規定のあとにも出していたが、運営の依頼で終わりの挨拶だけにした)
     const scheduleSlides = (step) => {
       if (!D.schedule) return;
       deck("schedule", { name: D.schedule.title, step, lead: D.schedule.lead, rows: D.schedule.rows, note: D.schedule.note });
