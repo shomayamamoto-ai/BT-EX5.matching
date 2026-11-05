@@ -436,7 +436,16 @@ function buildE7(cars = 5) {
     el.innerHTML = `<i></i><span><b><em>${x.label[0]}</em>${x.label[1]}</b><small>${x.label[2]}</small></span>`;
     labelBox.appendChild(el); x.el = el;
   });
-  let explodeOn = q.get("explode") === "1", explodeT = explodeOn ? 1 : 0, lastF = 1, centerBack = false;
+  let explodeOn = q.get("explode") === "1", explodeT = explodeOn ? 1 : 0, lastF = 1, goal = null;
+  // 形のまん中(羽を広げて止めた形・部品を k だけ離した形で、一度だけ測る)
+  function stableCenter(kk) {
+    const keep = EX.filter((x) => x.off).map((x) => [x, x.obj.position.clone()]);
+    keep.forEach(([x]) => x.obj.position.copy(x.home).addScaledVector(x.off, kk));
+    const by = bird.position.y; bird.userData.flap(0, 0); bird.position.y = 0;
+    const box = new THREE.Box3(); [toki, train].filter((c) => c.visible).forEach((c) => box.expandByObject(c));
+    keep.forEach(([x, p]) => x.obj.position.copy(p)); bird.position.y = by;
+    return box.getCenter(new THREE.Vector3());
+  }
 
   let mode = ["toki", "train", "both"].includes(q.get("c")) ? q.get("c") : "both";
   let t = 0, move = q.get("still") !== "1", spin = q.get("spin") !== "0";
@@ -444,11 +453,13 @@ function buildE7(cars = 5) {
   function frame() {
     // 分解していても、組み立てた形でカメラの位置を決める(分解の分は、あとで少し引く)
     const keep = EX.filter((x) => x.off).map((x) => [x, x.obj.position.clone()]); keep.forEach(([x]) => x.obj.position.copy(x.home));
+    const by = bird.position.y; bird.userData.flap(0, 0); bird.position.y = 0;
     const box = new THREE.Box3(); [toki, train].filter((c) => c.visible).forEach((c) => box.expandByObject(c));
-    keep.forEach(([x, p]) => x.obj.position.copy(p));
+    keep.forEach(([x, p]) => x.obj.position.copy(p)); bird.position.y = by;
     const ctr = box.getCenter(new THREE.Vector3()), size = box.getSize(new THREE.Vector3()).length();
     const w = window.innerWidth, h = window.innerHeight, narrow = w < h;
     controls.target.copy(ctr); camera.position.copy(ctr).addScaledVector(DIRS[mode].clone().normalize(), size * (narrow ? 1.75 : mode === "toki" ? 1.45 : 1.2)); lastF = 1;
+    if (explodeOn) goal = stableCenter(1);
   }
   function setMode(m) {
     mode = m;
@@ -466,7 +477,7 @@ function buildE7(cars = 5) {
   document.querySelectorAll("[data-c]").forEach((b) => b.addEventListener("click", () => setMode(b.dataset.c)));
   const explodeBtn = document.getElementById("explodeBtn");
   explodeBtn.setAttribute("aria-pressed", String(explodeOn));
-  explodeBtn.addEventListener("click", () => { explodeOn = !explodeOn; centerBack = true; explodeBtn.setAttribute("aria-pressed", String(explodeOn)); });
+  explodeBtn.addEventListener("click", () => { explodeOn = !explodeOn; goal = stableCenter(explodeOn ? 1 : 0); explodeBtn.setAttribute("aria-pressed", String(explodeOn)); });
   const moveBtn = document.getElementById("moveBtn"), spinBtn = document.getElementById("spinBtn");
   moveBtn.setAttribute("aria-pressed", String(move)); spinBtn.setAttribute("aria-pressed", String(spin));
   moveBtn.addEventListener("click", () => { move = !move; moveBtn.setAttribute("aria-pressed", String(move)); });
@@ -496,9 +507,8 @@ function buildE7(cars = 5) {
     const k = explodeT * explodeT * (3 - 2 * explodeT);
     EX.forEach((x) => { if (x.off) x.obj.position.copy(x.home).addScaledVector(x.off, k); });
     const f = 1 + 0.35 * k;
-    // 見ている先を、いまの形(分解の途中も)のまん中へなめらかに合わせる
-    if (explodeT > 0.001 && explodeT < 0.999 || explodeOn) { const bx = new THREE.Box3(); [toki, train].filter((c) => c.visible).forEach((c) => bx.expandByObject(c)); const cc = bx.getCenter(new THREE.Vector3()); const d = cc.sub(controls.target).multiplyScalar(Math.min(1, dt * 4)); controls.target.add(d); camera.position.add(d); }
-    else if (!explodeOn && explodeT <= 0.001 && centerBack) { const bx = new THREE.Box3(); [toki, train].filter((c) => c.visible).forEach((c) => bx.expandByObject(c)); const cc = bx.getCenter(new THREE.Vector3()); const d = cc.sub(controls.target).multiplyScalar(Math.min(1, dt * 4)); controls.target.add(d); camera.position.add(d); if (d.length() < 1e-4) centerBack = false; }
+    // 見ている先を、決まったまん中(goal)へなめらかに合わせる。羽ばたき・車輪の動きでは動かさない(画面が揺れないように)
+    if (goal) { const d = goal.clone().sub(controls.target); if (d.length() < 1e-4) goal = null; else { d.multiplyScalar(Math.min(1, dt * 4)); controls.target.add(d); camera.position.add(d); } }
     if (Math.abs(lastF - f) > 1e-4) { const off = camera.position.clone().sub(controls.target); off.multiplyScalar(f / lastF); camera.position.copy(controls.target).add(off); lastF = f; }
     if (spin) { const a = dt * 0.18; const p = camera.position.clone().sub(controls.target); p.applyAxisAngle(V(0, 1, 0), a); camera.position.copy(controls.target).add(p); }
     controls.update();
