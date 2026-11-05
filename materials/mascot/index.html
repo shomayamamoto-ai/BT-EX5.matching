@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="robots" content="noindex">
   <title>BT-EX5 マスコット</title>
-  <!-- BT-EX5 のマスコット(3D)。トキの「ときめ」と、新幹線の「つなぐ」。からくり人形のように、エナメルの板と金の縁・歯車でできている。
-       指(マウス)で回せる・「分解して見る」で部品に分かれる・「画像で保存」で PNG にできる。
-       URL の ? のあとで: c=toki / train / both(はじめに出すキャラ)、bg=dark / soft(背景)、explode=1(分解した形)、embed=1(ボタンなし) -->
+  <!-- BT-EX5 のマスコット(3D)。トキの「ときめ」と、上越新幹線 E7系の「つなぐ」(オープニングムービーと同じ、本物に近い形)。
+       指(マウス)で回せる・「動かす」で羽ばたき・車輪が回る・「画像で保存」で PNG にできる。
+       URL の ? のあとで: c=toki / train / both(はじめに出すキャラ)、bg=dark / soft(背景)、still=1(止めた形)、embed=1(ボタンなし)、bare=1(背景なし) -->
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;1,600&family=Noto+Sans+JP:wght@500;700&family=Shippori+Mincho:wght@700;800&display=swap">
   <style>
     :root { --gold:#d9b46a; --ink:#f3ebe0; --sub:rgba(243,235,224,.66); --panel:rgba(20,18,18,.55); --line:rgba(217,180,106,.38);
@@ -50,7 +50,7 @@
     <button type="button" data-c="train">新幹線</button>
     <button type="button" data-c="both">ふたり</button>
     <span class="sep"></span>
-    <button type="button" id="explodeBtn" aria-pressed="false">分解して見る</button>
+    <button type="button" id="moveBtn" aria-pressed="true">動かす</button>
     <button type="button" id="spinBtn" aria-pressed="true">回す</button>
     <button type="button" id="bgBtn">背景</button>
     <button type="button" id="saveBtn">画像で保存</button>
@@ -83,7 +83,7 @@
   const pmrem = new THREE.PMREMGenerator(renderer);
   scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
   const controls = new OrbitControls(camera, canvas);
-  controls.enableDamping = true; controls.enablePan = false; controls.minDistance = 3.5; controls.maxDistance = 16;
+  controls.enableDamping = true; controls.enablePan = false; controls.minDistance = 2.5; controls.maxDistance = 20;
   controls.maxPolarAngle = Math.PI * 0.52;
 
   const key = new THREE.DirectionalLight(0xfff1dc, 2.4);
@@ -115,534 +115,351 @@
   }
   applyBg();
 
-  // ---------- 質感 ----------
-  // 細かい粒の地(エナメルの下の打ち出し模様)
-  function grainTexture() {
-    const c = document.createElement("canvas"); c.width = c.height = 512;
-    const g = c.getContext("2d"); g.fillStyle = "#808080"; g.fillRect(0, 0, 512, 512);
-    const s = 12, hgt = s * Math.sqrt(3) / 2;
-    for (let row = -1; row * hgt < 512 + s; row++) for (let col = -1; col * s < 512 + s; col++) {
-      const x = col * s + (row % 2 ? s / 2 : 0), y = row * hgt;
-      const gr = g.createRadialGradient(x, y, 0, x, y, s * 0.55);
-      gr.addColorStop(0, "#d8d8d8"); gr.addColorStop(0.7, "#9a9a9a"); gr.addColorStop(1, "#5a5a5a");
-      g.fillStyle = gr; g.beginPath(); g.arc(x, y, s * 0.55, 0, TAU); g.fill();
-    }
-    const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(7, 7); return t;
-  }
-  const GRAIN = grainTexture();
-  const M = {
-    gold: new THREE.MeshPhysicalMaterial({ color: 0xf2c467, metalness: 1, roughness: 0.22, clearcoat: 0.4, envMapIntensity: 1.5 }),
-    brass: new THREE.MeshPhysicalMaterial({ color: 0xc89a4c, metalness: 1, roughness: 0.36, bumpMap: GRAIN, bumpScale: 0.3, envMapIntensity: 1.4 }),
-    copper: new THREE.MeshPhysicalMaterial({ color: 0xd98a58, metalness: 0.55, roughness: 0.28, clearcoat: 1, clearcoatRoughness: 0.08, envMapIntensity: 1.4 }),
-    lacquer: new THREE.MeshPhysicalMaterial({ color: 0x141416, metalness: 0.2, roughness: 0.28, clearcoat: 1, clearcoatRoughness: 0.12 }),
-    glass: new THREE.MeshPhysicalMaterial({ color: 0x0b0f18, metalness: 0.1, roughness: 0.04, clearcoat: 1, clearcoatRoughness: 0.02 }),
-    eye: new THREE.MeshPhysicalMaterial({ color: 0x050505, metalness: 0, roughness: 0.03, clearcoat: 1 }),
-    iris: new THREE.MeshPhysicalMaterial({ color: 0xf0a020, metalness: 0.3, roughness: 0.25, clearcoat: 1 }),
-    lamp: new THREE.MeshPhysicalMaterial({ color: 0xfff6e0, emissive: 0xfff0c8, emissiveIntensity: 0.9, roughness: 0.1, clearcoat: 1 }),
-    wood: new THREE.MeshPhysicalMaterial({ color: 0x4a2c1c, metalness: 0.1, roughness: 0.55, bumpMap: GRAIN, bumpScale: 0.4, clearcoat: 0.5 }),
+  // ---------- 形と質感(オープニングムービーと同じ作り) ----------
+  const clamp = (x, a, b) => Math.max(a, Math.min(b, x)), lerp = (a, b, k) => a + (b - a) * k;
+  function hash(x, y) { const s = Math.sin(x * 127.1 + y * 311.7) * 43758.5453; return s - Math.floor(s); }
+// ================= 本物に近いトキ(朱鷺)と上越新幹線(E7系) =================
+// トキ: 全長約75cm・翼を広げて約140cm。体は白く、風切羽と尾羽の裏は朱鷺色(淡い橙赤色)で、飛ぶと翼の下がとくに鮮やか。
+//       顔の皮膚は赤、くちばしは黒く下に曲がり先が赤い。後頭部に細長い冠羽。脚は赤く、飛ぶときは首を前に伸ばし脚をうしろへ伸ばす。
+// E7系: 白い車体に青い屋根と先頭の上、窓の下に青の帯と銅色の線(上越新幹線では朱鷺色の線も)。12両編成(ここでは先頭から5両)。
+
+// 表と裏で色がちがう羽(表は白、裏は朱鷺色)
+function twoTone(top, bottom, o) {
+  const m = new THREE.MeshStandardMaterial(Object.assign({ color: 0xffffff, roughness: 0.8, metalness: 0, side: THREE.DoubleSide }, o || {}));
+  const cT = new THREE.Color(top), cB = new THREE.Color(bottom);
+  m.onBeforeCompile = (sh) => {
+    sh.uniforms.cTop = { value: cT }; sh.uniforms.cBot = { value: cB };
+    sh.fragmentShader = 'uniform vec3 cTop; uniform vec3 cBot;\n' + sh.fragmentShader.replace('#include <color_fragment>', '#include <color_fragment>\n  diffuseColor.rgb *= gl_FrontFacing ? cTop : cBot;')
+      // 羽は光を少し透かす(下から見ても、翼の裏の朱鷺色が明るく見える)
+      .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\n  if (!gl_FrontFacing) totalEmissiveRadiance += diffuseColor.rgb * 0.38;');
   };
-  const enamel = (color, extra) => new THREE.MeshPhysicalMaterial(Object.assign({ color, metalness: 0.05, roughness: 0.42, clearcoat: 1, clearcoatRoughness: 0.1, bumpMap: GRAIN, bumpScale: 0.45 }, extra || {}));
-  const E = {
-    white: enamel(0xf5efe8), pale: enamel(0xf7ddd2), toki: enamel(0xf1a58c), tokiDeep: enamel(0xe3866c), red: enamel(0xc9322a, { bumpScale: 0.7 }),
-    legRed: enamel(0xc0392b), sky: enamel(0x5aa9dc), navy: enamel(0x22314f), ivory: enamel(0xf6f2ea),
+  return m;
+}
+// 羽毛のこまかな凹凸(体・首の質感)
+function plumeBump() {
+  const c = document.createElement('canvas'); c.width = c.height = 512; const g = c.getContext('2d');
+  g.fillStyle = '#7a7a7a'; g.fillRect(0, 0, 512, 512);
+  for (let row = 0; row < 30; row++) for (let k = 0; k < 24; k++) {
+    const x = k * 22 + (row % 2) * 11 + (hash(row, k) - 0.5) * 6, y = row * 18 + (hash(k, row) - 0.5) * 5;
+    const gr = g.createRadialGradient(x, y - 5, 1, x, y - 2, 15); gr.addColorStop(0, '#b4b4b4'); gr.addColorStop(0.75, '#868686'); gr.addColorStop(1, '#5c5c5c');
+    g.fillStyle = gr; g.beginPath(); g.ellipse(x, y, 11, 14, 0, 0, TAU); g.fill();
+  }
+  const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; return t;
+}
+const PLUME = plumeBump();
+// 先細りの管(首・くちばし・冠羽・脚)。three.js の TubeGeometry と同じ向きで面を張る
+function taperGeo(curve, rFn, segs = 48, radial = 16, colFn) {
+  const fr = curve.computeFrenetFrames(segs, false), pos = [], col = [], idx = [], P = new THREE.Vector3(), cc = new THREE.Color();
+  for (let i = 0; i <= segs; i++) {
+    const s = i / segs; curve.getPointAt(s, P); const r = rFn(s), N = fr.normals[i], B = fr.binormals[i];
+    for (let j = 0; j <= radial; j++) {
+      const v = (j / radial) * TAU, sn = Math.sin(v), cs = -Math.cos(v);
+      pos.push(P.x + r * (cs * N.x + sn * B.x), P.y + r * (cs * N.y + sn * B.y), P.z + r * (cs * N.z + sn * B.z));
+      if (colFn) { colFn(s, cc); col.push(cc.r, cc.g, cc.b); }
+    }
+  }
+  for (let i = 1; i <= segs; i++) for (let j = 1; j <= radial; j++) {
+    const a = (radial + 1) * (i - 1) + (j - 1), b = (radial + 1) * i + (j - 1), c = (radial + 1) * i + j, d = (radial + 1) * (i - 1) + j;
+    idx.push(a, b, d, b, c, d);
+  }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  if (colFn) g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+  g.setIndex(idx); g.computeVertexNormals(); return g;
+}
+const curveOf = (pts) => new THREE.CatmullRomCurve3(pts.map((p) => V(p[0], p[1], p[2])));
+// 1枚の羽(根元が原点、+x へ伸びる。表が +y)。先は丸く、外側の初列風切は先のほうがくびれる
+function featherGeom(len, wid, o = {}) {
+  const nL = 14, nW = 4, asym = o.asym || 0, curl = o.curl || 0, notch = o.notch || 0, pos = [], col = [], idx = [];
+  const cBase = new THREE.Color(o.base || 0xffffff), cTip = new THREE.Color(o.tip || 0xffffff), c = new THREE.Color();
+  for (let i = 0; i <= nL; i++) {
+    const s = i / nL;
+    let w = s < 0.8 ? 0.4 + 0.6 * Math.sin((Math.PI / 2) * Math.min(1, s / 0.45)) : Math.sqrt(Math.max(0, 1 - ((s - 0.8) / 0.2) ** 2));
+    if (notch && s > 0.42 && s < 0.8) w *= 1 - notch * Math.sin((Math.PI * (s - 0.42)) / 0.38);
+    w *= wid * 0.5;
+    for (let j = 0; j <= nW; j++) {
+      const v = (j / nW) * 2 - 1;
+      const y = 0.09 * wid * (1 - v * v) * Math.sin(Math.PI * Math.min(1, s * 1.1)) + curl * s * s * len;
+      pos.push(s * len, y, (v + asym) * w);
+      c.copy(cBase).lerp(cTip, Math.pow(s, 0.7)); col.push(c.r, c.g, c.b);
+    }
+  }
+  for (let i = 0; i < nL; i++) for (let j = 0; j < nW; j++) { const a = i * (nW + 1) + j, b = a + nW + 1; idx.push(a, a + 1, b, a + 1, b + 1, b); }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+  g.setIndex(idx); g.computeVertexNormals(); return g;
+}
+
+function buildRealToki() {
+  const root = new THREE.Group(), parts = {};
+  const bodyM = new THREE.MeshPhysicalMaterial({ color: 0xf9f2ef, roughness: 0.8, sheen: 0.8, sheenRoughness: 0.55, sheenColor: new THREE.Color(0xffd8cc), bumpMap: PLUME, bumpScale: 0.7 });
+  const featherM = twoTone(0xfffbf9, 0xf0997f, { vertexColors: true });
+  const add = (geo, mat, parent = root) => { const m = new THREE.Mesh(geo, mat); m.castShadow = true; m.receiveShadow = true; parent.add(m); return m; };
+  // 胴: 胸がふくらみ、尾へ細くなる流線形
+  const prof = [[0, -0.8], [0.06, -0.76], [0.12, -0.66], [0.18, -0.48], [0.235, -0.2], [0.262, 0.08], [0.255, 0.3], [0.215, 0.46], [0.16, 0.58], [0.11, 0.66], [0, 0.71]].map(([r, y]) => new THREE.Vector2(r, y));
+  const bg = new THREE.LatheGeometry(prof, 48); bg.rotateZ(-Math.PI / 2); bg.scale(1, 0.9, 1);
+  PLUME.repeat.set(6, 3); add(bg, bodyM);
+  // 首: 飛ぶときはまっすぐ前へ伸ばす
+  add(taperGeo(curveOf([[0.5, 0.05, 0], [0.8, 0.1, 0], [1.08, 0.15, 0], [1.24, 0.18, 0]]), (s) => lerp(0.11, 0.076, s), 40, 18), bodyM);
+  // 頭(白い羽)と、赤い顔の皮膚、目(橙色の虹彩)
+  const head = add(new THREE.SphereGeometry(0.115, 32, 24), bodyM); head.scale.set(1.22, 0.95, 0.92); head.position.set(1.28, 0.2, 0);
+  const face = add(new THREE.SphereGeometry(0.085, 32, 24), new THREE.MeshPhysicalMaterial({ color: 0xd63a2f, roughness: 0.5, clearcoat: 0.35, clearcoatRoughness: 0.4 }));
+  face.scale.set(1.15, 0.82, 1.12); face.position.set(1.37, 0.175, 0);
+  [-1, 1].forEach((sd) => {
+    const eye = add(new THREE.SphereGeometry(0.019, 16, 12), new THREE.MeshPhysicalMaterial({ color: 0xe39a2c, roughness: 0.15, clearcoat: 1 })); eye.position.set(1.35, 0.205, sd * 0.091);
+    const pupil = add(new THREE.SphereGeometry(0.009, 12, 8), new THREE.MeshPhysicalMaterial({ color: 0x0c0806, roughness: 0.05, clearcoat: 1 })); pupil.position.set(1.354, 0.206, sd * 0.106);
+  });
+  // くちばし: 長く下へ曲がり、黒く、先だけ赤い
+  const billCol = (s, c) => c.set(0x1b1715).lerp(new THREE.Color(0xc4352c), clamp((s - 0.8) / 0.08, 0, 1));
+  add(taperGeo(curveOf([[1.43, 0.17, 0], [1.62, 0.145, 0], [1.82, 0.07, 0], [1.98, -0.05, 0]]), (s) => lerp(0.034, 0.007, Math.pow(s, 0.9)), 48, 14, billCol),
+    new THREE.MeshPhysicalMaterial({ color: 0xffffff, vertexColors: true, roughness: 0.32, clearcoat: 0.6 }));
+  // 冠羽: 後頭部の細長い羽の束(飛ぶときはうしろへ寝かせる)
+  const crestM = new THREE.MeshStandardMaterial({ color: 0xf7e3dc, roughness: 0.75 });
+  for (let k = 0; k < 7; k++) {
+    const zz = (k / 6 - 0.5) * 0.07, j = hash(k, 2.7), L = 0.26 + j * 0.12;
+    add(taperGeo(curveOf([[1.25, 0.265, zz * 0.4], [1.12, 0.29 + j * 0.015, zz * 0.8], [1.2 - L, 0.255 - j * 0.02, zz]]), (s) => lerp(0.024, 0.003, Math.pow(s, 0.8)), 20, 8), crestM);
+  }
+  // 尾: 扇形の尾羽(裏は朱鷺色)
+  for (let k = 0; k < 8; k++) {
+    const a = (k - 3.5) * 0.085, L = 0.42 - Math.abs(k - 3.5) * 0.02;
+    const f = add(featherGeom(L, 0.12, { base: 0xffe0d6 }), featherM); f.rotation.order = 'YZX'; f.position.set(-0.68, 0.035 + k * 0.001, (k - 3.5) * 0.02); f.rotation.set(0, Math.PI + a, 0.04);
+  }
+  // 脚: 赤く、うしろへ伸ばす(指も)
+  const legM = new THREE.MeshPhysicalMaterial({ color: 0xcc4637, roughness: 0.45, clearcoat: 0.3 });
+  [-1, 1].forEach((sd) => {
+    const zz = sd * 0.055, end = [-0.98, -0.12, zz * 1.25];
+    add(taperGeo(curveOf([[-0.15, -0.19, zz], [-0.5, -0.2, zz], end]), (s) => lerp(0.018, 0.012, s), 24, 10), legM);
+    [-0.12, 0, 0.12].forEach((sp) => add(taperGeo(curveOf([end, [end[0] - 0.04, end[1] - 0.005, end[2] + sd * sp * 0.03], [end[0] - 0.08, end[1] - 0.012, end[2] + sd * sp * 0.05]]), (s) => lerp(0.009, 0.004, s), 8, 6), legM));
+  });
+  // 翼: 腕(次列風切・雨覆)と手(初列風切)。外側の初列風切は先が指のように分かれる
+  const wings = [];
+  [-1, 1].forEach((sd) => {
+    const wr = new THREE.Group(); wr.position.set(0.16, 0.13, sd * 0.19); root.add(wr);
+    const arm = new THREE.Group(); wr.add(arm);
+    const hand = new THREE.Group(); hand.position.set(0.02, 0, sd * 1.05); arm.add(hand);
+    add(taperGeo(curveOf([[0.12, 0, 0], [0.1, 0.012, sd * 0.5], [0.03, 0, sd * 1.06]]), (s) => lerp(0.06, 0.04, s), 24, 12), bodyM, arm);
+    add(taperGeo(curveOf([[0.02, 0, -sd * 0.02], [-0.01, 0.004, sd * 0.32], [-0.09, 0, sd * 0.58]]), (s) => lerp(0.042, 0.018, s), 20, 10), bodyM, hand);
+    const place = (parent, geo, x, y, z, dx, dz, droop = 0, twist = 0) => {
+      const m = add(geo, featherM, parent); m.rotation.order = 'YZX'; m.position.set(x, y, z); m.rotation.set(twist, Math.atan2(-dz, dx), droop); return m;
+    };
+    // 三列風切(体のそば)
+    for (let i = 0; i < 3; i++) place(arm, featherGeom(0.5 - i * 0.04, 0.15, { base: 0xffe6de }), 0.06, -0.006 + i * 0.002, sd * (0.0 + i * 0.05), -1, sd * (-0.05 + i * 0.05));
+    // 次列風切(腕のうしろのふち)
+    for (let i = 0; i < 12; i++) place(arm, featherGeom(0.64 - i * 0.006, 0.16, { base: 0xffd8cc }), 0.06, -0.012 + i * 0.0015, sd * (0.1 + i * 0.083), -1, sd * (0.05 + i * 0.014), -0.03);
+    // 大雨覆・中雨覆
+    for (let i = 0; i < 12; i++) place(arm, featherGeom(0.36, 0.14), 0.1, 0.012 + i * 0.001, sd * (0.07 + i * 0.083), -1, sd * 0.08, -0.02);
+    for (let i = 0; i < 11; i++) place(arm, featherGeom(0.2, 0.13), 0.13, 0.032, sd * (0.08 + i * 0.088), -1, sd * 0.1, -0.02);
+    // 初列風切(手): 扇のように開き、外側ほど長く、先はくびれて分かれる
+    const PL = [0.64, 0.68, 0.72, 0.77, 0.82, 0.88, 0.93, 0.96, 0.92, 0.82];
+    for (let k = 0; k < 10; k++) {
+      const f = k / 9, phi = lerp(0.38, 1.74, Math.pow(f, 0.92));
+      place(hand, featherGeom(PL[k], 0.165 - f * 0.05, { base: 0xffd2c4, notch: k >= 5 ? 0.38 : 0, curl: 0.03 * f, asym: sd * 0.12 * f }),
+        0.02 - f * 0.1, -0.004 - k * 0.0018, sd * (0.02 + f * 0.52), -Math.cos(phi), sd * Math.sin(phi), -0.02, sd * 0.05 * f);
+    }
+    // 初列雨覆・小翼羽
+    for (let k = 0; k < 8; k++) { const f = k / 7, phi = lerp(0.4, 1.55, f); place(hand, featherGeom(0.3, 0.13), 0.04 - f * 0.08, 0.018, sd * (0.02 + f * 0.46), -Math.cos(phi), sd * Math.sin(phi), -0.02); }
+    for (let k = 0; k < 3; k++) place(hand, featherGeom(0.16 - k * 0.02, 0.07), 0.05, 0.03, sd * (0.0 + k * 0.03), 0.6, sd * 1, -0.05);
+    wings.push({ sd, arm, hand });
+  });
+  parts.wingL = wings[0].arm; parts.wingR = wings[1].arm;
+  // 羽ばたき: 打ち下ろしで翼をひろげ、打ち上げで手首を曲げてうしろへたたむ
+  root.userData.flap = (ph, amt) => {
+    const s = Math.sin(ph), c = Math.cos(ph);
+    const up = 0.1 + (0.62 * s) * amt, hd = 0.06 + 0.4 * Math.sin(ph - 0.75) * amt, fold = 0.34 * Math.max(0, -c) * amt;
+    wings.forEach(({ sd, arm, hand }) => { arm.rotation.set(-sd * up, sd * 0.06 * fold, -0.06 * s * amt); hand.rotation.set(-sd * hd, -sd * fold, 0); });
   };
+  root.userData.flap(0, 0);
+  root.userData.parts = parts;
+  return root;
+}
 
-  // ---------- 形のどうぐ ----------
-  function mesh(geo, mat, parent, cast = true) { const m = new THREE.Mesh(geo, mat); m.castShadow = cast; m.receiveShadow = true; if (parent) parent.add(m); return m; }
-  function ringAt(parent, center, normal, R, r, mat) {
-    const m = mesh(new THREE.TorusGeometry(R, r, 12, 72), mat, parent);
-    m.position.copy(center); m.quaternion.setFromUnitVectors(V(0, 0, 1), normal.clone().normalize()); return m;
+// ---------- E7系(上越新幹線) ----------
+// 断面は角の丸い四角(超楕円)。先頭は、上から下へ流れるように低くなり、左右から細くなって先がとがる
+function sRing(a, yB, yT, n, N, x) {
+  const out = [], yc = (yB + yT) / 2, b = (yT - yB) / 2;
+  for (let j = 0; j < N; j++) { const th = (j / N) * TAU, c = Math.cos(th), s = Math.sin(th); out.push([x, yc + b * Math.sign(s) * Math.pow(Math.abs(s), 2 / n), a * Math.sign(c) * Math.pow(Math.abs(c), 2 / n)]); }
+  return out;
+}
+function loftGeo(rings, N, capStart, capEnd) {
+  const pos = [], idx = [];
+  rings.forEach((r) => r.forEach((p) => pos.push(p[0], p[1], p[2])));
+  for (let i = 0; i < rings.length - 1; i++) for (let j = 0; j < N; j++) {
+    const a = i * N + j, b = i * N + ((j + 1) % N), c = (i + 1) * N + j, d = (i + 1) * N + ((j + 1) % N); idx.push(a, c, b, b, c, d);
   }
-  // 平らな曲線(XY 面)にそって、太さが変わる筒
-  function taperTube(curve, t0, t1, rFn, segs = 64, radial = 24) {
-    const pos = [], nor = [], idx = [];
-    const Z = V(0, 0, 1);
-    for (let i = 0; i <= segs; i++) {
-      const u = i / segs, t = t0 + (t1 - t0) * u;
-      const P = curve.getPointAt(t), T = curve.getTangentAt(t);
-      const N = new THREE.Vector3().crossVectors(Z, T).normalize(), B = Z;
-      const r = rFn(u);
-      for (let j = 0; j <= radial; j++) {
-        const a = (j / radial) * TAU, n = N.clone().multiplyScalar(Math.cos(a)).addScaledVector(B, Math.sin(a));
-        pos.push(P.x + n.x * r, P.y + n.y * r, P.z + n.z * r); nor.push(n.x, n.y, n.z);
+  const cap = (ring, start) => {
+    const base = pos.length / 3; let cx = 0, cy = 0; ring.forEach((p) => { pos.push(p[0], p[1], p[2]); cy += p[1]; }); cy /= ring.length; cx = ring[0][0];
+    const ci = pos.length / 3; pos.push(cx, cy, 0);
+    for (let j = 0; j < N; j++) { const a = base + j, b = base + ((j + 1) % N); if (start) idx.push(ci, a, b); else idx.push(ci, b, a); }
+  };
+  if (capStart) cap(rings[0], true); if (capEnd) cap(rings[rings.length - 1], false);
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals(); return g;
+}
+// 先頭の形(u: 先頭部の付け根0 → 先端1)
+const E7 = { A: 0.6, YB: 0.22, YT: 1.28, N0: 5.5, LN: 3.1, LC: 8.6, LM: 8.9, GAP: 0.12 };
+const noseYT = (u) => E7.YT - 0.84 * Math.pow(u, 1.5), noseYB = (u) => E7.YB - 0.12 * u * u, noseA = (u) => E7.A * Math.pow(Math.max(0, 1 - Math.pow(u, 2.4)), 0.6);
+// 塗り分け(白・青の屋根と先頭・青の帯・銅色の線・朱鷺色の線・窓・扉・前面ガラス)は、車体の中の位置で決める(線がくっきり)
+function e7Mat(len, n0) {
+  const m = new THREE.MeshPhysicalMaterial({ color: 0xffffff, roughness: 0.36, metalness: 0, clearcoat: 0.55, clearcoatRoughness: 0.14 });
+  const U = { uLen: { value: len }, uN0: { value: n0 }, uLN: { value: E7.LN },
+    cIv: { value: new THREE.Color(0xf4f2eb) }, cBl: { value: new THREE.Color(0x1f5ca8) }, cCu: { value: new THREE.Color(0xb47445) }, cPk: { value: new THREE.Color(0xee9a92) },
+    cGl: { value: new THREE.Color(0x1a222c) }, cLn: { value: new THREE.Color(0x9a9ea4) } };
+  m.onBeforeCompile = (sh) => {
+    Object.assign(sh.uniforms, U);
+    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vP;').replace('#include <begin_vertex>', '#include <begin_vertex>\n  vP = position;');
+    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', `#include <common>
+varying vec3 vP; uniform float uLen, uN0, uLN; uniform vec3 cIv, cBl, cCu, cPk, cGl, cLn; float gGlass = 0.0;`)
+      .replace('#include <color_fragment>', `#include <color_fragment>
+  {
+    float x = vP.x, y = vP.y, az = abs(vP.z);
+    vec3 col = cIv;
+    bool nose = x > uN0;
+    float u = clamp((x - uN0) / uLN, 0.0, 1.0);
+    float yTop = 1.28 - 0.84 * pow(u, 1.5);
+    float aw = 0.6 * pow(max(0.0, 1.0 - pow(u, 2.4)), 0.6);
+    float roofY = nose ? mix(1.10, 0.64, pow(u, 0.8)) : 1.10;
+    if (y > roofY) col = cBl;
+    if (x < uN0 + uLN * 0.36) {
+      if (y > 0.65 && y < 0.72) col = cBl;
+      if (y > 0.72 && y < 0.745) col = cCu;
+      if (y > 0.612 && y < 0.630) col = cPk;
+    }
+    float wEnd = min(uLen, uN0) - 0.95;
+    if (!nose && az > 0.45 && y > 0.86 && y < 1.01 && x > 0.95 && x < wEnd && mod(x - 0.95, 0.42) < 0.27) { col = cGl; gGlass = 1.0; }
+    for (int k = 0; k < 2; k++) {
+      float x0 = k == 0 ? 0.42 : uLen - 0.80;
+      if (k == 1 && uN0 < uLen) continue;
+      if (az > 0.45 && x > x0 && x < x0 + 0.38 && y > 0.36 && y < 1.03) {
+        float e = min(min(x - x0, x0 + 0.38 - x), min(y - 0.36, 1.03 - y));
+        if (e < 0.011) col = cLn;
+        else if (x > x0 + 0.09 && x < x0 + 0.29 && y > 0.84 && y < 0.99) { col = cGl; gGlass = 1.0; }
       }
     }
-    for (let i = 0; i < segs; i++) for (let j = 0; j < radial; j++) {
-      const a = i * (radial + 1) + j, b = a + radial + 1;
-      idx.push(a, b, a + 1, b, b + 1, a + 1);
-    }
-    const g = new THREE.BufferGeometry();
-    g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute("normal", new THREE.Float32BufferAttribute(nor, 3)); g.setIndex(idx);
-    return g;
+    if (nose && u > 0.07 && u < 0.4 && y > yTop - 0.2 && az < aw * 0.8) { col = cGl; gGlass = 1.0; }
+    diffuseColor.rgb = col;
+  }`)
+      .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\n  if (gGlass > 0.5) roughnessFactor = 0.05;');
+  };
+  return m;
+}
+function buildE7(cars = 5) {
+  const root = new THREE.Group(), wheels = [], N = 96;
+  const darkM = new THREE.MeshStandardMaterial({ color: 0x55585e, roughness: 0.6, metalness: 0.4 }), wheelM = new THREE.MeshStandardMaterial({ color: 0x6a6d72, roughness: 0.35, metalness: 0.8 });
+  const add = (geo, mat, parent = root) => { const m = new THREE.Mesh(geo, mat); m.castShadow = true; m.receiveShadow = true; parent.add(m); return m; };
+  const body = (x) => sRing(E7.A, E7.YB, E7.YT, 3.6, N, x), inset = (x) => sRing(E7.A * 0.95, E7.YB + 0.03, E7.YT - 0.03, 3.6, N, x);
+  function bogie(parent, x) {
+    const g = new THREE.Group(); g.position.set(x, 0, 0); parent.add(g);
+    add(new THREE.BoxGeometry(0.9, 0.06, 0.5), darkM, g).position.y = 0.21;
+    [-1, 1].forEach((sd) => { add(new THREE.BoxGeometry(0.86, 0.05, 0.05), darkM, g).position.set(0, 0.17, sd * 0.31); [-0.34, 0.34].forEach((dx) => add(new THREE.CylinderGeometry(0.05, 0.05, 0.06, 14).rotateX(Math.PI / 2), darkM, g).position.set(dx, 0.155, sd * 0.31)); });
+    [-0.34, 0.34].forEach((dx) => [-0.255, 0.255].forEach((z) => {
+      const w = add(new THREE.CylinderGeometry(0.155, 0.155, 0.05, 28).rotateX(Math.PI / 2), wheelM, g); w.position.set(dx, 0.155, z); wheels.push(w);
+    }));
   }
-  // 羽の形(根元が x=0、先が x=len)
-  function featherGeo(len, wid, depth = 0.014, round = 0.6) {
-    const s = new THREE.Shape();
-    s.moveTo(0, -wid * round); s.quadraticCurveTo(len * 0.55, -wid * 1.05, len, 0); s.quadraticCurveTo(len * 0.55, wid * 1.05, 0, wid * round); s.lineTo(0, -wid * round);
-    return new THREE.ExtrudeGeometry(s, { depth, bevelEnabled: true, bevelThickness: 0.006, bevelSize: 0.006, bevelSegments: 2, curveSegments: 18 });
+  let x0 = -E7.N0; // 先頭車の付け根(先頭の先は x = 3.1)
+  for (let k = 0; k < cars; k++) {
+    const lead = k === 0, len = lead ? E7.LC : E7.LM, start = lead ? -E7.N0 : x0 - E7.GAP - len;
+    const car = new THREE.Group(); car.position.x = start; root.add(car);
+    const rings = [inset(0), body(0.05)];
+    if (lead) {
+      rings.push(body(E7.N0));
+      for (let i = 1; i <= 44; i++) { const u = i / 44, xx = E7.N0 + u * E7.LN; rings.push(sRing(Math.max(0.0005, noseA(u)), noseYB(u), noseYT(u), 3.6 - 1.6 * u, N, xx)); }
+      add(loftGeo(rings, N, true, false), e7Mat(len, E7.N0), car);
+      // 前照灯(先頭の下の左右)
+      const lightM = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xfff6e8, emissiveIntensity: 1.6, roughness: 0.2 });
+      [-1, 1].forEach((sd) => { const l = add(new THREE.SphereGeometry(0.05, 16, 10), lightM, car); l.scale.set(2.4, 0.55, 0.6); l.position.set(E7.N0 + 0.7 * E7.LN, 0.47, sd * 0.415); });
+    } else {
+      rings.push(body(len - 0.05), inset(len));
+      add(loftGeo(rings, N, true, true), e7Mat(len, 999), car);
+    }
+    bogie(car, lead ? 1.25 : 1.25); bogie(car, lead ? E7.N0 + 0.2 : len - 1.25);
+    // 車両のつなぎ目(ほろ)
+    if (!lead) add(new THREE.BoxGeometry(E7.GAP + 0.06, 0.86, 0.98), new THREE.MeshStandardMaterial({ color: 0x2c2e31, roughness: 0.9 }), car).position.set(len + E7.GAP / 2, 0.8, 0);
+    // パンタグラフ(3両目)とそのカバー
+    if (k === 2) {
+      const pm = new THREE.MeshStandardMaterial({ color: 0x6f7378, roughness: 0.45, metalness: 0.7 }), cx = len * 0.5;
+      [-1, 1].forEach((sd) => add(new THREE.BoxGeometry(1.4, 0.16, 0.04), new THREE.MeshPhysicalMaterial({ color: 0xe9ebec, roughness: 0.35, clearcoat: 0.8 }), car).position.set(cx, E7.YT + 0.06, sd * 0.43));
+      add(new THREE.BoxGeometry(0.5, 0.06, 0.4), pm, car).position.set(cx, E7.YT + 0.02, 0);
+      const arm1 = add(new THREE.CylinderGeometry(0.018, 0.018, 0.46, 8), pm, car); arm1.position.set(cx - 0.05, E7.YT + 0.26, 0); arm1.rotation.z = -0.95;
+      const arm2 = add(new THREE.CylinderGeometry(0.014, 0.014, 0.4, 8), pm, car); arm2.position.set(cx + 0.03, E7.YT + 0.4, 0); arm2.rotation.z = 0.8;
+      add(new THREE.BoxGeometry(0.07, 0.035, 0.62), pm, car).position.set(cx - 0.12, 1.79 - 0.02, 0);
+    }
+    x0 = start;
   }
-  // 金の縁どりつきの羽(金の板の上に、エナメルの板)
-  function feather(parent, len, wid, mat) {
-    // 表と裏の両方にエナメル、あいだに少し大きい金の板(どちらから見ても金の縁が見える)
-    const g = new THREE.Group(); parent.add(g);
-    const core = mesh(featherGeo(len * 1.04, wid * 1.14, 0.006), M.gold, g); core.position.set(-len * 0.02, 0, -0.003);
-    mesh(featherGeo(len, wid, 0.008), mat, g).position.z = 0.006;
-    mesh(featherGeo(len, wid, 0.008), mat, g).position.z = -0.02;
-    return g;
-  }
-  // 歯車(スポークつき)
-  function gearGeo(R, teeth, depth, spokes = 6) {
-    const s = new THREE.Shape(), rr = R * 0.86, tooth = TAU / teeth;
-    for (let i = 0; i < teeth; i++) {
-      const a = i * tooth;
-      const pts = [[rr, a], [R, a + tooth * 0.18], [R, a + tooth * 0.5], [rr, a + tooth * 0.68]];
-      pts.forEach(([r, t], k) => { const x = Math.cos(t) * r, y = Math.sin(t) * r; if (i === 0 && k === 0) s.moveTo(x, y); else s.lineTo(x, y); });
-    }
-    s.closePath();
-    const rim = R * 0.7, hub = R * 0.24, half = 0.18;
-    for (let i = 0; i < spokes; i++) {
-      const a0 = (i / spokes) * TAU + half / 1.2, a1 = ((i + 1) / spokes) * TAU - half / 1.2;
-      const h = new THREE.Path();
-      h.moveTo(Math.cos(a0) * hub * 1.25, Math.sin(a0) * hub * 1.25);
-      h.absarc(0, 0, rim, a0 + 0.05, a1 - 0.05, false);
-      h.lineTo(Math.cos(a1) * hub * 1.25, Math.sin(a1) * hub * 1.25);
-      h.closePath(); s.holes.push(h);
-    }
-    return new THREE.ExtrudeGeometry(s, { depth, bevelEnabled: true, bevelThickness: depth * 0.25, bevelSize: R * 0.015, bevelSegments: 2, curveSegments: 10 });
-  }
+  root.userData.wheels = wheels;
+  return root;
+}
 
-  // ---------- 台座(文字盤) ----------
-  function dialTexture(label) {
-    const c = document.createElement("canvas"); c.width = c.height = 1024;
-    const g = c.getContext("2d"), C = 512;
-    const gr = g.createRadialGradient(C, C, 250, C, C, 512);
-    gr.addColorStop(0, "#caa25a"); gr.addColorStop(0.6, "#e2c27e"); gr.addColorStop(1, "#b88c42");
-    g.fillStyle = gr; g.beginPath(); g.arc(C, C, 512, 0, TAU); g.fill();
-    g.strokeStyle = "rgba(60,40,10,.55)"; g.lineWidth = 2;
-    [500, 470, 300, 285].forEach((r) => { g.beginPath(); g.arc(C, C, r, 0, TAU); g.stroke(); });
-    for (let i = 0; i < 60; i++) {
-      const a = (i / 60) * TAU, r0 = i % 5 ? 482 : 474;
-      g.beginPath(); g.moveTo(C + Math.cos(a) * r0, C + Math.sin(a) * r0); g.lineTo(C + Math.cos(a) * 498, C + Math.sin(a) * 498); g.stroke();
-    }
-    const R = ["XII", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI"];
-    g.fillStyle = "#3b2a10"; g.font = "600 54px 'Cormorant Garamond', 'Shippori Mincho', serif"; g.textAlign = "center"; g.textBaseline = "middle";
-    R.forEach((t, i) => {
-      const a = (i / 12) * TAU - Math.PI / 2;
-      g.save(); g.translate(C + Math.cos(a) * 400, C + Math.sin(a) * 400); g.rotate(a + Math.PI / 2); g.fillText(t, 0, 0); g.restore();
-    });
-    // 内側の帯の文字
-    g.font = "600 30px 'Cormorant Garamond', serif"; g.fillStyle = "#4a3514";
-    const text = label + " · ", n = text.length * 3;
-    for (let i = 0; i < n; i++) {
-      const a = (i / n) * TAU - Math.PI / 2;
-      g.save(); g.translate(C + Math.cos(a) * 316, C + Math.sin(a) * 316); g.rotate(a + Math.PI / 2); g.fillText(text[i % text.length], 0, 0); g.restore();
-    }
-    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t;
-  }
-  function pedestal(label) {
-    const g = new THREE.Group();
-    mesh(new THREE.CylinderGeometry(1.52, 1.6, 0.16, 96), M.lacquer, g).position.y = 0.08;
-    ringAt(g, V(0, 0.165, 0), V(0, 1, 0), 1.5, 0.012, M.gold);
-    mesh(new THREE.CylinderGeometry(1.22, 1.22, 0.62, 96), M.lacquer, g).position.y = 0.47;
-    [0.24, 0.32, 0.7].forEach((y) => ringAt(g, V(0, y, 0), V(0, 1, 0), 1.225, 0.009, M.gold));
-    mesh(new THREE.CylinderGeometry(1.36, 1.3, 0.14, 96), M.lacquer, g).position.y = 0.85;
-    ringAt(g, V(0, 0.92, 0), V(0, 1, 0), 1.355, 0.016, M.gold);
-    const face = mesh(new THREE.RingGeometry(0.5, 1.24, 128), new THREE.MeshPhysicalMaterial({ map: dialTexture(label), metalness: 0.85, roughness: 0.32, clearcoat: 0.6 }), g, false);
-    face.rotation.x = -Math.PI / 2; face.rotation.z = Math.PI / 2; face.position.y = 0.921;
-    const inner = mesh(new THREE.CircleGeometry(0.5, 64), M.lacquer, g, false); inner.rotation.x = -Math.PI / 2; inner.position.y = 0.92;
-    ringAt(g, V(0, 0.925, 0), V(0, 1, 0), 0.5, 0.012, M.gold);
-    // ぜんまいの鍵
-    const keyG = new THREE.Group(); g.add(keyG);
-    mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.16, 12), M.gold, keyG).rotation.x = Math.PI / 2;
-    [-0.045, 0.045].forEach((x) => { const lp = mesh(new THREE.TorusGeometry(0.04, 0.011, 10, 24), M.gold, keyG); lp.position.set(x, 0, 0.1); });
-    keyG.position.set(Math.cos(-0.5) * 1.22, 0.47, Math.sin(-0.5) * -1.22); keyG.lookAt(keyG.position.clone().multiplyScalar(2).setY(0.47));
-    // 歯車
-    const gear = mesh(gearGeo(0.36, 28, 0.05), M.gold, g); gear.rotation.x = -Math.PI / 2; gear.position.set(-0.32, 0.93, 0.42);
-    const cap = mesh(new THREE.CylinderGeometry(0.06, 0.07, 0.06, 24), M.brass, g); cap.position.set(-0.32, 0.99, 0.42);
-    const gear2 = mesh(gearGeo(0.16, 14, 0.04, 5), M.brass, g); gear2.rotation.x = -Math.PI / 2; gear2.position.set(0.15, 0.93, 0.6);
-    g.userData.gears = [gear, gear2];
-    return g;
-  }
-
-  // ---------- トキ「ときめ」 ----------
-  function buildToki() {
-    const root = new THREE.Group();
-    const parts = {};
-    const part = (name) => { const p = new THREE.Group(); root.add(p); parts[name] = p; return p; };
-    const ped = part("pedestal"); ped.add(pedestal("BT-EX5 · NIIGATA ⇔ TOKYO"));
-    // 枝(真ちゅう)
-    const branchCurve = new THREE.CatmullRomCurve3([V(0.25, 0.92, 0.05), V(0.32, 1.35, 0.02), V(0.2, 1.75, 0), V(-0.05, 2.0, 0)]);
-    mesh(new THREE.TubeGeometry(branchCurve, 48, 0.07, 16), M.wood, ped);
-    mesh(new THREE.SphereGeometry(0.085, 20, 16), M.gold, ped).position.copy(branchCurve.getPoint(1));
-    ringAt(ped, branchCurve.getPoint(0.04), V(0.1, 1, 0), 0.085, 0.018, M.gold);
-
-    const bird = new THREE.Group(); bird.position.set(-0.05, 2.12, 0); root.add(bird);
-    // 胴(細長い流線形。2026年11月に、丸い卵形からすらりとした形に)
-    const body = part("body"); bird.add(body);
-    const torso = new THREE.Group(); torso.scale.set(1.6, 0.76, 0.72); torso.rotation.z = 0.2; torso.position.set(-0.02, 0.42, 0); body.add(torso);
-    mesh(new THREE.SphereGeometry(0.5, 64, 48), E.white, torso);
-    // 胴の継ぎ目(金)
-    const seam = mesh(new THREE.TorusGeometry(0.5, 0.012, 10, 96), M.gold, torso); seam.rotation.y = Math.PI / 2;
-    // 首(細く長く、前へ伸びる)と、付け根の金の輪
-    const neckCurve = new THREE.CatmullRomCurve3([V(0.5, 0.58, 0), V(0.68, 0.78, 0), V(0.8, 1.0, 0), V(0.86, 1.14, 0)]);
-    mesh(new THREE.TubeGeometry(neckCurve, 48, 0.135, 28), E.white, body);
-    ringAt(body, neckCurve.getPointAt(0.12), neckCurve.getTangentAt(0.12), 0.172, 0.02, M.gold);
-    // のぞき窓と歯車
-    const port = new THREE.Group(); port.position.set(-0.1, 0.38, 0.365); body.add(port);
-    ringAt(port, V(0, 0, 0), V(0, 0, 1), 0.085, 0.016, M.gold);
-    mesh(new THREE.CircleGeometry(0.08, 32), M.lacquer, port, false).position.z = -0.005;
-    const pg = mesh(gearGeo(0.065, 12, 0.012, 5), M.gold, port); pg.position.z = -0.002;
-    body.userData.spin = pg;
-    // 中の歯車(分解すると見える)
-    const inGear = mesh(gearGeo(0.22, 18, 0.04), M.brass, body); inGear.position.set(0.1, 0.5, -0.02);
-
-    // 胸当て(淡紅)
-    const breast = part("breast"); bird.add(breast);
-    const bt = new THREE.Group(); bt.scale.copy(torso.scale); bt.rotation.copy(torso.rotation); bt.position.copy(torso.position); breast.add(bt);
-    const capAxis = new THREE.Group(); capAxis.quaternion.setFromUnitVectors(V(0, 1, 0), V(0.75, -0.66, 0).normalize()); bt.add(capAxis);
-    mesh(new THREE.SphereGeometry(0.508, 48, 24, 0, TAU, 0, 0.95), E.pale, capAxis);
-    const cr = mesh(new THREE.TorusGeometry(0.508 * Math.sin(0.95), 0.014, 10, 96), M.gold, capAxis); cr.rotation.x = Math.PI / 2; cr.position.y = 0.508 * Math.cos(0.95);
-
-    // 頭
-    const head = part("head"); head.position.set(0.9, 1.22, 0); head.scale.setScalar(0.84); bird.add(head);
-    mesh(new THREE.SphereGeometry(0.3, 64, 48), E.white, head);
-    // 朱の顔(くちばしの根元から目のまわり)
-    // 目のまわりの朱(左右)と、くちばしの根元の朱。金の縁どり
-    [1, -1].forEach((side) => {
-      const ax = V(0.5, 0.12, 0.86 * side).normalize(), cap = new THREE.Group(); cap.quaternion.setFromUnitVectors(V(0, 1, 0), ax); head.add(cap);
-      mesh(new THREE.SphereGeometry(0.303, 40, 16, 0, TAU, 0, 0.42), E.red, cap);
-      const rr = mesh(new THREE.TorusGeometry(0.303 * Math.sin(0.42), 0.007, 8, 64), M.gold, cap); rr.rotation.x = Math.PI / 2; rr.position.y = 0.303 * Math.cos(0.42);
-    });
-    { const cap = new THREE.Group(); cap.quaternion.setFromUnitVectors(V(0, 1, 0), V(1, -0.05, 0).normalize()); head.add(cap);
-      mesh(new THREE.SphereGeometry(0.302, 40, 16, 0, TAU, 0, 0.4), E.red, cap); }
-    // 頭のうろこ(白から鴇色へ)
-    const scaleGeo = new THREE.CylinderGeometry(0.052, 0.052, 0.012, 20);
-    for (let row = 0; row < 6; row++) {
-      const th = 0.25 + row * 0.2, n = 6 + row * 2;
-      for (let k = 0; k < n; k++) {
-        const ph = Math.PI * 0.15 + (k / (n - 1)) * Math.PI * 1.1 - 0.9 + Math.PI * 0.5;
-        const p = V(-Math.cos(ph) * Math.sin(th), Math.cos(th), Math.sin(ph) * Math.sin(th));
-        if (p.x > 0.35 && p.y < 0.75) continue; // 顔の朱の上には置かない
-        const mat = row < 2 ? E.white : row < 4 ? E.pale : E.toki;
-        const s = mesh(scaleGeo, mat, head); s.position.copy(p.clone().multiplyScalar(0.305));
-        s.quaternion.setFromUnitVectors(V(0, 1, 0), p.clone().normalize());
-        s.rotateX(-0.25);
-      }
-    }
-    // 目(黒いガラス・山吹の虹彩・金の縁)
-    [1, -1].forEach((side) => {
-      const c = V(0.15, 0.05, 0.255 * side), n = V(0.35, 0.1, side).normalize();
-      const e = mesh(new THREE.SphereGeometry(0.05, 32, 24), M.eye, head); e.position.copy(c);
-      ringAt(head, c.clone().addScaledVector(n, -0.004), n, 0.058, 0.011, M.iris);
-      ringAt(head, c.clone().addScaledVector(n, -0.012), n, 0.074, 0.011, M.gold);
-      const hl = mesh(new THREE.SphereGeometry(0.012, 12, 8), M.lamp, head, false); hl.position.copy(c.clone().addScaledVector(n, 0.045).add(V(0.012, 0.018, 0)));
-    });
-    // くちばし(黒漆、先は朱)
-    const beak = part("beak"); head.add(beak);
-    // くちばしは長く細く、ゆるやかに下へ反る
-    const bc = new THREE.CatmullRomCurve3([V(0.24, -0.02, 0), V(0.66, -0.06, 0), V(1.06, -0.22, 0), V(1.36, -0.52, 0)]);
-    mesh(taperTube(bc, 0, 0.86, (u) => 0.066 - 0.048 * u), M.lacquer, beak);
-    mesh(taperTube(bc, 0.86, 1, (u) => 0.025 * Math.sqrt(Math.max(0, 1 - u * u)) + 0.001), E.red, beak);
-    ringAt(beak, bc.getPointAt(0.02), bc.getTangentAt(0.02), 0.074, 0.016, M.gold);
-    // 冠羽(後ろ頭のふさふさ)
-    const crest = part("crest"); head.add(crest);
-    for (let i = 0; i < 9; i++) {
-      // 冠羽は長く、後ろへ流れるように
-      const f = feather(crest, 0.72 + (i % 3) * 0.12, 0.07, i % 3 === 0 ? E.white : i % 3 === 1 ? E.pale : E.toki);
-      const a = -0.22 - (i % 3) * 0.2 - Math.floor(i / 3) * 0.04;
-      f.position.set(-0.22, 0.2 - (i % 3) * 0.07, (Math.floor(i / 3) - 1) * 0.08);
-      f.rotation.set(0, Math.PI + (Math.floor(i / 3) - 1) * 0.28, a);
-    }
-
-    // 翼(左右)
-    [1, -1].forEach((side) => {
-      const wing = part(side > 0 ? "wingR" : "wingL"); bird.add(wing);
-      wing.position.set(0.3, 0.66, 0.34 * side);
-      wing.rotation.set(side * -0.18, side * 0.12, 0.36);
-      if (side < 0) wing.scale.z = -1;
-      const rows = [
-        { n: 5, len: 0.28, wid: 0.09, mat: E.white, y: 0.06, x0: -0.02, dx: -0.1 },
-        { n: 6, len: 0.44, wid: 0.085, mat: E.pale, y: -0.03, x0: -0.06, dx: -0.09 },
-        { n: 6, len: 0.62, wid: 0.08, mat: E.toki, y: -0.11, x0: -0.12, dx: -0.08 },
-        { n: 5, len: 0.8, wid: 0.075, mat: E.tokiDeep, y: -0.17, x0: -0.36, dx: -0.07 },
-      ];
-      // 羽は大きめに(長さ1.6倍・幅1.25倍。運営の依頼で2026年11月に大きくした)
-      const WL = 1.6, WW = 1.25;
-      rows.forEach((r, ri) => {
-        for (let k = 0; k < r.n; k++) {
-          const f = feather(wing, r.len * WL, r.wid * WW, r.mat);
-          f.position.set(r.x0 * WW + k * r.dx * WW, r.y * WW - k * 0.012, 0.02 * (rows.length - ri) + k * 0.004);
-          f.rotation.set(0, 0, Math.PI - 0.08 - k * 0.025);
-        }
-      });
-      // 翼の上の小さなのぞき窓
-      const wp = new THREE.Group(); wp.position.set(-0.22, 0.02, 0.11); wing.add(wp);
-      ringAt(wp, V(0, 0, 0), V(0, 0, 1), 0.05, 0.011, M.gold);
-      const wg = mesh(gearGeo(0.04, 10, 0.01, 4), M.brass, wp); wg.position.z = -0.004;
-    });
-
-    // 尾羽
-    const tail = part("tail"); tail.position.set(-0.78, 0.28, 0); bird.add(tail);
-    for (let i = 0; i < 7; i++) {
-      const f = feather(tail, 0.8 + (3 - Math.abs(i - 3)) * 0.07, 0.06, i % 2 ? E.toki : E.pale);
-      f.rotation.set(0, (i - 3) * 0.1, Math.PI + 0.3);
-      f.position.set(0, -0.01 * Math.abs(i - 3), (i - 3) * 0.03);
-    }
-    const hinge = mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.3, 16), M.gold, tail); hinge.rotation.x = Math.PI / 2;
-
-    // 脚(朱)と金の関節
-    const legs = part("legs"); bird.add(legs);
-    [0.09, -0.09].forEach((z) => {
-      const top = V(0.02, 0.08, z), bot = V(-0.02, -0.1, z);
-      const seg = mesh(new THREE.CylinderGeometry(0.03, 0.026, top.distanceTo(bot), 12), E.legRed, legs);
-      seg.position.copy(top.clone().add(bot).multiplyScalar(0.5)); seg.quaternion.setFromUnitVectors(V(0, 1, 0), top.clone().sub(bot).normalize());
-      mesh(new THREE.SphereGeometry(0.04, 16, 12), M.gold, legs).position.copy(top);
-      mesh(new THREE.SphereGeometry(0.034, 16, 12), M.gold, legs).position.copy(bot);
-      [-0.5, 0, 0.5].forEach((a) => {
-        const toe = mesh(new THREE.CylinderGeometry(0.016, 0.01, 0.13, 8), E.legRed, legs);
-        toe.position.copy(bot).add(V(Math.cos(a) * 0.05, -0.02, Math.sin(a) * 0.05));
-        toe.rotation.set(Math.sin(a) * 0.9, 0, Math.PI / 2 + 0.5);
-      });
-    });
-
-    root.userData = {
-      parts, name: "ときめ", sub: "新潟の鳥・トキのからくり人形。鴇色(ときいろ)の羽板と、朱のエナメルの顔。上越新幹線の「とき」と同じ名前の鳥です。",
-      explode: {
-        head: { off: V(0.45, 0.55, 0), origin: true, label: ["01", "頭部", "HEAD — 朱のエナメル面・山吹の瞳"] },
-        beak: { off: V(0.35, 0.05, 0) },
-        crest: { off: V(-0.85, -0.12, 0), label: ["02", "冠羽", "CREST — 白から鴇色の羽板"] },
-        wingR: { off: V(-0.05, 0.25, 0.75), label: ["03", "翼", "WING — 鴇色の羽板・金の縁"] },
-        wingL: { off: V(-0.05, 0.25, -0.75) },
-        breast: { off: V(0.55, -0.25, 0), label: ["04", "胸当て", "BREAST — 淡紅のエナメル"] },
-        tail: { off: V(-0.6, -0.1, 0), label: ["05", "尾羽", "TAIL — 羽板と蝶番"] },
-        legs: { off: V(0, -0.22, 0) },
-        body: { off: V(0, 0, 0), label: ["06", "胴", "BODY — 打ち出しの白エナメル・歯車"] },
-        pedestal: { off: V(0, -0.35, 0), label: ["07", "台座", "PEDESTAL — 新潟⇔東京の文字盤"] },
-      },
-      gears: ped.children[0].userData.gears, spin: [body.userData.spin], idle: (t) => { head.rotation.z = Math.sin(t * 0.9) * 0.05; head.rotation.y = Math.sin(t * 0.5) * 0.08; },
-    };
-    return root;
-  }
-
-  // ---------- 新幹線「つなぐ」 ----------
-  function buildTrain() {
-    const root = new THREE.Group();
-    const parts = {};
-    const part = (name, parent = root) => { const p = new THREE.Group(); parent.add(p); parts[name] = p; return p; };
-    const ped = part("pedestal"); ped.add(pedestal("SHINKANSEN · TSUNAGU · BT-EX5"));
-    // 線路(金のレールと枕木)
-    [-0.24, 0.24].forEach((z) => { const r = mesh(new THREE.BoxGeometry(3.2, 0.04, 0.04), M.gold, ped); r.position.set(0, 0.98, z); });
-    for (let i = 0; i < 13; i++) { const s = mesh(new THREE.BoxGeometry(0.12, 0.035, 0.66), M.wood, ped); s.position.set(-1.5 + i * 0.25, 0.945, 0); }
-
-    // 形(2026年11月に、低く長く・鼻を長くとがらせた形に。E5系・E7系のような流線形)
-    // L: 全長 / Ln: 先頭の鼻の長さ / W・H: 車体の幅・高さ(半分) / C: 後ろの丸み
-    const L = 3.4, Ln = 1.8, W = 0.4, H = 0.36, C = 0.22;
-    function sec(s) {
-      let w = W, h = H, yc = H, n = 3.0;
-      if (s < C) { const k = Math.sqrt(Math.max(0, 1 - Math.pow(1 - s / C, 2))); w = W * Math.max(k, 0.001); h = H * Math.max(k, 0.001); yc = H; }
-      if (s > L - Ln) {
-        const u = (s - (L - Ln)) / Ln;
-        // 屋根はなだらかに下がり、鼻の先はうすく低く(下のふちは平らなまま)
-        h = H * (1 - 0.9 * Math.pow(u, 0.85)); w = W * (1 - 0.72 * Math.pow(u, 1.9)); yc = h; n = 3.0 - 0.9 * u;
-        if (u > 0.965) { const k = Math.sqrt(Math.max(0, 1 - Math.pow((u - 0.965) / 0.035, 2))); w *= Math.max(k, 0.001); h *= Math.max(k, 0.001); yc = H * 0.1; }
-      }
-      return { w, h, yc, n };
-    }
-    const P = (s, th) => {
-      const { w, h, yc, n } = sec(s), c = Math.cos(th), si = Math.sin(th);
-      return V(s - L / 2, yc + h * Math.sign(si) * Math.pow(Math.abs(si), 2 / n), w * Math.sign(c) * Math.pow(Math.abs(c), 2 / n));
-    };
-    function loft(s0, s1, t0, t1, ns = 60, nt = 24) {
-      const pos = [], nor = [], idx = [], e = 1e-3;
-      for (let i = 0; i <= ns; i++) {
-        const s = s0 + (s1 - s0) * (i / ns);
-        for (let j = 0; j <= nt; j++) {
-          const th = t0 + (t1 - t0) * (j / nt), p = P(s, th);
-          const ds = P(Math.min(L, s + e), th).sub(P(Math.max(0, s - e), th));
-          const dt = P(s, th + e).sub(P(s, th - e));
-          let nrm = new THREE.Vector3().crossVectors(ds, dt);
-          if (nrm.lengthSq() < 1e-12) nrm.set(s < L / 2 ? -1 : 1, 0, 0);
-          nrm.normalize();
-          pos.push(p.x, p.y, p.z); nor.push(nrm.x, nrm.y, nrm.z);
-        }
-      }
-      for (let i = 0; i < ns; i++) for (let j = 0; j < nt; j++) {
-        const a = i * (nt + 1) + j, b = a + nt + 1;
-        idx.push(a, b, a + 1, b, b + 1, a + 1);
-      }
-      const g = new THREE.BufferGeometry();
-      g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute("normal", new THREE.Float32BufferAttribute(nor, 3)); g.setIndex(idx);
-      return g;
-    }
-    const S1 = L - Ln;
-    // 帯: 下は空色・銅のライン・白・窓・屋根
-    const bands = [
-      [Math.PI + 0.1, TAU - 0.1, E.sky], [-0.1, 0, M.copper], [Math.PI, Math.PI + 0.1, M.copper],
-      [0, 0.4, E.ivory], [Math.PI - 0.4, Math.PI, E.ivory], [0.4, 0.68, M.glass], [Math.PI - 0.68, Math.PI - 0.4, M.glass],
-    ];
-    const train = new THREE.Group(); train.position.y = 1.04; root.add(train);
-    const body = part("body", train), nose = part("nose", train), roof = part("roof", train);
-    bands.forEach(([a, b, m]) => { mesh(loft(0, S1, a, b, 40, 18), m, body).material.side = THREE.DoubleSide; mesh(loft(S1, L, a, b, 140, 24), m, nose).material.side = THREE.DoubleSide; });
-    mesh(loft(0, S1, 0.68, Math.PI - 0.68, 40, 24), E.ivory, roof).material.side = THREE.DoubleSide;
-    // 先頭の屋根: 運転席の窓(黒いガラス)
-    const uA = S1 + Ln * 0.14, uB = S1 + Ln * 0.44;
-    mesh(loft(S1, uA, 0.68, Math.PI - 0.68, 10, 24), E.ivory, nose);
-    mesh(loft(uA, uB, 0.68, Math.PI - 0.68, 24, 24), M.glass, nose);
-    mesh(loft(uB, L, 0.68, Math.PI - 0.68, 90, 24), E.ivory, nose);
-    // 金の細い線(窓のふち)
-    const pipe = (parent, th, s0, s1) => {
-      const pts = []; for (let i = 0; i <= 40; i++) { const s = s0 + (s1 - s0) * (i / 40); const p = P(s, th); pts.push(p.add(V(0, 0, 0).copy(p).setX(0).setY(0).multiplyScalar(0.012))); }
-      mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 80, 0.008, 8), M.gold, parent);
-    };
-    [0.4, 0.68, Math.PI - 0.68, Math.PI - 0.4].forEach((th) => { pipe(body, th, 0.12, S1); pipe(nose, th, S1, S1 + Ln * 0.9); });
-    // 前照灯(目)
-    [1, -1].forEach((side) => {
-      const s = S1 + Ln * 0.6, p = P(s, side > 0 ? 0.12 : Math.PI - 0.12);
-      const nrm = V(0.55, 0.15, side).normalize();
-      const lamp = mesh(new THREE.SphereGeometry(0.045, 24, 16), M.lamp, nose); lamp.position.copy(p).addScaledVector(nrm, -0.01);
-      ringAt(nose, p.clone().addScaledVector(nrm, 0.005), nrm, 0.055, 0.01, M.gold);
-    });
-    // パンタグラフ
-    const panto = new THREE.Group(); panto.position.set(-0.9, 2 * H + 0.01, 0); panto.scale.setScalar(0.7); roof.add(panto);
-    mesh(new THREE.BoxGeometry(0.3, 0.04, 0.22), M.gold, panto).position.y = 0.02;
-    const arm1 = mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.3, 8), M.gold, panto); arm1.position.set(0.05, 0.14, 0); arm1.rotation.z = -0.9;
-    const arm2 = mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.28, 8), M.gold, panto); arm2.position.set(0.06, 0.32, 0); arm2.rotation.z = 0.9;
-    const bar = mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.36, 8), M.gold, panto); bar.position.set(-0.04, 0.42, 0); bar.rotation.x = Math.PI / 2;
-    // 中の歯車(分解すると見える)
-    const g1 = mesh(gearGeo(0.22, 20, 0.05), M.brass, body); g1.position.set(-0.8, H, 0);
-    const g2 = mesh(gearGeo(0.14, 14, 0.05, 5), M.gold, body); g2.position.set(-0.45, H + 0.08, 0.02);
-    // 台車(歯車の車輪)
-    // 台車は車体の下に少し隠す(速そうに見えるように)
-    const bogie = part("bogie", train); bogie.position.y = 0.08;
-    const wheels = [];
-    [-1.1, 0.7].forEach((x) => {
-      const frame = mesh(new THREE.BoxGeometry(0.62, 0.08, 0.5), M.lacquer, bogie); frame.position.set(x, 0.02, 0);
-      [-0.16, 0.16].forEach((dx) => [-0.26, 0.26].forEach((z) => {
-        const wg = mesh(gearGeo(0.13, 16, 0.035, 5), M.gold, bogie); wg.position.set(x + dx, -0.03, z - (z > 0 ? 0 : 0.035)); wheels.push(wg);
-      }));
-    });
-    root.userData = {
-      parts, name: "つなぐ", sub: "新潟と東京をつなぐ、上越新幹線をイメージしたからくりの新幹線。白と空色のエナメルに銅のライン、歯車の車輪で走ります。",
-      explode: {
-        nose: { off: V(0.75, 0.15, 0), label: ["01", "先頭ノーズ", "NOSE — 運転席の窓・前照灯"] },
-        roof: { off: V(0, 0.6, 0), label: ["02", "屋根", "ROOF — 金のパンタグラフ"] },
-        body: { off: V(-0.15, 0.1, 0), label: ["03", "車体", "BODY — 白・空色のエナメルと銅のライン"] },
-        bogie: { off: V(0, -0.28, 0), label: ["04", "台車", "BOGIE — 歯車の車輪"] },
-        pedestal: { off: V(0, -0.45, 0), label: ["05", "台座", "PEDESTAL — 線路と文字盤"] },
-      },
-      gears: ped.children[0].userData.gears, spin: [g1, g2], wheels,
-      idle: (t) => { train.position.y = 1.04 + Math.sin(t * 2.2) * 0.008; },
-    };
-    return root;
-  }
+  // 下からの照り返し(翼の裏・おなかを明るく)
+  const bounce = new THREE.DirectionalLight(0xffe6dc, 0.9); bounce.position.set(1, -5, 4); scene.add(bounce);
 
   // ---------- 場面 ----------
-  const toki = buildToki(), train = buildTrain();
-  scene.add(toki, train);
+  // ときめ: 翼を広げて飛ぶトキ(白い体・翼の裏の朱鷺色・赤い顔・先の赤い黒いくちばし・冠羽・うしろへ伸ばす赤い脚)
+  const toki = new THREE.Group(); const bird = buildRealToki(); bird.scale.setScalar(1.25); bird.position.set(-0.5, 0, 0); toki.add(bird); scene.add(toki);
+  toki.userData = { name: "ときめ", sub: "新潟の鳥・トキ。白い体に、翼の裏の朱鷺色。赤い顔と、先の赤い黒いくちばし、後頭部の冠羽が目じるしです。" };
+  // つなぐ: 上越新幹線 E7系(先頭車と2両目)。新幹線の線路(スラブ軌道)の上に
+  const train = new THREE.Group(); const e = buildE7(2); e.scale.setScalar(0.36); e.position.set(2.0, 0.08, 0); train.add(e); scene.add(train);
+  {
+    const conc = new THREE.MeshStandardMaterial({ color: soft ? 0xe2dad4 : 0x55524f, roughness: 0.9 });
+    const deck = new THREE.Mesh(new THREE.BoxGeometry(8.8, 0.06, 1.05), conc); deck.position.set(-1.1, 0.03, 0); deck.receiveShadow = true; train.add(deck);
+    const steel = new THREE.MeshPhysicalMaterial({ color: 0xc9c7c3, metalness: 0.85, roughness: 0.3 });
+    [-0.092, 0.092].forEach((z) => { const r = new THREE.Mesh(new THREE.BoxGeometry(8.8, 0.02, 0.014), steel); r.position.set(-1.1, 0.07, z); r.castShadow = true; train.add(r); });
+    for (let i = 0; i < 21; i++) { const sl = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.02, 0.32), new THREE.MeshStandardMaterial({ color: 0x8f8a86, roughness: 0.9 })); sl.position.set(-5.3 + i * 0.42, 0.065, 0); sl.receiveShadow = true; train.add(sl); }
+    e.position.y = 0.08; // 車輪がレールの上に乗る高さ
+  }
+  train.userData = { name: "つなぐ", sub: "新潟と東京をつなぐ上越新幹線 E7系。白い車体に青い屋根と先頭、窓の下に銅色の帯と青い線。" };
+  scene.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
   const chars = { toki, train };
-  // 分解のときの部品の元の位置
-  Object.values(chars).forEach((c) => Object.entries(c.userData.parts).forEach(([k, p]) => { p.userData.home = p.position.clone(); }));
 
-  // 名札
-  const labelBox = document.getElementById("labels");
-  const labels = [];
-  Object.values(chars).forEach((c) => Object.entries(c.userData.explode).forEach(([k, ex]) => {
-    if (!ex.label) return;
-    const el = document.createElement("div"); el.className = "lab";
-    el.innerHTML = `<i></i><span><b><em>${ex.label[0]}</em>${ex.label[1]}</b><small>${ex.label[2]}</small></span>`;
-    labelBox.appendChild(el);
-    labels.push({ el, char: c, part: c.userData.parts[k], origin: !!ex.origin });
-  }));
-
-  let mode = ["toki", "train", "both"].includes(q.get("c")) ? q.get("c") : "toki";
-  let t = 0, lastF = 1;
-  let explodeOn = q.get("explode") === "1", explodeT = explodeOn ? 1 : 0, spin = q.get("spin") !== "0";
-  const VIEWS = {
-    toki: { target: V(0.2, 1.75, 0), pos: V(3.8, 3.1, 6.8) },
-    train: { target: V(0, 1.2, 0), pos: V(3.8, 2.7, 6.0) },
-    both: { target: V(0, 1.6, 0), pos: V(4.8, 3.7, 10.2) },
-  };
+  let mode = ["toki", "train", "both"].includes(q.get("c")) ? q.get("c") : "both";
+  let t = 0, move = q.get("still") !== "1", spin = q.get("spin") !== "0";
+  const DIRS = { toki: V(0.45, -0.12, 1), train: V(0.3, 0.16, 1), both: V(0.42, 0.1, 1) };
+  function frame() {
+    const box = new THREE.Box3(); [toki, train].filter((c) => c.visible).forEach((c) => box.expandByObject(c));
+    const ctr = box.getCenter(new THREE.Vector3()), size = box.getSize(new THREE.Vector3()).length();
+    const w = window.innerWidth, h = window.innerHeight, narrow = w < h;
+    controls.target.copy(ctr); camera.position.copy(ctr).addScaledVector(DIRS[mode].clone().normalize(), size * (narrow ? 1.75 : mode === "toki" ? 1.45 : 1.2));
+  }
   function setMode(m) {
     mode = m;
     toki.visible = m !== "train"; train.visible = m !== "toki";
-    toki.position.set(m === "both" ? -1.75 : 0, 0, m === "both" ? 0.1 : 0);
-    train.position.set(m === "both" ? 1.75 : 0, 0, m === "both" ? -0.1 : 0);
-    train.rotation.y = m === "both" ? -0.5 : -0.35;
-    toki.rotation.y = m === "both" ? 0.15 : -0.3;
-    const v = VIEWS[m]; controls.target.copy(v.target); camera.position.copy(v.pos); lastF = 1;
+    toki.position.set(m === "both" ? -0.9 : 0, m === "both" ? 2.2 : 1.6, m === "both" ? 0.5 : 0);
+    toki.rotation.set(-0.42, m === "both" ? 0.15 : -0.2, 0.06); // 少しこちらへ傾けて、翼の裏の朱鷺色が見えるように
+    train.position.set(0, 0, 0); train.rotation.y = m === "both" ? -0.35 : -0.5;
+    frame();
     document.querySelectorAll("[data-c]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.c === m)));
     const name = document.getElementById("name");
-    if (m === "both") name.innerHTML = `ときめ と つなぐ<small>新潟の鳥・トキと、新潟と東京をつなぐ新幹線。BT-EX5 の、からくり仕掛けのマスコットです。</small>`;
+    if (m === "both") name.innerHTML = `ときめ と つなぐ<small>新潟の鳥・トキと、新潟と東京をつなぐ上越新幹線 E7系。BT-EX5 のマスコットです。</small>`;
     else { const u = chars[m].userData; name.innerHTML = `${u.name}<small>${u.sub}</small>`; }
   }
-  setMode(mode);
-  // 台座なし: 台座(と枝・線路)を隠し、キャラクターがちょうど入る位置にカメラを置く
-  if (bare) {
-    document.body.classList.add("is-embed");
-    document.querySelectorAll(".brand, .labels").forEach((e) => { e.style.display = "none"; });
-    Object.values(chars).forEach((c) => { c.userData.parts.pedestal.visible = false; });
-    spin = false;
-    const box = new THREE.Box3();
-    [toki, train].filter((c) => c.visible).forEach((c) => box.expandByObject(c));
-    const ctr = box.getCenter(new THREE.Vector3()), size = box.getSize(new THREE.Vector3()).length();
-    const dir = (mode === "train" ? V(0.5, 0.32, 1) : V(0.25, 0.12, 1)).normalize();
-    controls.target.copy(ctr); camera.position.copy(ctr).addScaledVector(dir, size * 1.25);
-  }
+  if (bare) { document.body.classList.add("is-embed"); document.querySelectorAll(".brand, .labels").forEach((x) => { x.style.display = "none"; }); spin = false; }
   document.querySelectorAll("[data-c]").forEach((b) => b.addEventListener("click", () => setMode(b.dataset.c)));
-  const explodeBtn = document.getElementById("explodeBtn"), spinBtn = document.getElementById("spinBtn");
-  explodeBtn.setAttribute("aria-pressed", String(explodeOn));
-  spinBtn.setAttribute("aria-pressed", String(spin));
-  explodeBtn.addEventListener("click", () => { explodeOn = !explodeOn; explodeBtn.setAttribute("aria-pressed", String(explodeOn)); });
+  const moveBtn = document.getElementById("moveBtn"), spinBtn = document.getElementById("spinBtn");
+  moveBtn.setAttribute("aria-pressed", String(move)); spinBtn.setAttribute("aria-pressed", String(spin));
+  moveBtn.addEventListener("click", () => { move = !move; moveBtn.setAttribute("aria-pressed", String(move)); });
   spinBtn.addEventListener("click", () => { spin = !spin; spinBtn.setAttribute("aria-pressed", String(spin)); });
   document.getElementById("bgBtn").addEventListener("click", () => { soft = !soft; applyBg(); });
   document.getElementById("saveBtn").addEventListener("click", () => {
     render(); const a = document.createElement("a");
-    a.href = renderer.domElement.toDataURL("image/png"); a.download = `bt-ex5-mascot-${mode}${explodeOn ? "-parts" : ""}.png`;
+    a.href = renderer.domElement.toDataURL("image/png"); a.download = `bt-ex5-mascot-${mode}.png`;
     document.body.appendChild(a); a.click(); a.remove();
   });
-
   function resize() {
     const w = window.innerWidth, h = window.innerHeight;
     renderer.setSize(w, h, false); camera.aspect = w / h;
     camera.fov = w < h ? 44 : 32; camera.updateProjectionMatrix();
   }
-  window.addEventListener("resize", resize); resize();
+  window.addEventListener("resize", () => { resize(); frame(); }); resize(); setMode(mode);
 
-  const ease = (t) => t * t * (3 - 2 * t);
-  const tmp = new THREE.Vector3();
-  const clock = new THREE.Clock();
+  const clock = new THREE.Clock(); let ph = q.get("still") === "1" ? 0 : 0;
   function render() {
     const dt = Math.min(clock.getDelta(), 0.05); t += dt;
-    explodeT += ((explodeOn ? 1 : 0) - explodeT) * Math.min(1, dt * 3.2);
-    const k = ease(Math.max(0, Math.min(1, explodeT)));
-    Object.values(chars).forEach((c) => {
-      const u = c.userData;
-      Object.entries(u.explode).forEach(([name, ex]) => { const p = u.parts[name]; p.position.copy(p.userData.home).addScaledVector(ex.off, k); });
-      (u.gears || []).forEach((g, i) => { g.rotation.z += dt * (i ? -0.9 : 0.45); });
-      (u.spin || []).forEach((g, i) => { g.rotation.z += dt * (i % 2 ? -1.2 : 0.8); });
-      (u.wheels || []).forEach((g) => { g.rotation.z -= dt * 1.6; });
-      if (u.idle) u.idle(t);
-    });
-    // 分解したときは、少し引いて全体が入るように
-    const f = 1 + 0.32 * k, base = VIEWS[mode].target;
-    controls.target.set(base.x, base.y + 0.32 * k, base.z);
-    if (lastF !== f) { const off = camera.position.clone().sub(controls.target); off.multiplyScalar(f / lastF); camera.position.copy(controls.target).add(off); lastF = f; }
+    if (move) ph += dt * TAU * 1.1;
+    bird.userData.flap(ph, move ? 1 : 0);
+    bird.position.y = move ? -Math.sin(ph) * 0.05 : 0;
+    if (move) (e.userData.wheels || []).forEach((w) => { w.rotation.z -= dt * 6; });
     if (spin) { const a = dt * 0.18; const p = camera.position.clone().sub(controls.target); p.applyAxisAngle(V(0, 1, 0), a); camera.position.copy(controls.target).add(p); }
     controls.update();
     renderer.render(scene, camera);
-    // 名札(分解したときだけ)
-    const w = window.innerWidth, h = window.innerHeight;
-    labels.forEach((L) => {
-      const on = k > 0.6 && L.char.visible;
-      L.el.classList.toggle("is-on", on);
-      if (!on) return;
-      if (L.origin) L.part.getWorldPosition(tmp); else new THREE.Box3().setFromObject(L.part).getCenter(tmp);
-      tmp.project(camera);
-      L.el.style.transform = `translate(${(tmp.x * 0.5 + 0.5) * w - 4}px, ${(-tmp.y * 0.5 + 0.5) * h - 4}px)`;
-    });
   }
   renderer.setAnimationLoop(render);
-  window.BtexMascot = { setMode, explode: (v) => { explodeOn = !!v; explodeT = explodeOn ? 1 : 0; }, spin: (v) => { spin = !!v; }, render };
+  window.BtexMascot = { setMode, move: (v) => { move = !!v; }, spin: (v) => { spin = !!v; }, render, pose: (p) => { ph = p; } };
   </script>
 </body>
 </html>
