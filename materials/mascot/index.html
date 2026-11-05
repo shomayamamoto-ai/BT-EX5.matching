@@ -6,8 +6,8 @@
   <meta name="robots" content="noindex">
   <title>BT-EX5 マスコット</title>
   <!-- BT-EX5 のマスコット(3D)。トキの「ときめ」と、上越新幹線 E7系の「つなぐ」(オープニングムービーと同じ、本物に近い形)。
-       指(マウス)で回せる・「動かす」で羽ばたき・車輪が回る・「画像で保存」で PNG にできる。
-       URL の ? のあとで: c=toki / train / both(はじめに出すキャラ)、bg=dark / soft(背景)、still=1(止めた形)、embed=1(ボタンなし)、bare=1(背景なし) -->
+       指(マウス)で回せる・「分解して見る」で部品に分かれる・「動かす」で羽ばたき・車輪が回る・「画像で保存」で PNG にできる。
+       URL の ? のあとで: c=toki / train / both(はじめに出すキャラ)、bg=dark / soft(背景)、explode=1(分解した形)、still=1(止めた形)、embed=1(ボタンなし)、bare=1(背景なし) -->
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;1,600&family=Noto+Sans+JP:wght@500;700&family=Shippori+Mincho:wght@700;800&display=swap">
   <style>
     :root { --gold:#d9b46a; --ink:#f3ebe0; --sub:rgba(243,235,224,.66); --panel:rgba(20,18,18,.55); --line:rgba(217,180,106,.38);
@@ -30,8 +30,8 @@
     .lab b { display:block; font:700 13px/1.2 var(--mincho); letter-spacing:.08em; }
     .lab b em { font:600 italic 12px/1 var(--en); color:var(--gold); margin-right:6px; font-style:italic; }
     .lab small { display:block; margin-top:3px; font:500 10.5px/1.3 var(--sans); letter-spacing:.1em; color:var(--sub); }
-    .bar { position:fixed; left:50%; bottom:max(16px, env(safe-area-inset-bottom)); transform:translateX(-50%); display:flex; flex-wrap:wrap; justify-content:center; gap:8px; padding:8px; border-radius:999px; background:var(--panel); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); box-shadow:0 0 0 1px var(--line); max-width:calc(100vw - 24px); }
-    .bar button { appearance:none; border:0; border-radius:999px; padding:10px 16px; font:700 13px/1 var(--sans); letter-spacing:.06em; color:var(--ink); background:transparent; cursor:pointer; }
+    .bar { width:max-content; position:fixed; left:50%; bottom:max(16px, env(safe-area-inset-bottom)); transform:translateX(-50%); display:flex; flex-wrap:wrap; justify-content:center; gap:8px; padding:8px; border-radius:999px; background:var(--panel); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); box-shadow:0 0 0 1px var(--line); max-width:calc(100vw - 24px); }
+    .bar button { appearance:none; border:0; border-radius:999px; padding:10px 13px; font:700 13px/1 var(--sans); letter-spacing:.06em; color:var(--ink); background:transparent; cursor:pointer; }
     .bar button[aria-pressed="true"] { background:linear-gradient(135deg,#e7c27a,#b98a3e); color:#1c1408; }
     .bar .sep { width:1px; background:var(--line); margin:4px 2px; }
     .hint { position:fixed; right:clamp(16px,3vw,36px); top:clamp(18px,3vh,34px); font:500 11px/1.6 var(--sans); letter-spacing:.12em; color:var(--sub); text-align:right; pointer-events:none; }
@@ -50,6 +50,7 @@
     <button type="button" data-c="train">新幹線</button>
     <button type="button" data-c="both">ふたり</button>
     <span class="sep"></span>
+    <button type="button" id="explodeBtn" aria-pressed="false">分解して見る</button>
     <button type="button" id="moveBtn" aria-pressed="true">動かす</button>
     <button type="button" id="spinBtn" aria-pressed="true">回す</button>
     <button type="button" id="bgBtn">背景</button>
@@ -192,12 +193,16 @@ function buildRealToki() {
   const root = new THREE.Group(), parts = {};
   const bodyM = new THREE.MeshPhysicalMaterial({ color: 0xf9f2ef, roughness: 0.8, sheen: 0.8, sheenRoughness: 0.55, sheenColor: new THREE.Color(0xffd8cc), bumpMap: PLUME, bumpScale: 0.7 });
   const featherM = twoTone(0xfffbf9, 0xf0997f, { vertexColors: true });
-  const add = (geo, mat, parent = root) => { const m = new THREE.Mesh(geo, mat); m.castShadow = true; m.receiveShadow = true; parent.add(m); return m; };
+  // 分解して見るときの部品のまとまり(胴・頭と首・尾・脚・左右の翼)
+  const G = {}; ["body", "head", "tail", "legs", "wingL", "wingR"].forEach((k) => { G[k] = new THREE.Group(); root.add(G[k]); });
+  let cur = G.body;
+  const add = (geo, mat, parent = cur) => { const m = new THREE.Mesh(geo, mat); m.castShadow = true; m.receiveShadow = true; parent.add(m); return m; };
   // 胴: 胸がふくらみ、尾へ細くなる流線形
   const prof = [[0, -0.8], [0.06, -0.76], [0.12, -0.66], [0.18, -0.48], [0.235, -0.2], [0.262, 0.08], [0.255, 0.3], [0.215, 0.46], [0.16, 0.58], [0.11, 0.66], [0, 0.71]].map(([r, y]) => new THREE.Vector2(r, y));
   const bg = new THREE.LatheGeometry(prof, 48); bg.rotateZ(-Math.PI / 2); bg.scale(1, 0.9, 1);
   PLUME.repeat.set(6, 3); add(bg, bodyM);
   // 首: 飛ぶときはまっすぐ前へ伸ばす
+  cur = G.head;
   add(taperGeo(curveOf([[0.5, 0.05, 0], [0.8, 0.1, 0], [1.08, 0.15, 0], [1.24, 0.18, 0]]), (s) => lerp(0.11, 0.076, s), 40, 18), bodyM);
   // 頭(白い羽)と、赤い顔の皮膚、目(橙色の虹彩)
   const head = add(new THREE.SphereGeometry(0.115, 32, 24), bodyM); head.scale.set(1.22, 0.95, 0.92); head.position.set(1.28, 0.2, 0);
@@ -218,11 +223,13 @@ function buildRealToki() {
     add(taperGeo(curveOf([[1.25, 0.265, zz * 0.4], [1.12, 0.29 + j * 0.015, zz * 0.8], [1.2 - L, 0.255 - j * 0.02, zz]]), (s) => lerp(0.024, 0.003, Math.pow(s, 0.8)), 20, 8), crestM);
   }
   // 尾: 扇形の尾羽(裏は朱鷺色)
+  cur = G.tail;
   for (let k = 0; k < 8; k++) {
     const a = (k - 3.5) * 0.085, L = 0.42 - Math.abs(k - 3.5) * 0.02;
     const f = add(featherGeom(L, 0.12, { base: 0xffe0d6 }), featherM); f.rotation.order = 'YZX'; f.position.set(-0.68, 0.035 + k * 0.001, (k - 3.5) * 0.02); f.rotation.set(0, Math.PI + a, 0.04);
   }
   // 脚: 赤く、うしろへ伸ばす(指も)
+  cur = G.legs;
   const legM = new THREE.MeshPhysicalMaterial({ color: 0xcc4637, roughness: 0.45, clearcoat: 0.3 });
   [-1, 1].forEach((sd) => {
     const zz = sd * 0.055, end = [-0.98, -0.12, zz * 1.25];
@@ -232,7 +239,7 @@ function buildRealToki() {
   // 翼: 腕(次列風切・雨覆)と手(初列風切)。外側の初列風切は先が指のように分かれる
   const wings = [];
   [-1, 1].forEach((sd) => {
-    const wr = new THREE.Group(); wr.position.set(0.16, 0.13, sd * 0.19); root.add(wr);
+    const wr = new THREE.Group(); wr.position.set(0.16, 0.13, sd * 0.19); (sd < 0 ? G.wingL : G.wingR).add(wr);
     const arm = new THREE.Group(); wr.add(arm);
     const hand = new THREE.Group(); hand.position.set(0.02, 0, sd * 1.05); arm.add(hand);
     add(taperGeo(curveOf([[0.12, 0, 0], [0.1, 0.012, sd * 0.5], [0.03, 0, sd * 1.06]]), (s) => lerp(0.06, 0.04, s), 24, 12), bodyM, arm);
@@ -259,7 +266,7 @@ function buildRealToki() {
     for (let k = 0; k < 3; k++) place(hand, featherGeom(0.16 - k * 0.02, 0.07), 0.05, 0.03, sd * (0.0 + k * 0.03), 0.6, sd * 1, -0.05);
     wings.push({ sd, arm, hand });
   });
-  parts.wingL = wings[0].arm; parts.wingR = wings[1].arm;
+  parts.wingL = wings[0].arm; parts.wingR = wings[1].arm; root.userData.groups = G;
   // 羽ばたき: 打ち下ろしで翼をひろげ、打ち上げで手首を曲げてうしろへたたむ
   root.userData.flap = (ph, amt) => {
     const s = Math.sin(ph), c = Math.cos(ph);
@@ -356,17 +363,18 @@ function buildE7(cars = 5) {
   for (let k = 0; k < cars; k++) {
     const lead = k === 0, len = lead ? E7.LC : E7.LM, start = lead ? -E7.N0 : x0 - E7.GAP - len;
     const car = new THREE.Group(); car.position.x = start; root.add(car);
+    const shell = new THREE.Group(); car.add(shell); (root.userData.cars = root.userData.cars || []).push(car); (root.userData.shells = root.userData.shells || []).push(shell);
     const rings = [inset(0), body(0.05)];
     if (lead) {
       rings.push(body(E7.N0));
       for (let i = 1; i <= 44; i++) { const u = i / 44, xx = E7.N0 + u * E7.LN; rings.push(sRing(Math.max(0.0005, noseA(u)), noseYB(u), noseYT(u), 3.6 - 1.6 * u, N, xx)); }
-      add(loftGeo(rings, N, true, false), e7Mat(len, E7.N0), car);
+      add(loftGeo(rings, N, true, false), e7Mat(len, E7.N0), shell);
       // 前照灯(先頭の下の左右)
       const lightM = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xfff6e8, emissiveIntensity: 1.6, roughness: 0.2 });
-      [-1, 1].forEach((sd) => { const l = add(new THREE.SphereGeometry(0.05, 16, 10), lightM, car); l.scale.set(2.4, 0.55, 0.6); l.position.set(E7.N0 + 0.7 * E7.LN, 0.47, sd * 0.415); });
+      [-1, 1].forEach((sd) => { const l = add(new THREE.SphereGeometry(0.05, 16, 10), lightM, shell); l.scale.set(2.4, 0.55, 0.6); l.position.set(E7.N0 + 0.7 * E7.LN, 0.47, sd * 0.415); });
     } else {
       rings.push(body(len - 0.05), inset(len));
-      add(loftGeo(rings, N, true, true), e7Mat(len, 999), car);
+      add(loftGeo(rings, N, true, true), e7Mat(len, 999), shell);
     }
     bogie(car, lead ? 1.25 : 1.25); bogie(car, lead ? E7.N0 + 0.2 : len - 1.25);
     // 車両のつなぎ目(ほろ)
@@ -406,15 +414,41 @@ function buildE7(cars = 5) {
   train.userData = { name: "つなぐ", sub: "新潟と東京をつなぐ上越新幹線 E7系。白い車体に青い屋根と先頭、窓の下に銅色の帯と青い線。" };
   scene.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
   const chars = { toki, train };
+  // 分解: 部品ごとに、どちらへどれだけ離すか(それぞれの持ち主の向きで)と名札
+  const TG = bird.userData.groups;
+  const EX = [
+    { char: toki, obj: TG.head, off: V(0.75, 0.3, 0), label: ["Head", "頭と首", "赤い顔・先の赤いくちばし・冠羽"] },
+    { char: toki, obj: TG.wingL, off: V(-0.1, 0.55, -0.45), label: ["Wing", "翼", "裏は朱鷺色。外側の羽は指のように分かれる"] },
+    { char: toki, obj: TG.wingR, off: V(-0.1, -0.2, 0.55) },
+    { char: toki, obj: TG.tail, off: V(-0.75, 0.05, 0), label: ["Tail", "尾羽", "扇のように開く。裏は朱鷺色"] },
+    { char: toki, obj: TG.legs, off: V(-0.35, -0.55, 0), label: ["Legs", "脚", "赤い脚。飛ぶときはうしろへ伸ばす"] },
+    { char: train, obj: e.userData.cars[0], off: V(2.2, 0, 0) },
+    { char: train, obj: e.userData.cars[1], off: V(-2.2, 0, 0) },
+    { char: train, obj: e.userData.shells[0], off: V(0, 1.7, 0), label: ["Lead car", "先頭車", "長い鼻・青い先頭・運転席"] },
+    { char: train, obj: e.userData.shells[1], off: V(0, 1.7, 0), label: ["Car 2", "2両目", "白い車体に銅色の帯と青い線"] },
+    { char: train, obj: e.userData.cars[0], off: null, bogie: true, label: ["Bogies", "台車と車輪", "車体を支え、レールの上を走る"] },
+  ];
+  EX.forEach((x) => { if (x.off) x.home = x.obj.position.clone(); });
+  const labelBox = document.getElementById("labels");
+  EX.forEach((x) => {
+    if (!x.label) return;
+    const el = document.createElement("div"); el.className = "lab";
+    el.innerHTML = `<i></i><span><b><em>${x.label[0]}</em>${x.label[1]}</b><small>${x.label[2]}</small></span>`;
+    labelBox.appendChild(el); x.el = el;
+  });
+  let explodeOn = q.get("explode") === "1", explodeT = explodeOn ? 1 : 0, lastF = 1, centerBack = false;
 
   let mode = ["toki", "train", "both"].includes(q.get("c")) ? q.get("c") : "both";
   let t = 0, move = q.get("still") !== "1", spin = q.get("spin") !== "0";
   const DIRS = { toki: V(0.45, -0.12, 1), train: V(0.3, 0.16, 1), both: V(0.42, 0.1, 1) };
   function frame() {
+    // 分解していても、組み立てた形でカメラの位置を決める(分解の分は、あとで少し引く)
+    const keep = EX.filter((x) => x.off).map((x) => [x, x.obj.position.clone()]); keep.forEach(([x]) => x.obj.position.copy(x.home));
     const box = new THREE.Box3(); [toki, train].filter((c) => c.visible).forEach((c) => box.expandByObject(c));
+    keep.forEach(([x, p]) => x.obj.position.copy(p));
     const ctr = box.getCenter(new THREE.Vector3()), size = box.getSize(new THREE.Vector3()).length();
     const w = window.innerWidth, h = window.innerHeight, narrow = w < h;
-    controls.target.copy(ctr); camera.position.copy(ctr).addScaledVector(DIRS[mode].clone().normalize(), size * (narrow ? 1.75 : mode === "toki" ? 1.45 : 1.2));
+    controls.target.copy(ctr); camera.position.copy(ctr).addScaledVector(DIRS[mode].clone().normalize(), size * (narrow ? 1.75 : mode === "toki" ? 1.45 : 1.2)); lastF = 1;
   }
   function setMode(m) {
     mode = m;
@@ -430,6 +464,9 @@ function buildE7(cars = 5) {
   }
   if (bare) { document.body.classList.add("is-embed"); document.querySelectorAll(".brand, .labels").forEach((x) => { x.style.display = "none"; }); spin = false; }
   document.querySelectorAll("[data-c]").forEach((b) => b.addEventListener("click", () => setMode(b.dataset.c)));
+  const explodeBtn = document.getElementById("explodeBtn");
+  explodeBtn.setAttribute("aria-pressed", String(explodeOn));
+  explodeBtn.addEventListener("click", () => { explodeOn = !explodeOn; centerBack = true; explodeBtn.setAttribute("aria-pressed", String(explodeOn)); });
   const moveBtn = document.getElementById("moveBtn"), spinBtn = document.getElementById("spinBtn");
   moveBtn.setAttribute("aria-pressed", String(move)); spinBtn.setAttribute("aria-pressed", String(spin));
   moveBtn.addEventListener("click", () => { move = !move; moveBtn.setAttribute("aria-pressed", String(move)); });
@@ -437,7 +474,7 @@ function buildE7(cars = 5) {
   document.getElementById("bgBtn").addEventListener("click", () => { soft = !soft; applyBg(); });
   document.getElementById("saveBtn").addEventListener("click", () => {
     render(); const a = document.createElement("a");
-    a.href = renderer.domElement.toDataURL("image/png"); a.download = `bt-ex5-mascot-${mode}.png`;
+    a.href = renderer.domElement.toDataURL("image/png"); a.download = `bt-ex5-mascot-${mode}${explodeOn ? "-parts" : ""}.png`;
     document.body.appendChild(a); a.click(); a.remove();
   });
   function resize() {
@@ -454,12 +491,31 @@ function buildE7(cars = 5) {
     bird.userData.flap(ph, move ? 1 : 0);
     bird.position.y = move ? -Math.sin(ph) * 0.05 : 0;
     if (move) (e.userData.wheels || []).forEach((w) => { w.rotation.z -= dt * 6; });
+    // 分解: 部品を離す(なめらかに)。分解したときは少し引いて全体が入るように
+    explodeT += ((explodeOn ? 1 : 0) - explodeT) * Math.min(1, dt * 3.2);
+    const k = explodeT * explodeT * (3 - 2 * explodeT);
+    EX.forEach((x) => { if (x.off) x.obj.position.copy(x.home).addScaledVector(x.off, k); });
+    const f = 1 + 0.35 * k;
+    // 見ている先を、いまの形(分解の途中も)のまん中へなめらかに合わせる
+    if (explodeT > 0.001 && explodeT < 0.999 || explodeOn) { const bx = new THREE.Box3(); [toki, train].filter((c) => c.visible).forEach((c) => bx.expandByObject(c)); const cc = bx.getCenter(new THREE.Vector3()); const d = cc.sub(controls.target).multiplyScalar(Math.min(1, dt * 4)); controls.target.add(d); camera.position.add(d); }
+    else if (!explodeOn && explodeT <= 0.001 && centerBack) { const bx = new THREE.Box3(); [toki, train].filter((c) => c.visible).forEach((c) => bx.expandByObject(c)); const cc = bx.getCenter(new THREE.Vector3()); const d = cc.sub(controls.target).multiplyScalar(Math.min(1, dt * 4)); controls.target.add(d); camera.position.add(d); if (d.length() < 1e-4) centerBack = false; }
+    if (Math.abs(lastF - f) > 1e-4) { const off = camera.position.clone().sub(controls.target); off.multiplyScalar(f / lastF); camera.position.copy(controls.target).add(off); lastF = f; }
     if (spin) { const a = dt * 0.18; const p = camera.position.clone().sub(controls.target); p.applyAxisAngle(V(0, 1, 0), a); camera.position.copy(controls.target).add(p); }
     controls.update();
     renderer.render(scene, camera);
+    // 名札(分解したときだけ)
+    const w = window.innerWidth, h = window.innerHeight, tmp = new THREE.Vector3(), bb = new THREE.Box3();
+    EX.forEach((x) => {
+      if (!x.el) return;
+      const on = k > 0.6 && x.char.visible; x.el.classList.toggle("is-on", on); if (!on) return;
+      if (x.bogie) { bb.makeEmpty(); x.obj.children.filter((c) => c.isGroup && c !== e.userData.shells[0]).forEach((c) => bb.expandByObject(c)); } else bb.setFromObject(x.obj);
+      bb.getCenter(tmp); tmp.project(camera);
+      const lx = Math.min((tmp.x * 0.5 + 0.5) * w - 4, w - x.el.offsetWidth - 8), ly = Math.min((-tmp.y * 0.5 + 0.5) * h - 4, h - 120);
+      x.el.style.transform = `translate(${Math.max(8, lx)}px, ${ly}px)`;
+    });
   }
   renderer.setAnimationLoop(render);
-  window.BtexMascot = { setMode, move: (v) => { move = !!v; }, spin: (v) => { spin = !!v; }, render, pose: (p) => { ph = p; } };
+  window.BtexMascot = { setMode, explode: (v) => { explodeOn = !!v; explodeT = explodeOn ? 1 : 0; }, move: (v) => { move = !!v; }, spin: (v) => { spin = !!v; }, render, pose: (p) => { ph = p; } };
   </script>
 </body>
 </html>

@@ -260,7 +260,7 @@
             h("img", { src: "../materials/mascot/preview.jpg?v=2", alt: "トキの「ときめ」と新幹線の「つなぐ」", loading: "lazy", width: "960", height: "600" }),
             h("span", { class: "mt-mascot-text" },
               h("b", null, "ときめ と つなぐ"),
-              h("small", null, "新潟の鳥・トキと、新潟と東京をつなぐ上越新幹線 E7系のマスコットです(オープニングムービーと同じ、本物に近い形)。指で回したり、羽ばたかせたり、画像で保存できます。"),
+              h("small", null, "新潟の鳥・トキと、新潟と東京をつなぐ上越新幹線 E7系のマスコットです(オープニングムービーと同じ、本物に近い形)。指で回したり、部品に分解して見たり、羽ばたかせたり、画像で保存できます。"),
               h("span", { class: "app-btn primary small" }, "3D で開く")))),
         App.section("これまでの資料",
           h("ul", { class: "app-list mt-files" },
