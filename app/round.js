@@ -202,6 +202,8 @@
   const PITCH_FIRST = ["m16", "m14", "m02", "m24", "m22", "yamamoto", "m09", "m10", "m08", "m04", "m06", "m29"];
   const STAFF_ROLES = [["facilitator", "ファシリテーター"], ["education", "エデュケーション"], ["system", "スライド進行"], ["breakout", "ブレイクアウトルーム"], ["builder", "本システム（スライド含む）制作", ["yamamoto"]]];
   const thumbOf = (url) => String(url).replace(/assets\/members\/([^/?#]+\.jpg)/, "assets/members/thumbs/$1");
+  // ほかの BT-EX の場所(referral/data.js の BTEX_UNIT_AREAS。未定なら空)
+  const unitArea = (n) => (typeof btexUnitArea === "function" ? btexUnitArea(n) : "");
   function face(url, name, cls) {
     return url
       ? h("img", { class: cls, src: SMALL_FACE.test(cls) ? thumbOf(url) : url, alt: "", loading: "lazy", decoding: "async",
@@ -454,13 +456,15 @@
         if (!unitRow) return;
         // 番号の下に人数(bt-ex.jp のメンバー一覧の人数)。最後に合計
         const COUNTS = typeof BTEX_UNIT_COUNTS !== "undefined" ? BTEX_UNIT_COUNTS : {};
+        // 番号の下に場所(関東・大阪 など。未定のユニットは出さない)
+        const AREA = (n) => (typeof btexUnitArea === "function" ? btexUnitArea(n) : "");
         const nums = Array.from({ length: 14 }, (_, i) => i + 1).filter((n) => n !== 5);
         // 合計は BT-EX5 も入れた全ユニットの人数(2つのユニットに入っている方は1名と数える)
         const total = typeof BTEX_ALL_UNITS_TOTAL !== "undefined" ? BTEX_ALL_UNITS_TOTAL : Array.from({ length: 14 }, (_, i) => COUNTS[i + 1] || 0).reduce((a, b) => a + b, 0);
         App.fill(unitRow, ...nums.map((n) =>
           h("button", { type: "button", class: `pr-unit-chip${n === cur ? " is-on" : ""}`, role: "radio", "aria-checked": n === cur ? "true" : "false", dataset: { unit: String(n) },
-            "aria-label": `BT-EX${n}(${COUNTS[n] || 0}名)`,
-            onclick: () => { unitSel.value = String(n); bx.setUnit(n); drawUnits(n); } }, h("small", null, "BT-EX"), h("b", null, String(n)), h("small", { class: "pr-unit-n" }, `${COUNTS[n] || 0}名`))),
+            "aria-label": `BT-EX${n}(${AREA(n) ? `${AREA(n)}・` : ""}${COUNTS[n] || 0}名)`, title: AREA(n) ? `BT-EX${n}: ${AREA(n)}` : `BT-EX${n}: エリア未定`,
+            onclick: () => { unitSel.value = String(n); bx.setUnit(n); drawUnits(n); } }, h("small", null, "BT-EX"), h("b", null, String(n)), AREA(n) ? h("small", { class: "pr-unit-area" }, btexUnitArea(n, true)) : null, h("small", { class: "pr-unit-n" }, `${COUNTS[n] || 0}名`))),
           h("p", { class: "pr-unit-total" }, h("span", null, "合計"), h("b", null, `${total}名`)));
       }
       if (bx) {
@@ -2180,7 +2184,7 @@
           h("p", { class: "pr-no", "aria-hidden": "true" }, two(persons.indexOf(p) + 1)),
           h("div", { class: "pr-body" },
             h("p", { class: "pr-teamname" },
-              h("span", null, p.kind === "visitor" ? "ビジター" : p.kind === "guest" ? "ゲスト" : p.kind === "other" ? (p.unit ? `BT-EX${p.unit} メンバー` : "BT-EX メンバー") : p.team || ""),
+              h("span", null, p.kind === "visitor" ? "ビジター" : p.kind === "guest" ? "ゲスト" : p.kind === "other" ? (p.unit ? `BT-EX${p.unit} メンバー${unitArea(p.unit) ? `・${unitArea(p.unit)}` : ""}` : "BT-EX メンバー") : p.team || ""),
               ...(p.roles || []).map(roleBadge)),
             nameEl(p.name, "h2", "pr-name", h("small", null, "さん"), !solo),
             // フリガナは BT-EX5 のメンバーだけ(ほかの BT-EX・ゲスト・ビジターの方は出さない)
@@ -2203,7 +2207,7 @@
                   face(n.photo, n.name, "pr-next-photo"),
                   h("div", { class: "pr-next-txt" },
                     h("p", { class: "pr-next-name" }, h("small", null, two(persons.indexOf(n) + 1)), n.name, h("small", null, "さん")),
-                    h("p", { class: "pr-next-team" }, n.kind === "visitor" ? "ビジター" : n.kind === "guest" ? "ゲスト" : n.kind === "other" ? (n.unit ? `BT-EX${n.unit} メンバー` : "BT-EX メンバー") : n.team || "BT-EX5 メンバー")))); })()
+                    h("p", { class: "pr-next-team" }, n.kind === "visitor" ? "ビジター" : n.kind === "guest" ? "ゲスト" : n.kind === "other" ? (n.unit ? `BT-EX${n.unit} メンバー${unitArea(n.unit) ? `・${unitArea(n.unit)}` : ""}` : "BT-EX メンバー") : n.team || "BT-EX5 メンバー")))); })()
             : h("div", { class: "pr-next is-card is-last" }, h("p", { class: "pr-next-label" }, "最後の方です"))));
       requestAnimationFrame(fitTags);
     }

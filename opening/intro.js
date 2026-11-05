@@ -15,7 +15,7 @@
   // theme: 定例会のスライドではスライドのデザイン、ほかはサイトのデザインで選ぶ
   const V = "3d4";
   // やわらかいデザイン: 「ときめ」(本物に近いトキ)と「つなぐ」(上越新幹線 E7系)のムービー(16秒・3DCG。2026年11月)
-  const SOFT = { base: "bt-ex5-opening-mascot", v: "3" };
+  const SOFT = { base: "bt-ex5-opening-mascot", v: "4" };
   const BIG = Math.max(window.innerWidth, window.innerHeight) >= 1100 && Math.min(window.innerWidth, window.innerHeight) >= 600;
   const SAFARI = /^((?!chrome|chromium|android|crios|fxios).)*safari/i.test(navigator.userAgent);
   function movie(theme) {

@@ -660,7 +660,7 @@ const App = (function () {
       return h("li", null, h("button", { type: "button", class: `bx-item${on ? " is-on" : ""}`, role: "option", "aria-selected": on ? "true" : "false", title: on && multi ? "もう一度押すと外します" : null, onclick: () => pick(u, name) },
         on && multi ? h("span", { class: "bx-check", "aria-hidden": "true" }, "✓") : null,
         h("span", { class: "bx-name" }, name, (() => { const pf = profOf(u, name); return pf && (pf[1] || pf[0]) ? h("small", { class: "bx-cat" }, pf[1] || pf[0], pf[2] ? h("span", { class: "bx-team" }, pf[2]) : null) : null; })()),
-        tag ? h("span", { class: "bx-tag" }, `BT-EX${u}`) : null));
+        tag ? h("span", { class: "bx-tag", title: typeof btexUnitArea === "function" && btexUnitArea(u) ? btexUnitArea(u) : null }, `BT-EX${u}`) : null));
     }
     function draw() {
       const words = norm(q.value);
