@@ -14,7 +14,7 @@
   // ムービーは2種類: やわらかいデザインはマスコットのムービー(SOFT)、元の黒×金は金の輪のムービー。
   // theme: 定例会のスライドではスライドのデザイン、ほかはサイトのデザインで選ぶ
   const V = "3d4";
-  // やわらかいデザイン: マスコットの「ときめ」(トキ)と「つなぐ」(新幹線)のムービー(16秒・3DCG。2026年11月)
+  // やわらかいデザイン: 「ときめ」(本物に近いトキ)と「つなぐ」(上越新幹線 E7系)のムービー(16秒・3DCG。2026年11月)
   const SOFT = { base: "bt-ex5-opening-mascot", v: "3" };
   const BIG = Math.max(window.innerWidth, window.innerHeight) >= 1100 && Math.min(window.innerWidth, window.innerHeight) >= 600;
   const SAFARI = /^((?!chrome|chromium|android|crios|fxios).)*safari/i.test(navigator.userAgent);
@@ -24,7 +24,7 @@
     const v = soft ? SOFT.v : V;
     const MP4 = [`../assets/opening/${base}.mp4?v=${v}`, "video/mp4"];
     const WEBM = [`../assets/opening/${base}.webm?v=${v}`, "video/webm"];
-    return { sources: SAFARI ? [MP4, WEBM] : [WEBM, MP4], poster: `../assets/opening/${soft ? `${SOFT.base}-poster` : "poster"}.jpg?v=${v}` };
+    return { soft: !!soft, sources: SAFARI ? [MP4, WEBM] : [WEBM, MP4], poster: `../assets/opening/${soft ? `${SOFT.base}-poster` : "poster"}.jpg?v=${v}` };
   }
   const siteTheme = () => { try { return window.BtexTheme && BtexTheme.site ? BtexTheme.site() : "soft"; } catch { return "soft"; } };
   const script = document.currentScript;
@@ -38,6 +38,8 @@
     box.setAttribute("role", "dialog");
     box.setAttribute("aria-label", "BT-EX5 オープニングムービー(画面を押すとスキップ)");
     const mv = movie((opts && opts.theme) || siteTheme());
+    // やわらかいデザインのムービーは明るい映像なので、まわりを黒にしない(映像をぼかした背景で埋める。終わりも明るく溶かす)
+    if (mv.soft) { box.classList.add("is-soft"); box.style.setProperty("--op-poster", `url("${mv.poster}")`); }
     box.innerHTML = `
       <video class="op-intro-video" poster="${mv.poster}" playsinline preload="auto">
         ${mv.sources.map(([src, type]) => `<source src="${src}" type="${type}">`).join("")}
@@ -66,7 +68,7 @@
     }
     function onKey(e) { if (e.key === "Escape") close(); }
 
-    // 終わり: 映像は最後に真っ黒になる。念のため最後の 0.6 秒で映像を黒へ溶かし、ボタンも消してから閉じる
+    // 終わり: 最後の 0.6 秒で映像を背景(元の黒×金は黒、やわらかいデザインは明るい色)へ溶かし、ボタンも消してから閉じる
     video.addEventListener("timeupdate", () => {
       if (video.duration && video.duration - video.currentTime < 0.6) current.classList.add("is-ending");
     });

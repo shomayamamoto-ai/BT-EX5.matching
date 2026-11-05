@@ -73,3 +73,11 @@ html.op-intro-open, html.op-intro-open body { overflow: hidden; }
 @media (max-width: 360px) {
   .op-movie-btn { width: 26px; height: 26px; }
 }
+
+/* やわらかいデザインのムービー(明るい映像): まわりを黒で埋めない。
+   映像の形と画面の形がちがうところは、同じ絵をぼかした背景で埋める。16:9 に近い画面では画面いっぱいに出す */
+.op-intro.is-soft { background: #f3e7e3; overflow: hidden; }
+.op-intro.is-soft::before { content: ""; position: absolute; inset: -60px; background: var(--op-poster, none) center / cover no-repeat; filter: blur(36px) saturate(0.9) brightness(1.04); opacity: 0.9; pointer-events: none; }
+.op-intro.is-soft .op-intro-video { position: relative; background: transparent; }
+@media (min-aspect-ratio: 3/2) and (max-aspect-ratio: 21/10) { .op-intro.is-soft .op-intro-video { object-fit: cover; } }
+.op-intro.is-soft .op-intro-hint { color: rgba(90, 60, 52, 0.7); }
