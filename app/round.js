@@ -203,7 +203,8 @@
   const STAFF_ROLES = [["facilitator", "ファシリテーター"], ["education", "エデュケーション"], ["system", "スライド進行"], ["breakout", "ブレイクアウトルーム"], ["builder", "本システム（スライド含む）制作", ["yamamoto"]]];
   const thumbOf = (url) => String(url).replace(/assets\/members\/([^/?#]+\.jpg)/, "assets/members/thumbs/$1");
   // ほかの BT-EX の場所(referral/data.js の BTEX_UNIT_AREAS。未定なら空)
-  const unitArea = (n) => (typeof btexUnitArea === "function" ? btexUnitArea(n) : "");
+  // スライドの「BT-EXn メンバー・場所」には、決まっている場所だけ出す(「未定」は出さない)
+  const unitArea = (n) => { const a = typeof btexUnitArea === "function" ? btexUnitArea(n) : ""; return a === "未定" ? "" : a; };
   function face(url, name, cls) {
     return url
       ? h("img", { class: cls, src: SMALL_FACE.test(cls) ? thumbOf(url) : url, alt: "", loading: "lazy", decoding: "async",
@@ -456,7 +457,7 @@
         if (!unitRow) return;
         // 番号の下に人数(bt-ex.jp のメンバー一覧の人数)。最後に合計
         const COUNTS = typeof BTEX_UNIT_COUNTS !== "undefined" ? BTEX_UNIT_COUNTS : {};
-        // 番号の下に場所(関東・大阪 など。未定のユニットは出さない)
+        // 番号の下に場所(関東・大阪 など。決まっていないユニットは「未定」)
         const AREA = (n) => (typeof btexUnitArea === "function" ? btexUnitArea(n) : "");
         const nums = Array.from({ length: 14 }, (_, i) => i + 1).filter((n) => n !== 5);
         // 合計は BT-EX5 も入れた全ユニットの人数(2つのユニットに入っている方は1名と数える)
