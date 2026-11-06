@@ -3236,6 +3236,16 @@ button.home-welcome-check:active { transform: scale(0.94); }
 .mt-mascot-text { display: grid; gap: 8px; padding: 18px 20px 20px; justify-items: start; }
 .mt-mascot-text b { font-family: "Shippori Mincho", serif; font-size: 22px; letter-spacing: 0.06em; }
 .mt-mascot-text small { font-size: 13px; line-height: 1.7; color: rgba(243, 235, 224, 0.75); }
+/* 資料: Zoom 背景 */
+.mt-zoom { display: grid; gap: 0; border-radius: 18px; overflow: hidden; background: var(--surface, #fff); border: 1px solid rgba(120, 80, 60, 0.12); box-shadow: 0 10px 30px rgba(60, 30, 20, 0.1); }
+@media (min-width: 900px) { .mt-zoom { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); align-items: center; } }
+.mt-zoom-img img { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; object-fit: cover; }
+.mt-zoom-text { display: grid; gap: 10px; padding: 18px 20px 20px; justify-items: start; }
+.mt-zoom-text > b { font-family: "Shippori Mincho", serif; font-size: 20px; letter-spacing: 0.06em; }
+.mt-zoom-text > small { font-size: 13px; line-height: 1.7; color: var(--text-sub, #7a645c); }
+.mt-zoom-text .app-btn-row { margin: 0; }
+.mt-zoom-steps { margin: 0; padding-left: 1.3em; display: grid; gap: 4px; font-size: 13px; line-height: 1.6; }
+.mt-zoom-note { font-size: 12px; line-height: 1.6; color: var(--text-sub, #7a645c); }
 /* マイページ: アプリの版と「最新の版にする」 */
 .me-version { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px 12px; margin: 18px 0 4px; text-align: center; }
 .me-version p { margin: 0; font-size: 13px; color: var(--text-sub, #7a645c); }

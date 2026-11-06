@@ -95,6 +95,27 @@
         h("div", { class: "mt-preview is-portrait" }, frame)));
   }
 
+  // Zoom 背景(BT-EX5。1920 × 1080)。資料が準備中の方の画面にも出す(全員が使える)
+  const ZOOM_BG = "../materials/zoom/bt-ex5-zoom-bg.jpg";
+  App.zoomBgSection = () => {
+    const full = new URL(ZOOM_BG, location.href).href;
+    return App.section("Zoom 背景",
+      h("div", { class: "mt-zoom" },
+        h("a", { class: "mt-zoom-img", href: ZOOM_BG, target: "_blank", rel: "noopener" },
+          h("img", { src: "../materials/zoom/preview.jpg", alt: "BT-EX5 の Zoom 背景(新潟と東京)", loading: "lazy", width: "960", height: "540" })),
+        h("div", { class: "mt-zoom-text" },
+          h("b", null, "BT-EX5 の Zoom 背景"),
+          h("small", null, "定例会や 1on1 の Zoom で、どなたでも使えます(1920 × 1080)。ゲストの方にも「リンクをコピー」で送れます。"),
+          h("div", { class: "app-btn-row" },
+            h("a", { class: "app-btn primary small", href: ZOOM_BG, download: "BT-EX5_Zoom背景.jpg" }, "画像を保存"),
+            App.btn("リンクをコピー", () => App.copyText(full, "リンクをコピーしました。LINE などに貼り付けて送ってください"), "ghost small")),
+          h("ol", { class: "mt-zoom-steps" },
+            h("li", null, "上の「画像を保存」で、この端末に保存します(スマホは、画像を長押しして保存)"),
+            h("li", null, "Zoom の「設定」→「背景とエフェクト」→「バーチャル背景」を開きます"),
+            h("li", null, "「＋」→「画像を追加」で、保存した画像を選びます")),
+          h("small", { class: "mt-zoom-note" }, "自分の画面では文字が左右反対に見えることがありますが、相手には正しく見えます(「マイビデオをミラーリング」を外すと、自分にも正しく見えます)。"))));
+  };
+
   App.views.materials = {
     title: "資料",
     async render(el) {
@@ -254,6 +275,7 @@
               h("p", { class: "app-field-hint" }, "PDF・画像は、A4 横(297mm × 210mm)ちょうどの大きさで保存します。印刷するときは「実際のサイズ(100%)」を選んでください。")),
             h("div", { class: "mt-preview" }, frame))),
         inviteSection(upcoming),
+        App.zoomBgSection(),
         // マスコット(3D。トキの「ときめ」と新幹線の「つなぐ」)。回す・分解して見る・画像で保存は、開いた先で
         App.section("マスコット(3D)",
           h("a", { class: "mt-mascot", href: "../materials/mascot/", target: "_blank", rel: "noopener" },

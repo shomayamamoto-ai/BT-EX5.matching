@@ -43,8 +43,8 @@
       text: "定例会の出席・欠席はここで押します。当日は、会場で見せる4桁の出席コードをここに入れます。" });
     if (tabEl("present")) steps.push({ el: () => tabEl("present"), title: "プレゼン",
       text: "定例会の進行用です。顔写真と紹介つきの大きな画面で、1分プレゼンを順番に進められます。" });
-    if (App.canTab("materials") && tabEl("materials")) steps.push({ el: () => tabEl("materials"), title: "資料",
-      text: "ポスター・招待の画像・スライドなど、そのまま使える資料がそろっています。" });
+    if (tabEl("materials")) steps.push({ el: () => tabEl("materials"), title: "資料",
+      text: App.canMaterials && App.canMaterials() ? "ポスター・招待の画像・Zoom 背景など、そのまま使える資料がそろっています。" : "BT-EX5 の Zoom 背景を保存できます。ポスターなどのほかの資料は準備中です。" });
     steps.push(
       { el: () => document.getElementById("appSearchBtn"), title: "アプリ内を検索",
         text: "名前・仕事・掲示板のことばなどで、アプリの中をまとめて探せます。" },
