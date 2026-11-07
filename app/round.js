@@ -903,8 +903,9 @@
       }
       if (/用語/.test(st.title) && hasGloss && !glossDone) glossary(label);
       if (/理念/.test(st.title) && D.about) {
-        deck("about", { name: `${D.name || "BT-EX"}とは`, step: label, paras: D.about, formula: D.formula, center: D.name || "BT-EX" });
+        // 理念・ビジョン → 「BT-EXとは」の順(2026年11月、運営の依頼で入れかえ)
         deck("vision", { name: D.name || "BT-EX", step: label, en: D.en, philosophy: D.philosophy, vision: D.vision });
+        deck("about", { name: `${D.name || "BT-EX"}とは`, step: label, paras: D.about, formula: D.formula, center: D.name || "BT-EX" });
         // 一覧はカードにして並べる(layout: grid=3×3)。「BT-EXの目的」のスライドは運営の依頼で外した(2026年11月)
         const withIcon = (arr, icons) => arr.map((x, i) => Object.assign(x, { icon: (icons || [])[i] || "" }));
         if (D.feature) deck("feature", { name: D.feature.title, step: label, lines: D.feature.lines });
@@ -1747,9 +1748,12 @@
         const [head, ...rest] = p.lines || [];
         return frameL("pd-feature is-centered", "",
           head ? h("p", { class: "pd-display" }, head) : null,
-          rest.map((x) => {
+          rest.map((x, i) => {
             const ends = String(x).split(/\s*[⇔↔]\s*/);
-            return ends.length === 2 ? routeMap(ends[0], ends[1], x) : h("p", { class: "pd-big" }, x);
+            if (ends.length === 2) return routeMap(ends[0], ends[1], x);
+            // 図のすぐ下の文は、図に添えるキャッチ(「映画一本の距離に、無限のビジネスチャンスを!」)
+            const afterMap = i > 0 && String(rest[i - 1]).split(/\s*[⇔↔]\s*/).length === 2;
+            return h("p", { class: afterMap ? "pd-route-catch" : "pd-big" }, x);
           }));
       }
       if (p.type === "list" && p.carousel) {

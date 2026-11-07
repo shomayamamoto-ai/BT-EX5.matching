@@ -3031,6 +3031,27 @@
           }
           changed = true;
         }
+        // BT-EX5 の特徴(2026年11月): 「新潟 ⇔ 東京」の図の下に「映画一本の距離に、無限のビジネスチャンスを！」を足す。
+        // 前に保存した特徴の文に、まだこの文がなければ、図の行のすぐ下に入れる
+        if (db.cleanups.indexOf("deck-feature-catch-1") === -1) {
+          db.cleanups.push("deck-feature-catch-1");
+          var cfg7 = readCfg(db);
+          var CATCH = "映画一本の距離に、無限のビジネスチャンスを！";
+          var addCatch = function (lines) {
+            if (!Array.isArray(lines)) return lines;
+            if (lines.some(function (t) { return flatText(t).indexOf("映画一本の距離") !== -1 || flatText(t).indexOf("映画1本の距離") !== -1; })) return lines;
+            var at = -1;
+            lines.forEach(function (t, i) { if (at === -1 && /[⇔↔]/.test(String(t))) at = i; });
+            if (at === -1) return lines;
+            var out = lines.slice(); out.splice(at + 1, 0, CATCH); return out;
+          };
+          if (cfg7) {
+            if (Array.isArray(cfg7["feature.lines"])) cfg7["feature.lines"] = addCatch(cfg7["feature.lines"]);
+            if (cfg7.feature && Array.isArray(cfg7.feature.lines)) cfg7.feature.lines = addCatch(cfg7.feature.lines);
+            writeCfg(db, cfg7);
+          }
+          changed = true;
+        }
         return changed;
       }
       return { migrate: migrate, actions: { getDeckConfig: getDeckConfig, saveDeckConfig: saveDeckConfig } };

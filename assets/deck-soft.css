@@ -80,6 +80,7 @@
 .pr-run.deck-soft .pd-route-map .rt-rails { stroke: #e3a69c; }
 .pr-run.deck-soft .pd-route-map .rt-rails-gap { stroke: #fbf3f0; }
 .pr-run.deck-soft .pd-route-map .rt-city { fill: var(--pd-strong); }
+.pr-run.deck-soft .pd-feature .pd-route-catch { color: var(--pd-strong); }
 .pr-run.deck-soft .pd-tseg { background: linear-gradient(180deg, rgba(217, 119, 107, 0.3), rgba(217, 119, 107, 0.14)); }
 .pr-run.deck-soft .pd-tseg:nth-child(even) { background: linear-gradient(180deg, rgba(217, 119, 107, 0.2), rgba(217, 119, 107, 0.07)); }
 .pr-run.deck-soft .pd-tseg.is-op { background: #fff; }
