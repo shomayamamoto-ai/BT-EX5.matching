@@ -80,10 +80,13 @@ var BtexServerCore = (function () {
   function registerModule(mod) { MODULES.push(mod); }
 
   // お名前の照合用: 全角・半角、空白、大文字小文字の違いをそろえる
+  // 名前をくらべるときの形: 空白・全角半角・大文字小文字のちがいを見ない。
+  // 旧字・異体字(栁/柳・髙/高 など)も同じ字として扱う(2026年11月、運営の依頼: 栁と柳は同じ人)
+  var NAME_VARIANTS = { "栁": "柳", "髙": "高", "﨑": "崎", "邊": "辺", "邉": "辺", "齋": "斎", "齊": "斎", "濵": "浜", "濱": "浜" };
   function normalizeName(v) {
     var s = String(v || "");
     if (s.normalize) s = s.normalize("NFKC");
-    return s.replace(/[\s\u3000・]/g, "").toLowerCase();
+    return s.replace(/[\s\u3000・]/g, "").replace(/[栁髙﨑邊邉齋齊濵濱]/g, function (ch) { return NAME_VARIANTS[ch] || ch; }).toLowerCase();
   }
 
   // ---------- SHA-256(UTF-8 文字列 → 16進) ----------

@@ -7,7 +7,9 @@
 (function () {
   "use strict";
   const { h } = App;
-  const norm = (s) => String(s || "").toLowerCase().normalize("NFKC");
+  // 旧字・異体字(栁/柳・髙/高 など)は同じ字として探す(1字を1字に置きかえるので、印をつける位置はずれない)
+  const VARIANTS = { "栁": "柳", "髙": "高", "﨑": "崎", "邊": "辺", "邉": "辺", "齋": "斎", "齊": "斎", "濵": "浜", "濱": "浜" };
+  const norm = (s) => String(s || "").toLowerCase().normalize("NFKC").replace(/[栁髙﨑邊邉齋齊濵濱]/g, (ch) => VARIANTS[ch] || ch);
 
   // 見つかった言葉のまわりだけを切り出し、言葉に印をつける
   function snippet(text, words, len = 60) {

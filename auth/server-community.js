@@ -709,7 +709,8 @@
           var u = userOf(db, m.id);
           if (u && u.meetName) keys[BtexServerCore.normalizeName(u.meetName)] = m.id;
         });
-        Object.keys(db.meetAliases || {}).forEach(function (k) { keys[k] = db.meetAliases[k]; });
+        // 前に覚えた表示名も、いまのくらべ方(栁/柳 などを同じ字に)でそろえて使う
+        Object.keys(db.meetAliases || {}).forEach(function (k) { keys[BtexServerCore.normalizeName(k)] = db.meetAliases[k]; });
         var byMember = {};
         var unmatched = {};
         list.forEach(function (p) {
