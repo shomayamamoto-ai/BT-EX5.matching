@@ -11,6 +11,9 @@ import { createTools, handleRpc } from "../../core.mjs";
 
 const DEFAULT_API = "https://script.google.com/macros/s/AKfycbw_Pb3sqA4O83kwIiT5GPO9cBGfhyh5knBqgebBPbKxbedMkzS9skIIH6M7MKb3pP9mqA/exec";
 const DAY = 24 * 60 * 60;
+// つないでよい方(メンバーの id をカンマ区切り。wrangler.jsonc の ALLOWED_MEMBERS)。空なら全員
+const allowedList = (env) => String(env.ALLOWED_MEMBERS || "").split(",").map((x) => x.trim()).filter(Boolean);
+const isAllowed = (env, memberId) => { const l = allowedList(env); return !l.length || l.includes(memberId); };
 
 // ---------- 共有サーバー(GAS)へ ----------
 async function gas(env, action, payload) {
@@ -33,6 +36,8 @@ async function gas(env, action, payload) {
 const mcpHandler = {
   async fetch(request, env, ctx) {
     const props = ctx.props || {};
+    // あとから使える方をしぼったときは、前に許可した AI も使えなくする
+    if (!isAllowed(env, props.memberId)) return json({ jsonrpc: "2.0", id: null, error: { code: -32001, message: "BT-EX5 の AI 連携は、いまは一部の方だけが使えます。" } }, 403);
     if (request.method === "GET") return new Response("このサーバーは、知らせ(SSE)を送りません。POST で使ってください。", { status: 405, headers: { Allow: "POST, DELETE" } });
     if (request.method === "DELETE") return new Response(null, { status: 204 });
     if (request.method !== "POST") return new Response("Method Not Allowed", { status: 405, headers: { Allow: "POST" } });
@@ -136,6 +141,9 @@ const defaultHandler = {
             const tx = await env.OAUTH_PROVIDER.beginConsent(approved.request);
             const msg = e.code === "LOCKED" ? "何度かまちがえたため、しばらくログインできません。時間をおいてください。" : e.message || "ログインできませんでした。";
             return loginPage(desc, tx, { error: msg, name });
+          }
+          if (!isAllowed(env, s.memberId)) {
+            return page("準備中です", `<h1><b>BT-EX5</b> の AI 連携は準備中です</h1><p>いまは一部の方だけが試しています。使えるようになったら、会員サイトのお知らせでご案内します。この画面は閉じてください。</p>`);
           }
           const { redirectTo } = await env.OAUTH_PROVIDER.completeAuthorization({
             request: approved.request,

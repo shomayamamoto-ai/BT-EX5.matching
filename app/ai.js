@@ -8,6 +8,9 @@
   const h = App.h;
   // 公開した MCP サーバーの URL(https://…/mcp)。空のあいだは「準備中」と出す
   const MCP_URL = "";
+  // いまは山本 捷真だけが使える(2026年11月、運営の依頼。ためしてから全員に広げる)。空にすると全員
+  const AI_USERS = ["yamamoto"];
+  App.canAi = () => !AI_USERS.length || !!(App.session && AI_USERS.includes(App.session.memberId));
   // BT-EX 全体(bt-ex.jp)の AI 連携(公式)
   const BTEX_JP_MCP = "https://bt-ex.jp/mcp";
 
@@ -23,6 +26,13 @@
     title: "AI との連携",
     tab: "",
     async render(el) {
+      if (!App.canAi()) {
+        el.append(h("section", { class: "app-section locked-box" },
+          h("h1", { class: "app-h1" }, "AI との連携は準備中です"),
+          h("p", { class: "app-lead" }, "いまは一部の方だけが試しています。使えるようになったら、お知らせでご案内します。"),
+          h("div", { class: "app-btn-row" }, h("a", { class: "app-btn primary", href: "#me" }, "マイページへ"))));
+        return;
+      }
       const ready = !!MCP_URL;
       el.append(
         h("h1", { class: "app-h1" }, "AI との連携"),

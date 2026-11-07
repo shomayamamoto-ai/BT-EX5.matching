@@ -14,7 +14,9 @@
     // 共有サーバー(Google Apps Script)の URL。auth/api.js の API_BASE_URL と同じ
     "BTEX5_API": "https://script.google.com/macros/s/AKfycbw_Pb3sqA4O83kwIiT5GPO9cBGfhyh5knBqgebBPbKxbedMkzS9skIIH6M7MKb3pP9mqA/exec",
     // 会員サイト(案内のページからのリンク)
-    "APP_URL": "https://shomayamamoto-ai.github.io/kouryukai.matching/app/"
+    "APP_URL": "https://shomayamamoto-ai.github.io/kouryukai.matching/app/",
+    // つないでよい方(メンバーの id をカンマ区切り)。空にすると全員。いまは山本 捷真だけ(ためしてから広げる)
+    "ALLOWED_MEMBERS": "yamamoto"
   },
   "observability": { "enabled": true }
 }
