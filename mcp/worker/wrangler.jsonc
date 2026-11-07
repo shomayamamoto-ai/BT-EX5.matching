@@ -4,6 +4,8 @@
   "name": "btex5-mcp",
   "main": "src/index.js",
   "compatibility_date": "2026-10-01",
+  // ChatGPT などが使う「クライアントの説明書の URL」(CIMD)を読むために必要
+  "compatibility_flags": ["global_fetch_strictly_public"],
   "kv_namespaces": [
     // AI ごとの許可を入れる場所。`npx wrangler kv namespace create OAUTH_KV` で作り、出てきた id をここに入れる
     { "binding": "OAUTH_KV", "id": "ここに KV の id を入れる" }
