@@ -798,27 +798,41 @@
     const lines = String(text || "").split("\n");
     const isStep = (l) => NUMS.includes(l.trim().charAt(0));
     const title = (l) => l.trim().slice(1).trim();
-    if (lines.some((l) => isStep(l) && /仕組み|ベネフィット|強み|ご案内/.test(title(l)))) return text;
+    const has = (re) => lines.some((l) => isStep(l) && re.test(title(l)));
+    const isEnd = (l) => isStep(l) && /(終わり|おわり)の?(挨拶|あいさつ)/.test(title(l));
     const out = [];
-    lines.forEach((l) => {
-      if (isStep(l) && /実績/.test(title(l))) out.push("①BT-EXの強み");
-      // 終わりの挨拶の前に「BT-EX5のご案内」(入会・アンケート・出席コード・スケジュール・規定は、ご案内のほうへ)
-      if (isStep(l) && /(終わり|おわり)の?(挨拶|あいさつ)/.test(title(l))) out.push("①BT-EX5のご案内");
-      out.push(l);
-      if (isStep(l) && /理念/.test(title(l))) out.push("①仕組みとベネフィット");
-    });
+    if (!has(/仕組み|ベネフィット|強み|ご案内|規定/)) {
+      lines.forEach((l) => {
+        if (isStep(l) && /実績/.test(title(l))) out.push("①BT-EXの強み");
+        // 終わりの挨拶の前に「BT-EX5のご案内」(入会・アンケート・出席コード・スケジュール)と「BT-EXの規定」
+        if (isEnd(l)) out.push("①BT-EX5のご案内", "①BT-EXの規定");
+        out.push(l);
+        if (isStep(l) && /理念/.test(title(l))) out.push("①仕組みとベネフィット");
+      });
+    } else if (has(/ご案内/) && !has(/規定/)) {
+      // ⑩ご案内 ⑪終わりの挨拶 の形(2026年11月7日の版)なら、あいだに「BT-EXの規定」
+      lines.forEach((l) => { if (isEnd(l)) out.push("①BT-EXの規定"); out.push(l); });
+    } else return text;
+    if (out.length === lines.length) return text;
     let n = 0;
     return out.map((l) => (isStep(l) ? NUMS.charAt(n++) + l.trim().slice(1) : l)).join("\n");
   }
 
-  // 時間の目安が前の流れ(8区切り = 9つ)のままなら、新しい流れ(11区切り)に合わせて分ける:
-  // 理念の時間を「理念」と「仕組みとベネフィット」に、商談から3分を「BT-EXの強み」に、終わりの挨拶から1分を残してあとを「ご案内」に
+
+  // 時間の目安が前の流れ(8区切り = 9つ / 11区切り = 12)のままなら、新しい流れ(12区切り)に合わせて分ける:
+  // 理念の時間を「理念」と「仕組みとベネフィット」に、商談から3分を「BT-EXの強み」に、終わりの挨拶から1分を残してあとを「ご案内」と「規定」に
   function fitPlan(plan) {
-    if (!Array.isArray(plan) || plan.length !== 9) return plan;
+    if (!Array.isArray(plan)) return plan;
     const p = plan.map((v) => Math.max(0, Number(v) || 0));
-    const ri = Math.round((p[3] * 10) / 18), st = p[6] > 3 ? 3 : 0, cl = p[8] > 1 ? 1 : 0;
-    return [p[0], p[1], p[2], ri, p[3] - ri, p[4], p[5], p[6] - st, st, p[7], p[8] - cl, cl];
+    if (p.length === 9) {
+      const ri = Math.round((p[3] * 10) / 18), st = p[6] > 3 ? 3 : 0, cl = p[8] > 1 ? 1 : 0, gd = Math.ceil((p[8] - cl) / 2);
+      return [p[0], p[1], p[2], ri, p[3] - ri, p[4], p[5], p[6] - st, st, p[7], gd, p[8] - cl - gd, cl];
+    }
+    // 12(⑩ご案内 ⑪終わりの挨拶 の版)→ ご案内を「ご案内」と「規定」に分ける
+    if (p.length === 12) { const gd = Math.ceil(p[10] / 2); return [...p.slice(0, 10), gd, p[10] - gd, p[11]]; }
+    return plan;
   }
+
 
   App.fitDeckPlan = fitPlan;
   // 定例会の長さ(分)。わからないときは null
@@ -879,6 +893,7 @@
     // 仕組みとベネフィット(9つのカード)。流れに「仕組みとベネフィット」の区切りがあればそこに、なければ理念のあとに
     const hasBenefitStep = steps.some((st) => /仕組み|ベネフィット/.test(st.title));
     const hasStrengthStep = steps.some((st) => /強み/.test(st.title));
+    const hasRuleStep = steps.some((st) => /規定/.test(st.title));
     let benefitDone = false;
     const benefits = (label) => {
       benefitDone = true;
@@ -898,20 +913,24 @@
       if (D.attend) deck("attend", Object.assign({ step: label }, D.attend, { name: D.attend.title, msg: D.attend.lead, lead: "", code: more.code || "" }));
       // 出席コードのあとに、もう一度スケジュール(次の定例会の日程を伝えて終わる)
       scheduleSlides(label);
-      rulesSlides();
+      if (!hasRuleStep) rulesSlides();
     };
     // 規定(一般・出席・倫理)。終わりの挨拶のスケジュールのあと、「本日もありがとうございました」の前に出す
     // (2026年11月・運営の依頼。前は②理念の「仕組みとベネフィット」のあと。「主な3つの活動」のスライドは外した)
-    const rulesSlides = () => {
+    // 流れに「BT-EXの規定」の区切り(⑪)があれば、その区切りのスライドのあとに。なければ、ご案内のあとに番号なしの区切りをつけて出す
+    let rulesDone = false;
+    const rulesSlides = (stepLabel) => {
+      rulesDone = true;
       const R = D.rules;
+      const lb = stepLabel || "BT-EXの規定";
       if (R) {
-        deck("section", { no: 0, name: R.title, step: "BT-EXの規定" });
+        if (!stepLabel) deck("section", { no: 0, name: R.title, step: lb });
         // 「BT-EX の約束」(3件/月・月1回以上 など数字のページ)は出さない(運営の依頼。2026年11月)
         // 規定は1つずつのスライドに、絵・番号・見出しつきのカードで出す(文はそのまま)
         const H = R.heads || {}, I = R.icons || {};
-        deck("rules", { name: "一般規定", step: "BT-EXの規定", rows: R.general, heads: H.general, icons: I.general, cols: 3, carousel: true });
-        deck("rules", { name: "出席規定", step: "BT-EXの規定", rows: R.attendance, heads: H.attendance, icons: I.attendance, cols: 2, note: R.note, carousel: true });
-        deck("rules", { name: "倫理規定", step: "BT-EXの規定", rows: R.ethics, heads: H.ethics, icons: I.ethics, cols: 3, carousel: true });
+        deck("rules", { name: "一般規定", step: lb, rows: R.general, heads: H.general, icons: I.general, cols: 3, carousel: true });
+        deck("rules", { name: "出席規定", step: lb, rows: R.attendance, heads: H.attendance, icons: I.attendance, cols: 2, note: R.note, carousel: true });
+        deck("rules", { name: "倫理規定", step: lb, rows: R.ethics, heads: H.ethics, icons: I.ethics, cols: 3, carousel: true });
       }
     };
     // BT-EX5 スケジュール(月2回の定例会 → 次回以降の日程)。終わりの挨拶の出席コードのあとにだけ出す
@@ -984,6 +1003,7 @@
       if (/商談/.test(st.title) && !extra && !hasStrengthStep) extras(label);
       if (/実績/.test(st.title) && !raiseDone) raises(label);
       if (/ご案内/.test(st.title) && !guideDone) guideSlides(label);
+      if (/規定/.test(st.title) && !rulesDone) rulesSlides(label);
       if (/(終わり|おわり)の?(挨拶|あいさつ)/.test(st.title)) closeLabel = label;
     });
     // 進行表にプレゼンの行がないときは、最後の区切りの前に入れる
