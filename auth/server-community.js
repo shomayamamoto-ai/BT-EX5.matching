@@ -35,7 +35,7 @@
       "rsvpEvent", "adminSetRsvp", "saveSeed", "deleteSeed", "checkIn", "adminSaveEvent", "adminDeleteEvent", "adminOpenCheckIn", "adminMarkAttendance",
       "adminSyncMeetAttendance", "adminMapMeetName",
       "createVisitorInvite", "updateVisitor", "visitorApply",
-      "reportThanks", "deleteThanks", "save1on1", "delete1on1", "confirm1on1", "muteReferralNudge",
+      "reportThanks", "deleteThanks", "markBtexPosted", "save1on1", "delete1on1", "confirm1on1", "muteReferralNudge",
     ],
     // 書き込みのあとに、通知(プッシュ)を送るか確かめる操作(mutating に加えて)
     notifying: ["createPost", "commentPost", "adminSaveAnnouncement", "adminRemindAnnouncement", "setReferralMeeting", "adminSaveMinutes", "saveTask"],
@@ -964,6 +964,7 @@
           mine: giver === me, received: l.toMemberId === me,
           thanksAmount: thanks ? thanks.amount : 0,
           meeting: meetingView(db, l.meeting),
+          btexPostedAt: l.btexPostedAt || 0, // bt-ex.jp にも登録した日時(AI・MCP で書き写したとき)
         };
       }
 
@@ -1003,7 +1004,7 @@
       }
 
       function thanksView(db, t) {
-        return { id: t.id, at: t.at, from: t.from, fromName: nameOf(db, t.from), to: t.to, toName: nameOf(db, t.to), amount: t.amount, message: t.message, referralId: t.referralId || "" };
+        return { id: t.id, at: t.at, from: t.from, fromName: nameOf(db, t.from), to: t.to, toName: nameOf(db, t.to), amount: t.amount, message: t.message, referralId: t.referralId || "", btexPostedAt: t.btexPostedAt || 0 };
       }
 
       function listMyReferrals(body) {
@@ -1019,6 +1020,24 @@
         var thanksIn = db.thanks.filter(function (t) { return t.to === w.id; }).map(function (t) { return thanksView(db, t); });
         var thanksOut = db.thanks.filter(function (t) { return t.from === w.id; }).map(function (t) { return thanksView(db, t); });
         return c.ok({ given: given.reverse(), received: received.reverse(), thanksIn: thanksIn.reverse(), thanksOut: thanksOut.reverse() });
+      }
+
+      // bt-ex.jp にも登録した(または登録をやめた)印を付ける。自分がした紹介・自分が送ったありがとうマイルだけ。
+      // bt-ex.jp とはつながっていないので、AI(MCP)がご本人のブラウザで bt-ex.jp に書き写したあとに付ける(2026年11月)
+      function markBtexPosted(body) {
+        var w = who(body);
+        if (w.error) return w.error;
+        var ids = (Array.isArray(body.ids) ? body.ids : []).map(function (v) { return c.cleanStr(v, 40); }).filter(Boolean).slice(0, 200);
+        var at = body.posted === false ? 0 : c.nowMs();
+        var done = [];
+        ids.forEach(function (id) {
+          var l = c.find(w.db.referralLogs, function (x) { return x.id === id; });
+          if (l && memberIdOfUser(w.db, l.fromUserId) === w.id) { if (at) l.btexPostedAt = at; else delete l.btexPostedAt; done.push(id); return; }
+          var t = c.find(w.db.thanks, function (x) { return x.id === id; });
+          if (t && t.from === w.id) { if (at) t.btexPostedAt = at; else delete t.btexPostedAt; done.push(id); }
+        });
+        if (done.length) c.saveDb(w.db);
+        return c.ok({ marked: done, at: at });
       }
 
       // 紹介で決まった仕事のお礼(ありがとうマイル)を記録する。
@@ -2679,7 +2698,7 @@
           adminSyncMeetAttendance: adminSyncMeetAttendance, adminMapMeetName: adminMapMeetName,
           createVisitorInvite: createVisitorInvite, listMyVisitors: listMyVisitors, updateVisitor: updateVisitor,
           visitorInfo: visitorInfo, visitorApply: visitorApply,
-          listMyReferrals: listMyReferrals, setReferralMeeting: setReferralMeeting, reportThanks: reportThanks, deleteThanks: deleteThanks, getRankings: getRankings, getTeamRanking: getTeamRanking, getStats: getStats, logSearch: logSearch, adminSetTeamGoals: adminSetTeamGoals,
+          listMyReferrals: listMyReferrals, markBtexPosted: markBtexPosted, setReferralMeeting: setReferralMeeting, reportThanks: reportThanks, deleteThanks: deleteThanks, getRankings: getRankings, getTeamRanking: getTeamRanking, getStats: getStats, logSearch: logSearch, adminSetTeamGoals: adminSetTeamGoals,
           list1on1: list1on1, save1on1: save1on1, delete1on1: delete1on1, confirm1on1: confirm1on1,
           getMySettings: getMySettings, updateMySettings: updateMySettings, muteReferralNudge: muteReferralNudge, lineLinkCode: lineLinkCode, lineSetting: lineSetting, adminLineStatus: adminLineStatus,
           listAnnouncements: listAnnouncements, markAnnouncementsRead: markAnnouncementsRead,

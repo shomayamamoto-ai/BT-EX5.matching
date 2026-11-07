@@ -288,6 +288,47 @@ const TOOLS = [
       return { marked: targets.map((m) => m.name), status: st, skipped };
     },
   },
+  {
+    name: "btex5_list_referrals_for_btex",
+    description: "ログインしている本人が会員サイトに記録した「紹介(リファーラル)」と「送ったありがとうマイル」のうち、まだ bt-ex.jp に登録していないものを返す(include_posted: true で登録ずみも)。AI はこれを見て、ご本人のブラウザの bt-ex.jp の入力画面に1件ずつ書き写し、送信の前にご本人に確かめてもらう。紹介した相手の連絡先は返さない(bt-ex.jp に必要なときは、ご本人が入れる)。",
+    inputSchema: { type: "object", properties: { include_posted: { type: "boolean" } } },
+    run: async ({ include_posted }) => {
+      const d = await authed("listMyReferrals");
+      const day = (ms) => (ms ? new Date(ms + 9 * 3600 * 1000).toISOString().slice(0, 10) : "");
+      const STATUS = { new: "未対応", contacted: "連絡済み", meeting: "商談中", won: "成約", lost: "見送り" };
+      const referrals = (d.given || []).filter((r) => include_posted || !r.btexPostedAt).map((r) => ({
+        id: r.id, kind: "紹介(リファーラル)", date: day(r.at), to: r.toName, prospect: r.prospect, memo: r.memo,
+        status: STATUS[r.status] || r.status, thanksAmount: r.thanksAmount || 0, btexPosted: day(r.btexPostedAt),
+      }));
+      const thanks = (d.thanksOut || []).filter((t) => include_posted || !t.btexPostedAt).map((t) => ({
+        id: t.id, kind: "ありがとうマイル(送った)", date: day(t.at), to: t.toName, amount: t.amount, message: t.message, btexPosted: day(t.btexPostedAt),
+      }));
+      return {
+        referrals, thanks,
+        next: referrals.length + thanks.length
+          ? "bt-ex.jp の入力画面に書き写し、ご本人が送信したら、その id を btex5_mark_btex_posted に渡して「bt-ex.jp に登録ずみ」にしてください(はじめは apply なしで下見)。"
+          : "bt-ex.jp にまだ登録していない記録はありません。",
+      };
+    },
+  },
+  {
+    name: "btex5_mark_btex_posted",
+    description: "会員サイトの紹介・ありがとうマイルの記録に「bt-ex.jp に登録ずみ」の印を付ける(本人の記録だけ)。bt-ex.jp で実際に送信できたものだけに付ける。apply: true のときだけ書きこむ。posted: false で印を外す。",
+    inputSchema: {
+      type: "object",
+      required: ["ids"],
+      properties: { ids: { type: "array", items: { type: "string" } }, posted: { type: "boolean" }, apply: { type: "boolean" } },
+    },
+    run: async ({ ids, posted, apply }) => {
+      const d = await authed("listMyReferrals");
+      const all = [...(d.given || []).map((r) => ({ id: r.id, what: `紹介: ${r.toName} へ ${r.prospect || ""}`.trim() })),
+        ...(d.thanksOut || []).map((t) => ({ id: t.id, what: `ありがとうマイル: ${t.toName} へ ${t.amount}` }))];
+      const targets = (ids || []).map((id) => all.find((x) => x.id === id) || { id, what: "(本人の記録に見つかりません)" });
+      if (!apply) return { preview: true, posted: posted !== false, targets };
+      const r = await authed("markBtexPosted", { ids: targets.map((t) => t.id), posted: posted !== false });
+      return { marked: r.marked, notFound: targets.filter((t) => !r.marked.includes(t.id)).map((t) => t.id) };
+    },
+  },
 ];
 
 // ---------- MCP(JSON-RPC 2.0、1行に1つ) ----------
