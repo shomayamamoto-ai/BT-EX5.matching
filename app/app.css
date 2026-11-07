@@ -3426,3 +3426,12 @@ button.home-welcome-check:active { transform: scale(0.94); }
 /* ほかの BT-EX の番号のボタン: 番号の下に場所(関東・大阪 など) */
 .pr-unit-chip .pr-unit-area { font-size: 10px; font-weight: 700; letter-spacing: 0; color: var(--text-sub); white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
 .pr-unit-chip.is-on .pr-unit-area { color: #5a3c10; }
+
+/* 定例会のスライドの下の進行バー(2026年11月): 流れが12区切りになり、文字が重なっていたので、
+   画面の両端まで広げ、列は「いちばん長いことばのかたまり」が入る幅を下限にする(重ならない)。
+   右はしの操作パネル(縦に置いたとき)にはかからないよう、右だけ少しあける */
+.pr-run.is-deck .pd-progress { width: 100%; justify-self: stretch; box-sizing: border-box; padding-left: clamp(12px, 2vw, 40px); padding-right: clamp(12px, 2vw, 40px); }
+.pr-run.is-deck:not(.dock-home) .pd-progress { padding-right: clamp(96px, 7.5vw, 140px); }
+.pr-run.is-deck .pd-progress-steps { grid-auto-columns: minmax(min-content, 1fr); gap: clamp(4px, 0.5vw, 10px); }
+.pr-run.is-deck .pd-progress-steps li { min-width: min-content; }
+.pr-run.is-deck .pd-progress-steps li > span { max-width: none; min-width: min-content; overflow-wrap: normal; }
