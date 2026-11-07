@@ -900,19 +900,19 @@
       const withIcon = (arr, icons) => arr.map((x, i) => Object.assign(x, { icon: (icons || [])[i] || "" }));
       if (D.benefits) deck("list", { name: `${D.name || "BT-EX"}の仕組みとベネフィット`, step: label, layout: "grid", carousel: true, lead: `${D.benefits.length}つの仕組みが、ビジネスを加速させる`, items: withIcon(D.benefits.map((x) => (typeof x === "string" ? { title: x } : { title: x.head, lines: [x.text] })), D.benefitIcons) });
     };
-    // BT-EX5のご案内: 入会への3ステップ → アンケート(BT-EX メンバー / ビジター) → 出席コード → スケジュール → 規定(一般・出席・倫理)
+    // BT-EX5のご案内: 入会への3ステップ → 出席コード → 次回のスケジュール → アンケート(BT-EX メンバー / ビジター)
     // (2026年11月、運営の依頼で終わりの挨拶から分けた)
     let guideDone = false, closeLabel = "";
     const guideSlides = (label) => {
       guideDone = true;
       if (D.joinSteps) deck("joinsteps", { name: D.joinSteps.title, step: label, cards: D.joinSteps.steps || [], note: D.joinSteps.note || "", noteSpan: D.joinSteps.noteSpan || 2 });
+      if (D.attend) deck("attend", Object.assign({ step: label }, D.attend, { name: D.attend.title, msg: D.attend.lead, lead: "", code: more.code || "" }));
+      // 出席コードのあとに、次回のスケジュール → アンケート(2026年11月、運営の依頼でこの順に)
+      scheduleSlides(label);
       if (D.survey) {
         const url = (k) => { try { return new URL(`../survey/?k=${k}${ev ? `&e=${encodeURIComponent(ev.id)}` : ""}`, location.href).href; } catch { return ""; } };
         deck("survey", { name: D.survey.title, step: label, lead: D.survey.lead, urls: [["BT-EX メンバーの方", url("member")], ["ビジターの方", url("visitor")]] });
       }
-      if (D.attend) deck("attend", Object.assign({ step: label }, D.attend, { name: D.attend.title, msg: D.attend.lead, lead: "", code: more.code || "" }));
-      // 出席コードのあとに、もう一度スケジュール(次の定例会の日程を伝えて終わる)
-      scheduleSlides(label);
       if (!hasRuleStep) rulesSlides();
     };
     // 規定(一般・出席・倫理)。終わりの挨拶のスケジュールのあと、「本日もありがとうございました」の前に出す
