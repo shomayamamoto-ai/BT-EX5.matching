@@ -1515,10 +1515,10 @@
     const slide = h("div", { class: "pr-slide" });
     // 定例会のスライドの下の進行バー: 流れの1〜7のどこにいるかと、ページ数
     const deckSteps = opts.deck ? ((people.find((p) => p.steps) || {}).steps || []) : [];
-    // 進行バーの名前を、ことばの切れ目でだけ折り返す(「エデュケーション/コーナー」「ブレイクアウト/ルーム商談/(テーブル商談)」)
+    // 進行バーの名前を、ことばの切れ目でだけ折り返す(「仕組みと/ベネフィット」「エデュケーション/コーナー」「ブレイクアウト/ルーム商談/(テーブル商談)」)
     // ことばのかたまりは1行のまま(途中で折り返さない)
     const stepWords = (title) => String(title || "")
-      .replace(/(エデュケーション|ブレイクアウト|ビジネス|プレゼン(?=テーション)|1分|の)(?=.)/g, "$1\u0000").replace(/(.)(?=[（(])/g, "$1\u0000")
+      .replace(/(エデュケーション|ブレイクアウト|ビジネス|プレゼン(?=テーション)|1分|仕組みと|の)(?=.)/g, "$1\u0000").replace(/(.)(?=[（(])/g, "$1\u0000")
       .split("\u0000").filter(Boolean).flatMap((part, i) => (i ? [h("wbr"), h("span", { class: "pd-nw" }, part)] : [h("span", { class: "pd-nw" }, part)]));
     const progress = opts.deck ? h("div", { class: "pd-progress", "aria-hidden": "true" }) : null;
     function drawProgress() {
@@ -1691,8 +1691,8 @@
         const rows = (m ? m[2] : t).split("\n").map((r) => h("span", { class: "pd-line" }, r.trim()));
         return m ? [h("span", { class: "pd-hang is-tagged" }, h("span", { class: "pd-hang-l pd-tag" }, m[1]), h("span", { class: "pd-hang-r" }, ...rows))] : rows;
       };
-      // 長いカタカナの言葉は、決めたところで改行する(「ブレイクアウト/ルーム商談」)
-      const softBreaks = (t) => String(t).split(/(?=ルーム商談|[（(]テーブル)/).flatMap((x, i) => (i ? [h("br"), x] : [x]));
+      // 長いカタカナの言葉は、決めたところで改行する(「ブレイクアウト/ルーム商談」「仕組みと/ベネフィット」)
+      const softBreaks = (t) => String(t).split(/(?=ルーム商談|[（(]テーブル|(?<=仕組みと)ベネフィット)/).flatMap((x, i) => (i ? [h("br"), x] : [x]));
       // カードなどを順に浮かび上がらせる(--i は順番)
       const nth = (i) => ({ style: `--i:${i}` });
       // 区切りの英語の名前(やわらかいデザインのスライドで、筆記体で添える。assets/deck-soft.css)
