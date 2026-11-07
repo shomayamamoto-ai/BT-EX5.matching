@@ -1,0 +1,18 @@
+// BT-EX5 MCP サーバー(Cloudflare Workers)の設定。公開のしかたは ../README.md の「インターネット版」
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "btex5-mcp",
+  "main": "src/index.js",
+  "compatibility_date": "2026-10-01",
+  "kv_namespaces": [
+    // AI ごとの許可を入れる場所。`npx wrangler kv namespace create OAUTH_KV` で作り、出てきた id をここに入れる
+    { "binding": "OAUTH_KV", "id": "ここに KV の id を入れる" }
+  ],
+  "vars": {
+    // 共有サーバー(Google Apps Script)の URL。auth/api.js の API_BASE_URL と同じ
+    "BTEX5_API": "https://script.google.com/macros/s/AKfycbw_Pb3sqA4O83kwIiT5GPO9cBGfhyh5knBqgebBPbKxbedMkzS9skIIH6M7MKb3pP9mqA/exec",
+    // 会員サイト(案内のページからのリンク)
+    "APP_URL": "https://shomayamamoto-ai.github.io/kouryukai.matching/app/"
+  },
+  "observability": { "enabled": true }
+}

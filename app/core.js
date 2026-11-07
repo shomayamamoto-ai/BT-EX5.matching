@@ -776,7 +776,7 @@ const App = (function () {
 
   // 各画面の頭: 英字の筆記体と日本語の画面名(assets/soft.css の .app-hero)。
   // 画面の中にもう大きな見出し(.app-h1)があるときは、その上に英字だけを添える
-  const HERO_EN = { home: "Schedule", events: "Schedule", log: "Record", present: "Presentation", board: "Board", news: "Update", feed: "News", me: "My Page", admin: "Admin", ops: "Meeting", invite: "Invitation", help: "Guide", materials: "Materials" };
+  const HERO_EN = { home: "Schedule", events: "Schedule", log: "Record", present: "Presentation", board: "Board", news: "Update", feed: "News", me: "My Page", admin: "Admin", ops: "Meeting", invite: "Invitation", help: "Guide", materials: "Materials", ai: "AI" };
   function addHero(el, view, parts) {
     const en = HERO_EN[view];
     if (!en || (typeof BtexTheme !== "undefined" && BtexTheme.site() === "classic")) return; // 元の黒×金のデザインでは出さない

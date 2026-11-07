@@ -1,0 +1,16 @@
+{
+  "name": "btex5-mcp-worker",
+  "private": true,
+  "type": "module",
+  "description": "BT-EX5 会員サイトの MCP サーバー(インターネット版。Cloudflare Workers)",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy"
+  },
+  "dependencies": {
+    "@cloudflare/workers-oauth-provider": "1.2.4"
+  },
+  "devDependencies": {
+    "wrangler": "4.152.0"
+  }
+}

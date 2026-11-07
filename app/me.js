@@ -40,6 +40,7 @@
           menu("#me/notify", "通知を受け取る(iPhone・Android)", "紹介・掲示板・運営連絡が届いたら、スマホに通知します"),
           menu("#me/calendar", "Google カレンダー・Meet の設定", "1on1 の招待を受け取るアドレスと、Meet で表示される名前"),
           menu("#me/install", "スマホのホーム画面に追加", "アプリのようにすぐ開けます"),
+          menu("#ai", "AI との連携(ChatGPT・Claude・Gemini)", "自分の AI に BT-EX5 をつなぎ、会話から予定を調べたり、記録を登録したり"),
           typeof BtexTheme !== "undefined" ? menu("#me/design", "デザインの切りかえ", `いま: サイト ${BtexTheme.site() === "classic" ? "元の黒×金" : "やわらかいデザイン"}・スライド ${BtexTheme.deck() === "classic" ? "元の黒×金" : "やわらかいデザイン"}`) : null),
         group("定例会",
           menu("#meeting", "💡 定例会メモ", "プレゼンを聞きながら「この人に紹介できそう」をメモ(自分だけが見られます)"),

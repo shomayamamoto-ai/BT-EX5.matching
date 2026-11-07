@@ -1,5 +1,13 @@
 # BT-EX5 会員サイトの MCP サーバー
 
+2つの版があります。
+
+- **インターネット版**(`worker/`、Cloudflare Workers): ChatGPT・Claude・Gemini のアプリに URL を入れるだけでつながります。
+  つなぐときに BT-EX5 のログイン画面が開き、「許可する」でその AI が使えるようになります(OAuth)。会員サイトの「マイページ → AI との連携」に手順があります。
+- **パソコン版**(`btex5-mcp.mjs`): ご自分のパソコンの Claude Desktop・Claude Code などで動かします(下の「設定のしかた」)。
+
+道具の中身は2つとも同じ `core.mjs` です。
+
 Claude などの AI から、BT-EX5 会員サイト(共有サーバー)の名簿・定例会・出欠を読んだり、
 **bt-ex.jp の名簿・出席とくらべて、会員サイトに反映**したりできるようにするためのものです。
 
@@ -85,3 +93,31 @@ bt-ex.jp は、**ご本人がふだんのブラウザでログインしたまま
 - 共有サーバーの URL を変えたときは、`env` に `"BTEX5_API": "新しい URL"` を足します(ふだんは不要)。
 - 動かないとき: `node --version` が 18 以上か、お名前・パスワードが会員サイトに入れるものかを確かめてください。
   パスワードを何度もまちがえると、しばらくログインできなくなります。
+
+## インターネット版を公開する(運営・はじめの1回)
+
+Cloudflare の無料のアカウントを作っておきます(https://dash.cloudflare.com/sign-up)。パソコンで:
+
+```sh
+cd mcp/worker
+npm install
+npx wrangler login                              # ブラウザで Cloudflare にログイン
+npx wrangler kv namespace create OAUTH_KV       # 出てきた id を wrangler.jsonc の "ここに KV の id を入れる" と置きかえる
+npx wrangler deploy                             # https://btex5-mcp.<あなたのサブドメイン>.workers.dev が出る
+```
+
+出てきた URL の後ろに `/mcp` を付けたもの(例: `https://btex5-mcp.example.workers.dev/mcp`)が、AI に入れる「MCP サーバーの URL」です。
+これを `app/ai.js` の `MCP_URL` に入れると、会員サイトの「AI との連携」に出ます。
+
+- 共有サーバーの URL を変えたときは `wrangler.jsonc` の `BTEX5_API` を直して、もう一度 `npx wrangler deploy`。
+- ここに残るのは、AI ごとの許可(共有サーバーのログインの合いことば。暗号化して KV に保存)だけです。名簿や記録は共有サーバーにあります。
+- 許可は30日で切れ、AI がもう一度 BT-EX5 のログイン画面を出します。
+- 自分の独自ドメインで出したいときは、Cloudflare の画面で Workers にドメインを付け、`wrangler.jsonc` の `vars` に `"PUBLIC_URL": "https://そのドメイン"` を足します。
+
+### ためし方(公開する前に、パソコンで)
+
+```sh
+cd mcp/worker
+npx wrangler dev          # http://localhost:8787/mcp で動く(共有サーバーは本番につながる)
+npx @modelcontextprotocol/inspector   # 画面で URL に http://localhost:8787/mcp を入れて「Connect」
+```
