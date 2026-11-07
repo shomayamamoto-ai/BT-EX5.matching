@@ -188,6 +188,30 @@
           });
           changed = true;
         }
+        // 2026年11月(運営の依頼): 「BT-EXの理念」の次に「仕組みとベネフィット」、「LINKのビジネス実績紹介」の前に「BT-EXの強み」、
+        // 「終わりの挨拶」の前に「BT-EX5のご案内」を足し、番号を振りなおす(すべての定例会。どれかがすでにある流れは、運営が書きかえたものとしてそのまま)
+        if (db.eventSeeds && db.eventSeeds.indexOf("deck-steps-split-1") === -1) {
+          db.eventSeeds.push("deck-steps-split-1");
+          var CIRC2 = "①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳";
+          var isStep2 = function (l) { return CIRC2.indexOf(String(l).trim().charAt(0)) !== -1; };
+          var title2 = function (l) { return String(l).trim().slice(1); };
+          db.events.forEach(function (ev) {
+            if (typeof ev.agenda !== "string" || !ev.agenda) return;
+            var lines = ev.agenda.split("\n");
+            if (lines.some(function (l) { return isStep2(l) && /仕組み|ベネフィット|強み|ご案内/.test(title2(l)); })) return;
+            var out = [];
+            lines.forEach(function (l) {
+              if (isStep2(l) && /実績/.test(title2(l))) out.push("①BT-EXの強み");
+              if (isStep2(l) && /(終わり|おわり)の?(挨拶|あいさつ)/.test(title2(l))) out.push("①BT-EX5のご案内");
+              out.push(l);
+              if (isStep2(l) && /理念/.test(title2(l))) out.push("①仕組みとベネフィット");
+            });
+            if (out.length === lines.length) return;
+            var n = 0;
+            ev.agenda = out.map(function (l) { return isStep2(l) && n < CIRC2.length ? CIRC2.charAt(n++) + String(l).trim().slice(1) : l; }).join("\n");
+          });
+          changed = true;
+        }
         // 入っていない値がつながって保存された「null」「nullnull」などの文字を、一度だけ消す
         // (ログイン・通知の登録・鍵などは触らない)
         if (!Array.isArray(db.cleanups)) { db.cleanups = []; changed = true; }
@@ -3033,6 +3057,18 @@
         }
         // BT-EX5 の特徴(2026年11月): 「新潟 ⇔ 東京」の図の下に「映画一本の距離に、無限のビジネスチャンスを！」を足す。
         // 前に保存した特徴の文に、まだこの文がなければ、図の行のすぐ下に入れる
+        // 流れを11区切りにした(2026年11月: 仕組みとベネフィット・BT-EXの強み・BT-EX5のご案内)。前に保存した時間の目安(9つ)を、理念 → 理念+仕組み、商談 → 商談+強み(3分)、終わりの挨拶 → ご案内+終わりの挨拶(1分)に分ける
+        if (db.cleanups.indexOf("deck-timeplan-split-1") === -1) {
+          db.cleanups.push("deck-timeplan-split-1");
+          var cfg8 = readCfg(db);
+          if (cfg8 && Array.isArray(cfg8.timeplan) && cfg8.timeplan.length === 9) {
+            var tp = cfg8.timeplan.map(function (v) { return Math.max(0, Number(v) || 0); });
+            var ri = Math.round((tp[3] * 10) / 18), sk = tp[6] > 3 ? 3 : 0, cl = tp[8] > 1 ? 1 : 0;
+            cfg8.timeplan = [tp[0], tp[1], tp[2], ri, tp[3] - ri, tp[4], tp[5], tp[6] - sk, sk, tp[7], tp[8] - cl, cl];
+            writeCfg(db, cfg8);
+          }
+          changed = true;
+        }
         if (db.cleanups.indexOf("deck-feature-catch-1") === -1) {
           db.cleanups.push("deck-feature-catch-1");
           var cfg7 = readCfg(db);

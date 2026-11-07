@@ -743,7 +743,7 @@
           })()) : null,
         h("div", { class: "pr-deck-more" },
           h("label", { class: "pr-deck-field" }, h("span", null, "ブレイクアウトルーム商談(テーブル商談)"), h("span", { class: "pr-bo" }, boMin, h("b", null, "×"), boTimes)),
-          h("label", { class: "pr-deck-field" }, h("span", null, "出席コード(4桁)"), codeIn, h("small", null, "終わりの挨拶の「出席コード」のスライドに大きく出ます")),
+          h("label", { class: "pr-deck-field" }, h("span", null, "出席コード(4桁)"), codeIn, h("small", null, "BT-EX5のご案内の「出席コード」のスライドに大きく出ます")),
           h("div", { class: "pr-deck-field is-staff" }, h("span", null, "本日の運営メンバー"), h("small", null, "はじめの挨拶のあとのスライドに出ます。役ごとに、担当の方を押して選んでください(もう一度押すと外します。複数選べます)"), staffBox)),
         h("div", { class: "app-btn-row pr-deck-edit" },
           deckInfo.canEdit && App.deckEditor ? App.btn("スライドの内容・時間の目安を編集", () => App.deckEditor(deckInfo.config, deckSteps(ev), (cfg) => { deckInfo.config = cfg; }), "ghost small") : null,
@@ -792,6 +792,35 @@
   }
   // 時間の目安を、登録した定例会の時間(開始〜終了)に合わせる。
   // 長さがちがう回(例: 90分)は、各項目の分を同じ割合でのばす・ちぢめる(合計は定例会の長さにそろえる)
+  // 2026年11月(運営の依頼): 「BT-EXの理念」の次に「仕組みとベネフィット」、「LINKのビジネス実績紹介」の前に「BT-EXの強み」を区切りとして足す。
+  // 共有サーバーの定例会の流れは一度だけ書きかえる(deck-steps-split-1)。書きかえ前の流れ(どちらもない流れ)は、ここでも同じ形にして出す
+  function upgradeAgenda(text) {
+    const lines = String(text || "").split("\n");
+    const isStep = (l) => NUMS.includes(l.trim().charAt(0));
+    const title = (l) => l.trim().slice(1).trim();
+    if (lines.some((l) => isStep(l) && /仕組み|ベネフィット|強み|ご案内/.test(title(l)))) return text;
+    const out = [];
+    lines.forEach((l) => {
+      if (isStep(l) && /実績/.test(title(l))) out.push("①BT-EXの強み");
+      // 終わりの挨拶の前に「BT-EX5のご案内」(入会・アンケート・出席コード・スケジュール・規定は、ご案内のほうへ)
+      if (isStep(l) && /(終わり|おわり)の?(挨拶|あいさつ)/.test(title(l))) out.push("①BT-EX5のご案内");
+      out.push(l);
+      if (isStep(l) && /理念/.test(title(l))) out.push("①仕組みとベネフィット");
+    });
+    let n = 0;
+    return out.map((l) => (isStep(l) ? NUMS.charAt(n++) + l.trim().slice(1) : l)).join("\n");
+  }
+
+  // 時間の目安が前の流れ(8区切り = 9つ)のままなら、新しい流れ(11区切り)に合わせて分ける:
+  // 理念の時間を「理念」と「仕組みとベネフィット」に、商談から3分を「BT-EXの強み」に、終わりの挨拶から1分を残してあとを「ご案内」に
+  function fitPlan(plan) {
+    if (!Array.isArray(plan) || plan.length !== 9) return plan;
+    const p = plan.map((v) => Math.max(0, Number(v) || 0));
+    const ri = Math.round((p[3] * 10) / 18), st = p[6] > 3 ? 3 : 0, cl = p[8] > 1 ? 1 : 0;
+    return [p[0], p[1], p[2], ri, p[3] - ri, p[4], p[5], p[6] - st, st, p[7], p[8] - cl, cl];
+  }
+
+  App.fitDeckPlan = fitPlan;
   // 定例会の長さ(分)。わからないときは null
   function eventLen(ev) {
     const toMin = (t) => { const m = /^(\d{1,2}):(\d{2})$/.exec(t || ""); return m ? Number(m[1]) * 60 + Number(m[2]) : null; };
@@ -802,7 +831,7 @@
   const isShort = (ev) => { const n = eventLen(ev); return n !== null && n <= 100; };
   function eventPlan(ev, plan, plan90) {
     if (plan90 && plan90.length && isShort(ev)) plan = plan90;
-    const base = (plan || []).map((v) => Math.max(0, Number(v) || 0));
+    const base = (fitPlan(plan) || []).map((v) => Math.max(0, Number(v) || 0));
     const total = base.reduce((a, b) => a + b, 0);
     const toMin = (t) => { const m = /^(\d{1,2}):(\d{2})$/.exec(t || ""); return m ? Number(m[1]) * 60 + Number(m[2]) : null; };
     const a = toMin(ev && ev.start), b = toMin(ev && ev.end);
@@ -816,7 +845,7 @@
   }
   // 当日の流れ(①〜の行)
   function deckSteps(ev) {
-    const agenda = String((ev && ev.agenda) || (typeof REF_SEED_AGENDA !== "undefined" ? REF_SEED_AGENDA : "")).split(/\n/).map((x) => x.trim()).filter(Boolean);
+    const agenda = upgradeAgenda(String((ev && ev.agenda) || (typeof REF_SEED_AGENDA !== "undefined" ? REF_SEED_AGENDA : ""))).split(/\n/).map((x) => x.trim()).filter(Boolean);
     return agenda.filter((x) => NUMS.includes(x[0])).map((x, i) => ({ no: i + 1, title: x.slice(1).trim() }));
   }
   // 「11月14日(土)」
@@ -826,7 +855,7 @@
     more = more || {};
     // 運営が編集した内容(cfg)を、元の内容(BTEX_DECK)の上に重ねる
     const D = App.deckData ? App.deckData(cfg) : (typeof BTEX_DECK !== "undefined" ? BTEX_DECK : {});
-    const agenda = String((ev && ev.agenda) || (typeof REF_SEED_AGENDA !== "undefined" ? REF_SEED_AGENDA : "")).split(/\n/).map((x) => x.trim()).filter(Boolean);
+    const agenda = upgradeAgenda(String((ev && ev.agenda) || (typeof REF_SEED_AGENDA !== "undefined" ? REF_SEED_AGENDA : ""))).split(/\n/).map((x) => x.trim()).filter(Boolean);
     const steps = agenda.filter((x) => NUMS.includes(x[0])).map((x, i) => ({ no: i + 1, title: x.slice(1).trim() }));
     const notes = agenda.filter((x) => !NUMS.includes(x[0])).map((x) => x.replace(/^[★☆・*]\s*/, ""));
     const items = [];
@@ -846,6 +875,30 @@
         deck("venn", { name: "3つのコミュニティの強みを、ひとつに", step: label, groups: D.strengths.groups, center: D.name || "BT-EX" });
         deck("strengths", { name: D.strengths.title, step: label, groups: D.strengths.groups });
       }
+    };
+    // 仕組みとベネフィット(9つのカード)。流れに「仕組みとベネフィット」の区切りがあればそこに、なければ理念のあとに
+    const hasBenefitStep = steps.some((st) => /仕組み|ベネフィット/.test(st.title));
+    const hasStrengthStep = steps.some((st) => /強み/.test(st.title));
+    let benefitDone = false;
+    const benefits = (label) => {
+      benefitDone = true;
+      const withIcon = (arr, icons) => arr.map((x, i) => Object.assign(x, { icon: (icons || [])[i] || "" }));
+      if (D.benefits) deck("list", { name: `${D.name || "BT-EX"}の仕組みとベネフィット`, step: label, layout: "grid", carousel: true, lead: `${D.benefits.length}つの仕組みが、ビジネスを加速させる`, items: withIcon(D.benefits.map((x) => (typeof x === "string" ? { title: x } : { title: x.head, lines: [x.text] })), D.benefitIcons) });
+    };
+    // BT-EX5のご案内: 入会への3ステップ → アンケート(BT-EX メンバー / ビジター) → 出席コード → スケジュール → 規定(一般・出席・倫理)
+    // (2026年11月、運営の依頼で終わりの挨拶から分けた)
+    let guideDone = false, closeLabel = "";
+    const guideSlides = (label) => {
+      guideDone = true;
+      if (D.joinSteps) deck("joinsteps", { name: D.joinSteps.title, step: label, cards: D.joinSteps.steps || [], note: D.joinSteps.note || "", noteSpan: D.joinSteps.noteSpan || 2 });
+      if (D.survey) {
+        const url = (k) => { try { return new URL(`../survey/?k=${k}${ev ? `&e=${encodeURIComponent(ev.id)}` : ""}`, location.href).href; } catch { return ""; } };
+        deck("survey", { name: D.survey.title, step: label, lead: D.survey.lead, urls: [["BT-EX メンバーの方", url("member")], ["ビジターの方", url("visitor")]] });
+      }
+      if (D.attend) deck("attend", Object.assign({ step: label }, D.attend, { name: D.attend.title, msg: D.attend.lead, lead: "", code: more.code || "" }));
+      // 出席コードのあとに、もう一度スケジュール(次の定例会の日程を伝えて終わる)
+      scheduleSlides(label);
+      rulesSlides();
     };
     // 規定(一般・出席・倫理)。終わりの挨拶のスケジュールのあと、「本日もありがとうございました」の前に出す
     // (2026年11月・運営の依頼。前は②理念の「仕組みとベネフィット」のあと。「主な3つの活動」のスライドは外した)
@@ -906,11 +959,12 @@
         // 理念・ビジョン → 「BT-EXとは」の順(2026年11月、運営の依頼で入れかえ)
         deck("vision", { name: D.name || "BT-EX", step: label, en: D.en, philosophy: D.philosophy, vision: D.vision });
         deck("about", { name: `${D.name || "BT-EX"}とは`, step: label, paras: D.about, formula: D.formula, center: D.name || "BT-EX" });
-        // 一覧はカードにして並べる(layout: grid=3×3)。「BT-EXの目的」のスライドは運営の依頼で外した(2026年11月)
-        const withIcon = (arr, icons) => arr.map((x, i) => Object.assign(x, { icon: (icons || [])[i] || "" }));
+        // 「BT-EXの目的」のスライドは運営の依頼で外した(2026年11月)
         if (D.feature) deck("feature", { name: D.feature.title, step: label, lines: D.feature.lines });
-        if (D.benefits) deck("list", { name: `${D.name || "BT-EX"}の仕組みとベネフィット`, step: label, layout: "grid", carousel: true, lead: `${D.benefits.length}つの仕組みが、ビジネスを加速させる`, items: withIcon(D.benefits.map((x) => (typeof x === "string" ? { title: x } : { title: x.head, lines: [x.text] })), D.benefitIcons) });
+        if (!hasBenefitStep) benefits(label);
       }
+      // ④仕組みとベネフィット(2026年11月、理念から分けた)
+      if (/仕組み|ベネフィット/.test(st.title) && !benefitDone) benefits(label);
       if (/プレゼン/.test(st.title) && !pres) {
         pres = true;
         people.forEach((p) => items.push(Object.assign({}, p, { step: label })));
@@ -925,8 +979,12 @@
         for (let k = 1; k <= times; k++) items.push({ key: `d:t${items.length}`, kind: "timer", name: `${base} ${k}回目`, sub: `${min}分`, sec: min * 60, step: label });
       }
       // 「このような人のお役に立てます」「3つのコミュニティの強み」「それぞれの強み」は、商談(ブレイクアウトルーム)のあとに(運営の依頼。2026年11月)
-      if (/商談/.test(st.title) && !extra) extras(label);
+      // 流れに「BT-EXの強み」の区切りがあれば、そこに出す(2026年11月、運営の依頼で区切りを作った)
+      if (/強み/.test(st.title) && !extra) extras(label);
+      if (/商談/.test(st.title) && !extra && !hasStrengthStep) extras(label);
       if (/実績/.test(st.title) && !raiseDone) raises(label);
+      if (/ご案内/.test(st.title) && !guideDone) guideSlides(label);
+      if (/(終わり|おわり)の?(挨拶|あいさつ)/.test(st.title)) closeLabel = label;
     });
     // 進行表にプレゼンの行がないときは、最後の区切りの前に入れる
     if (!pres && people.length) {
@@ -937,18 +995,10 @@
     if (!extra) extras("BT-EXについて");
     if (!raiseDone) raises("発表");
     if (hasGloss && !glossDone) { glossary("用語説明"); items.unshift(items.pop()); }
-    // 終わりの挨拶: 入会への3ステップ → アンケート(BT-EX メンバー / ビジター) → 出席コード → おわり
+    // 終わりの挨拶: 「本日もありがとうございました」(ご案内の区切りがない流れでは、前と同じく入会・アンケートなども終わりの挨拶に)
     const endLabel = steps.length ? `${steps[steps.length - 1].no}. ${steps[steps.length - 1].title}` : "おわり";
-    if (D.joinSteps) deck("joinsteps", { name: D.joinSteps.title, step: endLabel, cards: D.joinSteps.steps || [], note: D.joinSteps.note || "", noteSpan: D.joinSteps.noteSpan || 2 });
-    if (D.survey) {
-      const url = (k) => { try { return new URL(`../survey/?k=${k}${ev ? `&e=${encodeURIComponent(ev.id)}` : ""}`, location.href).href; } catch { return ""; } };
-      deck("survey", { name: D.survey.title, step: endLabel, lead: D.survey.lead, urls: [["BT-EX メンバーの方", url("member")], ["ビジターの方", url("visitor")]] });
-    }
-    if (D.attend) deck("attend", Object.assign({ step: endLabel }, D.attend, { name: D.attend.title, msg: D.attend.lead, lead: "", code: more.code || "" }));
-    // 出席コードのあとに、もう一度スケジュール(次の定例会の日程を伝えて終わる)
-    scheduleSlides(endLabel);
-    rulesSlides();
-    deck("closing", { name: "本日もありがとうございました", step: "おわり" });
+    if (!guideDone) guideSlides(endLabel);
+    deck("closing", { name: "本日もありがとうございました", step: closeLabel || "おわり" });
     // 表紙のあとに「本日の流れ」。どのスライドにも、流れの何番目かと流れの一覧を持たせる
     // (左上の小見出し・区切りのスライドの一覧・下の進行バーに使う)
     const stepList = steps.map((st) => { const tm = TIME.exec(st.title); return { no: st.no, title: tm ? st.title.replace(TIME, "") : st.title, sub: subOf(st, tm) }; });
@@ -1628,7 +1678,7 @@
       // 区切りの英語の名前(やわらかいデザインのスライドで、筆記体で添える。assets/deck-soft.css)
       const enOf = (t) => {
         const x = String(t || "");
-        return /はじめ/.test(x) && /挨拶/.test(x) ? "Opening" : /終わり/.test(x) ? "Closing" : /用語/.test(x) ? "Glossary" : /理念|BT-EX/.test(x) && !/スケジュール|規定/.test(x) ? "Philosophy"
+        return /ご案内/.test(x) ? "Information" : /はじめ/.test(x) && /挨拶/.test(x) ? "Opening" : /終わり/.test(x) ? "Closing" : /用語/.test(x) ? "Glossary" : /理念|BT-EX/.test(x) && !/スケジュール|規定/.test(x) ? "Philosophy"
           : /エデュケーション/.test(x) ? "Education" : /プレゼン/.test(x) ? "Presentation" : /商談|ブレイクアウト/.test(x) ? "Business Talk"
           : /実績/.test(x) ? "Achievements" : /規定/.test(x) ? "Rules" : /スケジュール/.test(x) ? "Schedule" : /アンケート/.test(x) ? "Survey" : "";
       };
@@ -1682,7 +1732,8 @@
         return h("div", { class: "pd pd-frame pd-agenda-slide" },
           h("header", { class: "pd-head" }, h("p", { class: "pd-eyebrow", "data-en": "Agenda" }, "AGENDA"), h("h2", { class: "pd-title" }, p.name)),
           h("div", { class: "pd-body" }, bar,
-            h("ol", { class: "pd-agenda" }, (p.steps || []).map((st, i) =>
+            // 2列に、上から順に(流れが増えても2列のまま。行の数 = 半分の切り上げ)
+            h("ol", { class: `pd-agenda${(p.steps || []).length > 8 ? " is-many" : ""}`, style: `--rows:${Math.max(1, Math.ceil((p.steps || []).length / 2))}` }, (p.steps || []).map((st, i) =>
               h("li", nth(i),
                 h("span", { class: "pd-agenda-no" }, two(st.no)),
                 h("span", { class: "pd-agenda-title" }, ...stepWords(st.title)),

@@ -220,7 +220,7 @@
           return App.field(f.label, el);
         })));
       // 時間の目安(2時間の定例会のタイムマネジメントに使う)
-      const plan = Array.isArray(now.timeplan) ? now.timeplan.slice() : [];
+      const plan = Array.isArray(now.timeplan) ? (App.fitDeckPlan ? App.fitDeckPlan(now.timeplan) : now.timeplan).slice() : [];
       const names = ["オープニング", ...(steps || []).map((s) => `${s.no}. ${s.title}`)];
       const sum = h("p", { class: "dk-sum" });
       const minInputs = names.map((n, i) => h("input", { type: "number", min: "0", max: "180", step: "1", inputmode: "numeric", value: String(plan[i] || 0), "aria-label": `${n}(分)`, oninput: drawSum }));

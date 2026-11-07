@@ -1801,7 +1801,11 @@ button.home-welcome-check:active { transform: scale(0.94); }
 .pd-agenda-no { font-family: var(--pd-serif); font-size: clamp(18px, min(2.4vw, 3.8svh), 34px); font-weight: 700; color: var(--pd-gold); line-height: 1; }
 .pd-agenda-title { font-family: var(--pd-serif); font-size: clamp(16px, min(2.1vw, 3.4svh), 30px); font-weight: 700; color: var(--pd-strong); }
 .pd-agenda-sub { font-size: clamp(12px, min(1.3vw, 2.2svh), 17px); font-weight: 800; color: var(--pd-gold); white-space: nowrap; }
-.pd-agenda-slide .pd-agenda { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-flow: column; grid-template-rows: repeat(4, auto); column-gap: clamp(10px, 1.6vw, 22px); }
+.pd-agenda-slide .pd-agenda { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-flow: column; grid-template-rows: repeat(var(--rows, 4), auto); column-gap: clamp(10px, 1.6vw, 22px); }
+/* 流れが多いとき(9つ以上): 行を詰めて、1画面に収める */
+.pd-agenda-slide .pd-agenda.is-many { gap: clamp(3px, 0.7svh, 8px) clamp(10px, 1.6vw, 22px); }
+.pd-agenda-slide .pd-agenda.is-many li { padding: clamp(5px, 1svh, 11px) clamp(12px, 1.6vw, 22px); }
+.pd-agenda-slide .pd-agenda.is-many .pd-agenda-title { font-size: clamp(15px, min(1.8vw, 2.9svh), 26px); }
 .pd-agenda.is-compact li { padding: clamp(5px, 1svh, 10px) clamp(10px, 1.2vw, 16px); border-color: transparent; background: none; opacity: 0.55; }
 .pd-agenda.is-compact .pd-agenda-no { font-size: clamp(14px, min(1.6vw, 2.6svh), 22px); }
 .pd-agenda.is-compact .pd-agenda-title { font-size: clamp(13px, min(1.5vw, 2.5svh), 21px); }
