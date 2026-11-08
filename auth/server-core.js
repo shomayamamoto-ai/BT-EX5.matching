@@ -304,6 +304,10 @@ var BtexServerCore = (function () {
             var add = clone((seedMember.links || []).filter(function (l) { return r.addLinks.indexOf(l.type) !== -1 && have.indexOf(l.url) === -1; }));
             next.links = (r.linksFirst ? add.concat(next.links || []) : (next.links || []).concat(add)).slice(0, LINKS_MAX);
           }
+          // removeLinks: [URL, …]。編集済みのメンバーでも、その URL のリンク・資料だけを外す(ほかのリンクはそのまま)
+          if (Array.isArray(r.removeLinks) && Array.isArray(next.links)) {
+            next.links = next.links.filter(function (l) { return !l || r.removeLinks.indexOf(l.url) === -1; });
+          }
           // addTriggers: 編集済みのメンバーにも、「こんな話が出たら」の言葉をないものだけ足す(ほかの言葉はそのまま)
           if (Array.isArray(r.addTriggers)) {
             next.triggers = (Array.isArray(next.triggers) ? next.triggers : []).slice();
