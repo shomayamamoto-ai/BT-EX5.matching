@@ -57,6 +57,7 @@ const REF_SEED_MEMBERS = [
     personal: "慶應義塾大学を2026年3月に卒業。自身で様々な事業を始めて7年以上。趣味はAI・仮想通貨・ガジェット・旅行・温泉・アニメ・ポーカーで、新しいものを試すのが大好き。趣味が合う方もお気軽に。",
     selfIntro: "はじめまして！\nAIを軸に法人様の課題をワンストップで解決する、Lumenium（ルメニウム）代表の山本 捷真（しょーま）です🤖\n慶應義塾大学を2026年3月に卒業し、自身で様々な事業を始めて7年以上になります。\n\n「AIに強い外部パートナーが欲しい。でも、どこに何を頼めばいいかわからない」\nそんな経営者様の“最初の窓口”になるのが私の仕事です。\n企画・制作から人材、資金繰りのご相談まで、まとめてお受けしています😊\n\n🥇 AI歴3年以上（AI講師として、全国でAIのセキュリティを指導）\n🥇 映像は芸能事務所・映像制作会社（合同会社AdvoVisions）と提携\n🥇 制作実績：リンガーハット様、一つ星レストラン様 ほか\n\n【事業内容】\n🤖 AI活用支援\n・企業向けAI研修（講師として登壇）\n・AIコンテンツ制作（AI補助金対策の解説動画／社内向けAIメルマガの執筆／AI教材・小中学生向け塾教材）\n\n🎬 制作（Web・映像・音楽）\n・Webサイト・業務効率化ツールの開発（https://lumenium.net ）\n・PR動画などの映像制作（芸能事務所・映像制作会社と提携し、高品質な映像をご提供）\n\n💼 経営・バックオフィス支援\n・融資引き出しサポート（資金繰りにお悩みの中小企業経営者様・個人事業主様に）\n・携帯料金の見直し、スマホ・PCの買い替え相談（元家電量販店店員）\n\n🎤 人材・教育・イベント\n・家庭教師マッチング（小中高生と早慶レベルの講師をおつなぎ）\n・苦手単元を一つずつ克服する、AIを用いたオンライン塾「Aqualium」\n・法人・個人事業主向け交流会の運営\n・キャスト手配・MC・イベント出演\n\n🌟 趣味：AI💻・仮想通貨📈・ガジェット⌚️・旅行✈️・温泉♨️・アニメ📺・ポーカー🃏\n新しいものを試すのが大好きです！\n\n「自社の業務をAIで楽にできない？」「これって誰に頼めばいい？」など、どんな切り口からでも大歓迎です😊 趣味が合う方もぜひお気軽に声をかけてください！よろしくお願いいたします🌼",
     links: [
+      { type: "proposal", url: "materials/lumenium-proposal-2026-11.pdf", label: "Lumenium 自己紹介・ご提案(14ページ)", cover: "materials/lumenium-proposal-2026-11-cover.jpg" },
       { type: "proposal", url: "materials/yamamoto-pc-kaikae.jpg", label: "パソコン買い替え相談・購入代行サービス", cover: "materials/yamamoto-pc-kaikae.jpg" },
       { type: "website", url: "https://lumenium.net", label: "lumenium.net" },
       { type: "instagram", url: "https://www.instagram.com/showstagram.keio/", label: "@showstagram.keio" },
@@ -428,6 +429,8 @@ const REF_SEED_REVISIONS = [
   { rev: "2026-11-yamamoto-remove-materials", ids: ["yamamoto"], fields: ["links"], removeLinks: ["materials/yamamoto-branding.jpg", "materials/lumenium-proposal.pdf"] },
   // 本人の依頼で、山本 捷真の自己紹介を最新の内容に書き直す(2026年11月8日。編集済みでも置き換える)
   { rev: "2026-11-yamamoto-selfintro-2", ids: ["yamamoto"], fields: ["selfIntro"], force: true },
+  // 本人の依頼で、新しい「Lumenium 自己紹介・ご提案」(2026年11月版)を資料のいちばん上に入れる(ほかのリンクはそのまま)
+  { rev: "2026-11-yamamoto-proposal-2", ids: ["yamamoto"], fields: ["links"], addLinks: ["proposal"], linksFirst: true },
   { rev: "2026-11-yamamoto-aqualium", ids: ["yamamoto"], fields: ["business"], replaceText: ["Weak-Point Sniper", "Aqualium"] },
   // 紹介診断の「相手がこう言っていたら」から探せるように、言葉とジャンルを足す(本人の言葉はそのまま)
   { rev: "2026-10-say-phrases", ids: ["yamamoto"], fields: ["triggers"], addTriggers: ["モデルになりたい", "芸能界に入りたい", "俳優・タレントになりたい", "芸能事務所を探している"] },
@@ -1428,7 +1431,7 @@ const REF_SEED_ANNOUNCEMENTS = [
   {
     seedId: "2026-10-25-update-16",
     cat: "アップデート",
-    rev: 170,
+    rev: 171,
     at: Date.UTC(2026, 9, 25, 4, 0), // 2026/10/25 13:00(日本時間)
     title: "【アップデート】紹介診断に「相手がこう言っていたら」・アンケート・運営タブ など",
     body: [
@@ -1448,6 +1451,7 @@ const REF_SEED_ANNOUNCEMENTS = [
       "・B.T. の系列(9系列)と、その中のチーム・チームの代表の一覧を入れました(今後の早見表づくりに使います)。1分プレゼンのスライドでは、ほかの BT-EX の方のユニットの横に系列の名前(例:BT-EX2 メンバー・関西・陽凪-ひなぎ-)を出します。",
       "・BT-EX2 の前田 祐里(マエダ ユリ)さん(株式会社ルチルクリエイション 代表取締役/ブランディングデザイン/陽凪-ひなぎ-)の顔写真と、事業内容・主なお客様・求める紹介・「こんな話が出たら」を入れました。プレゼンでほかの BT-EX の方として選ぶと、BT-EX5 のメンバーと同じように写真と求める紹介がスライドに出ます。",
       "・山本 捷真の自己紹介(「紹介文をコピー」に入る文)を、最新の内容(AI活用支援・制作・経営/バックオフィス支援・人材/教育/イベント)に書き直しました。",
+      "・山本 捷真の資料のいちばん上に、新しい「Lumenium 自己紹介・ご提案(14ページ)」を入れました。",
       "・山本 捷真の資料から「パーソナルブランディングシート」と「Lumenium 自己紹介・ご提案(14ページ)」を外しました。",
       "・山本 捷真のオンライン塾の名前を「Weak-Point Sniper」から「Aqualium」に変えました。",
       "・【新しいメンバー】加藤 寛之(カトウ ヒロユキ)さん(リーガラクト行政書士事務所 代表行政書士・声優・ボイストレーナー/AND-X)が BT-EX5 に加わりました。建設業許可・風俗営業許可などの許認可申請、補助金申請、ボイストレーニング、ナレーションが得意です。早見表・プレゼン・1on1 などでお名前を選べます。顔写真も入っています。",
