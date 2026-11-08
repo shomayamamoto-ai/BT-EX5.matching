@@ -319,6 +319,14 @@ var BtexServerCore = (function () {
               return r.addTopics.indexOf(t) !== -1 && next.topics.indexOf(t) === -1;
             }));
           }
+          // replaceText: [前, 後]。編集済みのメンバーでも、fields の文の中の言葉だけを置きかえる(ほかの文はそのまま)
+          if (Array.isArray(r.replaceText) && r.replaceText.length === 2) {
+            var rep = function (v) { return typeof v === "string" ? v.split(r.replaceText[0]).join(r.replaceText[1]) : v; };
+            (r.fields || []).forEach(function (k) {
+              if (typeof next[k] === "string") next[k] = rep(next[k]);
+              else if (Array.isArray(next[k])) next[k] = next[k].map(rep);
+            });
+          }
           var removeTopics = r.removeTopics && r.removeTopics[id];
           if (removeTopics && Array.isArray(next.topics)) {
             next.topics = next.topics.filter(function (t) { return removeTopics.indexOf(t) === -1; });
