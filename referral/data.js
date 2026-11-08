@@ -1266,6 +1266,40 @@ function refAliasPhotos(list) {
   return list;
 }
 
+// B.T. の系列と、その中のチーム・チームの代表(2026年11月8日、運営から受け取った一覧のまま)。
+// メンバーの「チーム」(bt-ex.jp の「系列」の欄)から、どの系列か・代表はだれかを引く。
+// ほかの BT-EX の方がチームの代表なら、スライドに「○○ 代表」の印を出す
+const BT_LINEAGES = [
+  { label: "村田大樹(フェイムパソ系列)", teams: [["チーム無限", "村田大樹"]] },
+  { label: "桜羽李果(プライムパソ系列)", teams: [["Team Bloom∞🌸", "桜羽李果"], ["Onephoria🐼", "みやちゃん"], ["CANOW", "坂本和保"]] },
+  { label: "大場さん(パソ系列)", teams: [["Over", "大場雅俊"]] },
+  { label: "関口ありさ(プライムパソ/篠原フェイム系列)", teams: [["Rankers🏆", "関口ありさ"], ["Next Rise", "畑竜介"], ["GLANZ", "飯田崇秀"], ["Smile😊", "関隆行"], ["結宙", "能瀬千恵"], ["掌 -TANAGOKORO-", "河西慧"], ["Crew Plus", "佐野宗吾朗"], ["綺絆", "坂本明綺子"], ["ミライア", "吉武知家良"], ["Playground", "小川真由美(まゆげ⤴️⤴️ちゃん)"], ["J", "砂田ママ"]] },
+  { label: "さとうひろこ(フェイム系列)", teams: [["V-Blaze❤️‍🔥", "さとうひろこ"], ["Symargy", "川村英紀"]] },
+  { label: "和田真希(フェイム系列)", teams: [["SunnyUp☀️", "やまさきみき"], ["Challengers", "Momoko"], ["フェリシア", "シャイア"], ["アバンダンティア", "手塚勇輔"], ["Orion", "KAYOKO"], ["グランディア", "はやしえいこ"], ["Legends🦁", "Hideka"]] },
+  { label: "pikaru(フェイムパソ系列)", teams: [["High Speed🚀", "上村洋平"], ["All Win🏆", "アモーレ石上"], ["WILDSPEED🃏", "こやありさ"], ["Paradise Junction", "もずく"]] },
+  { label: "佐々木真美(プライムパソ系列)", teams: [["🍀ティーエフレールー", "佐々木真美"], ["♡STARS", "ゆかりん"], ["AND-X", "堺典子"], ["翔", "たかすぎかずみ"], ["M-CARAT", "堀内千尋"], ["One World🌏", "谷口直美"]] },
+  { label: "辰巳眞玄(フェイム系列)", teams: [["FirstPlace", "酒井寛至"], ["Realize Dreams", "横辻悠太"], ["環", "山本理恵"], ["センターラブ", "田中みっち"], ["陽凪-ひなぎ-", "前田祐里"]] },
+];
+// チーム名・お名前のくらべ方: 絵文字・記号・空白・全角半角・大文字小文字のちがいは見ない(「SunnyUp☀️」と「SunnyUp🌞」も同じ)
+function btKey(t) {
+  return String(t || "").normalize("NFKC").replace(/\([^)]*\)/g, "").replace(/[\s\-_・♡🍀]|\p{Extended_Pictographic}|\uFE0F|\u200D/gu, "").toLowerCase();
+}
+// チーム名から { team, rep, lineage } を返す(わからなければ null)
+function btTeamInfo(team) {
+  const k = btKey(team);
+  if (!k) return null;
+  for (const l of BT_LINEAGES) for (const [t, rep] of l.teams) if (btKey(t) === k) return { team: t, rep, lineage: l.label };
+  return null;
+}
+// その方がチームの代表なら、代表をしているチームの名前(ほかの BT-EX の方の印に使う)
+function btTeamRepOf(name) {
+  const k = btKey(name);
+  if (!k) return [];
+  const out = [];
+  for (const l of BT_LINEAGES) for (const [t, rep] of l.teams) if (btKey(rep) === k) out.push(t);
+  return out;
+}
+
 // チーム代表・正式ランク・役職・役割のマークと、その基礎ポイント(大きいほど上に出る)
 // - マーク: 名前の下に表示する。種類ごとに色と形を変える(1人に何枚でも)
 //   team = チーム代表(Team Bloom∞🌸 や Over などのチームの代表。BT-EX5 の代表ではない)/ rank = 正式ランク

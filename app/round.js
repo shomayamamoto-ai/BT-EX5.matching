@@ -667,6 +667,8 @@
         const x = byKey(k);
         if (!x) return null;
         const base = { key: k, kind: x.kind, name: x.name, kana: x.kana || "", catch: x.unit ? String(x.company || "").replace(/^BT-EX\d+( ・ )?/, "") : x.company, unit: x.unit || 0, photo: "", area: "", wants: "", triggers: [], sec: x.sec || 30 };
+        // ほかの BT-EX の方が B.T. のチームの代表なら、「○○ 代表」の印(系列の一覧 BT_LINEAGES から)
+        if (x.kind === "other" && typeof btTeamRepOf === "function") base.roles = btTeamRepOf(x.name).map((t) => ({ kind: "team", role: `${t} 代表` }));
         // ほかの BT-EX の方で、くわしい紹介(顔写真・求める紹介など)を運営が入れている方は、BT-EX5 のメンバーと同じように出す
         const op = x.kind === "other" && typeof btexOtherProfile === "function" ? btexOtherProfile(x.unit, x.name) : null;
         if (op) Object.assign(base, { photo: op.photo ? `../${op.photo}` : "", catch: [op.company, op.category].filter(Boolean).join("/") || base.catch, team: op.keiretsu || "", wants: clip(op.wantsShort || op.wants, 240), triggers: (op.triggers || []).slice(0, 24) });
