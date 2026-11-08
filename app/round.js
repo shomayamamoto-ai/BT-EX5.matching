@@ -667,8 +667,11 @@
         const x = byKey(k);
         if (!x) return null;
         const base = { key: k, kind: x.kind, name: x.name, kana: x.kana || "", catch: x.unit ? String(x.company || "").replace(/^BT-EX\d+( ・ )?/, "") : x.company, unit: x.unit || 0, photo: "", area: "", wants: "", triggers: [], sec: x.sec || 30 };
-        // ほかの BT-EX の方が B.T. のチームの代表なら、「○○ 代表」の印(系列の一覧 BT_LINEAGES から)
-        if (x.kind === "other" && typeof btTeamRepOf === "function") base.roles = btTeamRepOf(x.name).map((t) => ({ kind: "team", role: `${t} 代表` }));
+        // ほかの BT-EX の方の系列(bt-ex.jp の「系列」の欄。ふつうの文字で出す。代表などの印は出さない: 運営の依頼)
+        if (x.kind === "other" && x.unit && typeof BTEX_UNIT_PROFILES !== "undefined") {
+          const row = Object.entries(BTEX_UNIT_PROFILES[x.unit] || {}).find(([n]) => n.replace(/\s+/g, "") === String(x.name || "").replace(/\s+/g, ""));
+          if (row && row[1][2]) base.team = row[1][2];
+        }
         // ほかの BT-EX の方で、くわしい紹介(顔写真・求める紹介など)を運営が入れている方は、BT-EX5 のメンバーと同じように出す
         const op = x.kind === "other" && typeof btexOtherProfile === "function" ? btexOtherProfile(x.unit, x.name) : null;
         if (op) Object.assign(base, { photo: op.photo ? `../${op.photo}` : "", catch: [op.company, op.category].filter(Boolean).join("/") || base.catch, team: op.keiretsu || "", wants: clip(op.wantsShort || op.wants, 240), triggers: (op.triggers || []).slice(0, 24) });
@@ -2262,7 +2265,7 @@
           h("p", { class: "pr-no", "aria-hidden": "true" }, two(persons.indexOf(p) + 1)),
           h("div", { class: "pr-body" },
             h("p", { class: "pr-teamname" },
-              h("span", null, p.kind === "visitor" ? "ビジター" : p.kind === "guest" ? "ゲスト" : p.kind === "other" ? (p.unit ? `BT-EX${p.unit} メンバー${unitArea(p.unit) ? `・${unitArea(p.unit)}` : ""}` : "BT-EX メンバー") : p.team || ""),
+              h("span", null, p.kind === "visitor" ? "ビジター" : p.kind === "guest" ? "ゲスト" : p.kind === "other" ? (p.unit ? `BT-EX${p.unit} メンバー${unitArea(p.unit) ? `・${unitArea(p.unit)}` : ""}` : "BT-EX メンバー") + (p.team ? `・${p.team}` : "") : p.team || ""),
               ...(p.roles || []).map(roleBadge)),
             nameEl(p.name, "h2", "pr-name", h("small", null, "さん"), !solo),
             // フリガナは BT-EX5 のメンバーだけ(ほかの BT-EX・ゲスト・ビジターの方は出さない)

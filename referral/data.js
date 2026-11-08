@@ -1268,7 +1268,7 @@ function refAliasPhotos(list) {
 
 // B.T. の系列と、その中のチーム・チームの代表(2026年11月8日、運営から受け取った一覧のまま)。
 // メンバーの「チーム」(bt-ex.jp の「系列」の欄)から、どの系列か・代表はだれかを引く。
-// ほかの BT-EX の方がチームの代表なら、スライドに「○○ 代表」の印を出す
+// (ほかの BT-EX の方には、代表などの印は出さない。スライドには系列の名前だけをふつうの文字で出す: 運営の依頼)
 const BT_LINEAGES = [
   { label: "村田大樹(フェイムパソ系列)", teams: [["チーム無限", "村田大樹"]] },
   { label: "桜羽李果(プライムパソ系列)", teams: [["Team Bloom∞🌸", "桜羽李果"], ["Onephoria🐼", "みやちゃん"], ["CANOW", "坂本和保"]] },
@@ -1290,14 +1290,6 @@ function btTeamInfo(team) {
   if (!k) return null;
   for (const l of BT_LINEAGES) for (const [t, rep] of l.teams) if (btKey(t) === k) return { team: t, rep, lineage: l.label };
   return null;
-}
-// その方がチームの代表なら、代表をしているチームの名前(ほかの BT-EX の方の印に使う)
-function btTeamRepOf(name) {
-  const k = btKey(name);
-  if (!k) return [];
-  const out = [];
-  for (const l of BT_LINEAGES) for (const [t, rep] of l.teams) if (btKey(rep) === k) out.push(t);
-  return out;
 }
 
 // チーム代表・正式ランク・役職・役割のマークと、その基礎ポイント(大きいほど上に出る)
