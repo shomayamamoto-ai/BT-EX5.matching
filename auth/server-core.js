@@ -302,7 +302,12 @@ var BtexServerCore = (function () {
           if (Array.isArray(r.addLinks)) {
             var have = (next.links || []).map(function (l) { return l.url; });
             var add = clone((seedMember.links || []).filter(function (l) { return r.addLinks.indexOf(l.type) !== -1 && have.indexOf(l.url) === -1; }));
-            next.links = (r.linksFirst ? add.concat(next.links || []) : (next.links || []).concat(add)).slice(0, LINKS_MAX);
+            // addUrls: [URL, …] があれば、その URL のリンクだけを足す。linksAfter: URL があれば、そのリンクのすぐ後ろに足す
+            if (Array.isArray(r.addUrls)) add = add.filter(function (l) { return r.addUrls.indexOf(l.url) !== -1; });
+            var cur = (next.links || []).slice();
+            var at = r.linksAfter ? findIndex(cur, function (l) { return l && l.url === r.linksAfter; }) : -1;
+            if (at >= 0) next.links = cur.slice(0, at + 1).concat(add, cur.slice(at + 1)).slice(0, LINKS_MAX);
+            else next.links = (r.linksFirst ? add.concat(cur) : cur.concat(add)).slice(0, LINKS_MAX);
           }
           // removeLinks: [URL, …]。編集済みのメンバーでも、その URL のリンク・資料だけを外す(ほかのリンクはそのまま)
           if (Array.isArray(r.removeLinks) && Array.isArray(next.links)) {
