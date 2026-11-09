@@ -197,9 +197,9 @@
   const SMALL_FACE = /^(pr-card-face|pr-row-face|pr-me-face|pd-staff-face|pr-next-photo)$/;
   // 本日の運営メンバーの役(はじめの挨拶のあとのスライド)
   // 3つ目があるのは担当が決まっている役(選べない)。本システム(スライド含む)制作は山本 捷真なので固定
-  // 1分プレゼンの話す順番で、いちばん前に固定する12名(この順番)
-  // 桜羽 李果・三村 隆・あまみや 七音・栁橋 雅也・小林 末季(こばねぇ)・山本 捷真・大場 雅俊・大枝 篤志・床島 良夫・吉澤 美和子・吉原 優・大小原 翔太
-  const PITCH_FIRST = ["m16", "m14", "m02", "m24", "m22", "yamamoto", "m09", "m10", "m08", "m04", "m06", "m29"];
+  // 1分プレゼンの話す順番で、いちばん前に固定する13名(この順番。2026年11月9日、運営の依頼で並べ直し)
+  // 桜羽 李果・三村 隆・あまみや 七音・小林 末季(こばねぇ)・山本 捷真・大場 雅俊・大枝 篤志・加藤 寛之・床島 良夫・吉澤 美和子・吉原 優・栁橋 雅也・大小原 翔太
+  const PITCH_FIRST = ["m16", "m14", "m02", "m22", "yamamoto", "m09", "m10", "m30", "m08", "m04", "m06", "m24", "m29"];
   const STAFF_ROLES = [["facilitator", "ファシリテーター"], ["education", "エデュケーション"], ["system", "スライド進行"], ["breakout", "ブレイクアウトルーム"], ["builder", "本システム（スライド含む）制作", ["yamamoto"]]];
   const thumbOf = (url) => String(url).replace(/assets\/members\/([^/?#]+\.jpg)/, "assets/members/thumbs/$1");
   // ほかの BT-EX の場所(referral/data.js の BTEX_UNIT_AREAS。未定なら空)
@@ -531,7 +531,7 @@
 
     // 話す順番は必ず BT-EX5 のメンバー → ほかの BT-EX(BT-EX1 → BT-EX14 の順)→ ゲスト・ビジター。
     // それぞれの組の中では、押した順・↑↓・つかんで動かす・シャッフル・名前の順で並べかえられる
-    // BT-EX5 のメンバーの中でも、決まった12名は、この順番でいちばん前に固定(運営の依頼。2026年11月)。動かせない
+    // BT-EX5 のメンバーの中でも、決まった13名(PITCH_FIRST)は、この順番でいちばん前に固定(運営の依頼。2026年11月)。動かせない
     const groupRank = (k) => {
       const x = byKey(k) || {};
       if (x.kind === "member") { const p = PITCH_FIRST.indexOf(x.id); return p >= 0 ? p - 100 : 0; }
