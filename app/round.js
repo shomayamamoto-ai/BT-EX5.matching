@@ -543,7 +543,9 @@
     function draw() {
       order = order.map((k, i) => [k, i]).sort((a, b) => groupRank(a[0]) - groupRank(b[0]) || a[1] - b[1]).map(([k]) => k);
       saveOrder();
-      App.fill(grid, all.filter((x) => x.kind === "member" || x.kind === "visitor").map(card));
+      // 名簿のカードも、順番固定の13名をその順番で先に並べる(見つけやすいように。運営の依頼。2026年11月)。ほかは名簿の順
+      const pickRank = (x) => { const p = x.kind === "member" ? PITCH_FIRST.indexOf(x.id) : -1; return p >= 0 ? p : PITCH_FIRST.length; };
+      App.fill(grid, all.filter((x) => x.kind === "member" || x.kind === "visitor").map((x, i) => [x, i]).sort((a, b) => pickRank(a[0]) - pickRank(b[0]) || a[1] - b[1]).map(([x]) => card(x)));
       otherBox.drawList(); guestBox.drawList();
       App.fill(listEl, order.length ? order.flatMap((k, i) => (i === 0 || groupOf(order[i - 1]) !== groupOf(k)
         ? [h("li", { class: "pr-order-group", "aria-hidden": "true" }, GROUP_NAMES[groupOf(k)]), row(k, i)] : [row(k, i)]))
