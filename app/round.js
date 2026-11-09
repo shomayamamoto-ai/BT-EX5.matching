@@ -502,7 +502,10 @@
       const box = h("div", { class: `pr-extra is-${kind}` }, head, body, listBox);
       box.drawList = () => {
         if (bx && bx.refresh) bx.refresh();
-        const mine = extras.filter((x) => x.kind === kind);
+        // 一覧は話す順番と同じに: ほかの BT-EX は BT-EX1 → BT-EX14、同じ番号の中は話す順番(まだ出ない方はその後ろ)
+        const posOf = (x) => { const n = order.indexOf(x.key); return n >= 0 ? n : 1e6; };
+        const mine = extras.filter((x) => x.kind === kind).map((x, i) => [x, i])
+          .sort((a, b) => (kind === "other" ? (a[0].unit || 15) - (b[0].unit || 15) : 0) || posOf(a[0]) - posOf(b[0]) || a[1] - b[1]).map(([x]) => x);
         countEl.textContent = mine.length ? `${mine.length}名` : "";
         countEl.hidden = !mine.length;
         App.fill(listBox, mine.map((x) => {
