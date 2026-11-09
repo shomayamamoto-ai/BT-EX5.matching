@@ -730,7 +730,7 @@
               draw();
             }, "ghost small"),
             App.btn("名前の順", () => { order = order.slice().sort((a, b) => byKey(a).name.localeCompare(byKey(b).name, "ja")); draw(); }, "ghost small"))),
-        h("p", { class: "app-field-hint pr-drag-hint" }, "順番は必ず BT-EX5 のメンバー → ほかの BT-EX(BT-EX1 から 14 の順)→ ゲストです。BT-EX5 のメンバーのうち「順番固定」の12名は、決まった順番でいちばん前です(動かせません。出ない方は × で外せます)。それぞれの中で、パソコンでは行をつかんで、スマホは ↑↓ で動かせます。"),
+        h("p", { class: "app-field-hint pr-drag-hint" }, "順番は必ず BT-EX5 のメンバー → ほかの BT-EX(BT-EX1 から 14 の順)→ ゲストです。BT-EX5 のメンバーのうち「順番固定」の13名は、決まった順番でいちばん前です(動かせません。出ない方は × で外せます)。それぞれの中で、パソコンでは行をつかんで、スマホは ↑↓ で動かせます。"),
         listEl, total,
         h("p", { class: "round-label" }, "1人の時間"), perRow,
         h("div", { class: "pr-auto" },
