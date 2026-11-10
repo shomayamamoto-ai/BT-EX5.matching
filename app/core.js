@@ -1073,7 +1073,7 @@ const App = (function () {
       if (pending && location.hash.length <= 1) history.replaceState(null, "", pending);
     } catch { /* noop */ }
     session = data;
-    try { sessionStorage.setItem("btex5-my-name", data.displayName || ""); sessionStorage.setItem("btex5-present", canPresent() ? "1" : "0"); } catch { /* noop */ }
+    try { sessionStorage.setItem("btex5-my-name", data.displayName || ""); sessionStorage.setItem("btex5-my-id", data.memberId || ""); sessionStorage.setItem("btex5-present", canPresent() ? "1" : "0"); } catch { /* noop */ }
     // 早見表などを、アプリを通らずにすぐ開いたとき(新しいタブ・ホーム画面のアイコン)も下のタブにプレゼン・運営が出るように、この端末にも覚える
     try { localStorage.setItem("btex5-present", canPresent() ? "1" : "0"); } catch { /* noop */ }
     try { localStorage.setItem("btex5-log", canLog() ? "1" : "0"); sessionStorage.setItem("btex5-log", canLog() ? "1" : "0"); } catch { /* noop */ }

@@ -143,6 +143,15 @@
     }
     me.setAttribute("aria-label", `${name}さんのマイページ`);
     me.textContent = String(name).replace(/\s/g, "").slice(0, 1);
+    // 顔写真があれば丸く出す(本人が入れた写真 → 運営が用意した写真)。読み込めなければ頭文字のまま
+    const ph = myPhoto();
+    if (ph) {
+      const img = document.createElement("img");
+      img.alt = ""; img.decoding = "async"; img.src = ph.src;
+      img.onerror = () => { if (img.getAttribute("src") !== ph.full) img.src = ph.full; else { img.remove(); me.classList.remove("has-photo"); } };
+      me.classList.add("has-photo");
+      me.append(img);
+    }
   }
 
   function cached() {
@@ -152,6 +161,15 @@
     } catch { return null; }
   }
 
+  function myPhoto() {
+    let id = "";
+    try { id = sessionStorage.getItem("btex5-my-id") || ""; } catch { return null; }
+    if (!id) return null;
+    try { const c = JSON.parse(localStorage.getItem(`btex5-photo-${id}`) || "null"); if (c && c.data) return { src: c.data, full: c.data }; } catch { /* noop */ }
+    const file = typeof REF_MEMBER_PHOTOS !== "undefined" ? REF_MEMBER_PHOTOS[id] : "";
+    if (!file) return null;
+    return { src: `../${String(file).replace(/assets\/members\/([^/?#]+\.jpg)/, "assets/members/thumbs/$1")}`, full: `../${file}` };
+  }
   function myName() { try { return sessionStorage.getItem("btex5-my-name") || ""; } catch { return ""; } }
   function start() {
     const c = cached();
