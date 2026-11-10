@@ -3191,7 +3191,8 @@ button.home-welcome-check:active { transform: scale(0.94); }
 .pr-deck-theme > span { font-size: 13px; font-weight: 800; color: var(--text-sub); }
 /* 資料: ポスターを作る(左に入力、右に見本。スマホは上下に) */
 .mt-maker { display: grid; gap: 16px; }
-@media (min-width: 900px) { .mt-maker { grid-template-columns: minmax(300px, 380px) minmax(0, 1fr); align-items: start; } .mt-preview { position: sticky; top: 84px; } }
+/* 見本は入力欄の横に置いたまま(スクロールについてこない: 運営の依頼。2026年11月) */
+@media (min-width: 900px) { .mt-maker { grid-template-columns: minmax(300px, 380px) minmax(0, 1fr); align-items: start; } }
 .mt-form { display: grid; gap: 12px; }
 .mt-times { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .mt-hint { margin: -4px 0 0; }
