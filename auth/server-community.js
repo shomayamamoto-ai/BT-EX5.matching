@@ -3047,6 +3047,25 @@
           }
           changed = true;
         }
+        // 用語説明(2026年11月10日): 「貢献（リファーラル）」を「貢献（紹介）」に(運営の依頼)。前に保存した用語説明が元の言葉のままなら書きかえる
+        if (db.cleanups.indexOf("deck-glossary-referral-2") === -1) {
+          db.cleanups.push("deck-glossary-referral-2");
+          var cfg10 = readCfg(db);
+          if (cfg10) {
+            var renameRef2 = function (v) {
+              if (Array.isArray(v)) return v.map(renameRef2);
+              if (v && typeof v === "object") {
+                if (typeof v.head === "string" && /^(貢献)?[（(]?リファーラル[）)]?$|^貢献[（(]リファーラル[）)]$/.test(v.head.replace(/\s/g, ""))) v.head = "貢献（紹介）";
+                Object.keys(v).forEach(function (k) { if (k !== "head") v[k] = renameRef2(v[k]); });
+              }
+              return v;
+            };
+            if (cfg10["glossary.items"]) cfg10["glossary.items"] = renameRef2(cfg10["glossary.items"]);
+            if (cfg10.glossary) renameRef2(cfg10.glossary);
+            writeCfg(db, cfg10);
+          }
+          changed = true;
+        }
         // 用語説明(2026年10月): 「リファーラル」を「貢献（リファーラル）」に。前に保存した用語説明が元の言葉のままなら書きかえる
         if (db.cleanups.indexOf("deck-glossary-referral-1") === -1) {
           db.cleanups.push("deck-glossary-referral-1");
