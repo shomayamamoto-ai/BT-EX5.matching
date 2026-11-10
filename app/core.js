@@ -130,11 +130,31 @@ const App = (function () {
   };
   function chip(label, tone) { return h("span", { class: `app-chip tone-${tone || "mute"}` }, label); }
   function initial(name) { return String(name || "?").replace(/\s/g, "").slice(0, 1); }
+  // 丸い顔アイコンの写真: 本人が入れた写真(この端末に覚えているもの)→ 運営が用意した写真(小さい版)。なければ頭文字
+  // (2026年11月 UI/UX: 掲示板・マイページ・お気に入りなどでも、顔で見分けられるように)
+  function avatarPhoto(name) {
+    const key = String(name || "").replace(/\s/g, "");
+    if (!key || typeof members === "undefined") return null;
+    const m = members.find((x) => String(x.name || "").replace(/\s/g, "") === key);
+    if (!m) return null;
+    try { const c = JSON.parse(localStorage.getItem(`btex5-photo-${m.id}`) || "null"); if (c && c.data) return { src: c.data, full: c.data }; } catch { /* noop */ }
+    const file = typeof REF_MEMBER_PHOTOS !== "undefined" ? REF_MEMBER_PHOTOS[m.id] : "";
+    if (!file) return null;
+    return { src: `../${String(file).replace(/assets\/members\/([^/?#]+\.jpg)/, "assets/members/thumbs/$1")}`, full: `../${file}` };
+  }
   function avatar(name, size) {
     // 名前から色を決める(同じ人はいつも同じ色)
     let n = 0;
     for (const ch of String(name || "")) n = (n * 31 + ch.charCodeAt(0)) % 360;
-    return h("span", { class: `app-avatar${size ? ` is-${size}` : ""}`, style: `--hue:${n}`, "aria-hidden": "true" }, initial(name));
+    const el = h("span", { class: `app-avatar${size ? ` is-${size}` : ""}`, style: `--hue:${n}`, "aria-hidden": "true" }, initial(name));
+    const ph = avatarPhoto(name);
+    if (ph) {
+      el.classList.add("has-photo");
+      el.append(h("img", { src: ph.src, alt: "", loading: "lazy", decoding: "async",
+        // 小さい版がないとき → 元の写真 → それもだめなら頭文字に戻す
+        onerror: (e) => { const img = e.target; if (img.getAttribute("src") !== ph.full) img.src = ph.full; else { img.remove(); el.classList.remove("has-photo"); } } }));
+    }
+    return el;
   }
   // 本文の改行を保ち、URL だけリンクにする
   function richText(text) {

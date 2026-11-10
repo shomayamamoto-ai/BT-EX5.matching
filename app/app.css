@@ -128,6 +128,9 @@ a { color: var(--accent-dark); }
 }
 .app-avatar.is-sm { width: 28px; height: 28px; font-size: 12px; }
 .app-avatar.is-lg { width: 60px; height: 60px; font-size: 24px; }
+/* 写真があるときは丸く切り抜いて出す(頭文字は写真の下に隠れる。読み込めなければ頭文字のまま) */
+.app-avatar.has-photo { position: relative; overflow: hidden; color: transparent; }
+.app-avatar.has-photo img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 22%; border-radius: inherit; }
 .app-me .app-avatar { width: 34px; height: 34px; font-size: 14px; box-shadow: 0 0 0 2px #fff, 0 0 0 3.5px var(--line-strong); }
 
 .app-seg {
