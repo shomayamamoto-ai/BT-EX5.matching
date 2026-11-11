@@ -3455,3 +3455,43 @@ button.home-welcome-check:active { transform: scale(0.94); }
 .ai-note { margin: 10px 0 0; font-size: 13px; line-height: 1.7; color: var(--text-sub, #7a645c); }
 .ai-examples, .ai-points { margin: 0; padding-left: 1.2em; display: grid; gap: 6px; line-height: 1.7; }
 .ai-card .ai-url { margin-top: 12px; }
+
+/* 記録の分析・アンケート: 活動のバランス(レーダー)・強み/伸びしろ TOP3・次の一手(2026年11月) */
+.sd-balance { margin: 4px 0 14px; display: grid; gap: 12px; }
+.sd-balance-head h3 { margin: 0; font-size: 17px; font-weight: 900; }
+.sd-balance-head p { margin: 4px 0 0; font-size: 12.5px; color: var(--text-light); }
+.sd-balance-row { margin-bottom: 0; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); }
+.sd-radar { min-height: 300px; }
+.sd-radar-ring { fill: none; stroke: #ece4d6; stroke-width: 1; }
+.sd-radar-spoke { stroke: #ece4d6; stroke-width: 1; }
+.sd-radar-label { font-size: 12px; font-weight: 800; fill: var(--text-sub, #6f5f57); }
+.sd-radar-me { fill: var(--sd-accent, #a8813e); fill-opacity: 0.16; stroke: var(--sd-accent, #a8813e); stroke-width: 2; stroke-linejoin: round; }
+.sd-radar-ref { fill: none; stroke: #9a8f86; stroke-width: 1.5; stroke-dasharray: 4 4; }
+.sd-radar-dot { fill: var(--sd-accent, #a8813e); stroke: #fff; stroke-width: 2; transition: r 0.12s; }
+.sd-radar-dot.is-on { r: 6; }
+.sd-radar-legend { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; font-size: 12px; font-weight: 700; color: var(--text-sub, #6f5f57); margin-bottom: 2px; }
+.sd-radar-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.sd-radar-legend i { display: inline-block; width: 18px; height: 0; border-top: 2px solid var(--sd-accent, #a8813e); }
+.sd-radar-legend i.is-ref { border-top: 2px dashed #9a8f86; }
+.sd-top3-wrap { display: grid; gap: 12px; align-content: start; }
+.sd-top3-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.sd-top3-list li { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; grid-template-areas: "no label val" "no bar bar"; align-items: center; column-gap: 8px; row-gap: 5px; }
+.sd-top3-no { grid-area: no; align-self: start; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; font-weight: 900; background: var(--sd-tone-soft); color: var(--sd-tone); }
+.sd-top3-label { grid-area: label; font-size: 14px; font-weight: 800; min-width: 0; }
+.sd-top3-label small { display: block; font-size: 11.5px; font-weight: 600; color: var(--text-light); }
+.sd-top3-val { grid-area: val; font-size: 14px; font-weight: 900; color: var(--text); font-variant-numeric: tabular-nums; }
+.sd-top3-bar { grid-area: bar; height: 6px; border-radius: 4px; background: #f1ece4; overflow: hidden; }
+.sd-top3-bar i { display: block; height: 100%; border-radius: 4px; background: var(--sd-tone); }
+.sd-top3.is-good { --sd-tone: #16865a; --sd-tone-soft: #e3f3ec; background: linear-gradient(180deg, #f3faf6, var(--card) 60%); }
+.sd-top3.is-grow { --sd-tone: #c2462a; --sd-tone-soft: #fde8e3; background: linear-gradient(180deg, #fdf3f0, var(--card) 60%); }
+.sd-top3-mark { color: var(--sd-tone); margin-right: 6px; font-size: 12px; }
+.sd-next-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.sd-next-list li { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 10px 12px; border-radius: 12px; background: #faf6ef; }
+.sd-next-check { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; background: var(--sd-accent, #a8813e); color: #fff; font-size: 12px; font-weight: 900; }
+.sd-next-text { font-size: 13.5px; line-height: 1.6; }
+@media (max-width: 760px) {
+  .sd-balance-row { grid-template-columns: minmax(0, 1fr); }
+  .sd-next-list li { grid-template-columns: 22px minmax(0, 1fr); }
+  .sd-next-list li .app-btn { grid-column: 2; justify-self: start; }
+}
+.svx .sd-balance, .svx .sd-radar-card, .svx .sd-next { --sd-accent: var(--svx-accent); }

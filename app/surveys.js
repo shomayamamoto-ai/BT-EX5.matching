@@ -259,8 +259,37 @@
     const meetCard = h("section", { class: "sd-card" }, h("div", { class: "sd-card-head" }, h("h3", null, kind === "visitor" ? "また話したいメンバーはいたか" : "紹介や商談につながる出会い")),
       !meetList.length ? h("p", { class: "sd-empty" }, "この質問の回答はまだありません。")
         : C.donut ? C.donut((MEETS[kind] || []).map((k, i) => ({ label: k, value: meetList.filter((x) => x.meet === k).length, color: MEET_COLORS[i] })), "回答", "件") : bars((MEETS[kind] || []).map((k) => [k, meetList.filter((x) => x.meet === k).length]), meetList.length));
+    // ---------- ひと目でわかる: 満足度のバランス(今回 と 前回 のレーダー)・良かったところ TOP3・改善したいところ TOP3 ----------
+    const ok = (x) => x.improve.includes(NO_IMPROVE());
+    const indicators = (xs) => {
+      const imp = xs.filter((x) => x.improve.length), len = xs.filter((x) => x.length), mt = xs.filter((x) => x.meet);
+      return [
+        { label: "可能性", long: "ビジネスを加速させる可能性(平均)", v: (avgOf(xs) / 5) * 100, text: `${avgOf(xs).toFixed(1)} / 5` },
+        { label: "感じた以上", long: "「感じた」以上の割合", v: pctOf(xs, (x) => x.score <= 1), text: `${pctOf(xs, (x) => x.score <= 1)}%` },
+        kind === "visitor"
+          ? { label: "入会に前向き", long: "入会に前向きな割合", v: pctOf(xs, warm), text: `${pctOf(xs, warm)}%` }
+          : { label: "出会い", long: "紹介・商談につながる出会いがあった割合", v: pctOf(mt, met), text: mt.length ? `${pctOf(mt, met)}%` : "—" },
+        { label: "長さ", long: "全体の長さが「ちょうどよい」の割合", v: pctOf(len, (x) => x.length === "ちょうどよい"), text: len.length ? `${pctOf(len, (x) => x.length === "ちょうどよい")}%` : "—" },
+        { label: "このままでよい", long: "「特になし(このままでよい)」の割合", v: pctOf(imp, ok), text: imp.length ? `${pctOf(imp, ok)}%` : "—" },
+      ];
+    };
+    // くらべるのは、上の数字のカードと同じ「この回(すべてのときはいちばん新しい回)」と「その1つ前の回」
+    const nowInd = indicators(cur);
+    const refInd = prev && prev.length ? indicators(prev) : null;
+    const radarAxes = nowInd.map((a, i) => ({ label: a.label, title: a.long, value: a.v, valueText: a.text, ref: refInd ? refInd[i].v : 0, refText: refInd ? refInd[i].text : "—" }));
+    const radarNames = [`今回(${md(curDate)})`, prevDate ? `前回(${md(prevDate)})` : "前回"];
+    const progTop = countBy(list, (x) => String(x.program || "").replace(/^その他: ?/, "その他")).slice(0, 3);
+    const impTop = countBy(withImp.flatMap((x) => x.improve.map((v) => ({ v }))), (o) => (o.v === NO_IMPROVE() ? "" : o.v)).slice(0, 3);
+    const glance = n && C.radar && C.topList ? band("At a glance", "ひと目でわかる", h("div", { class: "sv-dash" },
+      h("div", { class: "sd-row sd-balance-row" },
+        h("section", { class: "sd-card sd-radar-card" }, h("div", { class: "sd-card-head" }, h("h3", null, "満足度のバランス"),
+          h("small", null, refInd ? "外側ほど良い。点線は前回" : "外側ほど良い")), C.radar(radarAxes, radarNames)),
+        h("div", { class: "sd-top3-wrap" },
+          C.topList("良かったプログラム TOP3", "good", progTop.map(([k, v]) => ({ label: k, pct: (v / Math.max(1, n)) * 100, text: `${v}件`, sub: `回答の ${Math.round((v / Math.max(1, n)) * 100)}%` })), "まだ選ばれたプログラムはありません。"),
+          C.topList("もっと良くしたいところ TOP3", "grow", impTop.map(([k, v]) => ({ label: k, pct: (v / Math.max(1, withImp.length)) * 100, text: `${v}件`, sub: `この質問に答えた方の ${Math.round((v / Math.max(1, withImp.length)) * 100)}%` })), withImp.length ? "改善してほしいところは選ばれていません。" : "この質問の回答はまだありません。"))))) : null;
     return [
       band("Summary", "数字で見る", h("div", { class: "sv-dash" }, kpis)),
+      glance,
       band("Improve", "次回に向けて良くするところ", h("div", { class: "sv-dash" }, h("div", { class: "sd-row is-half" }, impCard, fixCard), h("div", { class: "sd-row is-half" }, lenCard, meetCard))),
       band("Trend", "回ごとの推移と内訳", h("div", { class: "sv-dash" }, h("div", { class: "sd-row" }, trendCard, scoreCard))),
       band("Ranking", kind === "visitor" ? "良かったプログラムと入会への興味" : "良かったプログラムと所属ユニット", h("div", { class: "sv-dash" }, h("div", { class: "sd-row is-half" }, progCard, sideCard))),

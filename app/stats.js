@@ -4,6 +4,7 @@
 // メンバー別の表は、項目ごとに 1位・2位・3位・4位 を色分けし、見出しを押すと並べ替える。
 // 上の「ダッシュボード」: 数字のカード(前の期間との増減)/ 活動の推移(6か月の折れ線)/
 // 出した紹介の状況(ドーナツ)/ メンバー TOP5 / ありがとうマイルの推移(6か月の棒)
+// 「あなたの活動バランス」: メンバー平均とくらべたレーダー図・強み TOP3・伸びしろ TOP3・次の一手(2026年11月)
 // ============================================
 
 (function () {
@@ -193,7 +194,62 @@
     return h("div", { class: "sd-donut" }, h("div", { class: "sd-donut-fig" }, svg, mid), legend);
   }
   // ほかの画面(アンケートの結果など)でも同じグラフを使う
-  App.charts = { lineChart, barChart, donut };
+  // レーダー(くもの巣)図。axes: [{ label, value(0〜100), ref(0〜100), title, valueText, refText }]
+  // 「あなた」は塗り+線、「くらべる相手(平均など)」は灰色の点線(色だけにたよらず、線の形でも見分けられる)
+  function radar(axes, names) {
+    const box = h("div", { class: "sd-chart sd-radar" });
+    const tip = tipBox(box);
+    const legend = h("div", { class: "sd-radar-legend" },
+      h("span", null, h("i", { class: "is-me" }), names[0]), h("span", null, h("i", { class: "is-ref" }), names[1]));
+    box.append(legend);
+    responsive(box, (W) => {
+      const S = Math.min(W, 360), cx = S / 2, cy = S / 2 + 4, R = S / 2 - 54;
+      const n = axes.length;
+      const ang = (i) => -Math.PI / 2 + (i * 2 * Math.PI) / n;
+      const pt = (i, v) => [cx + Math.cos(ang(i)) * R * Math.max(0, Math.min(100, v)) / 100, cy + Math.sin(ang(i)) * R * Math.max(0, Math.min(100, v)) / 100];
+      const poly = (key) => axes.map((a, i) => pt(i, a[key]).map((v) => v.toFixed(1)).join(",")).join(" ");
+      const rings = [25, 50, 75, 100].map((v) => sv("polygon", { class: "sd-radar-ring", points: axes.map((_, i) => pt(i, v).join(",")).join(" ") }));
+      const spokes = axes.map((_, i) => { const [x, y] = pt(i, 100); return sv("line", { class: "sd-radar-spoke", x1: cx, y1: cy, x2: x, y2: y }); });
+      const labels = axes.map((a, i) => {
+        const [x, y] = pt(i, 122);
+        const anchor = Math.abs(x - cx) < 6 ? "middle" : x > cx ? "start" : "end";
+        // 左右の軸の名前は、点と重ならないよう少し外へ
+        const dx = anchor === "start" ? 6 : anchor === "end" ? -6 : 0;
+        return sv("text", { class: "sd-radar-label", x: x + dx, y: y + 4, "text-anchor": anchor }, a.label);
+      });
+      const dots = axes.map((a, i) => { const [x, y] = pt(i, a.value); return sv("circle", { class: "sd-radar-dot", cx: x, cy: y, r: 4 }); });
+      const svg = sv("svg", { class: "sd-svg", width: S, height: S + 8, viewBox: `0 0 ${S} ${S + 8}`, role: "img",
+        "aria-label": axes.map((a) => `${a.label} ${names[0]} ${a.valueText}、${names[1]} ${a.refText}`).join("。") },
+        rings, spokes,
+        sv("polygon", { class: "sd-radar-ref", points: poly("ref") }),
+        sv("polygon", { class: "sd-radar-me", points: poly("value") }),
+        dots, labels);
+      // 軸ごとに、さわると数字が出る(点より大きいあたり判定)
+      axes.forEach((a, i) => {
+        const [x, y] = pt(i, Math.max(a.value, 18));
+        const hit = sv("circle", { cx: x, cy: y, r: 18, fill: "transparent" });
+        const on = () => { dots.forEach((d, k) => d.classList.toggle("is-on", k === i)); tip.show(x + (W - S) / 2, y, a.title || a.label, `${names[0]} ${a.valueText} / ${names[1]} ${a.refText}`); };
+        hit.addEventListener("pointerenter", on); hit.addEventListener("pointerdown", on);
+        hit.addEventListener("pointerleave", () => { dots.forEach((d) => d.classList.remove("is-on")); tip.hide(); });
+        svg.append(hit);
+      });
+      svg.style.marginLeft = `${Math.max(0, (W - S) / 2)}px`;
+      box.querySelector("svg") ? box.querySelector("svg").replaceWith(svg) : box.prepend(svg);
+    });
+    return box;
+  }
+  // 強み・伸びしろの TOP3(ラベル・横棒・数字)。rows: [{ label, pct(0〜100), text, sub }]
+  function topList(title, tone, rows, empty) {
+    return h("section", { class: `sd-card sd-top3 is-${tone}` },
+      h("div", { class: "sd-card-head" }, h("h3", null, h("span", { class: "sd-top3-mark", "aria-hidden": "true" }, tone === "good" ? "▲" : "▼"), title)),
+      rows.length ? h("ol", { class: "sd-top3-list" }, rows.map((r, i) => h("li", null,
+        h("span", { class: "sd-top3-no" }, String(i + 1)),
+        h("span", { class: "sd-top3-label" }, r.label, r.sub ? h("small", null, r.sub) : null),
+        h("b", { class: "sd-top3-val" }, r.text),
+        h("span", { class: "sd-top3-bar", "aria-hidden": "true" }, h("i", { style: `width:${Math.max(3, Math.round(r.pct))}%` })))))
+        : h("p", { class: "sd-empty" }, empty));
+  }
+  App.charts = { lineChart, barChart, donut, radar, topList };
   function dateLabel(key) { return `${key.slice(0, 4)}年${Number(key.slice(5, 7))}月${Number(key.slice(8, 10))}日`; }
 
   // 期間: params → { mode, ym, from, to, title }
@@ -214,6 +270,7 @@
   }
 
   // after: グラフのあとに置くもの(BT-EX5 シグナル・全体の今月)
+  const C_radar = (axes) => radar(axes, ["あなた", "メンバー平均"]);
   App.renderStats = async function (el, params, after) {
     const per = periodOf(params);
     const sortKey = COLS.some((c) => c.id === params.get("s")) ? params.get("s") : DEFAULT_SORT;
@@ -282,6 +339,54 @@
       kpi("thanks", "amber", "ありがとうマイル(贈った)", App.yen(m.milesReceived), m.milesReceived, pv.milesReceived, true, "メンバーの紹介・協力で自分が成約できた分"),
       kpi("visitor", "teal", "招待したビジター", `${m.visitors}人`, m.visitors, pv.visitors, false, `一般 ${m.visitorsGeneral} / LINK BT ${m.visitorsLink}`),
       kpi("won", "gold", "入会者数", `${m.joined}人`, m.joined, pv.joined, false, `入会率 ${m.visitors ? `${Math.round((m.joined / m.visitors) * 100)}%` : "—"}`)));
+
+    // ---------- 活動のバランス(レーダー)・強み TOP3・伸びしろ TOP3・次の一手 ----------
+    // 各項目は「メンバーの中でいちばん多い人」を100として、あなたとメンバー平均をくらべる
+    const AX = [
+      { id: "miles", label: "マイル", long: "ありがとうマイル(受け取った)", fmt: man,
+        tip: "紹介した相手が成約したら、ありがとうマイルを記録してもらうよう声をかけましょう", href: "#log/miles", go: "マイルを見る" },
+      { id: "referrals", label: "紹介", long: "出した紹介", fmt: (v) => `${v}件`,
+        tip: "早見表の「聞いた相談を入れるだけで、紹介先がわかる」から、紹介を1件出してみましょう", href: "../referral/", go: "早見表を開く" },
+      { id: "oneOnOnes", label: "1on1", long: "1on1", fmt: (v) => `${v}回`,
+        tip: "まだ1on1をしていないメンバーと、30分の1on1を1つ入れましょう", href: "#log/1on1", go: "1on1 を入れる" },
+      { id: "visitors", label: "ビジター", long: "招待したビジター", fmt: (v) => `${v}人`,
+        tip: "次の定例会に、ビジター招待の URL を1人に送ってみましょう", href: "#invite", go: "招待する" },
+      { id: "attended", label: "出席", long: "出席", fmt: (v) => `${v}回`,
+        tip: "次の定例会の出欠を答えて、出席の記録をつけましょう", href: "#events", go: "予定を見る" },
+    ];
+    const mine = d.members.find((r) => r.isMe) || {};
+    const others = d.members.length ? d.members : [mine];
+    const avgOf = (k) => others.reduce((t, r) => t + (r[k] || 0), 0) / Math.max(1, others.length);
+    const maxOf = (k) => Math.max(1, ...others.map((r) => r[k] || 0));
+    const axes = AX.map((a) => {
+      const me = mine[a.id] || 0, av = avgOf(a.id), mx = maxOf(a.id);
+      const rank = me > 0 ? others.filter((r) => (r[a.id] || 0) > me).length + 1 : 0;
+      return Object.assign({}, a, { me, av, mx, rank, value: (me / mx) * 100, ref: (av / mx) * 100,
+        valueText: a.fmt(me), refText: a.id === "miles" ? man(Math.round(av)) : `${Math.round(av * 10) / 10}`, title: a.long });
+    });
+    const hasAny = axes.some((a) => a.me > 0 || a.av > 0);
+    const sorted = axes.slice().sort((x, y) => (y.value - y.ref) - (x.value - x.ref));
+    const strong = sorted.filter((a) => a.me > 0 && a.value >= a.ref).slice(0, 3);
+    // 伸びしろ: メンバーの平均より少ない項目(だれもまだ記録していない項目は出さない)
+    const weak = sorted.slice().reverse().filter((a) => a.av > 0 && a.value < a.ref).slice(0, 3);
+    const row = (a) => ({ label: a.long, pct: a.value, text: a.fmt(a.me), sub: a.rank ? `メンバー中 ${a.rank}位・平均 ${a.refText}` : `平均 ${a.refText}` });
+    // 次の一手: 伸びしろの項目。なければ、まだ0の項目から2つ
+    const nextSteps = (weak.length ? weak : axes.filter((a) => a.me === 0).slice(0, 2)).slice(0, 3);
+    el.append(h("section", { class: "sd-balance" },
+      h("div", { class: "sd-balance-head" }, h("h3", null, "あなたの活動バランス"),
+        h("p", null, `${per.title}の数字を、メンバーの平均とくらべています(いちばん多いメンバーを外側の線にしています)。`)),
+      hasAny ? h("div", { class: "sd-row sd-balance-row" },
+        h("section", { class: "sd-card sd-radar-card" }, h("div", { class: "sd-card-head" }, h("h3", null, "強み・伸びしろの見える化")), C_radar(axes)),
+        h("div", { class: "sd-top3-wrap" },
+          topList("強み TOP3", "good", strong.map(row), "この期間は、平均を上回っている項目がまだありません。"),
+          topList("伸びしろ TOP3", "grow", weak.map(row), "メンバーの平均を下回っている項目はありません。")))
+        : h("p", { class: "sd-empty" }, "この期間の記録がたまると、活動のバランスが出ます。"),
+      hasAny && nextSteps.length ? h("section", { class: "sd-card sd-next" },
+        h("div", { class: "sd-card-head" }, h("h3", null, "次の一手")),
+        h("ul", { class: "sd-next-list" }, nextSteps.map((a) => h("li", null,
+          h("span", { class: "sd-next-check", "aria-hidden": "true" }, "✓"),
+          h("span", { class: "sd-next-text" }, h("b", null, a.long), " ", a.tip),
+          h("a", { class: "app-btn ghost small", href: a.href }, a.go))))) : null));
 
     // 活動の推移(6か月)と、出した紹介の状況
     const series = d.series || [];
