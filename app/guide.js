@@ -223,7 +223,8 @@
       el.append(h("h1", { class: "app-h1" }, "使い方・よくある質問"),
         h("p", { class: "app-lead" }, "わからないことがあれば、まずここを見てください。解決しないときは、いちばん下から運営に送れます。"),
         h("a", { class: "app-btn primary wide help-manual", href: "../manual/" }, "絵と動画の使い方マニュアルを開く"),
-        h("a", { class: "app-btn ghost wide help-manual", href: "#tour" }, "アプリの使い方ツアーをもう一度見る(1分)"));
+        h("a", { class: "app-btn ghost wide help-manual", href: "#tour" }, "アプリの使い方ツアーをもう一度見る(1分)"),
+        h("a", { class: "app-btn ghost wide help-manual", href: "#learn" }, "AI を学ぶ(仕事で AI を使いはじめるレッスン)"));
       FAQ.forEach(([sec, items]) => {
         el.append(h("section", { class: "app-section help-sec" }, h("h2", { class: "app-h2" }, sec),
           items.map(([q, a]) => h("details", { class: "help-item" }, h("summary", null, q), h("p", null, a)))));
