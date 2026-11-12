@@ -1238,8 +1238,36 @@ const REF_NEW_MEMBERS = [
 ];
 // 共有サーバーの名簿(list)に、まだいない新しいメンバーを足して返す(ID・お名前のどちらかが同じなら足さない)。
 // 足した方には pending: true を付ける(共有の名簿に入るまでは、紹介の記録などのサーバーへの保存はできない)
+// 文の書きかえ(本人の依頼)。共有サーバーの名簿に届く前でも、どの画面でも新しい書き方で出す。
+// { id, fields, from, to }: その人の fields の文の中の from を to に置きかえる(「^」で始まる from は文のはじめだけ)。
+// 共有サーバーでも同じ書きかえを一度だけ行う(referral/data-seed.js の REF_SEED_REVISIONS)
+const REF_TEXT_FIXES = [
+  { id: "yamamoto", fields: ["company"], from: "AI事業者向けシステム開発", to: "AI歴4年のオタクによる事業者向けシステム改善" },
+  { id: "yamamoto", fields: ["company"], from: "/事業者向けシステム改善", to: "/AI歴4年のオタクによる事業者向けシステム改善" },
+  { id: "yamamoto", fields: ["company"], from: "、事業者向けシステム改善", to: "、AI歴4年のオタクによる事業者向けシステム改善" },
+  { id: "yamamoto", fields: ["company"], from: "^事業者向けシステム改善", to: "AI歴4年のオタクによる事業者向けシステム改善" },
+  { id: "yamamoto", fields: ["business"], from: "①システム開発(いちばんの事業", to: "①AI歴4年のオタクによる事業者向けシステム改善(いちばんの事業" },
+  { id: "yamamoto", fields: ["business"], from: "AI事業者向けのシステム開発", to: "事業者向けのシステム改善" },
+  { id: "yamamoto", fields: ["selfIntro"], from: "AI歴3年以上", to: "AI歴4年" },
+  { id: "yamamoto", fields: ["selfIntro"], from: "・Webサイト・業務効率化ツールの開発（https://lumenium.net ）", to: "・AI歴4年のオタクによる事業者向けシステム改善（Webサイト・業務効率化ツールの開発 https://lumenium.net ）" },
+];
+function refFixTexts(list) {
+  (Array.isArray(list) ? list : []).forEach((m) => {
+    if (!m) return;
+    REF_TEXT_FIXES.forEach((f) => {
+      if (f.id !== m.id) return;
+      f.fields.forEach((k) => {
+        const v = m[k];
+        if (typeof v !== "string") return;
+        if (f.from.charAt(0) === "^") { if (v.indexOf(f.from.slice(1)) === 0) m[k] = f.to + v.slice(f.from.length - 1); }
+        else m[k] = v.split(f.from).join(f.to);
+      });
+    });
+  });
+  return list;
+}
 function refMergeNewMembers(list) {
-  const out = Array.isArray(list) ? list.slice() : [];
+  const out = Array.isArray(list) ? refFixTexts(list.slice()) : [];
   const norm = (t) => String(t || "").replace(/\s+/g, "");
   REF_NEW_MEMBERS.forEach((m) => {
     if (out.some((x) => x && (x.id === m.id || norm(x.name) === norm(m.name)))) return;

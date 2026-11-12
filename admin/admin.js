@@ -39,6 +39,7 @@
   async function load() {
     const res = await AuthApi.listReferralMembers(AuthSession.getToken());
     members = res.success ? res.data.members : [];
+    if (typeof refFixTexts === "function") refFixTexts(members);
     render();
   }
 

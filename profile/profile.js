@@ -182,6 +182,8 @@
     if (!session) return;
     const res = await AuthApi.listReferralMembers(AuthSession.getToken());
     me = res.success ? res.data.members.find((m) => m.id === session.memberId) : null;
+    // 本人の依頼の書きかえ(共有サーバーに届く前でも、新しい書き方で編集・保存できるように)
+    if (me && typeof refFixTexts === "function") refFixTexts([me]);
     setupForm();
     if (me) {
       $("#profName").textContent = me.name;

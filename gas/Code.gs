@@ -1246,8 +1246,36 @@ const REF_NEW_MEMBERS = [
 ];
 // 共有サーバーの名簿(list)に、まだいない新しいメンバーを足して返す(ID・お名前のどちらかが同じなら足さない)。
 // 足した方には pending: true を付ける(共有の名簿に入るまでは、紹介の記録などのサーバーへの保存はできない)
+// 文の書きかえ(本人の依頼)。共有サーバーの名簿に届く前でも、どの画面でも新しい書き方で出す。
+// { id, fields, from, to }: その人の fields の文の中の from を to に置きかえる(「^」で始まる from は文のはじめだけ)。
+// 共有サーバーでも同じ書きかえを一度だけ行う(referral/data-seed.js の REF_SEED_REVISIONS)
+const REF_TEXT_FIXES = [
+  { id: "yamamoto", fields: ["company"], from: "AI事業者向けシステム開発", to: "AI歴4年のオタクによる事業者向けシステム改善" },
+  { id: "yamamoto", fields: ["company"], from: "/事業者向けシステム改善", to: "/AI歴4年のオタクによる事業者向けシステム改善" },
+  { id: "yamamoto", fields: ["company"], from: "、事業者向けシステム改善", to: "、AI歴4年のオタクによる事業者向けシステム改善" },
+  { id: "yamamoto", fields: ["company"], from: "^事業者向けシステム改善", to: "AI歴4年のオタクによる事業者向けシステム改善" },
+  { id: "yamamoto", fields: ["business"], from: "①システム開発(いちばんの事業", to: "①AI歴4年のオタクによる事業者向けシステム改善(いちばんの事業" },
+  { id: "yamamoto", fields: ["business"], from: "AI事業者向けのシステム開発", to: "事業者向けのシステム改善" },
+  { id: "yamamoto", fields: ["selfIntro"], from: "AI歴3年以上", to: "AI歴4年" },
+  { id: "yamamoto", fields: ["selfIntro"], from: "・Webサイト・業務効率化ツールの開発（https://lumenium.net ）", to: "・AI歴4年のオタクによる事業者向けシステム改善（Webサイト・業務効率化ツールの開発 https://lumenium.net ）" },
+];
+function refFixTexts(list) {
+  (Array.isArray(list) ? list : []).forEach((m) => {
+    if (!m) return;
+    REF_TEXT_FIXES.forEach((f) => {
+      if (f.id !== m.id) return;
+      f.fields.forEach((k) => {
+        const v = m[k];
+        if (typeof v !== "string") return;
+        if (f.from.charAt(0) === "^") { if (v.indexOf(f.from.slice(1)) === 0) m[k] = f.to + v.slice(f.from.length - 1); }
+        else m[k] = v.split(f.from).join(f.to);
+      });
+    });
+  });
+  return list;
+}
 function refMergeNewMembers(list) {
-  const out = Array.isArray(list) ? list.slice() : [];
+  const out = Array.isArray(list) ? refFixTexts(list.slice()) : [];
   const norm = (t) => String(t || "").replace(/\s+/g, "");
   REF_NEW_MEMBERS.forEach((m) => {
     if (out.some((x) => x && (x.id === m.id || norm(x.name) === norm(m.name)))) return;
@@ -2889,7 +2917,7 @@ const REF_SEED_ANNOUNCEMENTS = [
   {
     seedId: "2026-10-25-update-16",
     cat: "アップデート",
-    rev: 185,
+    rev: 186,
     at: Date.UTC(2026, 9, 25, 4, 0), // 2026/10/25 13:00(日本時間)
     title: "【アップデート】紹介診断に「相手がこう言っていたら」・アンケート・運営タブ など",
     body: [
@@ -2911,6 +2939,7 @@ const REF_SEED_ANNOUNCEMENTS = [
       "・【使いやすさ】掲示板の投稿・コメント、マイページ、画面右上の丸いアイコン(早見表など、ほかのページでも)、お気に入りなどの丸い顔アイコンに、顔写真を出すようにしました(これまでは頭文字だけでした)。写真がない方はこれまでどおり頭文字です。",
       "・定例会のスライドの「BT-EX でよく使う言葉」で、「貢献（リファーラル）」を「貢献（紹介）」にしました。",
       "・山本 捷真の肩書き・事業内容・自己紹介の最初の事業を「AI歴4年のオタクによる事業者向けシステム改善」にし、自己紹介の「AI歴3年以上」を「AI歴4年」にしました。",
+      "・山本 捷真の新しい書き方(AI歴4年のオタクによる事業者向けシステム改善)が、共有サーバーの名簿が新しくなる前でも、名簿・プロフィール編集・管理者ページのどこでもすぐ出るようにしました。",
       "・【新しい機能】記録の「分析」に「あなたの活動バランス」を足しました。マイル・紹介・1on1・ビジター・出席を、メンバーの平均とくらべたレーダー図(くもの巣の図)で見える化し、「強み TOP3」「伸びしろ TOP3」と、伸びしろに合わせた「次の一手」(押すとその画面へ)を出します。アンケートの結果にも「ひと目でわかる」を足し、満足度のバランス(今回と前回のレーダー図)・良かったプログラム TOP3・もっと良くしたいところ TOP3 を出します。",
       "・BT-EX7 の矢口 健彦(ヤグチ タケヒコ)さん(Data Fusion Partners 代表/中小企業診断士/綺絆)の顔写真と、事業内容・対象のお客様・「こんな話が出たら」を入れました。プレゼンで選ぶと、写真とつながりたい人がスライドに出ます。",
       "・BT-EX1 の小松 茂子さん(ReVivre 代表/チーム無限)の事業内容(共済保険)・主なお客様・求める紹介・「こんな話が出たら」を入れました。プレゼンで選ぶと、求める紹介がスライドに出ます。",
