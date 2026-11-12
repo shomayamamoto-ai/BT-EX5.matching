@@ -1481,7 +1481,7 @@ const REF_SEED_MEMBERS = [
     id: "yamamoto",
     name: "山本 捷真",
     // カードの名前の下に出る肩書き(本人から受け取った肩書き。2026年10月25日)
-    company: "Lumenium 代表/AI事業者向けシステム開発、0から作るオリジナルWebサイト制作、セキュリティ特化のAI研修、有名監督による企業PR動画・SNS運用、元家電量販店店員によるスマホ・PC買い替え相談と携帯料金見直し、個々に合わせた苦手克服AIを用いたオンライン塾",
+    company: "Lumenium 代表/AI歴4年のオタクによる事業者向けシステム改善、0から作るオリジナルWebサイト制作、セキュリティ特化のAI研修、有名監督による企業PR動画・SNS運用、元家電量販店店員によるスマホ・PC買い替え相談と携帯料金見直し、個々に合わせた苦手克服AIを用いたオンライン塾",
     team: "フェリシア",
     base: "東京",
     category: "システム開発",
@@ -1879,6 +1879,11 @@ const REF_SEED_REVISIONS = [
   { rev: "2026-11-yamamoto-proposal-2", ids: ["yamamoto"], fields: ["links"], addLinks: ["proposal"], linksFirst: true },
   // 本人の依頼で、Aqualium のチラシを資料の2番目(自己紹介・ご提案のすぐ後ろ)に入れる
   { rev: "2026-11-yamamoto-aqualium-flyer", ids: ["yamamoto"], fields: ["links"], addLinks: ["proposal"], addUrls: ["materials/yamamoto-aqualium.jpg"], linksAfter: "materials/lumenium-proposal-2026-11.pdf" },
+  // 本人の依頼で、肩書きの最初の事業を「AI歴4年のオタクによる事業者向けシステム改善」に(2026年11月12日。肩書きのほかの部分はそのまま)
+  { rev: "2026-11-yamamoto-title-ai4-a", ids: ["yamamoto"], fields: ["company"], replaceText: ["AI事業者向けシステム開発", "AI歴4年のオタクによる事業者向けシステム改善"] },
+  { rev: "2026-11-yamamoto-title-ai4-b", ids: ["yamamoto"], fields: ["company"], replaceText: ["/事業者向けシステム改善", "/AI歴4年のオタクによる事業者向けシステム改善"] },
+  { rev: "2026-11-yamamoto-title-ai4-c", ids: ["yamamoto"], fields: ["company"], replaceText: ["、事業者向けシステム改善", "、AI歴4年のオタクによる事業者向けシステム改善"] },
+  { rev: "2026-11-yamamoto-title-ai4-d", ids: ["yamamoto"], fields: ["company"], replaceText: ["^事業者向けシステム改善", "AI歴4年のオタクによる事業者向けシステム改善"] },
   { rev: "2026-11-yamamoto-aqualium", ids: ["yamamoto"], fields: ["business"], replaceText: ["Weak-Point Sniper", "Aqualium"] },
   // 紹介診断の「相手がこう言っていたら」から探せるように、言葉とジャンルを足す(本人の言葉はそのまま)
   { rev: "2026-10-say-phrases", ids: ["yamamoto"], fields: ["triggers"], addTriggers: ["モデルになりたい", "芸能界に入りたい", "俳優・タレントになりたい", "芸能事務所を探している"] },
@@ -2879,7 +2884,7 @@ const REF_SEED_ANNOUNCEMENTS = [
   {
     seedId: "2026-10-25-update-16",
     cat: "アップデート",
-    rev: 183,
+    rev: 184,
     at: Date.UTC(2026, 9, 25, 4, 0), // 2026/10/25 13:00(日本時間)
     title: "【アップデート】紹介診断に「相手がこう言っていたら」・アンケート・運営タブ など",
     body: [
@@ -2900,6 +2905,7 @@ const REF_SEED_ANNOUNCEMENTS = [
       "・資料の「ポスターを作る」「定例会のお誘い画像」で、右の見本がスクロールについてこないようにしました。",
       "・【使いやすさ】掲示板の投稿・コメント、マイページ、画面右上の丸いアイコン(早見表など、ほかのページでも)、お気に入りなどの丸い顔アイコンに、顔写真を出すようにしました(これまでは頭文字だけでした)。写真がない方はこれまでどおり頭文字です。",
       "・定例会のスライドの「BT-EX でよく使う言葉」で、「貢献（リファーラル）」を「貢献（紹介）」にしました。",
+      "・山本 捷真の肩書きの最初の事業を「AI歴4年のオタクによる事業者向けシステム改善」にしました。",
       "・【新しい機能】記録の「分析」に「あなたの活動バランス」を足しました。マイル・紹介・1on1・ビジター・出席を、メンバーの平均とくらべたレーダー図(くもの巣の図)で見える化し、「強み TOP3」「伸びしろ TOP3」と、伸びしろに合わせた「次の一手」(押すとその画面へ)を出します。アンケートの結果にも「ひと目でわかる」を足し、満足度のバランス(今回と前回のレーダー図)・良かったプログラム TOP3・もっと良くしたいところ TOP3 を出します。",
       "・BT-EX7 の矢口 健彦(ヤグチ タケヒコ)さん(Data Fusion Partners 代表/中小企業診断士/綺絆)の顔写真と、事業内容・対象のお客様・「こんな話が出たら」を入れました。プレゼンで選ぶと、写真とつながりたい人がスライドに出ます。",
       "・BT-EX1 の小松 茂子さん(ReVivre 代表/チーム無限)の事業内容(共済保険)・主なお客様・求める紹介・「こんな話が出たら」を入れました。プレゼンで選ぶと、求める紹介がスライドに出ます。",
@@ -3413,7 +3419,13 @@ var BtexServerCore = (function () {
           }
           // replaceText: [前, 後]。編集済みのメンバーでも、fields の文の中の言葉だけを置きかえる(ほかの文はそのまま)
           if (Array.isArray(r.replaceText) && r.replaceText.length === 2) {
-            var rep = function (v) { return typeof v === "string" ? v.split(r.replaceText[0]).join(r.replaceText[1]) : v; };
+            // 前の言葉が「^」で始まるときは、文のいちばんはじめにあるときだけ置きかえる
+            var rep = function (v) {
+              if (typeof v !== "string") return v;
+              var from = r.replaceText[0];
+              if (from.charAt(0) === "^") return v.indexOf(from.slice(1)) === 0 ? r.replaceText[1] + v.slice(from.length - 1) : v;
+              return v.split(from).join(r.replaceText[1]);
+            };
             (r.fields || []).forEach(function (k) {
               if (typeof next[k] === "string") next[k] = rep(next[k]);
               else if (Array.isArray(next[k])) next[k] = next[k].map(rep);

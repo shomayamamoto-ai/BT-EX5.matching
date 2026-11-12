@@ -330,7 +330,13 @@ var BtexServerCore = (function () {
           }
           // replaceText: [前, 後]。編集済みのメンバーでも、fields の文の中の言葉だけを置きかえる(ほかの文はそのまま)
           if (Array.isArray(r.replaceText) && r.replaceText.length === 2) {
-            var rep = function (v) { return typeof v === "string" ? v.split(r.replaceText[0]).join(r.replaceText[1]) : v; };
+            // 前の言葉が「^」で始まるときは、文のいちばんはじめにあるときだけ置きかえる
+            var rep = function (v) {
+              if (typeof v !== "string") return v;
+              var from = r.replaceText[0];
+              if (from.charAt(0) === "^") return v.indexOf(from.slice(1)) === 0 ? r.replaceText[1] + v.slice(from.length - 1) : v;
+              return v.split(from).join(r.replaceText[1]);
+            };
             (r.fields || []).forEach(function (k) {
               if (typeof next[k] === "string") next[k] = rep(next[k]);
               else if (Array.isArray(next[k])) next[k] = next[k].map(rep);
