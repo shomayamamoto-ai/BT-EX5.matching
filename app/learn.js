@@ -180,6 +180,59 @@
       ],
     },
     {
+      tag: "Codex", title: "Codex でデザイン・サイトづくり・公開まで(Figma・Canva・Wix・Vercel・Netlify)",
+      body: () => [
+        p("同じ記事では、デザイン系の3つは結果の差がはっきり分かれた、と紹介されていました。"),
+        h("div", { class: "lr-table" },
+          [
+            ["Figma", "この Figma の URL を読み取り、React のコンポーネントとして実装して", "元のデザインどおりの、おしゃれなサイト。デザイン性の高い Web 制作で出番が多そう"],
+            ["Canva", "Canva で AI セミナーの告知画像を作って。Instagram の正方形で", "候補がいくつかできたが、文字くずれや小さい文字もあり手直しが必要。原稿の文字を置いてもらい、あとは自分で編集するのが現実的"],
+            ["Wix", "Wix で AI 研修サービスのサイトを作って。料金と問い合わせも入れて", "Wix のテンプレートで見た目が安定したサイト。エディターで直感的に直せるので初心者向き"],
+          ].map(([k, ask, got]) => h("div", { class: "lr-tr" }, h("b", null, k), h("span", null, `「${ask}」`), h("em", null, `→ ${got}`)))),
+        h("h3", { class: "lr-h3" }, "Web アプリは「作る → 点検 → 公開」まで Codex の中で進む"),
+        h("ol", { class: "lr-steps" },
+          [
+            ["Build Web Apps", "作って、ブラウザで確かめる(記事では予約フォームつきのアプリ)"],
+            ["Codex Security", "コードの危ないところを、認証・入力の確認・秘密の情報・ログの観点で洗い出し、直し方の例まで出す"],
+            ["Vercel / Netlify", "インターネットに公開する(記事では予約サイトを Vercel、パズルゲームを Netlify で公開)"],
+          ].map(([k, d]) => h("li", null, h("b", null, k), `: ${d}`))),
+        p("Vercel は自分のアカウントが必要です。Netlify はフォームやサーバー側の処理(Functions)も設定でき、HTML だけのサイトなら公開はとてもかんたん、とのことでした。"),
+      ],
+    },
+    {
+      tag: "Codex", title: "Codex で動画・画像を作る(Remotion・HyperFrames・fal)",
+      body: () => [
+        h("div", { class: "lr-table" },
+          [
+            ["Remotion", "React(Web の画面を作るしくみ)で動画を組む。台本から字幕つきの30秒の縦型動画ができた", "表現にこだわる動画づくり向き"],
+            ["HyperFrames by HeyGen", "HTML で画面を作り、GSAP で動かす。15秒のサービス紹介動画ができた", "会社やサービスの説明動画向き(記事の筆者は、ビジネスならこちらが軽くて扱いやすいとの感想)"],
+            ["fal", "画像・動画・音声の生成 AI をまとめて API で使えるサービス。「広告ビジュアルを3案、信頼感重視で」で画像(FLUX.2)、続けて「Seedance で動画に」で動画もできた", "先にアカウントと API キーを作り、前払いのクレジットを入れておく(使った分だけ引かれる)"],
+          ].map(([k, d, use]) => h("div", { class: "lr-tr" }, h("b", null, k), h("span", null, d), h("em", null, `→ ${use}`)))),
+        p("お金がかかるサービス(fal など)をつなぐときは、クレジットの上限を決めておくと安心です。"),
+      ],
+    },
+    {
+      tag: "Codex", title: "Codex のプラグインの入れ方と、記事のまとめ",
+      body: () => [
+        h("ol", { class: "lr-steps" },
+          [
+            ["左上の「プラグイン」を開く", "使えるプラグインの一覧が出る"],
+            ["使いたいものの「＋」を押す", "押すだけでインストールが始まる"],
+            ["アプリと接続する", "出てきた画面の指示どおりにログインする(例: HyperFrames なら HeyGen の画面で Google アカウントでログイン)"],
+            ["チャットで頼む", "入力欄の「＋」からプラグインを選び、作業を頼む"],
+          ].map(([k, d]) => h("li", null, h("b", null, k), `: ${d}`))),
+        p("認証を求められるのは、インストールのときと、はじめて使うときの場合があります。Codex CLI では「/plugins」でプラグインの画面を開けます(記事の時点・2026年11月)。"),
+        h("div", { class: "lr-box is-good" }, h("b", null, "記事のまとめ"),
+          ul([
+            "プラグインは、作業の手順(スキル)と外のアプリとの接続をまとめた追加機能。左上の「プラグイン」から「＋」で入れられる",
+            "まず入れたいのは Spreadsheets・Data Analytics・Documents と、Slack・Notion・Gmail・Google Calendar の7つ",
+            "Presentations や Canva は形を作るところまでは速いが、デザインは手直しかスキルでの工夫がいる",
+            "Build Web Apps・Codex Security・Vercel/Netlify で、アプリを作ってから公開するまでが Codex の中で終わる",
+            "いくつかのプラグインとスケジュールタスクを組み合わせると、毎朝のメール確認のような作業も任せられる",
+          ])),
+      ],
+    },
+    {
       tag: "Gemini", title: "Gemini でもエージェントの仕事ができる(Antigravity)",
       body: () => [
         p("Mac の Gemini アプリの右上にある「Antigravity」から使うと、Web 版とはスライドの出来がまったく違う、と紹介されていました。"),
