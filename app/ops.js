@@ -62,6 +62,8 @@
   ];
   const ROLE_TITLES = { m14: "副代表" }; // 名前の前に添える肩書き
   const flat = (t) => String(t || "").replace(/\s+/g, "");
+  // ひらがなでもカタカナでも探せるように、ひらがなをカタカナにそろえる
+  const kata = (t) => flat(t).replace(/[\u3041-\u3096]/g, (ch) => String.fromCharCode(ch.charCodeAt(0) + 0x60));
   const idByName = (name) => { const m = (App.members || []).find((x) => flat(x.name) === flat(name) || flat(x.name).startsWith(flat(name))); return m ? m.id : ""; };
   const defaultRoles = () => ROLE_DEFAULT.map(([key, label, names]) => ({ key, label, ids: names.map(idByName).filter(Boolean) }));
   const LOCAL = "btex5-ops-roles";
@@ -75,20 +77,26 @@
     let saved = shared ? res.roles : null;
     if (!shared) { try { saved = JSON.parse(localStorage.getItem(LOCAL) || "null"); } catch { saved = null; } }
     let items = saved && Array.isArray(saved.items) && saved.items.length ? saved.items.map((x) => Object.assign({}, x, { ids: (x.ids || []).slice() })) : defaultRoles();
-    const open = new Set();
+    const myId = (App.session && App.session.memberId) || "";
+    let openKey = "";       // 開いている行(1つだけ)
+    let filter = "all";     // all / mine / empty
     let query = "";
     const wrap = h("section", { class: "app-section ops-roles" });
-    const info = h("p", { class: "ops-roles-info" });
+    const info = h("p", { class: "ops-roles-info", "aria-live": "polite" });
+    const stats = h("div", { class: "ops-roles-stats" });
+    const filterBox = h("div", { class: "ops-roles-filter", role: "group", "aria-label": "表示する行" });
     const listBox = h("div", { class: "ops-roles-list" });
     const byPerson = h("div", { class: "ops-roles-people" });
     let timer = null;
 
     const people = () => (App.members || []).slice().sort((p, q) => kanaOf(p).localeCompare(kanaOf(q), "ja"));
-    const who = (ids) => ids.map((id) => `${ROLE_TITLES[id] ? `${ROLE_TITLES[id]} ` : ""}${nameOfId(id)}`).filter((t) => t.trim()).join("・");
+    const titled = (id) => `${ROLE_TITLES[id] ? `${ROLE_TITLES[id]} ` : ""}${nameOfId(id)}`;
+    // 「01 はじめの挨拶」→ 番号と名前に分ける(番号のない行は「・」)
+    const split = (label) => { const m = /^(\d+)\s*(.*)$/.exec(label); return m ? [m[1], m[2]] : ["", label]; };
 
     function setInfo(text) {
       info.textContent = text || (shared
-        ? (saved && saved.byName ? `最後に直した人: ${saved.byName}${saved.at ? `(${new Date(saved.at).toLocaleString("ja-JP", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" })})` : ""}` : "運営から受け取った割り当てです。行を押すと、全メンバーから担当を選べます。")
+        ? (saved && saved.byName ? `最後に直した人: ${saved.byName}${saved.at ? `(${new Date(saved.at).toLocaleString("ja-JP", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" })})` : ""}。直すとすぐ保存され、運営メンバーみんなの表が変わります。` : "運営から受け取った割り当てです。行を押すと、全メンバーから担当を選べます(直すとすぐ保存されます)。")
         : "いまは、この端末にだけ保存されます(共有サーバーの更新のあと、運営メンバーみんなで同じ表になります)。");
     }
     function save() {
@@ -98,63 +106,122 @@
         const out = items.map((x) => ({ key: x.key, label: x.label, ids: x.ids }));
         if (shared) {
           const r = await App.api("saveOpsRoles", { items: out });
-          if (r) { saved = r.roles; setInfo(); }
+          if (r) { saved = r.roles; setInfo(); } else setInfo("保存できませんでした。電波のよいところで、もう一度選んでください。");
         } else {
           try { localStorage.setItem(LOCAL, JSON.stringify({ items: out, at: Date.now() })); } catch { /* noop */ }
           setInfo();
         }
       }, 500);
     }
+    // LINE などに貼る文(写真の表と同じ並び)
+    function asText() {
+      return ["【BT-EX5 定例会 役割早見表】", ...items.map((it) => {
+        const [no, name] = split(it.label);
+        return `${no ? `${no} ` : "　"}${name}${it.ids.length ? `:${it.ids.map(titled).join("・")}` : ""}`;
+      })].join("\n");
+    }
+    function drawStats() {
+      const empty = items.filter((x) => !x.ids.length).length;
+      const mine = items.filter((x) => x.ids.includes(myId)).length;
+      App.fill(stats, [
+        h("span", { class: "ops-roles-stat" }, h("b", null, String(items.length)), "役割"),
+        h("span", { class: `ops-roles-stat${empty ? " is-warn" : " is-good"}` }, h("b", null, String(empty)), "担当なし"),
+        h("span", { class: `ops-roles-stat${mine ? " is-me" : ""}` }, h("b", null, String(mine)), "あなたの担当"),
+      ]);
+      App.fill(filterBox, [["all", "すべて"], ["mine", "自分の担当"], ["empty", "担当なし"]].map(([id, label]) =>
+        h("button", { type: "button", class: `app-pill${filter === id ? " is-on" : ""}`, "aria-pressed": filter === id ? "true" : "false",
+          onclick: () => { filter = id; openKey = ""; draw(); } }, label)));
+    }
     function drawPeople() {
       const map = new Map();
-      items.forEach((it) => it.ids.forEach((id) => { if (!map.has(id)) map.set(id, []); map.get(id).push(it.label.replace(/^\d+\s*/, "")); }));
+      items.forEach((it) => it.ids.forEach((id) => { if (!map.has(id)) map.set(id, []); map.get(id).push(it.label); }));
       const rows = [...map.entries()].sort((p, q) => kanaOf(App.memberById(p[0]) || {}).localeCompare(kanaOf(App.memberById(q[0]) || {}), "ja"));
-      App.fill(byPerson, rows.length ? rows.map(([id, roles]) => h("div", { class: "ops-roles-person" },
-        App.avatar(nameOfId(id), "sm"),
-        h("div", null, h("b", null, `${ROLE_TITLES[id] ? `${ROLE_TITLES[id]} ` : ""}${nameOfId(id)}`), h("span", null, roles.join(" / ")))))
+      App.fill(byPerson, rows.length ? rows.map(([id, roles]) => h("div", { class: `ops-roles-person${id === myId ? " is-me" : ""}` },
+        App.avatar(nameOfId(id)),
+        h("div", null, h("b", null, titled(id), id === myId ? h("i", null, "あなた") : null),
+          h("div", { class: "ops-roles-tags" }, roles.map((r) => h("span", null, r))))))
         : [h("p", { class: "app-field-hint" }, "まだだれも割り当てられていません。")]);
     }
-    function draw() {
-      App.fill(listBox, items.map((it) => {
-        const isOpen = open.has(it.key);
-        const row = h("div", { class: `ops-role${isOpen ? " is-open" : ""}${it.ids.length ? "" : " is-empty"}` });
-        const head = h("button", { type: "button", class: "ops-role-head", "aria-expanded": isOpen ? "true" : "false",
-          onclick: () => { if (open.has(it.key)) open.delete(it.key); else open.add(it.key); draw(); } },
-          h("span", { class: "ops-role-label" }, it.label),
-          h("span", { class: "ops-role-who" }, it.ids.length ? who(it.ids) : "担当なし"),
-          h("span", { class: "ops-role-toggle", "aria-hidden": "true" }, isOpen ? "閉じる" : "選ぶ"));
-        row.append(head);
-        if (isOpen) {
-          const q = flat(query);
-          const list = people().filter((m) => !q || flat(m.name).includes(q) || flat(m.kana).includes(q) || it.ids.includes(m.id));
-          row.append(h("div", { class: "ops-role-pick", role: "group", "aria-label": `${it.label}の担当` },
-            list.map((m) => {
-              const on = it.ids.includes(m.id);
-              return h("button", { type: "button", class: `ops-role-chip${on ? " is-on" : ""}`, "aria-pressed": on ? "true" : "false",
-                onclick: () => {
-                  it.ids = on ? it.ids.filter((x) => x !== m.id) : it.ids.concat(m.id).slice(0, 10);
-                  draw(); drawPeople(); save();
-                } }, App.avatar(m.name, "sm"), m.name);
-            }),
-            it.ids.length ? App.btn("担当を外す", () => { it.ids = []; draw(); drawPeople(); save(); }, "ghost small") : null));
-        }
-        return row;
-      }));
+    // 開いた行の中: 名前でしぼる欄と、全メンバーのトグル(選んだ人が先頭)
+    function picker(it) {
+      const grid = h("div", { class: "ops-role-chips", role: "group", "aria-label": `${it.label}の担当` });
+      const count = h("span", { class: "ops-role-count" });
+      const drawChips = () => {
+        const q = kata(query);
+        const all = people();
+        const on = it.ids.map((id) => all.find((m) => m.id === id)).filter(Boolean);
+        const rest = all.filter((m) => !it.ids.includes(m.id) && (!q || kata(m.name).includes(q) || kata(m.kana).includes(q)));
+        count.textContent = it.ids.length ? `${it.ids.length}人を選んでいます` : "まだ選んでいません";
+        App.fill(grid, on.concat(rest).map((m) => {
+          const sel = it.ids.includes(m.id);
+          return h("button", { type: "button", class: `ops-role-chip${sel ? " is-on" : ""}`, "aria-pressed": sel ? "true" : "false",
+            onclick: () => {
+              it.ids = sel ? it.ids.filter((x) => x !== m.id) : it.ids.concat(m.id).slice(0, 10);
+              drawChips(); drawHead(it); drawStats(); drawPeople(); save();
+            } }, App.avatar(m.name, "sm"), h("span", null, m.name), sel ? h("i", { "aria-hidden": "true" }, "✓") : null);
+        }));
+        if (!on.length && !rest.length) grid.append(h("p", { class: "app-field-hint" }, "その名前のメンバーは見つかりませんでした。"));
+      };
+      const search = h("input", { type: "search", class: "ops-search", placeholder: "名前でしぼる(例: 三村)", value: query, "aria-label": "メンバーを名前でしぼる",
+        oninput: () => { query = search.value; drawChips(); } });
+      drawChips();
+      return h("div", { class: "ops-role-pick" },
+        h("div", { class: "ops-role-pick-top" }, search, count),
+        grid,
+        h("div", { class: "app-btn-row" },
+          App.btn("担当を外す", () => { it.ids = []; drawChips(); drawHead(it); drawStats(); drawPeople(); save(); }, "ghost small"),
+          App.btn("閉じる", () => { openKey = ""; draw(); }, "ghost small")));
     }
-    const search = h("input", { type: "search", class: "ops-search", placeholder: "選ぶときに名前でしぼる(例: みむら)", "aria-label": "メンバーを名前でしぼる",
-      oninput: () => { query = search.value; draw(); } });
+    // 行の頭(番号・役割・担当)だけを描き直す(選ぶたびに、開いた行を作り直さないため)
+    const heads = new Map();
+    function headInner(it) {
+      const [no, name] = split(it.label);
+      const mine = it.ids.includes(myId);
+      return [
+        h("span", { class: `ops-role-no${no ? "" : " is-sub"}`, "aria-hidden": "true" }, no || "・"),
+        h("span", { class: "ops-role-main" },
+          h("span", { class: "ops-role-label" }, name, mine ? h("i", { class: "ops-role-me" }, "あなた") : null),
+          it.ids.length
+            ? h("span", { class: "ops-role-who" }, it.ids.map((id) => h("span", { class: "ops-role-face" }, App.avatar(nameOfId(id), "sm"), titled(id))))
+            : h("span", { class: "ops-role-who is-none" }, "担当なし(押して選ぶ)")),
+        h("span", { class: "ops-role-toggle", "aria-hidden": "true" }, openKey === it.key ? "▲" : "▼"),
+      ];
+    }
+    function drawHead(it) {
+      const el = heads.get(it.key);
+      if (!el) return;
+      App.fill(el, headInner(it));
+      el.parentNode.classList.toggle("is-empty", !it.ids.length);
+      el.parentNode.classList.toggle("is-mine", it.ids.includes(myId));
+    }
+    function draw() {
+      heads.clear();
+      drawStats();
+      const shown = items.filter((it) => filter === "all" || (filter === "mine" ? it.ids.includes(myId) : !it.ids.length));
+      App.fill(listBox, shown.length ? shown.map((it) => {
+        const isOpen = openKey === it.key;
+        const row = h("div", { class: `ops-role${isOpen ? " is-open" : ""}${it.ids.length ? "" : " is-empty"}${it.ids.includes(myId) ? " is-mine" : ""}` });
+        const head = h("button", { type: "button", class: "ops-role-head", "aria-expanded": isOpen ? "true" : "false",
+          onclick: () => { openKey = isOpen ? "" : it.key; query = ""; draw(); if (!isOpen) { const r = listBox.querySelector(".ops-role.is-open"); if (r && r.scrollIntoView) r.scrollIntoView({ block: "nearest", behavior: "smooth" }); } } },
+          ...headInner(it));
+        heads.set(it.key, head);
+        row.append(head);
+        if (isOpen) row.append(picker(it));
+        return row;
+      }) : [App.empty(filter === "mine" ? "あなたの担当は、いまはありません。" : "担当なしの役割はありません。すべて決まっています。")]);
+    }
     setInfo(); draw(); drawPeople();
     wrap.append(
       h("h2", { class: "app-h2" }, "定例会の役割早見表"),
-      info, search, listBox,
-      h("details", { class: "ops-roles-more" }, h("summary", null, "人ごとに見る"), byPerson),
+      stats, filterBox, info, listBox,
       h("div", { class: "app-btn-row" },
-        App.btn("すべての行を開く", () => { items.forEach((x) => open.add(x.key)); draw(); }, "ghost small"),
-        App.btn("すべて閉じる", () => { open.clear(); draw(); }, "ghost small"),
+        App.btn("LINE などで送る", () => App.shareText(asText(), "BT-EX5 定例会 役割早見表"), "primary small"),
+        App.btn("文をコピー", () => App.copyText(asText(), "役割早見表をコピーしました"), "ghost small"),
         App.btn("最初の割り当てに戻す", async () => {
           if (!(await App.confirm("運営から受け取った最初の割り当て(写真の表)に戻しますか?", { ok: "戻す" }))) return;
-          items = defaultRoles(); open.clear(); draw(); drawPeople(); save();
-        }, "ghost small")));
+          items = defaultRoles(); openKey = ""; draw(); drawPeople(); save();
+        }, "ghost small")),
+      h("details", { class: "ops-roles-more" }, h("summary", null, "人ごとに見る(だれが何を担当するか)"), byPerson));
     return wrap;
   }
 

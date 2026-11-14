@@ -3568,28 +3568,54 @@ button.home-welcome-check:active { transform: scale(0.94); }
 .lr-links span { font-size: 13.5px; line-height: 1.7; color: var(--text-sub); }
 
 /* 運営: 定例会の役割早見表(2026年11月) */
-.ops-roles { display: grid; gap: 8px; }
-.ops-roles-info { margin: 0; font-size: 12.5px; color: var(--text-light); }
+.ops-roles { display: grid; gap: 10px; }
+.ops-roles-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.ops-roles-stat { display: grid; justify-items: center; gap: 0; padding: 10px 6px; border-radius: 14px; border: 1px solid var(--line); background: var(--card); font-size: 12px; font-weight: 700; color: var(--text-sub); }
+.ops-roles-stat b { font-size: 24px; line-height: 1.2; color: var(--text); font-variant-numeric: tabular-nums; }
+.ops-roles-stat.is-warn { background: var(--warn-bg); border-color: transparent; } .ops-roles-stat.is-warn b { color: var(--warn); }
+.ops-roles-stat.is-good { background: var(--good-bg); border-color: transparent; } .ops-roles-stat.is-good b { color: var(--good); }
+.ops-roles-stat.is-me { background: var(--info-bg); border-color: transparent; } .ops-roles-stat.is-me b { color: var(--info); }
+.ops-roles-filter { display: flex; flex-wrap: wrap; gap: 6px; }
+.ops-roles-info { margin: 0; font-size: 12.5px; line-height: 1.6; color: var(--text-light); }
 .ops-roles-list { display: grid; gap: 6px; }
-.ops-role { border-radius: 14px; border: 1px solid var(--line); background: var(--card); overflow: hidden; }
-.ops-role.is-open { border-color: var(--accent); box-shadow: var(--shadow); }
-.ops-role-head { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr) auto; gap: 10px; align-items: center; width: 100%; min-height: 48px; padding: 10px 12px; border: 0; background: transparent; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
-.ops-role-label { font-size: 14px; font-weight: 800; line-height: 1.45; }
-.ops-role-who { font-size: 14px; font-weight: 700; color: var(--accent-dark); line-height: 1.45; }
-.ops-role.is-empty .ops-role-who { color: var(--text-light); font-weight: 600; }
-.ops-role-toggle { padding: 4px 10px; border-radius: 999px; border: 1px solid var(--line-strong); font-size: 12px; font-weight: 700; color: var(--text-sub); white-space: nowrap; }
-.ops-role.is-open .ops-role-toggle { background: var(--accent); border-color: var(--accent); color: #fff; }
-.ops-role-pick { display: flex; flex-wrap: wrap; gap: 6px; padding: 4px 12px 12px; border-top: 1px dashed var(--line); padding-top: 10px; max-height: 320px; overflow: auto; }
-.ops-role-chip { display: inline-flex; align-items: center; gap: 6px; min-height: 38px; padding: 3px 12px 3px 4px; border-radius: 999px; border: 1.5px solid var(--line-strong); background: var(--card); color: var(--text); font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
+.ops-role { border-radius: 16px; border: 1px solid var(--line); background: var(--card); overflow: hidden; scroll-margin-top: 76px; }
+.ops-role.is-mine { border-left: 4px solid var(--info); }
+.ops-role.is-empty { border-style: dashed; border-color: var(--line-strong); }
+.ops-role.is-open { border-style: solid; border-color: var(--accent); box-shadow: var(--shadow); }
+.ops-role-head { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; gap: 12px; align-items: center; width: 100%; min-height: 60px; padding: 10px 12px; border: 0; background: transparent; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
+.ops-role-head:hover { background: var(--bg); }
+.ops-role-no { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 12px; background: var(--grad); color: #fff; font-size: 15px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.ops-role-no.is-sub { background: var(--bg); color: var(--text-light); border: 1px solid var(--line); }
+.ops-role-main { display: grid; gap: 4px; min-width: 0; }
+.ops-role-label { font-size: 14.5px; font-weight: 800; line-height: 1.45; }
+.ops-role-me, .ops-roles-person b i { display: inline-block; margin-left: 8px; padding: 1px 8px; border-radius: 999px; background: var(--info-bg); color: var(--info); font-size: 11px; font-style: normal; font-weight: 800; vertical-align: 1px; }
+.ops-role-who { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 13.5px; font-weight: 700; color: var(--accent-dark); }
+.ops-role-who.is-none { color: var(--warn); font-weight: 700; font-size: 13px; }
+.ops-role-face { display: inline-flex; align-items: center; gap: 6px; }
+.ops-role-face .app-avatar { width: 26px; height: 26px; font-size: 11px; }
+.ops-role-toggle { font-size: 11px; color: var(--text-light); padding: 0 2px; }
+.ops-role.is-open .ops-role-toggle { color: var(--accent-dark); }
+.ops-role-pick { display: grid; gap: 10px; padding: 12px; border-top: 1px dashed var(--line-strong); background: var(--bg); }
+.ops-role-pick-top { display: grid; gap: 4px; }
+.ops-role-pick-top .ops-search { margin: 0; }
+.ops-role-count { font-size: 12.5px; font-weight: 700; color: var(--text-sub); }
+.ops-role-chips { display: flex; flex-wrap: wrap; gap: 6px; max-height: 300px; overflow: auto; padding: 2px; }
+.ops-role-chip { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 3px 12px 3px 4px; border-radius: 999px; border: 1.5px solid var(--line-strong); background: var(--card); color: var(--text); font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
+.ops-role-chip:hover { border-color: var(--accent); }
 .ops-role-chip.is-on { border-color: var(--accent); background: var(--accent); color: #fff; }
-.ops-role-chip .app-avatar { width: 28px; height: 28px; font-size: 12px; }
+.ops-role-chip i { font-style: normal; font-weight: 800; }
+.ops-role-chip .app-avatar { width: 30px; height: 30px; font-size: 12px; }
 .ops-roles-more summary { cursor: pointer; font-weight: 800; font-size: 14px; padding: 8px 2px; }
-.ops-roles-people { display: grid; gap: 6px; }
-.ops-roles-person { display: flex; gap: 10px; align-items: center; padding: 8px 10px; border-radius: 12px; background: var(--card); border: 1px solid var(--line); }
-.ops-roles-person div { display: grid; gap: 1px; min-width: 0; }
-.ops-roles-person span { font-size: 12.5px; color: var(--text-sub); line-height: 1.5; }
-@media (max-width: 520px) {
-  .ops-role-head { grid-template-columns: minmax(0, 1fr) auto; }
-  .ops-role-who { grid-column: 1; grid-row: 2; font-size: 13px; }
-  .ops-role-toggle { grid-column: 2; grid-row: 1 / span 2; }
+.ops-roles-people { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 6px; }
+.ops-roles-person { display: flex; gap: 10px; align-items: flex-start; padding: 10px; border-radius: 14px; background: var(--card); border: 1px solid var(--line); }
+.ops-roles-person.is-me { border-color: var(--info); }
+.ops-roles-person > div { display: grid; gap: 4px; min-width: 0; }
+.ops-roles-tags { display: flex; flex-wrap: wrap; gap: 4px; }
+.ops-roles-tags span { padding: 2px 8px; border-radius: 8px; background: var(--bg); border: 1px solid var(--line); font-size: 12px; color: var(--text-sub); line-height: 1.5; }
+/* パソコンなど広い画面では、写真の表と同じく「役割|担当」を横に並べる */
+@media (min-width: 720px) {
+  .ops-role-head { min-height: 56px; }
+  .ops-role-main { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 16px; align-items: center; }
+  .ops-role-label { font-size: 15.5px; }
+  .ops-role-who { font-size: 14.5px; }
 }
