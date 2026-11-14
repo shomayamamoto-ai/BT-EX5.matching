@@ -955,8 +955,15 @@
       if (!D.schedule) return;
       deck("schedule", { name: D.schedule.title, step, lead: D.schedule.lead, rows: D.schedule.rows, note: D.schedule.note });
       // 次回以降の日程は、予定に入っている定例会から
-      const next = (upcoming || []).filter((e) => !ev || (e.id !== ev.id && (e.date + (e.start || "")) > (ev.date + (ev.start || "")))).slice(0, 4);
+      // (特別会は、次の「Pick Up Schedule」のスライドに出すので、ここには入れない)
+      const after = (upcoming || []).filter((e) => !ev || (e.id !== ev.id && (e.date + (e.start || "")) > (ev.date + (ev.start || ""))));
+      const next = after.filter((e) => e.kind !== "special").slice(0, 4);
       if (next.length) deck("schedule", { name: D.schedule.title, step, lead: "次回以降のスケジュール", rows: next.map((e) => [mdw(e.date), e.start ? `${e.start}-${e.end || ""}` : ""]) });
+      // Pick Up Schedule(2026年11月14日、運営の依頼): 予定に入っている特別会(BT-EXフェスなど)を、日にち・時間・会場つきで出す。特別会がなければ出さない
+      const picks = after.filter((e) => e.kind === "special").slice(0, 3);
+      if (picks.length) deck("pickup", { name: "Pick Up Schedule", step, lead: "これからの特別な予定", items: picks.map((e) => ({
+        title: e.title, day: mdw(e.date), time: e.start ? `${e.start}-${e.end || ""}` : "",
+        meta: [e.doors ? ["受付", e.doors] : null, e.place ? ["会場", e.place] : null, e.fee ? ["参加費", e.fee] : null, e.capacity ? ["定員", `${e.capacity}名`] : null].filter(Boolean) })) });
     };
     // ⑥LINKのビジネス実績紹介: 入会申し込みフォーム → 挙手のお願い(LINK内での実績紹介 → 1on1・リファーラル・招待ビジター → ありがとうマイル)
     const raises = (label) => {
@@ -1963,8 +1970,9 @@
         const oneLine = (text) => String(text || "").split("\n").map((t) => t.trim()).filter(Boolean)
           .reduce((a, b) => a + (/[A-Za-z0-9]$/.test(a) && /^[A-Za-z0-9]/.test(b) ? " " : "") + b, "");
         const pop = h("div", { class: "pd-gloss-pop", hidden: true, role: "dialog", "aria-modal": "false", "aria-live": "polite" });
-        const cells = items.map((x, i) => h("div", Object.assign({ class: "pd-gloss-item", role: "button", tabindex: "0", "aria-label": `${x.head}を大きく見る`,
-          onclick: () => seq.show(i + 1), onkeydown: (e) => { if (e.key === "Enter") { e.preventDefault(); e.stopPropagation(); seq.show(i + 1); } } }, nth(i)),
+        // 言葉を1つずつ大きく出すポップアップは、やめた(2026年11月14日、運営の依頼。表の文字を大きくしたので、表だけで読める)。
+        // 「進む」は、そのまま次のスライドへ進む(下の seq・pop は使わないが、戻したくなったときのために残してある)
+        const cells = items.map((x, i) => h("div", Object.assign({ class: "pd-gloss-item is-plain" }, nth(i)),
           // 説明は1行で出す(運営の依頼。2026年11月14日)。行の区切りはつなぎ、入りきらないときは fitDeck がそろって小さくする
           h("dt", null, x.head), h("dd", null, h("span", { class: "pd-line" }, oneLine(x.text)))));
         // i: 0 = 閉じている / 1〜n = その番号の言葉を出している(カードの送りと同じ形で、進む・戻るから動かす)
@@ -1996,8 +2004,7 @@
         } };
         pop.addEventListener("click", (e) => { if (e.target === pop) seq.show(0); });
         // 1つの言葉を1行(左に言葉・右に説明)にして、説明を1行で大きく出す(横に広く使う)。言葉が多いときは行を詰める
-        const wrap = h("div", { class: "pd-gl-seq" }, h("dl", { class: `pd-gloss is-rows${items.length > 8 ? " is-many" : ""}`, style: `--gl-k:${Math.max(1, items.length)}` }, cells), pop);
-        wrap.car = seq;
+        const wrap = h("div", { class: "pd-gl-seq" }, h("dl", { class: `pd-gloss is-rows${items.length > 8 ? " is-many" : ""}`, style: `--gl-k:${Math.max(1, items.length)}` }, cells));
         return frame("pd-glossary", wrap);
       }
       if (p.type === "staff") {
@@ -2035,6 +2042,14 @@
             p.video ? h("figure", { class: "pd-attend-video", title: "押すと大きくなります", onclick: (e) => attendZoom(e.currentTarget) },
               (() => { const v = h("video", { src: `../${p.video}`, poster: `../${String(p.video).replace(/\.mp4$/, ".jpg")}`, autoplay: true, muted: true, loop: true, playsinline: true, preload: "auto", "aria-label": "出席コードの入れ方の動画" }); v.muted = true; return v; })(),
               h("figcaption", null, "入れ方がわからない方はこちら(押すと大きくなります)")) : null));
+      }
+      if (p.type === "pickup") {
+        return frame("pd-pickup",
+          h("div", { class: `pd-pick-cards${(p.items || []).length === 1 ? " is-one" : ""}` }, (p.items || []).map((x, i) => h("div", Object.assign({ class: "pd-card pd-pick-card" }, nth(i)),
+            h("span", { class: "pd-pick-tag" }, "PICK UP"),
+            h("p", { class: "pd-pick-title" }, x.title),
+            h("p", { class: "pd-pick-when" }, h("span", { class: "pd-sched-ic" }, lineIcon("calendar")), h("b", null, x.day), x.time ? h("i", null, x.time) : null),
+            (x.meta || []).length ? h("dl", { class: "pd-pick-meta" }, x.meta.map(([k, v]) => h("div", null, h("dt", null, k), h("dd", null, v)))) : null))));
       }
       if (p.type === "schedule") {
         return frame("pd-schedule",
@@ -2228,7 +2243,7 @@
       const nexts = people.slice(idx + 1).filter(isPerson).slice(0, 3);
       box.classList.toggle("is-deck", isDeck(p));
       box.classList.toggle("is-timer", p.kind === "timer");
-      ["movie", "cover", "agenda", "section", "leader", "about", "vision", "list", "feature", "checks", "strengths", "venn", "kpis", "rules", "schedule", "raise", "closing", "glossary", "joinsteps", "survey", "attend", "staff"].forEach((t) => box.classList.toggle(`is-d-${t}`, isDeck(p) && p.type === t));
+      ["movie", "cover", "agenda", "section", "leader", "about", "vision", "list", "feature", "checks", "strengths", "venn", "kpis", "rules", "schedule", "pickup", "raise", "closing", "glossary", "joinsteps", "survey", "attend", "staff"].forEach((t) => box.classList.toggle(`is-d-${t}`, isDeck(p) && p.type === t));
       box.classList.remove("is-edu");
       // スライドとプレゼンで操作バーの幅が変わる(スライドでは「はじめる」の場所をつめる)ので、置き直す
       if (box.dataset.kindWas !== String(isDeck(p))) { box.dataset.kindWas = String(isDeck(p)); if (box.classList.contains("dock-home")) requestAnimationFrame(() => window.dispatchEvent(new Event("resize"))); }

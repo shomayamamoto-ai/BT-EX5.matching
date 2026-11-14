@@ -382,7 +382,7 @@ const App = (function () {
   // 定例会は2時間(2026年11月14日、運営の依頼で1時間半から戻した。12/2 の BT-EXフェスなどの特別会は別)。
   // 共有サーバーがまだ書きかえる前(meeting120 の印がない)は、1時間半で入っている 11/14 以降の回の終わりの時刻と「7分×3」を、
   // アプリの画面で2時間・7分×4として見せる(サーバーを入れ直すと印が付き、そのまま使う)
-  const FIX120 = /^(listEvents|getEvent|getHome)$/;
+  const FIX120 = /^(list|get)/; // 予定が入ってくる読み出しすべて(定例会の形をしたものだけを直す)
   function as120(e) {
     if (!e || typeof e !== "object" || e.kind === "special" || typeof e.date !== "string" || !(e.date >= "2026-11-14") || e.date === "2026-12-02" || !("area" in e)) return;
     const m = (x) => { const r = /^(\d{1,2}):(\d{2})$/.exec(x || ""); return r ? Number(r[1]) * 60 + Number(r[2]) : null; };

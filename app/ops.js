@@ -45,15 +45,14 @@
   // はじめは運営から受け取った割り当て(2026年11月14日の写真)。担当は、行を開いて全メンバーから選ぶ(何人でも・もう一度押すと外れる)。
   // 共有サーバーに保存し、運営メンバーみんなが同じ表を見る(getOpsRoles / saveOpsRoles)。
   // 共有サーバーがまだ古いとき(GAS を再デプロイする前)は、この端末にだけ覚える
+  // 06 1分プレゼンテーション・07 ブレイクアウトルーム商談 は、担当を決めないので表に出さない(2026年11月14日、運営の依頼)
   const ROLE_DEFAULT = [
     ["r01", "01 はじめの挨拶", ["三村 隆"]],
     ["r02", "02 用語説明", ["床島 良夫"]],
     ["r03", "03 BT-EXの理念", ["三村 隆"]],
     ["r04", "04 仕組みとベネフィット", ["加藤 寛之"]],
     ["r05", "05 エデュケーションコーナー 5分", ["大場 雅俊"]],
-    ["r06", "06 1分プレゼンテーション", []],
     ["r06b", "休憩(3分)", ["あまみや 七音"]],
-    ["r07", "07 ブレイクアウトルーム商談(テーブル商談) 7分×4回", []],
     ["r08", "08 BT-EXの強み", ["小林 末季"]],
     ["r09", "09 LINKのビジネス実績紹介", ["大場 雅俊"]],
     ["r10", "10 BT-EX5のご案内", ["山本 捷真"]],
@@ -76,9 +75,10 @@
     const shared = !!res && res.success !== false;
     let saved = shared ? res.roles : null;
     if (!shared) { try { saved = JSON.parse(localStorage.getItem(LOCAL) || "null"); } catch { saved = null; } }
-    // 役割の名前(時間など)は、いつもアプリの今の名前で出す(前に保存した表に「休憩(1分)」などの前の名前が残っていても、担当だけを引きつぐ)
-    const labelOf = (x) => { const d = ROLE_DEFAULT.find((r) => r[0] === x.key); return d ? d[1] : x.label; };
-    let items = saved && Array.isArray(saved.items) && saved.items.length ? saved.items.map((x) => Object.assign({}, x, { label: labelOf(x), ids: (x.ids || []).slice() })) : defaultRoles();
+    // 行と名前(時間など)は、いつもアプリの今の表で出す。前に保存した表からは、同じ行の担当だけを引きつぐ
+    // (「休憩(1分)」などの前の名前や、表から外した行が保存されていても、今の表になる)
+    const savedIds = new Map((saved && Array.isArray(saved.items) ? saved.items : []).map((x) => [x.key, (x.ids || []).slice()]));
+    let items = savedIds.size ? ROLE_DEFAULT.map(([key, label, names]) => ({ key, label, ids: savedIds.has(key) ? savedIds.get(key) : names.map(idByName).filter(Boolean) })) : defaultRoles();
     const myId = (App.session && App.session.memberId) || "";
     let openKey = "";       // 開いている行(1つだけ)
     let filter = "all";     // all / mine / empty
