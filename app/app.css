@@ -3619,3 +3619,22 @@ button.home-welcome-check:active { transform: scale(0.94); }
   .ops-role-label { font-size: 15.5px; }
   .ops-role-who { font-size: 14.5px; }
 }
+
+/* 用語説明: 1つの言葉を1行に(左に言葉・右に説明)。説明は1行で大きく出す(2026年11月14日、運営の依頼)。
+   題の位置はほかのスライドと同じまま、表だけ画面の横いっぱいまで広げる。行の高さは、6つの言葉がそのままの大きさで収まるように詰める
+   (収まらないと app/round.js の fitDeck が全体を縮めて、かえって小さくなる)。1行に入りきらない分は fitDeck が説明をそろって小さくする */
+@media (min-aspect-ratio: 1/1) and (min-width: 761px) {
+  .pd-gloss.is-rows { --glw: min(calc(100vw - 150px), 1700px); position: relative; left: 50%; width: var(--glw); margin-left: calc(var(--glw) / -2); box-sizing: border-box;
+    grid-template-columns: minmax(0, 1fr); grid-auto-rows: auto; gap: clamp(5px, 1svh, 12px); }
+  .pd-gloss.is-rows .pd-gloss-item { display: grid; grid-template-columns: 7.1em minmax(0, 1fr); align-items: center; column-gap: 0.9em;
+    padding: clamp(5px, min(1.1svh, 40svh / var(--gl-k) / 5), 16px) clamp(14px, 1.5vw, 30px); border-radius: 16px;
+    font-size: clamp(18px, min(2.1vw, 4.4svh, 52svh / var(--gl-k) / 1.9), 40px); }
+  .pd-gloss.is-rows dt { font-size: 0.8em; }
+  .pd-gloss.is-rows dd { margin: 0; min-width: 0; font-size: 0.92em; line-height: 1.45; font-weight: 600; }
+  .pd-gloss.is-rows.is-many { gap: 4px; }
+}
+/* スマホ・縦長の画面では、説明は折り返して出す(1行にすると小さくなりすぎるため)。そのぶん文字は大きめに */
+@media (max-width: 760px), (max-aspect-ratio: 1/1) {
+  .pd-gloss.is-rows dd { font-size: clamp(13px, 3.6vw, 17px); }
+  .pd-gloss.is-rows dd .pd-line { width: auto; max-width: 100%; white-space: normal; }
+}

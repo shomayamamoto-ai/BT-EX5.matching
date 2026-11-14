@@ -52,8 +52,8 @@
     ["r04", "04 仕組みとベネフィット", ["加藤 寛之"]],
     ["r05", "05 エデュケーションコーナー 5分", ["大場 雅俊"]],
     ["r06", "06 1分プレゼンテーション", []],
-    ["r06b", "休憩(1分)", ["あまみや 七音"]],
-    ["r07", "07 ブレイクアウトルーム商談(テーブル商談) 7分×3回", []],
+    ["r06b", "休憩(3分)", ["あまみや 七音"]],
+    ["r07", "07 ブレイクアウトルーム商談(テーブル商談) 7分×4回", []],
     ["r08", "08 BT-EXの強み", ["小林 末季"]],
     ["r09", "09 LINKのビジネス実績紹介", ["大場 雅俊"]],
     ["r10", "10 BT-EX5のご案内", ["山本 捷真"]],
@@ -76,7 +76,9 @@
     const shared = !!res && res.success !== false;
     let saved = shared ? res.roles : null;
     if (!shared) { try { saved = JSON.parse(localStorage.getItem(LOCAL) || "null"); } catch { saved = null; } }
-    let items = saved && Array.isArray(saved.items) && saved.items.length ? saved.items.map((x) => Object.assign({}, x, { ids: (x.ids || []).slice() })) : defaultRoles();
+    // 役割の名前(時間など)は、いつもアプリの今の名前で出す(前に保存した表に「休憩(1分)」などの前の名前が残っていても、担当だけを引きつぐ)
+    const labelOf = (x) => { const d = ROLE_DEFAULT.find((r) => r[0] === x.key); return d ? d[1] : x.label; };
+    let items = saved && Array.isArray(saved.items) && saved.items.length ? saved.items.map((x) => Object.assign({}, x, { label: labelOf(x), ids: (x.ids || []).slice() })) : defaultRoles();
     const myId = (App.session && App.session.memberId) || "";
     let openKey = "";       // 開いている行(1つだけ)
     let filter = "all";     // all / mine / empty

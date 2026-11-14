@@ -379,31 +379,32 @@ const App = (function () {
   }
   function cacheClear() { viewCache = {}; cacheSave(); }
 
-  // 2026年11月: 11/5 以降の定例会は1時間半(12/2 の BT-EXフェスは除く)。共有サーバーがまだ書きかえる前(meeting90 の印がない)は、
-  // 2時間で入っている回の終わりの時刻と「7分×4」を、アプリの画面で1時間半・7分×3として見せる(サーバーを入れ直すと印が付き、そのまま使う)
-  const FIX90 = /^(listEvents|getEvent|getHome)$/;
-  function as90(e) {
-    if (!e || typeof e !== "object" || e.kind === "special" || typeof e.date !== "string" || !(e.date > "2026-11-04") || e.date === "2026-12-02" || !("area" in e)) return;
+  // 定例会は2時間(2026年11月14日、運営の依頼で1時間半から戻した。12/2 の BT-EXフェスなどの特別会は別)。
+  // 共有サーバーがまだ書きかえる前(meeting120 の印がない)は、1時間半で入っている 11/14 以降の回の終わりの時刻と「7分×3」を、
+  // アプリの画面で2時間・7分×4として見せる(サーバーを入れ直すと印が付き、そのまま使う)
+  const FIX120 = /^(listEvents|getEvent|getHome)$/;
+  function as120(e) {
+    if (!e || typeof e !== "object" || e.kind === "special" || typeof e.date !== "string" || !(e.date >= "2026-11-14") || e.date === "2026-12-02" || !("area" in e)) return;
     const m = (x) => { const r = /^(\d{1,2}):(\d{2})$/.exec(x || ""); return r ? Number(r[1]) * 60 + Number(r[2]) : null; };
     const a = m(e.start), b = m(e.end);
-    if (a === null || b === null || (b > a ? b - a : b + 1440 - a) !== 120) return;
-    const n = (a + 90) % 1440;
+    if (a === null || b === null || (b > a ? b - a : b + 1440 - a) !== 90) return;
+    const n = (a + 120) % 1440;
     e.end = `${String(Math.floor(n / 60)).padStart(2, "0")}:${String(n % 60).padStart(2, "0")}`;
-    if (typeof e.agenda === "string") e.agenda = e.agenda.replace(/(ブレイクアウトルーム商談[^\n]*?)7\s*分\s*[×xX✕]\s*4/, "$17分×3");
+    if (typeof e.agenda === "string") e.agenda = e.agenda.replace(/(ブレイクアウトルーム商談[^\n]*?)7\s*分\s*[×xX✕]\s*3/, "$17分×4");
   }
-  function fix90(action, d) {
-    if (!d || d.meeting90 || !FIX90.test(action)) return d;
+  function fix120(action, d) {
+    if (!d || d.meeting120 || !FIX120.test(action)) return d;
     const walk = (v, depth) => {
       if (!v || typeof v !== "object" || depth > 4) return;
       if (Array.isArray(v)) { v.forEach((x) => walk(x, depth + 1)); return; }
-      as90(v);
+      as120(v);
       Object.keys(v).forEach((k) => { if (v[k] && typeof v[k] === "object") walk(v[k], depth + 1); });
     };
     walk(d, 0);
     return d;
   }
   async function api(action, payload, opt) {
-    return fix90(action, await api0(action, payload, opt));
+    return fix120(action, await api0(action, payload, opt));
   }
   async function api0(action, payload, opt) {
     const readOnly = READ_ONLY.test(action) && !(opt && opt.raw);

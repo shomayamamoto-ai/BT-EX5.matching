@@ -151,18 +151,24 @@
           });
           changed = true;
         }
-        // 2026年11月: 次回(11/5)以降の定例会は1時間半に(12/2 の BT-EXフェスは除く。運営の依頼)。商談は 7分×3 に。
-        // 2時間の回だけ終わりを30分早め、流れの「7分×4」を「7分×3」にする(一度だけ。そのあと運営が直した回はそのまま)
+        // 2026年11月: 次回以降の定例会を1時間半にする書きかえ(meeting-90min-1)は、2026年11月14日に2時間へ戻したのでもう行わない。
+        // まだ行っていない共有サーバーでは、印だけ付ける(すでに行った共有サーバーは、下の meeting-120min-1 で2時間に戻す)
         if (db.eventSeeds && db.eventSeeds.indexOf("meeting-90min-1") === -1) {
           db.eventSeeds.push("meeting-90min-1");
-          var toMin90 = function (t) { var m = /^(\d{1,2}):(\d{2})$/.exec(t || ""); return m ? Number(m[1]) * 60 + Number(m[2]) : null; };
-          var fmt90 = function (n) { n = ((n % 1440) + 1440) % 1440; return (n < 600 ? "0" : "") + Math.floor(n / 60) + ":" + (n % 60 < 10 ? "0" : "") + (n % 60); };
+          changed = true;
+        }
+        // 2026年11月14日: 定例会を2時間に戻す(運営の依頼。12/2 の BT-EXフェスなどの特別会は除く)。商談は 7分×4 に。
+        // 11/14 以降の1時間半の回だけ終わりを30分のばし、流れの「7分×3」を「7分×4」にする(一度だけ。そのあと運営が直した回はそのまま)
+        if (db.eventSeeds && db.eventSeeds.indexOf("meeting-120min-1") === -1) {
+          db.eventSeeds.push("meeting-120min-1");
+          var toMin120 = function (t) { var m = /^(\d{1,2}):(\d{2})$/.exec(t || ""); return m ? Number(m[1]) * 60 + Number(m[2]) : null; };
+          var fmt120 = function (n) { n = ((n % 1440) + 1440) % 1440; return (n < 600 ? "0" : "") + Math.floor(n / 60) + ":" + (n % 60 < 10 ? "0" : "") + (n % 60); };
           db.events.forEach(function (ev) {
-            if (ev.kind === "special" || !(ev.date > "2026-11-04") || ev.date === "2026-12-02") return;
-            var a = toMin90(ev.start), b = toMin90(ev.end);
+            if (ev.kind === "special" || !(ev.date >= "2026-11-14") || ev.date === "2026-12-02") return;
+            var a = toMin120(ev.start), b = toMin120(ev.end);
             var hit = false;
-            if (a !== null && b !== null && (b > a ? b - a : b + 1440 - a) === 120) { ev.end = fmt90(a + 90); hit = true; }
-            if (typeof ev.agenda === "string" && /7\s*分\s*[×xX✕]\s*4/.test(ev.agenda)) { ev.agenda = ev.agenda.replace(/(ブレイクアウトルーム商談[^\n]*?)7\s*分\s*[×xX✕]\s*4/, "$17分×3"); hit = true; }
+            if (a !== null && b !== null && (b > a ? b - a : b + 1440 - a) === 90) { ev.end = fmt120(a + 120); hit = true; }
+            if (typeof ev.agenda === "string" && /ブレイクアウトルーム商談[^\n]*?7\s*分\s*[×xX✕]\s*3/.test(ev.agenda)) { ev.agenda = ev.agenda.replace(/(ブレイクアウトルーム商談[^\n]*?)7\s*分\s*[×xX✕]\s*3/, "$17分×4"); hit = true; }
             if (hit) syncEventCalendar(db, ev);
           });
           changed = true;
@@ -404,7 +410,7 @@
             return out;
           });
         return c.ok({
-          meeting90: true, // 1時間半の定例会に書きかえ済みの共有サーバー(アプリ側で時刻を直さなくてよい)
+          meeting90: true, meeting120: true, // 定例会を2時間に戻し済みの共有サーバー(アプリ側で時刻を直さなくてよい。meeting90 は前のアプリのために残す)
           event: eventView(w, e), members: members, visitors: visitors, isAdmin: w.isAdmin,
           minutes: e.minutes ? { text: e.minutes.text, at: e.minutes.at, byName: nameOf(w.db, e.minutes.by), annId: e.minutes.annId || "" } : null,
         });
@@ -452,7 +458,7 @@
           .filter(function (e) { return e.date >= from; })
           .sort(function (a, b) { return (a.date + a.start).localeCompare(b.date + b.start); })
           .map(function (e) { return eventView(w, e); });
-        return c.ok({ events: events, today: today(), calendar: !!c.calendar, meeting90: true });
+        return c.ok({ events: events, today: today(), calendar: !!c.calendar, meeting90: true, meeting120: true });
       }
 
       function rsvpEvent(body) {
@@ -2364,7 +2370,7 @@
           .sort(function (a, b) { return (a.due || "9999").localeCompare(b.due || "9999") || a.at - b.at; })
           .map(function (tk) { return taskView(db, tk, w.id); });
         return c.ok({
-          meeting90: true,
+          meeting90: true, meeting120: true,
           tasks: myTasks,
           spotlight: spotlight,
           me: { id: w.id, name: w.me.name, team: w.me.team || "", isAdmin: w.isAdmin, hasPassword: !!w.user.pw, goals: w.user.goals || null },
@@ -2888,16 +2894,24 @@
           else if (cfg3 && cfg3.joinSteps && isOld(cfg3.joinSteps.steps)) { delete cfg3.joinSteps.steps; writeCfg(db, cfg3); }
           changed = true;
         }
-        // スケジュールのスライド(2026年11月): 定例会が1時間半になったので、前に保存した時間が元のままなら書きかえる
+        // スケジュールのスライド(2026年11月14日): 定例会を2時間に戻したので、前に保存した時間が1時間半のままなら書きかえる。
+        // 商談のはじめの値(breakout)も、1時間半のときの 7分×3回 のままなら 7分×4回 に戻す
+        if (db.cleanups.indexOf("deck-schedule-120min-1") === -1) {
+          db.cleanups.push("deck-schedule-120min-1");
+          var cfg12 = readCfg(db);
+          var ROWS_90 = JSON.stringify([["第一水曜日", "13:00-14:30"], ["第三土曜日", "20:00-21:30"]]);
+          var ROWS_120 = [["第一水曜日", "13:00-15:00"], ["第三土曜日", "20:00-22:00"]];
+          var hit12 = false;
+          if (cfg12 && JSON.stringify(cfg12["schedule.rows"]) === ROWS_90) { cfg12["schedule.rows"] = ROWS_120; hit12 = true; }
+          if (cfg12 && cfg12.schedule && JSON.stringify(cfg12.schedule.rows) === ROWS_90) { cfg12.schedule.rows = ROWS_120; hit12 = true; }
+          if (cfg12 && Number(cfg12["breakout.times"]) === 3 && (cfg12["breakout.min"] === undefined || Number(cfg12["breakout.min"]) === 7)) { cfg12["breakout.times"] = 4; hit12 = true; }
+          if (cfg12 && cfg12.breakout && Number(cfg12.breakout.times) === 3 && Number(cfg12.breakout.min) === 7) { cfg12.breakout.times = 4; hit12 = true; }
+          if (hit12) writeCfg(db, cfg12);
+          changed = true;
+        }
+        // スケジュールのスライドを1時間半の時間にする書きかえ(deck-schedule-90min-1)は、2時間へ戻したのでもう行わない(印だけ付ける)
         if (db.cleanups.indexOf("deck-schedule-90min-1") === -1) {
           db.cleanups.push("deck-schedule-90min-1");
-          var cfg7 = readCfg(db);
-          var OLD_ROWS = JSON.stringify([["第一水曜日", "13:00-15:00"], ["第三土曜日", "20:00-22:00"]]);
-          var NEW_ROWS = [["第一水曜日", "13:00-14:30"], ["第三土曜日", "20:00-21:30"]];
-          var hit7 = false;
-          if (cfg7 && JSON.stringify(cfg7["schedule.rows"]) === OLD_ROWS) { cfg7["schedule.rows"] = NEW_ROWS; hit7 = true; }
-          if (cfg7 && cfg7.schedule && JSON.stringify(cfg7.schedule.rows) === OLD_ROWS) { cfg7.schedule.rows = NEW_ROWS; hit7 = true; }
-          if (hit7) writeCfg(db, cfg7);
           changed = true;
         }
         // 入会の3ステップ(2026年11月): Step2 の「BT-EX5 入会」を「BT-EX入会」に。前に保存したステップにあれば、その文字だけ一度だけ書きかえる
@@ -3044,6 +3058,27 @@
               return v;
             };
             writeCfg(db, brk(cfg7));
+          }
+          changed = true;
+        }
+        // 仕組みとベネフィット(2026年11月14日): 「コミットで加速」のカードの「リファーラル」を「紹介」に(運営の依頼)。
+        // 前に保存したカードの文に「リファーラル」(「リファラル」)が残っていれば、そのカードだけ書きかえる
+        if (db.cleanups.indexOf("deck-benefit-shokai-1") === -1) {
+          db.cleanups.push("deck-benefit-shokai-1");
+          var cfg13 = readCfg(db);
+          if (cfg13) {
+            var hit13 = false;
+            var fixBenefit = function (v) {
+              if (Array.isArray(v)) { v.forEach(fixBenefit); return; }
+              if (v && typeof v === "object") {
+                if (typeof v.head === "string" && v.head.replace(/\s/g, "") === "コミットで加速" && typeof v.text === "string" && /リファー?ラル/.test(v.text)) {
+                  v.text = v.text.replace(/リファー?ラル/g, "紹介"); hit13 = true;
+                }
+                Object.keys(v).forEach(function (k) { if (v[k] && typeof v[k] === "object") fixBenefit(v[k]); });
+              }
+            };
+            fixBenefit(cfg13);
+            if (hit13) writeCfg(db, cfg13);
           }
           changed = true;
         }

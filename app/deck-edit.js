@@ -43,9 +43,18 @@
     });
     return out;
   }
+  // 「コミットで加速」のカードの「リファーラル」は「紹介」に(2026年11月14日、運営の依頼)。前に保存したカードの文が
+  // 共有サーバーの更新の前に届いたときも、新しい言葉で出す(共有サーバーでも同じ書きかえを一度だけ行う)
+  function fixBenefitWord(cfg) {
+    if (!cfg || !Array.isArray(cfg.benefits)) return cfg;
+    cfg.benefits.forEach((x) => {
+      if (x && typeof x.head === "string" && x.head.replace(/\s/g, "") === "コミットで加速" && typeof x.text === "string") x.text = x.text.replace(/リファー?ラル/g, "紹介");
+    });
+    return cfg;
+  }
   App.loadDeckConfig = async function () {
     const r = await App.api("getDeckConfig", {}, { quiet: true });
-    return r ? { config: fixRaiseOrder(r.config) || null, canEdit: !!r.canEdit } : { config: null, canEdit: false };
+    return r ? { config: fixBenefitWord(fixRaiseOrder(r.config)) || null, canEdit: !!r.canEdit } : { config: null, canEdit: false };
   };
 
   // ---------- 入力欄の形 ----------

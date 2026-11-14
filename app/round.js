@@ -257,7 +257,7 @@
 
   async function renderSetup(el, params, parts) {
     const today = App.todayKey();
-    // 共有サーバーが1時間半に書きかえる前の時刻は、App.api(core.js の fix90)が1時間半にして返す
+    // 定例会は2時間(2026年11月14日に1時間半から戻した)。共有サーバーが書きかえる前の時刻は、App.api(core.js の fix120)が2時間にして返す
     const list = await App.api("listEvents", {}, { quiet: true });
     // 終わった定例会は出さない(日が過ぎたもの・今日でも終わりの時刻を過ぎたもの。運営の依頼。2026年11月)
     const nowHm = (() => { const d = new Date(); return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`; })();
@@ -624,9 +624,9 @@
     const deckBox = h("input", { type: "checkbox", onchange: () => { withDeck = deckBox.checked; store.set("deck", withDeck ? "1" : "0"); draw(); } });
     deckBox.checked = withDeck;
     // 商談(ブレイクアウトルーム商談)の1回の時間と回数(この端末に覚える)
-    // はじめの値は 7分×3回(2026年11月。前の 7分×4回 を覚えた端末も 3回 から始まるよう、覚えておく名前を変えた)
-    const BO0 = (App.deckData ? App.deckData(deckInfo.config).breakout : null) || { min: 7, times: 3 };
-    const boKey = "-v3";
+    // はじめの値は 7分×4回(2026年11月14日、定例会を2時間に戻した。1時間半のときの 7分×3回 を覚えた端末も 4回 から始まるよう、覚えておく名前を変えた)
+    const BO0 = (App.deckData ? App.deckData(deckInfo.config).breakout : null) || { min: 7, times: 4 };
+    const boKey = "-v4";
     const boMin = h("select", { class: "pr-bo-min", "aria-label": "商談の1回の時間(分)", onchange: () => store.set(`bo-min${boKey}`, boMin.value) },
       Array.from({ length: 20 }, (_, i) => i + 1).map((v) => h("option", { value: String(v) }, `${v}分`)));
     const boTimes = h("select", { class: "pr-bo-times", "aria-label": "商談の回数", onchange: () => store.set(`bo-times${boKey}`, boTimes.value) },
@@ -1959,10 +1959,14 @@
         // BT-EX でよく使う言葉。言葉を押すか「進む」で、1つずつ大きく出す(ポップアップ)。
         // 最後の言葉のあとの「進む」で次のスライドへ。「戻る」は1つ前の言葉、最初の言葉ならポップアップを閉じる
         const items = p.items || [];
+        // 改行をつないで1行に(英数字どうしがくっつくところだけ空白を入れる)
+        const oneLine = (text) => String(text || "").split("\n").map((t) => t.trim()).filter(Boolean)
+          .reduce((a, b) => a + (/[A-Za-z0-9]$/.test(a) && /^[A-Za-z0-9]/.test(b) ? " " : "") + b, "");
         const pop = h("div", { class: "pd-gloss-pop", hidden: true, role: "dialog", "aria-modal": "false", "aria-live": "polite" });
         const cells = items.map((x, i) => h("div", Object.assign({ class: "pd-gloss-item", role: "button", tabindex: "0", "aria-label": `${x.head}を大きく見る`,
           onclick: () => seq.show(i + 1), onkeydown: (e) => { if (e.key === "Enter") { e.preventDefault(); e.stopPropagation(); seq.show(i + 1); } } }, nth(i)),
-          h("dt", null, x.head), h("dd", null, String(x.text || "").split("\n").map((t) => h("span", { class: "pd-line" }, t)))));
+          // 説明は1行で出す(運営の依頼。2026年11月14日)。行の区切りはつなぎ、入りきらないときは fitDeck がそろって小さくする
+          h("dt", null, x.head), h("dd", null, h("span", { class: "pd-line" }, oneLine(x.text)))));
         // i: 0 = 閉じている / 1〜n = その番号の言葉を出している(カードの送りと同じ形で、進む・戻るから動かす)
         const seq = { n: items.length + 1, i: 0, show(k) {
           seq.i = Math.max(0, Math.min(items.length, k));
@@ -1991,8 +1995,8 @@
           }
         } };
         pop.addEventListener("click", (e) => { if (e.target === pop) seq.show(0); });
-        // 言葉が6つ以下のときは、大きなカード(3列×2段)にして画面の空きを使う
-        const wrap = h("div", { class: "pd-gl-seq" }, h("dl", { class: items.length <= 6 ? "pd-gloss is-few" : "pd-gloss" }, cells), pop);
+        // 1つの言葉を1行(左に言葉・右に説明)にして、説明を1行で大きく出す(横に広く使う)。言葉が多いときは行を詰める
+        const wrap = h("div", { class: "pd-gl-seq" }, h("dl", { class: `pd-gloss is-rows${items.length > 8 ? " is-many" : ""}`, style: `--gl-k:${Math.max(1, items.length)}` }, cells), pop);
         wrap.car = seq;
         return frame("pd-glossary", wrap);
       }
@@ -2381,7 +2385,7 @@
       if (idx > from && isDeck(p) && p.breakAsk && !breakAsked) { breakAsked = true; askBreak(); }
     }
     // ---------- 休憩のおさそい(商談の区切りのスライドに入ったとき) ----------
-    // 「休む」を押すと1分の休憩の画面。「進む」(または画面のボタン)ですぐに終えられる
+    // 「休む」を押すと3分の休憩の画面。「進む」(または画面のボタン)ですぐに終えられる
     let breakLayer = null, breakTimer = null, breakAsked = false, breakForced = false, breakAsking = false;
     function closeBreak() {
       if (breakForced) { nudgeBreak(); return; }
@@ -2399,7 +2403,7 @@
           h("h2", { class: "pr-break-title" }, "休憩しませんか?"),
           h("p", { class: "pr-break-text" }, "ここから商談がはじまります。", h("br"), "お水を飲んだり、体を伸ばしたりして、ひと息つきましょう"),
           h("div", { class: "pr-break-btns" },
-            h("button", { type: "button", class: "pr-break-btn is-main", onclick: startBreak }, "休む(1分)"),
+            h("button", { type: "button", class: "pr-break-btn is-main", onclick: startBreak }, "休む(3分)"),
             h("button", { type: "button", class: "pr-break-btn", onclick: forceBreak }, "このまま続ける"))));
       box.append(breakLayer);
       breakAsking = true;
@@ -2427,7 +2431,7 @@
           h("p", { class: "pr-hack-kicker" }, "⚠ WARNING ⚠"),
           h("h2", { class: "pr-hack-title", "data-text": "休憩をスキップ\nできません" }, "休憩をスキップ\nできません"),
           h("p", { class: "pr-hack-text" }, "体と頭を守るため、休憩を強制的に実行します。", h("br"), "下のボタンを押してください"),
-          h("button", { type: "button", class: "pr-break-btn is-main pr-hack-btn", onclick: startBreak }, "休む(1分)")));
+          h("button", { type: "button", class: "pr-break-btn is-main pr-hack-btn", onclick: startBreak }, "休む(3分)")));
       breakLayer.querySelector(".pr-hack-btn").focus({ preventScroll: true });
     }
     // 休むしか選べないときに、ほかの操作をしたら、カードをゆらして知らせる
@@ -2445,7 +2449,7 @@
       box.classList.remove("is-break-forced");
       breakLayer.classList.remove("is-hacked");
       breakLayer.setAttribute("aria-label", "休憩中");
-      const TOTAL = 60, until = Date.now() + TOTAL * 1000; // 休憩は1分(運営の依頼。2026年11月。前は3分)
+      const TOTAL = 180, until = Date.now() + TOTAL * 1000; // 休憩は3分(運営の依頼。2026年11月14日に1分から3分へ戻した)
       const TIPS = ["お水を一杯どうぞ", "肩をゆっくり回してみましょう", "深呼吸を3回", "次の商談で話したいことを1つ決めておきましょう", "まもなく商談がはじまります"];
       const num = h("b", { class: "pr-break-num" });
       const bar = h("i");
