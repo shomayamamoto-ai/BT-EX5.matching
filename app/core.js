@@ -750,11 +750,11 @@ const App = (function () {
   // プレゼン(定例会の進行)のタブは、この人だけに出す
   const PRESENT_OWNERS = ["yamamoto", "m22", "m02", "m16", "m08", "m14", "m09", "m10", "m24", "m04"]; // 山本 捷真・小林 末季(こばねぇ)・あまみや 七音・桜羽 李果・床島 良夫・三村 隆・大場 雅俊・大枝 篤志・栁橋 雅也・吉澤 美和子
   const canPresent = () => !!(session && PRESENT_OWNERS.includes(session.memberId));
-  // 記録(紹介・マイル・1on1・分析)は、いまは山本 捷真・小林 末季(こばねぇ)だけ(運営の依頼。ほかの方は、下のタブが黒くなって押せない)
+  // 記録(紹介・マイル・1on1・分析)は、いまは山本 捷真・小林 末季(こばねぇ)・三村 隆だけ(運営の依頼。三村さんは2026年11月14日から。ほかの方は、下のタブが黒くなって押せない)
   // 予定も同じ(2026年11月の運営の依頼)。使えない方は、下のタブが黒くなって押せず、アプリを開くと掲示板から始まる
   // 資料のタブは全員が開ける(Zoom 背景はどなたでも使える)。ポスター・お誘い画像などは、この方たちだけ(ほかの方は「準備中」と Zoom 背景)
   const LIMITED_TABS = ["log", "events"];
-  const LIMITED_OWNERS = ["yamamoto", "m22"];
+  const LIMITED_OWNERS = ["yamamoto", "m22", "m14"]; // 山本 捷真・小林 末季(こばねぇ)・三村 隆
   const canTab = (id) => !LIMITED_TABS.includes(id) || !!(session && LIMITED_OWNERS.includes(session.memberId));
   const canMaterials = () => !!(session && LIMITED_OWNERS.includes(session.memberId));
   const canLog = () => canTab("log");
