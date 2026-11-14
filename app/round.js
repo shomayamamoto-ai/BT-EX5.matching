@@ -810,7 +810,21 @@
   // 長さがちがう回(例: 90分)は、各項目の分を同じ割合でのばす・ちぢめる(合計は定例会の長さにそろえる)
   // 2026年11月(運営の依頼): 「BT-EXの理念」の次に「仕組みとベネフィット」、「LINKのビジネス実績紹介」の前に「BT-EXの強み」を区切りとして足す。
   // 共有サーバーの定例会の流れは一度だけ書きかえる(deck-steps-split-1)。書きかえ前の流れ(どちらもない流れ)は、ここでも同じ形にして出す
+  // 2026年11月14日(運営の依頼): 「BT-EX5のご案内」の前に「出席規定」を区切りとして足す(出席規定のスライドだけ。ご案内からあとは番号が1つずつ送られる)。
+  // 共有サーバーの定例会の流れは一度だけ書きかえる(deck-steps-attendance-1)。書きかえ前の流れは、ここでも同じ形にして出す
   function upgradeAgenda(text) {
+    const t = upgradeAgenda12(text);
+    const lines = String(t || "").split("\n");
+    const isStep = (l) => NUMS.includes(l.trim().charAt(0));
+    const title = (l) => l.trim().slice(1).trim();
+    const has = (re) => lines.some((l) => isStep(l) && re.test(title(l)));
+    if (!has(/ご案内/) || has(/出席規定/)) return t;
+    const out = [];
+    lines.forEach((l) => { if (isStep(l) && /ご案内/.test(title(l))) out.push("①出席規定"); out.push(l); });
+    let n = 0;
+    return out.map((l) => (isStep(l) ? NUMS.charAt(n++) + l.trim().slice(1) : l)).join("\n");
+  }
+  function upgradeAgenda12(text) {
     const lines = String(text || "").split("\n");
     const isStep = (l) => NUMS.includes(l.trim().charAt(0));
     const title = (l) => l.trim().slice(1).trim();
@@ -842,10 +856,12 @@
     const p = plan.map((v) => Math.max(0, Number(v) || 0));
     if (p.length === 9) {
       const ri = Math.round((p[3] * 10) / 18), st = p[6] > 3 ? 3 : 0, cl = p[8] > 1 ? 1 : 0, gd = Math.ceil((p[8] - cl) / 2);
-      return [p[0], p[1], p[2], ri, p[3] - ri, p[4], p[5], p[6] - st, st, p[7], gd, p[8] - cl - gd, cl];
+      return fitPlan([p[0], p[1], p[2], ri, p[3] - ri, p[4], p[5], p[6] - st, st, p[7], gd, p[8] - cl - gd, cl]);
     }
     // 12(⑩ご案内 ⑪終わりの挨拶 の版)→ ご案内を「ご案内」と「規定」に分ける
-    if (p.length === 12) { const gd = Math.ceil(p[10] / 2); return [...p.slice(0, 10), gd, p[10] - gd, p[11]]; }
+    if (p.length === 12) { const gd = Math.ceil(p[10] / 2); return fitPlan([...p.slice(0, 10), gd, p[10] - gd, p[11]]); }
+    // 13(12区切り)→ 14(13区切り): ご案内の前に「出席規定」。規定から1分(2分以上あるとき)と、実績紹介から1分(6分以上あるとき)を移す
+    if (p.length === 13) { const a = p[11] > 1 ? 1 : 0, b = p[9] > 5 ? 1 : 0; return [...p.slice(0, 9), p[9] - b, a + b, p[10], p[11] - a, p[12]]; }
     return plan;
   }
 
@@ -909,7 +925,10 @@
     // 仕組みとベネフィット(9つのカード)。流れに「仕組みとベネフィット」の区切りがあればそこに、なければ理念のあとに
     const hasBenefitStep = steps.some((st) => /仕組み|ベネフィット/.test(st.title));
     const hasStrengthStep = steps.some((st) => /強み/.test(st.title));
-    const hasRuleStep = steps.some((st) => /規定/.test(st.title));
+    // 「出席規定」の区切り(⑩)があれば、出席規定のスライドはそこにだけ出す。「BT-EXの規定」の区切り(⑫)は一般規定と倫理規定
+    const isAttStep = (title) => /出席規定/.test(title);
+    const hasAttStep = steps.some((st) => isAttStep(st.title));
+    const hasRuleStep = steps.some((st) => /規定/.test(st.title) && !isAttStep(st.title));
     let benefitDone = false;
     const benefits = (label) => {
       benefitDone = true;
@@ -945,9 +964,16 @@
         // 規定は1つずつのスライドに、絵・番号・見出しつきのカードで出す(文はそのまま)
         const H = R.heads || {}, I = R.icons || {};
         deck("rules", { name: "一般規定", step: lb, rows: R.general, heads: H.general, icons: I.general, cols: 3, carousel: true });
-        deck("rules", { name: "出席規定", step: lb, rows: R.attendance, heads: H.attendance, icons: I.attendance, cols: 2, note: R.note, carousel: true });
+        if (!hasAttStep) deck("rules", { name: "出席規定", step: lb, rows: R.attendance, heads: H.attendance, icons: I.attendance, cols: 2, note: R.note, carousel: true });
         deck("rules", { name: "倫理規定", step: lb, rows: R.ethics, heads: H.ethics, icons: I.ethics, cols: 3, carousel: true });
       }
+    };
+    // 出席規定だけの区切り(⑩。2026年11月14日、運営の依頼)
+    const attendanceRule = (label) => {
+      const R = D.rules;
+      if (!R) return;
+      const H = R.heads || {}, I = R.icons || {};
+      deck("rules", { name: "出席規定", step: label, rows: R.attendance, heads: H.attendance, icons: I.attendance, cols: 2, note: R.note, carousel: true });
     };
     // BT-EX5 スケジュール(月2回の定例会 → 次回以降の日程)。終わりの挨拶の出席コードのあとにだけ出す
     // (2026年11月。前は理念の規定のあとにも出していたが、運営の依頼で終わりの挨拶だけにした)
@@ -1026,7 +1052,8 @@
       if (/商談/.test(st.title) && !extra && !hasStrengthStep) extras(label);
       if (/実績/.test(st.title) && !raiseDone) raises(label);
       if (/ご案内/.test(st.title) && !guideDone) guideSlides(label);
-      if (/規定/.test(st.title) && !rulesDone) rulesSlides(label);
+      if (isAttStep(st.title)) attendanceRule(label);
+      else if (/規定/.test(st.title) && !rulesDone) rulesSlides(label);
       if (/(終わり|おわり)の?(挨拶|あいさつ)/.test(st.title)) closeLabel = label;
     });
     // 進行表にプレゼンの行がないときは、最後の区切りの前に入れる
@@ -2096,6 +2123,23 @@
       el.style.transform = ""; el.style.transformOrigin = "";
       const body = el.classList.contains("pd-frame") ? el.querySelector(":scope > .pd-body") : null;
       if (body) { body.style.transform = ""; body.style.transformOrigin = ""; }
+      // 用語説明の表: スライドの枠(見えている範囲)の横いっぱいまで広げる。画面の幅ではなく、いまのスライドの幅から決める
+      // (タイムマネジメントの帯や「進む」のボタンの置き場所でスライドの幅が変わっても、右はしが切れないように)
+      const glRows = el.querySelector(".pd-gloss.is-rows");
+      if (glRows) {
+        glRows.style.removeProperty("--glw"); glRows.style.removeProperty("--glx");
+        const wide = window.matchMedia("(min-aspect-ratio: 1/1) and (min-width: 761px)").matches;
+        const host = glRows.parentElement, sr = slide.getBoundingClientRect(), hr = host ? host.getBoundingClientRect() : null;
+        if (wide && hr && sr.width > 0) {
+          // 使える幅(スライドの見えている幅 − 少しの余白)が題の幅より広いときだけ広げ、スライドのまん中に置く。せまいときは題と同じ幅のまま
+          const pad = 8, avail = Math.min(sr.width - pad * 2, 1700);
+          const w = avail > hr.width ? avail : hr.width;
+          const x0 = avail > hr.width ? sr.left + (sr.width - w) / 2 : hr.left;
+          // 割合(%)で決める(「あ」の大きな文字のときは画面が拡大されていて、px では実際の幅とずれるため)
+          glRows.style.setProperty("--glw", `${((w / hr.width) * 100).toFixed(3)}%`);
+          glRows.style.setProperty("--glx", `${(((x0 - hr.left) / hr.width) * 100).toFixed(3)}%`);
+        }
+      }
       // 大きな数字(約束・実績のタイル): 枠に入りきらないときは、その数字だけ小さくする(枠に触れない)
       el.querySelectorAll(".pd-kpi b, .pd-stats b").forEach((b) => {
         b.style.fontSize = ""; b.style.height = "";

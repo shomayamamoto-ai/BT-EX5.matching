@@ -1145,11 +1145,13 @@ const BTEX_DECK = {
   // 時間の目安(分)。2時間の定例会のタイムマネジメントに使う(0: オープニング、1〜: 流れの番号)
   // 定例会は2時間(2026年11月14日、運営の依頼で1時間半から戻した)
   // オープニング1分・挨拶5分・用語説明2分・理念10分・仕組みとベネフィット8分・エデュケーション(5分+α1分)6分・1分プレゼン32分・商談(7分×4回+α5分)33分・BT-EXの強み3分・実績紹介15分・BT-EX5のご案内2分・BT-EXの規定2分・終わりの挨拶1分 = 120分
-  timeplan: [1, 5, 2, 10, 8, 6, 32, 33, 3, 15, 2, 2, 1],
+  // 2026年11月14日: 「出席規定」(2分)を実績紹介のあとに足した(実績紹介 15→14分、BT-EXの規定 2→1分)
+  // …実績紹介14分・出席規定2分・BT-EX5のご案内2分・BT-EXの規定1分・終わりの挨拶1分 = 120分
+  timeplan: [1, 5, 2, 10, 8, 6, 32, 33, 3, 14, 2, 2, 1, 1],
   // 1時間半(90分)くらいまでの短い回のときの配分(ふだんの定例会は2時間。運営が短い回を作ったときだけ使う)
   // オープニング1分・挨拶4分・用語説明2分・理念7分・仕組みとベネフィット5分・エデュケーション6分・1分プレゼン24分・商談(7分×3回+α2分)23分・BT-EXの強み3分・実績紹介10分・BT-EX5のご案内2分・BT-EXの規定2分・終わりの挨拶1分
   // 商談のはじめの値は 7分×4回(breakout)
-  timeplan90: [1, 4, 2, 7, 5, 6, 24, 23, 3, 10, 2, 2, 1],
+  timeplan90: [1, 4, 2, 7, 5, 6, 24, 23, 3, 9, 2, 2, 1, 1], // …実績紹介9分・出席規定2分・ご案内2分・規定1分・終わりの挨拶1分 = 90分
   // スケジュール(次回以降の日程は、予定に入っている定例会から出す)
   schedule: {
     title: "BT-EX5 スケジュール",
@@ -1404,9 +1406,10 @@ function refRoleOf(id) {
 // ②は BT-EX でよく使う言葉の説明(はじめの挨拶のあと)
 // 2026年11月: 「④仕組みとベネフィット」(理念から分けた)・「⑧BT-EXの強み」(実績紹介の前の3枚)・
 // 「⑩BT-EX5のご案内」(入会・アンケート・出席コード・スケジュール。終わりの挨拶から分けた)・「⑪BT-EXの規定」を足した
+// 2026年11月14日: 「⑩出席規定」(出席規定のスライドだけ)を「BT-EX5のご案内」の前に足した(ご案内は⑪、BT-EXの規定は⑫、終わりの挨拶は⑬に)
 const REF_SEED_AGENDA = [
   "①はじめの挨拶", "②用語説明", "③BT-EXの理念", "④仕組みとベネフィット", "⑤エデュケーションコーナー 5分", "⑥1分プレゼンテーション",
-  "⑦ブレイクアウトルーム商談（テーブル商談） 7分×4", "⑧BT-EXの強み", "⑨LINKのビジネス実績紹介", "⑩BT-EX5のご案内", "⑪BT-EXの規定", "⑫終わりの挨拶",
+  "⑦ブレイクアウトルーム商談（テーブル商談） 7分×4", "⑧BT-EXの強み", "⑨LINKのビジネス実績紹介", "⑩出席規定", "⑪BT-EX5のご案内", "⑫BT-EXの規定", "⑬終わりの挨拶",
 ].join("\n");
 // 以前の流れ(運営が書きかえていない定例会だけ、上の流れに置きかえる)
 const REF_SEED_AGENDA_PREV = [
@@ -2939,7 +2942,7 @@ const REF_SEED_ANNOUNCEMENTS = [
   {
     seedId: "2026-10-25-update-16",
     cat: "アップデート",
-    rev: 205,
+    rev: 206,
     at: Date.UTC(2026, 9, 25, 4, 0), // 2026/10/25 13:00(日本時間)
     title: "【アップデート】紹介診断に「相手がこう言っていたら」・アンケート・運営タブ など",
     body: [
@@ -2980,6 +2983,9 @@ const REF_SEED_ANNOUNCEMENTS = [
       "・スライドの「次回以降のスケジュール」の次に「Pick Up Schedule」を足しました。予定に入っている特別会(例: 12月2日 第一回BT-EXフェス)を、日にち・時間・受付・会場・参加費・定員つきで出します。",
       "・スライドの「BT-EX でよく使う言葉」は、言葉を1つずつ大きく出すポップアップをやめました(「進む」でそのまま次のスライドへ進みます)。",
       "・運営の役割早見表から「06 1分プレゼンテーション」「07 ブレイクアウトルーム商談」の行を外しました。",
+      "・定例会の流れに「⑩出席規定」を足しました(出席規定のスライドだけを、BT-EX5のご案内の前に出します)。BT-EX5のご案内は⑪、BT-EXの規定(一般規定・倫理規定)は⑫、終わりの挨拶は⑬になります。時間の目安は、実績紹介14分・出席規定2分・ご案内2分・規定1分・終わりの挨拶1分です。",
+      "・スライドの「BT-EX でよく使う言葉」が、画面の右で切れることがあったのを直しました(いま見えているスライドの幅に合わせて表を広げます)。",
+      "・運営の画面に「アンケートの URL」を足しました。定例会ごとに、BT-EX メンバー用とビジター用の URL をコピーできます(2つまとめてチャットに貼る文も作れます)。",
       "・【新しい機能】記録の「分析」に「あなたの活動バランス」を足しました。マイル・紹介・1on1・ビジター・出席を、メンバーの平均とくらべたレーダー図(くもの巣の図)で見える化し、「強み TOP3」「伸びしろ TOP3」と、伸びしろに合わせた「次の一手」(押すとその画面へ)を出します。アンケートの結果にも「ひと目でわかる」を足し、満足度のバランス(今回と前回のレーダー図)・良かったプログラム TOP3・もっと良くしたいところ TOP3 を出します。",
       "・BT-EX7 の矢口 健彦(ヤグチ タケヒコ)さん(Data Fusion Partners 代表/中小企業診断士/綺絆)の顔写真と、事業内容・対象のお客様・「こんな話が出たら」を入れました。プレゼンで選ぶと、写真とつながりたい人がスライドに出ます。",
       "・BT-EX1 の小松 茂子さん(ReVivre 代表/チーム無限)の事業内容(共済保険)・主なお客様・求める紹介・「こんな話が出たら」を入れました。プレゼンで選ぶと、求める紹介がスライドに出ます。",
@@ -4666,6 +4672,25 @@ var BtexServerCore = (function () {
             if (out.length === lines.length) return;
             var n = 0;
             ev.agenda = out.map(function (l) { return isStep3(l) && n < CIRC3.length ? CIRC3.charAt(n++) + String(l).trim().slice(1) : l; }).join("\n");
+          });
+          changed = true;
+        }
+        // 2026年11月14日(運営の依頼): 「BT-EX5のご案内」の前に「出席規定」の区切りを足し、番号を振りなおす
+        // (すべての定例会。すでに「出席規定」の区切りがある流れ・ご案内のない流れはそのまま)
+        if (db.eventSeeds && db.eventSeeds.indexOf("deck-steps-attendance-1") === -1) {
+          db.eventSeeds.push("deck-steps-attendance-1");
+          var CIRC4 = "①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳";
+          var isStep4 = function (l) { return CIRC4.indexOf(String(l).trim().charAt(0)) !== -1; };
+          db.events.forEach(function (ev) {
+            if (typeof ev.agenda !== "string" || !ev.agenda) return;
+            var lines = ev.agenda.split("\n");
+            var hasGuide4 = lines.some(function (l) { return isStep4(l) && /ご案内/.test(l); });
+            var hasAtt4 = lines.some(function (l) { return isStep4(l) && /出席規定/.test(l); });
+            if (!hasGuide4 || hasAtt4) return;
+            var out = [];
+            lines.forEach(function (l) { if (isStep4(l) && /ご案内/.test(l)) out.push("①出席規定"); out.push(l); });
+            var n = 0;
+            ev.agenda = out.map(function (l) { return isStep4(l) && n < CIRC4.length ? CIRC4.charAt(n++) + String(l).trim().slice(1) : l; }).join("\n");
           });
           changed = true;
         }
@@ -7623,6 +7648,19 @@ var BtexServerCore = (function () {
             var g9 = Math.ceil(t9[10] / 2);
             cfg9.timeplan = t9.slice(0, 10).concat([g9, t9[10] - g9, t9[11]]);
             writeCfg(db, cfg9);
+          }
+          changed = true;
+        }
+        // 流れを13区切りにした(2026年11月14日: ご案内の前に「出席規定」)。前に保存した時間の目安(13)を、新しい流れ(14)に合わせて分ける:
+        // 規定から1分(2分以上あるとき)と、実績紹介から1分(6分以上あるとき)を「出席規定」に移す
+        if (db.cleanups.indexOf("deck-timeplan-attendance-1") === -1) {
+          db.cleanups.push("deck-timeplan-attendance-1");
+          var cfg14 = readCfg(db);
+          if (cfg14 && Array.isArray(cfg14.timeplan) && cfg14.timeplan.length === 13) {
+            var t14 = cfg14.timeplan.map(function (v) { return Math.max(0, Number(v) || 0); });
+            var a14 = t14[11] > 1 ? 1 : 0, b14 = t14[9] > 5 ? 1 : 0;
+            cfg14.timeplan = t14.slice(0, 9).concat([t14[9] - b14, a14 + b14, t14[10], t14[11] - a14, t14[12]]);
+            writeCfg(db, cfg14);
           }
           changed = true;
         }

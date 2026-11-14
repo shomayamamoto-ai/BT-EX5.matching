@@ -3624,7 +3624,8 @@ button.home-welcome-check:active { transform: scale(0.94); }
    題の位置はほかのスライドと同じまま、表だけ画面の横いっぱいまで広げる。行の高さは、6つの言葉がそのままの大きさで収まるように詰める
    (収まらないと app/round.js の fitDeck が全体を縮めて、かえって小さくなる)。1行に入りきらない分は fitDeck が説明をそろって小さくする */
 @media (min-aspect-ratio: 1/1) and (min-width: 761px) {
-  .pd-gloss.is-rows { --glw: min(calc(100vw - 150px), 1700px); position: relative; left: 50%; width: var(--glw); margin-left: calc(var(--glw) / -2); box-sizing: border-box;
+  /* 幅(--glw)と左のずらし(--glx)は app/round.js の fitDeck が、いまのスライドの幅から決める(決まる前は、題と同じ幅) */
+  .pd-gloss.is-rows { position: relative; width: var(--glw, 100%); margin-left: var(--glx, 0px); box-sizing: border-box;
     grid-template-columns: minmax(0, 1fr); grid-auto-rows: auto; gap: clamp(5px, 1svh, 12px); }
   .pd-gloss.is-rows .pd-gloss-item { display: grid; grid-template-columns: 7.1em minmax(0, 1fr); align-items: center; column-gap: 0.9em;
     padding: clamp(5px, min(1.1svh, 40svh / var(--gl-k) / 5), 16px) clamp(14px, 1.5vw, 30px); border-radius: 16px;
@@ -3659,3 +3660,13 @@ button.home-welcome-check:active { transform: scale(0.94); }
 .pd-gloss-item.is-plain { cursor: default; }
 .pd-gloss-item.is-plain:hover { border-color: var(--pd-line); background: var(--pd-card); }
 .pr-run.deck-soft .pd-gloss-item.is-plain:hover { background: #fff; border-color: var(--pd-line); }
+
+/* 運営: アンケートの URL(定例会ごと・メンバー用 / ビジター用) */
+.ops-sv-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 420px), 1fr)); gap: 10px; }
+.ops-sv-card { display: grid; gap: 8px; padding: 14px; border-radius: 16px; border: 1px solid var(--line); background: var(--card); }
+.ops-sv-head { display: grid; gap: 2px; }
+.ops-sv-head b { font-size: 15px; } .ops-sv-head small { font-size: 12.5px; color: var(--text-light); }
+.ops-sv-row { display: grid; grid-template-columns: 8.6em minmax(0, 1fr) auto; gap: 8px; align-items: center; }
+.ops-sv-kind { font-size: 13px; font-weight: 800; color: var(--accent-dark); }
+.ops-sv-row input { min-width: 0; min-height: 40px; padding: 6px 10px; border-radius: 10px; border: 1px solid var(--line-strong); background: var(--bg); color: var(--text); font: 600 12.5px/1.3 ui-monospace, SFMono-Regular, Menlo, monospace; }
+@media (max-width: 520px) { .ops-sv-row { grid-template-columns: minmax(0, 1fr) auto; } .ops-sv-kind { grid-column: 1 / -1; } }

@@ -237,6 +237,25 @@
           });
           changed = true;
         }
+        // 2026年11月14日(運営の依頼): 「BT-EX5のご案内」の前に「出席規定」の区切りを足し、番号を振りなおす
+        // (すべての定例会。すでに「出席規定」の区切りがある流れ・ご案内のない流れはそのまま)
+        if (db.eventSeeds && db.eventSeeds.indexOf("deck-steps-attendance-1") === -1) {
+          db.eventSeeds.push("deck-steps-attendance-1");
+          var CIRC4 = "①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳";
+          var isStep4 = function (l) { return CIRC4.indexOf(String(l).trim().charAt(0)) !== -1; };
+          db.events.forEach(function (ev) {
+            if (typeof ev.agenda !== "string" || !ev.agenda) return;
+            var lines = ev.agenda.split("\n");
+            var hasGuide4 = lines.some(function (l) { return isStep4(l) && /ご案内/.test(l); });
+            var hasAtt4 = lines.some(function (l) { return isStep4(l) && /出席規定/.test(l); });
+            if (!hasGuide4 || hasAtt4) return;
+            var out = [];
+            lines.forEach(function (l) { if (isStep4(l) && /ご案内/.test(l)) out.push("①出席規定"); out.push(l); });
+            var n = 0;
+            ev.agenda = out.map(function (l) { return isStep4(l) && n < CIRC4.length ? CIRC4.charAt(n++) + String(l).trim().slice(1) : l; }).join("\n");
+          });
+          changed = true;
+        }
         // 入っていない値がつながって保存された「null」「nullnull」などの文字を、一度だけ消す
         // (ログイン・通知の登録・鍵などは触らない)
         if (!Array.isArray(db.cleanups)) { db.cleanups = []; changed = true; }
@@ -3191,6 +3210,19 @@
             var g9 = Math.ceil(t9[10] / 2);
             cfg9.timeplan = t9.slice(0, 10).concat([g9, t9[10] - g9, t9[11]]);
             writeCfg(db, cfg9);
+          }
+          changed = true;
+        }
+        // 流れを13区切りにした(2026年11月14日: ご案内の前に「出席規定」)。前に保存した時間の目安(13)を、新しい流れ(14)に合わせて分ける:
+        // 規定から1分(2分以上あるとき)と、実績紹介から1分(6分以上あるとき)を「出席規定」に移す
+        if (db.cleanups.indexOf("deck-timeplan-attendance-1") === -1) {
+          db.cleanups.push("deck-timeplan-attendance-1");
+          var cfg14 = readCfg(db);
+          if (cfg14 && Array.isArray(cfg14.timeplan) && cfg14.timeplan.length === 13) {
+            var t14 = cfg14.timeplan.map(function (v) { return Math.max(0, Number(v) || 0); });
+            var a14 = t14[11] > 1 ? 1 : 0, b14 = t14[9] > 5 ? 1 : 0;
+            cfg14.timeplan = t14.slice(0, 9).concat([t14[9] - b14, a14 + b14, t14[10], t14[11] - a14, t14[12]]);
+            writeCfg(db, cfg14);
           }
           changed = true;
         }

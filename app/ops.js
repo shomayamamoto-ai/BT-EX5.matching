@@ -24,6 +24,7 @@
       el.append(
         h("p", { class: "app-lead" }, "運営メンバーだけの画面です。定例会の役割早見表と、運営会議(Google Meet・議事録)をここで見られます。"));
       el.append(await rolesSection());
+      el.append(await surveySection());
       el.append(
         h("div", { class: "app-cta-row" }, App.btn("＋ 運営会議を作る", () => meetingForm(null, d), "primary wide")));
       // 議事録をことばで探す
@@ -41,6 +42,35 @@
     },
   };
 
+  // ---------- アンケートの URL(定例会ごと・BT-EX メンバー用 / ビジター用) ----------
+  // スライドの「定例会のアンケート」に出る QR と同じ URL。Zoom・Meet のチャットや LINE に貼れるよう、定例会ごとに2つずつ出す
+  async function surveySection() {
+    const wrap = h("section", { class: "app-section ops-sv" }, h("h2", { class: "app-h2" }, "アンケートの URL"));
+    const d = await App.api("listEvents", {}, { quiet: true });
+    const today = todayKey();
+    const evs = ((d && d.events) || []).filter((e) => e.date >= today)
+      .sort((p, q) => (p.date + (p.start || "")).localeCompare(q.date + (q.start || ""))).slice(0, 6);
+    const urlOf = (k, e) => { try { return new URL(`../survey/?k=${k}${e ? `&e=${encodeURIComponent(e.id)}` : ""}`, location.href).href; } catch { return ""; } };
+    const row = (label, url) => h("div", { class: "ops-sv-row" },
+      h("span", { class: "ops-sv-kind" }, label),
+      h("input", { type: "text", readonly: true, value: url, "aria-label": `${label}のアンケートの URL`, onclick: (e) => e.currentTarget.select() }),
+      App.btn("コピー", () => App.copyText(url, `${label}の URL をコピーしました`), "ghost small"));
+    const block = (title, sub, e) => {
+      const m = urlOf("member", e), v = urlOf("visitor", e);
+      const both = `【定例会のアンケート】${e ? `${App.fmtDate(e.date)} ${e.title}` : ""}\nBT-EX メンバーの方\n${m}\nビジターの方\n${v}`;
+      return h("article", { class: "ops-sv-card" },
+        h("div", { class: "ops-sv-head" }, h("b", null, title), sub ? h("small", null, sub) : null),
+        row("BT-EX メンバー用", m), row("ビジター用", v),
+        h("div", { class: "app-btn-row" },
+          App.btn("2つまとめてコピー(チャットに貼る文)", () => App.copyText(both, "アンケートの案内文をコピーしました"), "primary small"),
+          App.btn("LINE などで送る", () => App.shareText(both, "定例会のアンケート"), "ghost small")));
+    };
+    wrap.append(h("p", { class: "ops-roles-info" }, "定例会ごとに、BT-EX メンバー用とビジター用の2つがあります。スライドの QR コードと同じ URL です。答えは、プレゼンの画面の「アンケートの結果を見る」の集計に、その定例会の分として入ります。"));
+    if (evs.length) wrap.append(h("div", { class: "ops-sv-list" }, evs.map((e) => block(`${App.fmtDate(e.date)} ${e.start || ""}${e.end ? `〜${e.end}` : ""}`, e.title, e))));
+    else wrap.append(h("div", { class: "ops-sv-list" }, block("定例会を決めない URL", "これからの定例会が予定に入っていないときに使えます", null)));
+    return wrap;
+  }
+
   // ---------- 定例会の役割早見表 ----------
   // はじめは運営から受け取った割り当て(2026年11月14日の写真)。担当は、行を開いて全メンバーから選ぶ(何人でも・もう一度押すと外れる)。
   // 共有サーバーに保存し、運営メンバーみんなが同じ表を見る(getOpsRoles / saveOpsRoles)。
@@ -55,9 +85,10 @@
     ["r06b", "休憩(3分)", ["あまみや 七音"]],
     ["r08", "08 BT-EXの強み", ["小林 末季"]],
     ["r09", "09 LINKのビジネス実績紹介", ["大場 雅俊"]],
-    ["r10", "10 BT-EX5のご案内", ["山本 捷真"]],
-    ["r11", "11 BT-EXの規定", ["あまみや 七音"]],
-    ["r12", "12 終わりの挨拶", ["三村 隆"]],
+    ["r09b", "10 出席規定", []], // 2026年11月14日に足した区切り(担当はまだ決まっていない)。ここからあとは番号が1つずつ送られた
+    ["r10", "11 BT-EX5のご案内", ["山本 捷真"]],
+    ["r11", "12 BT-EXの規定", ["あまみや 七音"]],
+    ["r12", "13 終わりの挨拶", ["三村 隆"]],
   ];
   const ROLE_TITLES = { m14: "副代表" }; // 名前の前に添える肩書き
   const flat = (t) => String(t || "").replace(/\s+/g, "");
