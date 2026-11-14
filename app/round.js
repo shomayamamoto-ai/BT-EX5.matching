@@ -941,6 +941,9 @@
     const guideSlides = (label) => {
       guideDone = true;
       if (D.joinSteps) deck("joinsteps", { name: D.joinSteps.title, step: label, cards: D.joinSteps.steps || [], note: D.joinSteps.note || "", noteSpan: D.joinSteps.noteSpan || 2 });
+      // LINKの良さ(プレゼン資料の写真): 入会への3ステップと出席コードのあいだに、1枚ずつ(2026年11月14日、運営の依頼)
+      const LP = D.linkPitch && Array.isArray(D.linkPitch.pages) ? D.linkPitch.pages.filter(Boolean) : [];
+      LP.forEach((u, i) => deck("photo", { name: D.linkPitch.title || "LINKの良さ", step: label, src: `../${u}`, no: i + 1, of: LP.length }));
       if (D.attend) deck("attend", Object.assign({ step: label }, D.attend, { name: D.attend.title, msg: D.attend.lead, lead: "", code: more.code || "" }));
       // 出席コードのあとに、次回のスケジュール → アンケート(2026年11月、運営の依頼でこの順に)
       scheduleSlides(label);
@@ -2070,6 +2073,13 @@
               (() => { const v = h("video", { src: `../${p.video}`, poster: `../${String(p.video).replace(/\.mp4$/, ".jpg")}`, autoplay: true, muted: true, loop: true, playsinline: true, preload: "auto", "aria-label": "出席コードの入れ方の動画" }); v.muted = true; return v; })(),
               h("figcaption", null, "入れ方がわからない方はこちら(押すと大きくなります)")) : null));
       }
+      if (p.type === "photo") {
+        // 写真の資料: 題の下に、写真を大きく1枚(何枚目かを右下に小さく)
+        return frame("pd-photo", h("figure", { class: "pd-photo-fig" },
+          // 写真が読みこまれたら、もう一度スライドの収まりを確かめる(高さが決まるのは読みこみのあとなので)
+          h("img", { class: "pd-photo-img", src: p.src, alt: `${p.name} ${p.no}枚目`, decoding: "async", onload: () => { try { fitDeck(); } catch { /* noop */ } } }),
+          p.of > 1 ? h("figcaption", null, `${p.no} / ${p.of}`) : null));
+      }
       if (p.type === "pickup") {
         return frame("pd-pickup",
           h("div", { class: `pd-pick-cards${(p.items || []).length === 1 ? " is-one" : ""}` }, (p.items || []).map((x, i) => h("div", Object.assign({ class: "pd-card pd-pick-card" }, nth(i)),
@@ -2287,7 +2297,7 @@
       const nexts = people.slice(idx + 1).filter(isPerson).slice(0, 3);
       box.classList.toggle("is-deck", isDeck(p));
       box.classList.toggle("is-timer", p.kind === "timer");
-      ["movie", "cover", "agenda", "section", "leader", "about", "vision", "list", "feature", "checks", "strengths", "venn", "kpis", "rules", "schedule", "pickup", "raise", "closing", "glossary", "joinsteps", "survey", "attend", "staff"].forEach((t) => box.classList.toggle(`is-d-${t}`, isDeck(p) && p.type === t));
+      ["movie", "cover", "agenda", "section", "leader", "about", "vision", "list", "feature", "checks", "strengths", "venn", "kpis", "rules", "schedule", "pickup", "photo", "raise", "closing", "glossary", "joinsteps", "survey", "attend", "staff"].forEach((t) => box.classList.toggle(`is-d-${t}`, isDeck(p) && p.type === t));
       box.classList.remove("is-edu");
       // スライドとプレゼンで操作バーの幅が変わる(スライドでは「はじめる」の場所をつめる)ので、置き直す
       if (box.dataset.kindWas !== String(isDeck(p))) { box.dataset.kindWas = String(isDeck(p)); if (box.classList.contains("dock-home")) requestAnimationFrame(() => window.dispatchEvent(new Event("resize"))); }

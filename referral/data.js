@@ -1103,6 +1103,11 @@ const BTEX_DECK = {
     note: "入会希望の方はご紹介者の方へお聞きください",
     noteSpan: 2,
   },
+  // LINKの良さ(運営から受け取ったプレゼン資料の写真。2026年11月14日)。「入会への3ステップ」と「出席コード」のあいだに、1枚ずつ出す
+  linkPitch: {
+    title: "LINKの良さ",
+    pages: ["materials/link/link-01.jpg", "materials/link/link-02.jpg", "materials/link/link-03.jpg", "materials/link/link-04.jpg"],
+  },
   survey: {
     title: "定例会のアンケート",
     lead: "本日のBT-EX5の定例会の感想をお聞かせください(2〜3分)",

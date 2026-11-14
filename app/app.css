@@ -3670,3 +3670,10 @@ button.home-welcome-check:active { transform: scale(0.94); }
 .ops-sv-kind { font-size: 13px; font-weight: 800; color: var(--accent-dark); }
 .ops-sv-row input { min-width: 0; min-height: 40px; padding: 6px 10px; border-radius: 10px; border: 1px solid var(--line-strong); background: var(--bg); color: var(--text); font: 600 12.5px/1.3 ui-monospace, SFMono-Regular, Menlo, monospace; }
 @media (max-width: 520px) { .ops-sv-row { grid-template-columns: minmax(0, 1fr) auto; } .ops-sv-kind { grid-column: 1 / -1; } }
+
+/* 写真の資料(LINKの良さ): 題の下に、写真を大きく1枚。高さは画面に収まるところまで(2026年11月14日) */
+.pd-photo .pd-body { display: grid; justify-items: start; }
+.pd-photo-fig { position: relative; margin: 0; display: inline-grid; max-width: 100%; }
+.pd-photo-img { display: block; max-width: 100%; max-height: min(50svh, 780px); width: auto; height: auto; border-radius: clamp(14px, 1.6vw, 26px); box-shadow: 0 18px 50px rgba(40, 20, 12, 0.22); object-fit: contain; background: rgba(0, 0, 0, 0.04); }
+.pd-photo-fig figcaption { position: absolute; right: 12px; bottom: 12px; padding: 0.25em 0.9em; border-radius: 999px; background: rgba(20, 12, 8, 0.62); color: #fff; font-size: clamp(12px, min(1.2vw, 2.2svh), 18px); font-weight: 700; letter-spacing: 0.08em; font-variant-numeric: tabular-nums; }
+@media (max-width: 760px), (max-aspect-ratio: 1/1) { .pd-photo-img { max-height: none; } }
