@@ -19,7 +19,7 @@
 
 - `audio.py` で合成(陽音階の鐘、きらめき、背景の和音、ライザーのあとの一瞬の無音、9.0 秒の低い響き)。`python audio.py opening.wav`(numpy が必要)
 - 波のようなノイズは入れない(2026年11月14日、運営の依頼)。ライザーは上がっていく音だけ
-- やわらかいデザインのムービー(`bt-ex5-opening-mascot*`)の BGM は `audio-mascot.py` で合成(2026年11月14日に作り直し。ピアノだけの曲・ニ長調・毎分100拍。覚えやすいメロディと I–V–vi–IV の和音で、13.3 秒のロゴに向けて盛り上げる。ノイズは使わない)。`python3 audio-mascot.py mascot.wav` で作り、映像はそのまま音だけ入れかえる:
+- やわらかいデザインのムービー(`bt-ex5-opening-mascot*`)の BGM は `audio-mascot.py` で作る(2026年11月14日に作り直し。本物の楽器を録音した音源 FluidR3_GM(MIT ライセンス)を fluidsynth で鳴らすオーケストラ:ストリングス・笛・バイオリン・ピアノ・琴・鉄琴・ホルン・ティンパニ・ハープ。王道進行(IV△7–V7–iii7–vi)×2 → IV–V–I でロゴ。ニ長調・毎分100拍。シンバルなどザーッと聞こえる音は使わない。準備: `apt install fluidsynth fluid-soundfont-gm`、`pip install numpy mido`)。`python3 audio-mascot.py mascot.wav` で作り、映像はそのまま音だけ入れかえる:
   `ffmpeg -i bt-ex5-opening-mascot.mp4 -i mascot.wav -map 0:v -map 1:a -c:v copy -c:a aac -b:a 160k -shortest -movflags +faststart out.mp4`(720p は 128k、WebM は `-c:a libopus -b:a 128k`/112k `-ar 48000`)
 - 映像のできごとは音に合わせてある: 0 秒 光、3.0 秒 分かれる、4.4 秒〜 糸、5.9 秒〜 光が巡る、9.0 秒 ロゴが決まる、13 秒 おわり
 
