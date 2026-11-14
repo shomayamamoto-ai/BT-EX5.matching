@@ -2560,6 +2560,10 @@ button.home-welcome-check:active { transform: scale(0.94); }
 .pd-survey-card { display: grid; justify-items: center; gap: 12px; padding: clamp(14px, 2.6svh, 30px); }
 .pd-survey-who { margin: 0; font-family: var(--pd-serif); font-size: clamp(18px, min(2.2vw, 3.8svh), 34px); font-weight: 700; color: var(--pd-gold); }
 .pd-survey-card .qr-img { width: clamp(150px, min(18vw, 32svh), 300px); height: auto; padding: 10px; border-radius: 16px; background: #fff; image-rendering: pixelated; }
+/* QRコードの下のURL(押すと開く)と、チャットに貼るための「URLをコピー」(2026年11月15日) */
+.pd-survey-url { max-width: 100%; font-size: clamp(11px, min(1vw, 1.8svh), 15px); font-weight: 700; line-height: 1.4; color: var(--pd-text); text-align: center; word-break: break-all; text-decoration: underline; text-underline-offset: 3px; }
+.pd-survey-copy { padding: 0.45em 1.2em; border-radius: 999px; border: 1px solid var(--pd-gold); background: transparent; color: var(--pd-gold); font: inherit; font-size: clamp(12px, min(1.1vw, 2svh), 16px); font-weight: 800; cursor: pointer; }
+.pd-survey-copy:hover, .pd-survey-copy:focus-visible { background: var(--pd-gold); color: #fff; }
 @media (max-width: 760px), (max-aspect-ratio: 1/1) { .pd-survey-cards { grid-template-columns: minmax(0, 1fr); } }
 
 /* 出席コード */
@@ -3677,6 +3681,20 @@ button.home-welcome-check:active { transform: scale(0.94); }
 .pd-photo-img { display: block; max-width: 100%; max-height: min(50svh, 780px); width: auto; height: auto; border-radius: clamp(14px, 1.6vw, 26px); box-shadow: 0 18px 50px rgba(40, 20, 12, 0.22); object-fit: contain; background: rgba(0, 0, 0, 0.04); }
 .pd-photo-fig figcaption { position: absolute; right: 12px; bottom: 12px; padding: 0.25em 0.9em; border-radius: 999px; background: rgba(20, 12, 8, 0.62); color: #fff; font-size: clamp(12px, min(1.2vw, 2.2svh), 18px); font-weight: 700; letter-spacing: 0.08em; font-variant-numeric: tabular-nums; }
 @media (max-width: 760px), (max-aspect-ratio: 1/1) { .pd-photo-img { max-height: none; } }
+/* 写真の名前(LINKセレモニー/オリエンテーション): 題の下に大きく(2026年11月15日) */
+.pd-photo .pd-body { gap: clamp(8px, 1.6svh, 18px); }
+.pd-photo-label { margin: 0; display: inline-flex; align-items: center; gap: 0.5em; font-family: var(--pd-serif); font-size: clamp(20px, min(2.6vw, 4.4svh), 44px); font-weight: 700; line-height: 1.2; letter-spacing: 0.06em; color: var(--pd-gold); }
+.pd-photo-label::before { content: ""; width: 0.28em; height: 1.1em; border-radius: 99px; background: currentColor; }
+/* 写真を何枚か並べるスライド: 横に1列。高さがそろうよう、写真の縦横の比で幅を分ける(読みこみ後に flex-grow を入れる) */
+.pd.pd-photo.is-multi { width: min(100%, 1640px); }
+.pd-photo.is-multi > .pd-body { justify-items: stretch; }
+.pd-photo-row { display: flex; gap: clamp(8px, 1vw, 18px); align-items: flex-start; width: 100%; }
+.pd-photo-row .pd-photo-fig { flex: 1 1 0; min-width: 0; display: block; }
+.pd-photo-row .pd-photo-img { width: 100%; max-height: none; }
+@media (max-width: 760px), (max-aspect-ratio: 1/1) {
+  .pd-photo-row { flex-direction: column; }
+  .pd-photo-row .pd-photo-fig { flex: none !important; width: 100%; }
+}
 
 /* LINKの良さ(まとめの1枚): 3枚のスライドを、3つのカードにして横に並べる(LINKとは?/集客がうまくいく人の流れ/コミュニティ集客のメリット)。
    縦に積むと全体が縮んで小さくなるので、横に並べて文字を大きく保つ(2026年11月14日) */

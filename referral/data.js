@@ -1103,7 +1103,7 @@ const BTEX_DECK = {
     note: "入会希望の方はご紹介者の方へお聞きください",
     noteSpan: 2,
   },
-  // LINKの良さ(運営から受け取ったプレゼン資料の写真。2026年11月14日)。「入会への3ステップ」と「出席コード」のあいだに、1枚ずつ出す
+  // LINKの良さ(運営から受け取ったプレゼン資料の写真。2026年11月14日)。「入会への3ステップ」と「出席コード」のあいだに出す
   linkPitch: {
     title: "LINKの良さ",
     // 最初のページ: 運営から受け取った3枚のスライド(LINKとは?/集客がうまくいく人の流れ/コミュニティ集客のメリット)を1枚にまとめたもの。
@@ -1127,7 +1127,12 @@ const BTEX_DECK = {
         ],
       },
     },
-    pages: ["materials/link/link-01.jpg", "materials/link/link-02.jpg", "materials/link/link-03.jpg", "materials/link/link-04.jpg"],
+    // 写真のスライド(2026年11月15日、運営の依頼): 1枚目は「LINKセレモニー」、2〜4枚目は1枚のスライドにまとめて「オリエンテーション」
+    // label はスライドの題の下に大きく出す名前。pages に2枚以上入れると、1枚のスライドに横に並べる
+    photos: [
+      { label: "LINKセレモニー", pages: ["materials/link/link-01.jpg"] },
+      { label: "オリエンテーション", pages: ["materials/link/link-02.jpg", "materials/link/link-03.jpg", "materials/link/link-04.jpg"] },
+    ],
   },
   survey: {
     title: "定例会のアンケート",

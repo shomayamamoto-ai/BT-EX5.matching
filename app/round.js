@@ -942,10 +942,13 @@
       guideDone = true;
       if (D.joinSteps) deck("joinsteps", { name: D.joinSteps.title, step: label, cards: D.joinSteps.steps || [], note: D.joinSteps.note || "", noteSpan: D.joinSteps.noteSpan || 2 });
       // LINKの良さ(プレゼン資料の写真): 入会への3ステップと出席コードのあいだに、1枚ずつ(2026年11月14日、運営の依頼)
-      const LP = D.linkPitch && Array.isArray(D.linkPitch.pages) ? D.linkPitch.pages.filter(Boolean) : [];
+      // 写真のスライド: photos(名前つきのまとまり。2枚以上は1枚のスライドに並べる)。古い形(pages: 1枚ずつ)にも対応
+      const LK = D.linkPitch || {};
+      const LP = (Array.isArray(LK.photos) ? LK.photos : (Array.isArray(LK.pages) ? LK.pages.map((u) => ({ pages: [u] })) : []))
+        .map((g) => ({ label: (g && g.label) || "", pages: ((g && g.pages) || []).filter(Boolean) })).filter((g) => g.pages.length);
       // 最初のページ: LINKとは?・集客がうまくいく人の流れ・コミュニティ集客のメリット を1枚に
-      if (D.linkPitch && D.linkPitch.intro) deck("linkintro", { name: D.linkPitch.title || "LINKの良さ", step: label, intro: D.linkPitch.intro });
-      LP.forEach((u, i) => deck("photo", { name: D.linkPitch.title || "LINKの良さ", step: label, src: `../${u}`, no: i + 1, of: LP.length }));
+      if (LK.intro) deck("linkintro", { name: LK.title || "LINKの良さ", step: label, intro: LK.intro });
+      LP.forEach((g, i) => deck("photo", { name: LK.title || "LINKの良さ", step: label, label: g.label, srcs: g.pages.map((u) => `../${u}`), no: i + 1, of: LP.length }));
       if (D.attend) deck("attend", Object.assign({ step: label }, D.attend, { name: D.attend.title, msg: D.attend.lead, lead: "", code: more.code || "" }));
       // 出席コードのあとに、次回のスケジュール → アンケート(2026年11月、運営の依頼でこの順に)
       scheduleSlides(label);
@@ -2059,7 +2062,11 @@
         // アンケート: BT-EX メンバーの方・ビジターの方で分けた QR コード
         return frame("pd-survey",
           h("div", { class: "pd-survey-cards" }, (p.urls || []).map(([label, url], i) => h("div", Object.assign({ class: "pd-card pd-survey-card" }, nth(i)),
-            h("p", { class: "pd-survey-who" }, label), url && App.qrImage ? App.qrImage(url, `${label}のアンケート`) : null))));
+            h("p", { class: "pd-survey-who" }, label), url && App.qrImage ? App.qrImage(url, `${label}のアンケート`) : null,
+            // QRコードを読みこめない方・オンラインで参加の方のために、URL も出す(押すと開く)。
+            // 「URLをコピー」で、Zoom などのチャットにそのまま貼れる(2026年11月15日、運営の依頼)
+            url ? h("a", { class: "pd-survey-url", href: url, target: "_blank", rel: "noopener" }, url) : null,
+            url ? h("button", { type: "button", class: "pd-survey-copy", onclick: () => App.copyText(url, `${label}のアンケートのURLをコピーしました。チャットに貼り付けてください`) }, "URLをコピー") : null))));
       }
       if (p.type === "attend") {
         // 出席コード: 4桁のコードを大きく。やり方の動画をとなりに
@@ -2095,11 +2102,25 @@
             h("div", { class: "pd-lk-merits" }, (M.items || []).map(([a, key, b]) => h("p", null, h("span", null, a), h("span", { class: "pd-lk-key" }, h("em", null, `「${key}」`), b)))))));
       }
       if (p.type === "photo") {
-        // 写真の資料: 題の下に、写真を大きく1枚(何枚目かを右下に小さく)
-        return frame("pd-photo", h("figure", { class: "pd-photo-fig" },
-          // 写真が読みこまれたら、もう一度スライドの収まりを確かめる(高さが決まるのは読みこみのあとなので)
-          h("img", { class: "pd-photo-img", src: p.src, alt: `${p.name} ${p.no}枚目`, decoding: "async", onload: () => { try { fitDeck(); } catch { /* noop */ } } }),
-          p.of > 1 ? h("figcaption", null, `${p.no} / ${p.of}`) : null));
+        // 写真の資料: 題の下に写真の名前(LINKセレモニー など)を大きく、その下に写真。
+        // 写真が2枚以上なら1枚のスライドに横に並べる(高さをそろえるため、写真の縦横の比で幅を分ける)
+        const srcs = p.srcs || (p.src ? [p.src] : []);
+        const multi = srcs.length > 1;
+        const fig = (src, i) => {
+          const img = h("img", { class: "pd-photo-img", src, alt: `${p.label || p.name}${multi ? ` ${i + 1}枚目` : ""}`, decoding: "async" });
+          const f = h("figure", { class: "pd-photo-fig" }, img,
+            // 何枚目のスライドかは、右下に小さく(並べたときは最後の写真にだけ)
+            p.of > 1 && i === srcs.length - 1 ? h("figcaption", null, `${p.no} / ${p.of}`) : null);
+          // 写真が読みこまれたら、縦横の比で幅を決めて、もう一度スライドの収まりを確かめる(高さが決まるのは読みこみのあとなので)
+          img.onload = () => {
+            if (multi && img.naturalWidth && img.naturalHeight) f.style.flexGrow = String((img.naturalWidth / img.naturalHeight).toFixed(4));
+            try { fitDeck(); } catch { /* noop */ }
+          };
+          return f;
+        };
+        return frame(`pd-photo${multi ? " is-multi" : ""}`,
+          p.label ? h("p", { class: "pd-photo-label" }, p.label) : null,
+          multi ? h("div", { class: "pd-photo-row" }, srcs.map(fig)) : fig(srcs[0], 0));
       }
       if (p.type === "pickup") {
         return frame("pd-pickup",
@@ -2184,6 +2205,18 @@
           b.style.height = `${h0}px`;
         }
       });
+      // LINKの良さ(まとめの1枚): 3枚のカードのどれかに文字が入りきらないときは、3枚そろって文字を小さくする
+      // (画面が広いと文字は大きくなるが、スライドの幅には上限があるので、はみ出して となりのカードと重なっていた。2026年11月15日)
+      const lk = el.querySelector(".pd-lk");
+      if (lk) {
+        lk.style.fontSize = "";
+        for (let i = 0; i < 4; i++) {
+          const r = [...lk.querySelectorAll(":scope > .pd-card, .pd-lk-steps li, .pd-lk-merits p")]
+            .reduce((m, c) => (c.clientWidth > 0 && c.scrollWidth > c.clientWidth ? Math.min(m, c.clientWidth / c.scrollWidth) : m), 1);
+          if (r >= 1) break;
+          lk.style.fontSize = `${(parseFloat(getComputedStyle(lk).fontSize) * r * 0.97).toFixed(2)}px`;
+        }
+      }
       // カードの文: 1行が入りきらないときは、同じスライドのカードの文をそろって小さくする
       // 用語説明の言葉(dt)は1行で。入りきらないときは、その言葉だけ小さくする
       // 1分プレゼンの区切りの「※ 他BT-EX・ビジターの方は 30秒 です」: 1行で出す(入りきらないときは小さくする)
