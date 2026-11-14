@@ -3737,3 +3737,36 @@ button.home-welcome-check:active { transform: scale(0.94); }
   .pd-lk-steps li + li::before { content: none; }
   .pd-lk-lead .pd-line, .pd-lk-steps li span, .pd-lk-m-key em { white-space: normal; }
 }
+
+/* 本日の流れ(2026年11月15日、見やすく作り直し): 上に「開始〜終了・合計」と時間の帯、下に2列の表(時刻・番号・題・分) */
+.pd.pd-agenda-slide { width: min(100%, 1480px); }
+.pd-ag-top { display: grid; gap: clamp(4px, 0.9svh, 10px); margin-bottom: clamp(8px, 1.6svh, 18px); }
+.pd-ag-sum { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.3em 1em; }
+.pd-ag-sum b { font-family: var(--pd-serif); font-size: clamp(18px, min(2vw, 3.4svh), 34px); font-weight: 700; color: var(--pd-strong); font-variant-numeric: tabular-nums; }
+.pd-ag-sum span { font-size: clamp(13px, min(1.35vw, 2.4svh), 20px); font-weight: 800; color: var(--pd-gold); }
+.pd-ag-bar { display: flex; gap: 3px; height: clamp(12px, 2.2svh, 22px); border-radius: 999px; overflow: hidden; }
+.pd-ag-seg { min-width: 0; display: grid; place-items: center; background: rgba(226, 184, 102, 0.42); }
+.pd-ag-seg:nth-child(even) { background: rgba(226, 184, 102, 0.22); }
+.pd-ag-seg.is-op { background: rgba(226, 184, 102, 0.1); }
+.pd-ag-seg b { font-size: clamp(10px, min(1vw, 1.8svh), 15px); font-weight: 800; color: var(--pd-strong); line-height: 1; }
+.pd-ag-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-flow: column; grid-template-rows: repeat(var(--rows, 7), auto);
+  gap: clamp(4px, 0.8svh, 9px) clamp(14px, 2vw, 32px); }
+.pd-ag-list li { display: grid; grid-template-columns: 3.3em 1.8em minmax(0, 1fr) auto; align-items: center; column-gap: 0.6em;
+  padding: clamp(3px, 0.6svh, 8px) clamp(12px, 1.4vw, 22px); border-radius: 14px; border: 1px solid var(--pd-line); background: var(--pd-card);
+  font-size: clamp(14px, min(1.6vw, 2.5svh), 26px); line-height: 1.3; }
+.pd-ag-time { font-family: var(--pd-serif); font-weight: 700; color: var(--pd-muted); font-variant-numeric: tabular-nums; font-size: 0.86em; }
+.pd-ag-no { font-family: var(--pd-serif); font-weight: 700; color: var(--pd-gold); font-size: 1.08em; }
+.pd-ag-title { min-width: 0; overflow: hidden; font-family: var(--pd-serif); font-weight: 700; color: var(--pd-strong); white-space: nowrap; }
+.pd-ag-title > span { display: inline-block; white-space: nowrap; }
+.pd-ag-title small { font-size: 0.72em; margin-left: 0.15em; color: var(--pd-muted); }
+.pd-ag-min { justify-self: end; padding: 0.15em 0.65em; border-radius: 999px; background: rgba(226, 184, 102, 0.16); font-size: 0.68em; font-weight: 800; color: var(--pd-gold); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.pr-run.deck-soft .pd-ag-seg { background: rgba(217, 119, 107, 0.4); }
+.pr-run.deck-soft .pd-ag-seg:nth-child(even) { background: rgba(217, 119, 107, 0.2); }
+.pr-run.deck-soft .pd-ag-seg.is-op { background: rgba(217, 119, 107, 0.08); }
+.pr-run.deck-soft .pd-ag-list li { background: #fff; }
+.pr-run.deck-soft .pd-ag-min { background: #fdf0ec; }
+@media (max-width: 760px), (max-aspect-ratio: 1/1) {
+  .pd-ag-list { grid-template-columns: minmax(0, 1fr); grid-auto-flow: row; grid-template-rows: none; }
+  .pd-ag-list li { font-size: 15px; }
+  .pd-ag-title { white-space: normal; } .pd-ag-title > span { white-space: normal; }
+}

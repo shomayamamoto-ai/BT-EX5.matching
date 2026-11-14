@@ -1796,28 +1796,39 @@
           p.notes && p.notes.length ? h("ul", { class: "pd-notes" }, p.notes.map((x) => h("li", null, x))) : null);
       }
       if (p.type === "agenda") {
-        // 時間の配分(タイムマネジメントと同じ時間の目安)を、長さが分の割合の帯で見せ、各行に始まる時刻と分を添える
+        // 本日の流れ(2026年11月15日、運営の依頼で見やすく作り直し):
+        // 上に「開始〜終了・合計」と、分の割合の帯(番号は広い区切りにだけ)。下に2列の表(時刻・番号・題・分)。題は1行で、入りきらないときは fitDeck が小さくする
         const plan = (p.plan || []).map((v) => Math.max(0, Number(v) || 0));
         const total = plan.reduce((a, b) => a + b, 0);
         const m0 = /^(\d{1,2}):(\d{2})$/.exec(p.start || "");
         const startMin = m0 ? Number(m0[1]) * 60 + Number(m0[2]) : null;
         const clock = (min) => `${Math.floor(min / 60) % 24}:${String(min % 60).padStart(2, "0")}`;
+        // 題の後ろの時間(「5分」「7分×4」)は、表の分の欄に出すので題からは外す
+        const TIME_T = /\s*[（(]?\s*\d+\s*分(?:\s*[×xX✕]\s*\d+\s*回?)?\s*[)）]?\s*$/;
+        const steps = p.steps || [];
         let acc = plan[0] || 0;
-        const at = (p.steps || []).map((st) => { const s0 = acc; acc += plan[st.no] || 0; return { from: s0, min: plan[st.no] || 0 }; });
-        const bar = total ? h("div", { class: "pd-tbar", role: "img", "aria-label": `合計${total}分の時間配分` },
-          plan[0] ? h("span", { class: "pd-tseg is-op", style: `flex:${plan[0]}` }, h("small", null, "OP")) : null,
-          (p.steps || []).map((st, i) => (plan[st.no] ? h("span", Object.assign({ class: "pd-tseg", style: `flex:${plan[st.no]};--i:${i}` }), h("b", null, two(st.no)), h("small", null, `${plan[st.no]}分`)) : null))) : null;
+        const at = steps.map((st) => { const s0 = acc; acc += plan[st.no] || 0; return { from: s0, min: plan[st.no] || 0 }; });
+        const rows = Math.max(1, Math.ceil(steps.length / 2));
+        const head = startMin !== null && total ? h("div", { class: "pd-ag-sum" },
+          h("b", null, `${clock(startMin)} 〜 ${clock(startMin + total)}`),
+          h("span", null, `合計 ${Math.floor(total / 60) ? `${Math.floor(total / 60)}時間` : ""}${total % 60 ? `${total % 60}分` : ""}・全${steps.length}項目`)) : null;
+        const bar = total ? h("div", { class: "pd-ag-bar", role: "img", "aria-label": `合計${total}分の時間配分` },
+          plan[0] ? h("span", { class: "pd-ag-seg is-op", style: `flex:${plan[0]}` }) : null,
+          steps.map((st, i) => (plan[st.no] ? h("span", { class: `pd-ag-seg${plan[st.no] / total >= 0.06 ? " has-no" : ""}`, style: `flex:${plan[st.no]};--i:${i}` },
+            plan[st.no] / total >= 0.06 ? h("b", null, two(st.no)) : null) : null))) : null;
         return h("div", { class: "pd pd-frame pd-agenda-slide" },
           h("header", { class: "pd-head" }, h("p", { class: "pd-eyebrow", "data-en": "Agenda" }, "AGENDA"), h("h2", { class: "pd-title" }, p.name)),
-          h("div", { class: "pd-body" }, bar,
-            // 2列に、上から順に(流れが増えても2列のまま。行の数 = 半分の切り上げ)
-            h("ol", { class: `pd-agenda${(p.steps || []).length > 8 ? " is-many" : ""}`, style: `--rows:${Math.max(1, Math.ceil((p.steps || []).length / 2))}` }, (p.steps || []).map((st, i) =>
+          h("div", { class: "pd-body" },
+            head || bar ? h("div", { class: "pd-ag-top" }, head, bar) : null,
+            h("ol", { class: "pd-ag-list", style: `--rows:${rows}` }, steps.map((st, i) =>
               h("li", nth(i),
-                h("span", { class: "pd-agenda-no" }, two(st.no)),
-                h("span", { class: "pd-agenda-title" }, ...stepWords(st.title)),
-                h("span", { class: "pd-agenda-time" },
-                  startMin !== null && total ? h("b", null, clock(startMin + at[i].from)) : null,
-                  at[i].min ? h("small", null, `${at[i].min}分`) : st.sub ? h("small", null, st.sub) : null))))));
+                h("span", { class: "pd-ag-time" }, startMin !== null && total ? clock(startMin + at[i].from) : ""),
+                h("span", { class: "pd-ag-no" }, two(st.no)),
+                // かっこの中(「(テーブル商談)」)は小さく添える
+                h("span", { class: "pd-ag-title" }, h("span", null, ...String(st.title || "").replace(TIME_T, "").split(/([（(][^）)]*[）)])/).filter(Boolean).map((t) => (/^[（(]/.test(t) ? h("small", null, t) : t)),
+                  // 商談の「7分×4」は、題のあとに小さく残す(回数がわかるように)
+                  /[×xX✕]/.test((TIME_T.exec(String(st.title || "")) || [""])[0]) ? h("small", null, ` ${(TIME_T.exec(String(st.title)) || [""])[0].trim().replace(/\s+/g, "")}`) : null)),
+                h("span", { class: "pd-ag-min" }, at[i].min ? `${at[i].min}分` : st.sub || ""))))));
       }
       if (p.type === "section") {
         // 区切り: 左に大きな番号と題、右に流れの一覧(いまの所が光る)
@@ -2234,6 +2245,15 @@
         const room = n.parentElement ? n.parentElement.clientWidth : 0, w = n.getBoundingClientRect().width;
         if (room > 0 && w > room) n.style.fontSize = `${(parseFloat(getComputedStyle(n).fontSize) * (room / w) * 0.97).toFixed(2)}px`;
       });
+      // 本日の流れの題は1行で。入りきらない題があれば、表の題をそろって小さくする
+      const agT = [...el.querySelectorAll(".pd-ag-title > span")];
+      if (agT.length) {
+        agT.forEach((t) => { t.parentElement.style.fontSize = ""; });
+        const r = agT.reduce((m, t) => { const room = t.parentElement.clientWidth; return room > 0 && t.scrollWidth > room ? Math.min(m, room / t.scrollWidth) : m; }, 1);
+        // そろって小さくするのは 85% まで。それでも入りきらない題だけ、その題をさらに小さくする
+        if (r < 1) agT.forEach((t) => { t.parentElement.style.fontSize = `${(parseFloat(getComputedStyle(t.parentElement).fontSize) * Math.max(0.85, r * 0.97)).toFixed(2)}px`; });
+        agT.forEach((t) => { const room = t.parentElement.clientWidth; if (room > 0 && t.scrollWidth > room) t.parentElement.style.fontSize = `${(parseFloat(getComputedStyle(t.parentElement).fontSize) * (room / t.scrollWidth) * 0.97).toFixed(2)}px`; });
+      }
       el.querySelectorAll(".pd-gloss dt").forEach((t) => {
         t.style.fontSize = "";
         if (t.clientWidth > 0 && t.scrollWidth > t.clientWidth) t.style.fontSize = `${(parseFloat(getComputedStyle(t).fontSize) * (t.clientWidth / t.scrollWidth) * 0.97).toFixed(2)}px`;
