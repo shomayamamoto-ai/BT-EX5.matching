@@ -2937,7 +2937,7 @@ const REF_SEED_ANNOUNCEMENTS = [
   {
     seedId: "2026-10-25-update-16",
     cat: "アップデート",
-    rev: 200,
+    rev: 201,
     at: Date.UTC(2026, 9, 25, 4, 0), // 2026/10/25 13:00(日本時間)
     title: "【アップデート】紹介診断に「相手がこう言っていたら」・アンケート・運営タブ など",
     body: [
@@ -2968,6 +2968,7 @@ const REF_SEED_ANNOUNCEMENTS = [
       "・三村 隆さんも、記録・予定のタブと、資料のポスター・お誘い画像などが使えるようになりました(山本・こばねぇと同じ)。",
       "・樺澤 一郎さんの顔写真を入れました。早見表のカードの資料に、施術の様子の写真も足しました。",
       "・オープニングムービーの、波のような「ザーッ」という効果音を消しました。やわらかいデザインのムービーは、BGM を、ストリングス・笛・琴などのオーケストラの曲に作り直しました(J-POP の定番の「王道進行」で、ロゴに向けて盛り上がります。ノイズは入っていません)。",
+      "・運営の画面に「定例会の役割早見表」を足しました(01 はじめの挨拶〜12 終わりの挨拶の担当)。行を押すと全メンバーから担当を選べ、運営メンバーみんなで同じ表を見られます。「人ごとに見る」で、だれが何を担当するかも一覧できます。",
       "・【新しい機能】記録の「分析」に「あなたの活動バランス」を足しました。マイル・紹介・1on1・ビジター・出席を、メンバーの平均とくらべたレーダー図(くもの巣の図)で見える化し、「強み TOP3」「伸びしろ TOP3」と、伸びしろに合わせた「次の一手」(押すとその画面へ)を出します。アンケートの結果にも「ひと目でわかる」を足し、満足度のバランス(今回と前回のレーダー図)・良かったプログラム TOP3・もっと良くしたいところ TOP3 を出します。",
       "・BT-EX7 の矢口 健彦(ヤグチ タケヒコ)さん(Data Fusion Partners 代表/中小企業診断士/綺絆)の顔写真と、事業内容・対象のお客様・「こんな話が出たら」を入れました。プレゼンで選ぶと、写真とつながりたい人がスライドに出ます。",
       "・BT-EX1 の小松 茂子さん(ReVivre 代表/チーム無限)の事業内容(共済保険)・主なお客様・求める紹介・「こんな話が出たら」を入れました。プレゼンで選ぶと、求める紹介がスライドに出ます。",
@@ -7749,7 +7750,7 @@ var BtexServerCore = (function () {
   // ============================================
   var OPS_MAX = 300, OPS_NOTE_MAX = 40000;
   BtexServerCore.registerModule({
-    mutating: ["saveOpsMeeting", "deleteOpsMeeting", "saveOpsNotes", "fetchOpsNotes"],
+    mutating: ["saveOpsMeeting", "deleteOpsMeeting", "saveOpsNotes", "fetchOpsNotes", "saveOpsRoles"],
     create: function (c) {
       function ops(body) {
         var db = c.ensureDb();
@@ -7767,6 +7768,34 @@ var BtexServerCore = (function () {
       }
       function cleanDate(v) { return /^\d{4}-\d{2}-\d{2}$/.test(String(v || "")) ? String(v) : ""; }
       function cleanTime(v) { return /^\d{2}:\d{2}$/.test(String(v || "")) ? String(v) : ""; }
+      // 定例会の役割早見表(運営メンバーみんなで同じ表を見る)。まだ保存していなければ null(アプリが写真の割り当てを出す)
+      //   items: [{ key, label, ids: [メンバーID…] }](30 行まで・1行 10 人まで)
+      function rolesView(db) {
+        var r = db.opsRoles;
+        return r ? { items: r.items, at: r.at, byName: nameOf(db, r.by) } : null;
+      }
+      function getOpsRoles(body) {
+        var x = ops(body); if (x.error) return x.error;
+        return c.ok({ roles: rolesView(x.db) });
+      }
+      function saveOpsRoles(body) {
+        var x = ops(body); if (x.error) return x.error;
+        if (body.items === null) { delete x.db.opsRoles; c.saveDb(x.db); return c.ok({ roles: null }); }
+        if (!Array.isArray(body.items)) return c.fail("INVALID_REQUEST");
+        var ids = (x.db.referralMembers || []).map(function (m) { return m.id; });
+        var items = body.items.slice(0, 30).map(function (it) {
+          it = it || {};
+          return {
+            key: c.cleanStr(it.key, 40),
+            label: c.cleanStr(it.label, 80),
+            ids: (Array.isArray(it.ids) ? it.ids : []).map(function (v) { return String(v || ""); })
+              .filter(function (v, i, arr) { return v && ids.indexOf(v) !== -1 && arr.indexOf(v) === i; }).slice(0, 10),
+          };
+        }).filter(function (it) { return it.key && it.label; });
+        x.db.opsRoles = { items: items, at: c.nowMs(), by: x.id };
+        c.saveDb(x.db);
+        return c.ok({ roles: rolesView(x.db) });
+      }
       function listOpsMeetings(body) {
         var x = ops(body); if (x.error) return x.error;
         var list = x.db.opsMeetings.slice().sort(function (p, q) { return (q.date + q.start).localeCompare(p.date + p.start); });
@@ -7863,7 +7892,8 @@ var BtexServerCore = (function () {
         return n;
       }
       return {
-        actions: { listOpsMeetings: listOpsMeetings, saveOpsMeeting: saveOpsMeeting, deleteOpsMeeting: deleteOpsMeeting, saveOpsNotes: saveOpsNotes, fetchOpsNotes: fetchOpsNotes },
+        actions: { listOpsMeetings: listOpsMeetings, saveOpsMeeting: saveOpsMeeting, deleteOpsMeeting: deleteOpsMeeting, saveOpsNotes: saveOpsNotes, fetchOpsNotes: fetchOpsNotes,
+          getOpsRoles: getOpsRoles, saveOpsRoles: saveOpsRoles },
         jobs: { syncMeet: jobOpsNotes },
       };
     },

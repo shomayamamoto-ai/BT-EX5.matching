@@ -3329,7 +3329,7 @@
   // ============================================
   var OPS_MAX = 300, OPS_NOTE_MAX = 40000;
   BtexServerCore.registerModule({
-    mutating: ["saveOpsMeeting", "deleteOpsMeeting", "saveOpsNotes", "fetchOpsNotes"],
+    mutating: ["saveOpsMeeting", "deleteOpsMeeting", "saveOpsNotes", "fetchOpsNotes", "saveOpsRoles"],
     create: function (c) {
       function ops(body) {
         var db = c.ensureDb();
@@ -3347,6 +3347,34 @@
       }
       function cleanDate(v) { return /^\d{4}-\d{2}-\d{2}$/.test(String(v || "")) ? String(v) : ""; }
       function cleanTime(v) { return /^\d{2}:\d{2}$/.test(String(v || "")) ? String(v) : ""; }
+      // 定例会の役割早見表(運営メンバーみんなで同じ表を見る)。まだ保存していなければ null(アプリが写真の割り当てを出す)
+      //   items: [{ key, label, ids: [メンバーID…] }](30 行まで・1行 10 人まで)
+      function rolesView(db) {
+        var r = db.opsRoles;
+        return r ? { items: r.items, at: r.at, byName: nameOf(db, r.by) } : null;
+      }
+      function getOpsRoles(body) {
+        var x = ops(body); if (x.error) return x.error;
+        return c.ok({ roles: rolesView(x.db) });
+      }
+      function saveOpsRoles(body) {
+        var x = ops(body); if (x.error) return x.error;
+        if (body.items === null) { delete x.db.opsRoles; c.saveDb(x.db); return c.ok({ roles: null }); }
+        if (!Array.isArray(body.items)) return c.fail("INVALID_REQUEST");
+        var ids = (x.db.referralMembers || []).map(function (m) { return m.id; });
+        var items = body.items.slice(0, 30).map(function (it) {
+          it = it || {};
+          return {
+            key: c.cleanStr(it.key, 40),
+            label: c.cleanStr(it.label, 80),
+            ids: (Array.isArray(it.ids) ? it.ids : []).map(function (v) { return String(v || ""); })
+              .filter(function (v, i, arr) { return v && ids.indexOf(v) !== -1 && arr.indexOf(v) === i; }).slice(0, 10),
+          };
+        }).filter(function (it) { return it.key && it.label; });
+        x.db.opsRoles = { items: items, at: c.nowMs(), by: x.id };
+        c.saveDb(x.db);
+        return c.ok({ roles: rolesView(x.db) });
+      }
       function listOpsMeetings(body) {
         var x = ops(body); if (x.error) return x.error;
         var list = x.db.opsMeetings.slice().sort(function (p, q) { return (q.date + q.start).localeCompare(p.date + p.start); });
@@ -3443,7 +3471,8 @@
         return n;
       }
       return {
-        actions: { listOpsMeetings: listOpsMeetings, saveOpsMeeting: saveOpsMeeting, deleteOpsMeeting: deleteOpsMeeting, saveOpsNotes: saveOpsNotes, fetchOpsNotes: fetchOpsNotes },
+        actions: { listOpsMeetings: listOpsMeetings, saveOpsMeeting: saveOpsMeeting, deleteOpsMeeting: deleteOpsMeeting, saveOpsNotes: saveOpsNotes, fetchOpsNotes: fetchOpsNotes,
+          getOpsRoles: getOpsRoles, saveOpsRoles: saveOpsRoles },
         jobs: { syncMeet: jobOpsNotes },
       };
     },
