@@ -2083,23 +2083,32 @@
               h("figcaption", null, "入れ方がわからない方はこちら(押すと大きくなります)")) : null));
       }
       if (p.type === "linkintro") {
-        // LINKの良さ(まとめ): 上の段に「LINKとは?」と「集客がうまくいく人の流れ」、下の段に「コミュニティ集客のメリット」
+        // LINKの良さ(運営から受け取った3枚のスライド): 1枚のスライドの中で、大きなカードを1枚ずつ送る(規定のスライドと同じ形)。
+        // 1枚目 LINKとは? / 2枚目 集客がうまくいく人の流れ / 3枚目 コミュニティ集客のメリット(文は元のスライドのまま)
         const x = p.intro || {}, W = x.what || {}, F = x.flow || {}, M = x.merits || {};
         const NUM = "①②③④⑤⑥";
-        return frame("pd-linkintro", h("div", { class: "pd-lk" },
-          h("section", { class: "pd-card pd-lk-what" },
-            h("h3", { class: "pd-lk-head" }, W.head),
-            h("p", { class: "pd-lk-lead" }, String(W.text || "").split("\n").map((t) => h("span", { class: "pd-line" }, t))),
-            h("div", { class: "pd-lk-pillars" }, (W.pillars || []).map((t) => h("span", null, t))),
-            h("p", { class: "pd-lk-brand" }, h("b", null, W.brand), h("span", null, W.motto)),
-            W.note ? h("p", { class: "pd-lk-note" }, W.note) : null),
-          h("section", { class: "pd-card pd-lk-flow" },
-            h("h3", { class: "pd-lk-head" }, F.head),
-            h("ol", { class: "pd-lk-steps" }, (F.steps || []).map((t, i) => h("li", { class: i === F.hot ? "is-hot" : "" }, h("i", { "aria-hidden": "true" }, NUM.charAt(i)), h("span", null, t)))),
-            F.note ? h("p", { class: "pd-lk-note" }, F.note) : null),
-          h("section", { class: "pd-card pd-lk-merit" },
-            h("h3", { class: "pd-lk-head" }, M.head),
-            h("div", { class: "pd-lk-merits" }, (M.items || []).map(([a, key, b]) => h("p", null, h("span", null, a), h("span", { class: "pd-lk-key" }, h("em", null, `「${key}」`), b)))))));
+        const top = (ic, i) => h("div", { class: "pd-big-top" }, h("span", { class: "pd-big-ic" }, lineIcon(ic)), h("span", { class: "pd-big-no" }, two(i)));
+        const card1 = h("article", { class: "pd-card pd-big-card pd-lk-card" }, top("users", 1),
+          h("p", { class: "pd-big-head" }, W.head),
+          h("div", { class: "pd-lk-body pd-lk-what" },
+            h("div", { class: "pd-lk-what-l" },
+              h("p", { class: "pd-lk-lead" }, String(W.text || "").split("\n").map((t) => h("span", { class: "pd-line" }, t))),
+              W.note ? h("p", { class: "pd-lk-note" }, W.note) : null),
+            h("div", { class: "pd-lk-quad" },
+              (W.pillars || []).map((t) => h("span", { class: "pd-lk-q" }, t)),
+              h("span", { class: "pd-lk-ring" }, h("b", null, W.brand), h("small", null, W.motto)))));
+        const card2 = h("article", { class: "pd-card pd-big-card pd-lk-card" }, top("growth", 2),
+          h("p", { class: "pd-big-head" }, F.head),
+          h("div", { class: "pd-lk-body" },
+            h("ol", { class: "pd-lk-steps" }, (F.steps || []).map((t, i) => h("li", { class: i === F.hot ? "is-hot" : "" }, h("i", null, NUM.charAt(i)), h("span", null, t)))),
+            F.note ? h("p", { class: "pd-lk-note" }, F.note) : null));
+        const card3 = h("article", { class: "pd-card pd-big-card pd-lk-card" }, top("heart", 3),
+          h("p", { class: "pd-big-head" }, M.head),
+          h("div", { class: "pd-lk-body pd-lk-merits" }, (M.items || []).map(([a, key, b]) => h("p", null,
+            h("span", { class: "pd-lk-bar", "aria-hidden": "true" }),
+            h("span", { class: "pd-lk-m-lead" }, a),
+            h("span", { class: "pd-lk-m-key" }, h("em", null, `「${key}」`), b)))));
+        return frame("pd-linkintro is-carousel", carousel([card1, card2, card3]));
       }
       if (p.type === "photo") {
         // 写真の資料: 題の下に写真の名前(LINKセレモニー など)を大きく、その下に写真。
@@ -2253,7 +2262,7 @@
           el.style.setProperty("--big-h", `${Math.round(Math.max(160, Math.min(cap, room)))}px`);
           // 文が入りきらないカードだけ、そのカードの文字を小さくする(ほかのカードの文字はそのまま)
           cards.forEach((c) => {
-            const fonts = [...c.querySelectorAll(".pd-big-head, .pd-big-text")];
+            const fonts = [...c.querySelectorAll(".pd-big-head, .pd-big-text, .pd-lk-body")];
             fonts.forEach((f) => { f.style.fontSize = ""; });
             // まずは絵と番号を小さく、すき間をつめる(文字はなるべく大きいまま)
             c.classList.remove("is-tight");

@@ -3696,34 +3696,44 @@ button.home-welcome-check:active { transform: scale(0.94); }
   .pd-photo-row .pd-photo-fig { flex: none !important; width: 100%; }
 }
 
-/* LINKの良さ(まとめの1枚): 3枚のスライドを、3つのカードにして横に並べる(LINKとは?/集客がうまくいく人の流れ/コミュニティ集客のメリット)。
-   縦に積むと全体が縮んで小さくなるので、横に並べて文字を大きく保つ(2026年11月14日) */
-.pd-lk { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 0.92fr) minmax(0, 1.12fr); gap: clamp(10px, 1.3vw, 20px); align-items: stretch; font-size: clamp(13px, min(1.42vw, 2.6svh), 24px); }
-.pd-lk > .pd-card { display: grid; align-content: start; gap: clamp(6px, 1.3svh, 14px); padding: clamp(10px, 2svh, 24px) clamp(12px, 1.4vw, 24px); border-top: 3px solid var(--pd-gold); }
-.pd-lk-head { margin: 0; font-family: var(--pd-serif); font-size: 1.2em; font-weight: 700; color: var(--pd-gold); letter-spacing: 0.03em; white-space: nowrap; }
-.pd-lk-lead { margin: 0; font-size: 1em; font-weight: 700; line-height: 1.5; color: var(--pd-strong); }
+/* LINKの良さ: 1枚のスライドの中で、大きなカードを1枚ずつ送る(LINKとは?/集客がうまくいく人の流れ/コミュニティ集客のメリット。2026年11月14日) */
+.pd-linkintro .pd-big-card.pd-lk-card { width: min(100%, 1120px); align-content: start; }
+.pd-lk-body { display: grid; gap: clamp(10px, 2svh, 22px); font-size: clamp(16px, min(2vw, 3.6svh), 32px); font-weight: 700; color: var(--pd-text); }
+.pd-lk-note { margin: 0; font-size: 0.72em; line-height: 1.6; color: var(--pd-muted); font-weight: 700; }
+/* 1枚目: 左に説明、右に「集客・学び・節約・交流」と、まん中の LINK の丸 */
+.pd-lk-what { grid-template-columns: minmax(0, 1fr) minmax(0, 0.95fr); align-items: center; gap: clamp(16px, 3vw, 48px); }
+.pd-lk-what-l { display: grid; gap: clamp(10px, 2svh, 22px); }
+.pd-lk-lead { margin: 0; font-size: 1.12em; line-height: 1.6; color: var(--pd-strong); }
 .pd-lk-lead .pd-line { display: block; white-space: nowrap; }
-.pd-lk-pillars { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.35em; }
-.pd-lk-pillars span { padding: 0.3em 0.2em; border-radius: 12px; border: 1px solid var(--pd-line); background: rgba(226, 184, 102, 0.12); text-align: center; font-weight: 800; color: var(--pd-strong); }
-.pd-lk-brand { margin: 0; display: grid; gap: 0; }
-.pd-lk-brand b { font-family: var(--pd-serif); font-size: 1.35em; line-height: 1.2; color: var(--pd-gold); letter-spacing: 0.06em; }
-.pd-lk-brand span { font-size: 0.86em; font-weight: 700; color: var(--pd-text); white-space: nowrap; }
-.pd-lk-note { margin: 0; font-size: 0.74em; line-height: 1.5; color: var(--pd-muted); }
-.pd-lk-steps { margin: 0; padding: 0; list-style: none; display: grid; gap: 1.05em; }
-.pd-lk-steps li { position: relative; display: flex; align-items: center; gap: 0.5em; padding: 0.42em 0.7em; border-radius: 14px; border: 1px solid var(--pd-line); background: var(--pd-card); font-weight: 800; color: var(--pd-strong); line-height: 1.3; white-space: nowrap; }
-.pd-lk-steps li i { font-style: normal; font-size: 1.35em; line-height: 1; color: var(--pd-gold); }
-.pd-lk-steps li + li::before { content: "▼"; position: absolute; left: 50%; top: -1.15em; transform: translateX(-50%); font-size: 0.7em; color: var(--pd-gold); }
-.pd-lk-steps li.is-hot { border-color: var(--pd-gold); background: rgba(226, 184, 102, 0.18); box-shadow: 0 0 0 2px var(--pd-gold-soft); }
-.pd-lk-merits { display: grid; gap: clamp(6px, 1.2svh, 12px); }
-.pd-lk-merits p { margin: 0; display: grid; gap: 0; padding: 0.45em 0.7em; border-radius: 14px; border: 1px solid var(--pd-line); background: var(--pd-card); font-weight: 700; line-height: 1.4; color: var(--pd-text); }
-.pd-lk-merits p > span:first-child { font-size: 0.78em; white-space: nowrap; }
-.pd-lk-merits p > span:last-child { display: inline; }
-.pd-lk-merits .pd-lk-key { display: block; }
-.pd-lk-merits em { font-style: normal; font-size: 1.22em; font-weight: 900; color: var(--pd-gold); }
-.pr-run.deck-soft .pd-lk-pillars span { background: #fdf4f1; }
+.pd-lk-quad { position: relative; display: grid; grid-template-columns: 1fr 1fr; gap: 0.35em; font-size: 1.05em; }
+.pd-lk-q { display: grid; place-items: center; min-height: 2.6em; border-radius: 16px; border: 1px solid var(--pd-line); background: rgba(226, 184, 102, 0.12); color: var(--pd-strong); font-weight: 800; letter-spacing: 0.1em; }
+.pd-lk-q:nth-child(1), .pd-lk-q:nth-child(3) { padding-right: 2.6em; } .pd-lk-q:nth-child(2), .pd-lk-q:nth-child(4) { padding-left: 2.6em; }
+.pd-lk-ring { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); display: grid; place-items: center; align-content: center; width: 5.2em; height: 5.2em; border-radius: 50%; background: var(--pd-card, #fff); border: 2px solid var(--pd-gold); box-shadow: 0 8px 22px rgba(40, 20, 12, 0.14); text-align: center; }
+.pd-lk-ring b { font-family: var(--pd-serif); font-size: 1.05em; line-height: 1.1; color: var(--pd-gold); letter-spacing: 0.06em; }
+.pd-lk-ring small { font-size: 0.4em; line-height: 1.35; color: var(--pd-text); font-weight: 700; padding: 0 0.6em; }
+/* 2枚目: 4つの段階を横に、矢印でつなぐ。②は元のスライドと同じく強調 */
+.pd-lk-steps { margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1.4em; }
+.pd-lk-steps li { position: relative; display: grid; justify-items: center; align-content: center; gap: 0.25em; min-height: 3.6em; padding: 0.6em 0.3em; border-radius: 18px; border: 1px solid var(--pd-line); background: rgba(226, 184, 102, 0.08); text-align: center; font-weight: 800; color: var(--pd-strong); line-height: 1.3; }
+.pd-lk-steps li i { font-style: normal; font-size: 1.5em; line-height: 1; color: var(--pd-gold); }
+.pd-lk-steps li span { white-space: nowrap; }
+.pd-lk-steps li + li::before { content: ""; position: absolute; left: -1.15em; top: 50%; width: 0.8em; height: 0.8em; transform: translateY(-50%); background: var(--pd-gold); clip-path: polygon(0 15%, 55% 15%, 55% 0, 100% 50%, 55% 100%, 55% 85%, 0 85%); }
+.pd-lk-steps li.is-hot { border: 2px solid var(--pd-gold); background: rgba(226, 184, 102, 0.22); }
+.pd-lk-steps li.is-hot span { color: var(--pd-gold); }
+/* 3枚目: 3つのメリットを横に。上に色の帯、まん中に大きく「仲間づくり」など */
+.pd-lk-merits { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(10px, 1.6vw, 24px); }
+.pd-lk-merits p { margin: 0; display: grid; align-content: start; gap: 0.45em; padding: 0 0.2em; text-align: center; line-height: 1.5; }
+.pd-lk-bar { display: block; height: 0.42em; border-radius: 999px; background: linear-gradient(90deg, #f2c94c, #f48fb1 55%, #ff6b6b); }
+.pd-lk-m-lead { font-size: 0.82em; color: var(--pd-text); }
+.pd-lk-m-key { font-size: 0.95em; color: var(--pd-strong); }
+.pd-lk-m-key em { display: block; font-style: normal; font-size: 1.35em; font-weight: 900; color: var(--pd-gold); white-space: nowrap; }
+.pr-run.deck-soft .pd-lk-q { background: #fdf4f1; }
+.pr-run.deck-soft .pd-lk-ring { background: #fff; }
+.pr-run.deck-soft .pd-lk-steps li { background: #fffaf8; }
 .pr-run.deck-soft .pd-lk-steps li.is-hot { background: var(--sf-coral-soft, #fbe9e5); }
-.pr-run.deck-soft .pd-lk-steps li, .pr-run.deck-soft .pd-lk-merits p { background: #fffaf8; }
 @media (max-width: 760px), (max-aspect-ratio: 1/1) {
-  .pd-lk { grid-template-columns: minmax(0, 1fr); font-size: 14.5px; }
-  .pd-lk-lead .pd-line, .pd-lk-brand span, .pd-lk-merits p > span:first-child, .pd-lk-head { white-space: normal; }
+  .pd-lk-body { font-size: 15px; }
+  .pd-lk-what, .pd-lk-merits { grid-template-columns: minmax(0, 1fr); }
+  .pd-lk-steps { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.6em; }
+  .pd-lk-steps li + li::before { content: none; }
+  .pd-lk-lead .pd-line, .pd-lk-steps li span, .pd-lk-m-key em { white-space: normal; }
 }
