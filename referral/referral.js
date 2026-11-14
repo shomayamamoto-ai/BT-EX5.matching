@@ -246,7 +246,8 @@
       <article class="ref-card${m.id === "yamamoto" ? " is-real" : ""}" id="member-${m.id}">
         <div class="ref-col ref-col-member">
           <div class="ref-card-head">
-            <div>
+            ${faceHtml(m, "ref-face")}
+            <div class="ref-card-who">
               <h3 class="ref-name"><button type="button" class="ref-name-btn" data-detail="${m.id}">${nameHtml(m.name)}</button></h3>${m.kana ? `<p class="ref-kana">${escapeHtml(m.kana)}</p>` : ""}
               ${roleMark(m.id)}
               <p class="ref-company">${escapeHtml(m.company)}</p>
@@ -332,6 +333,16 @@
   function memberPhoto(id) {
     return typeof REF_MEMBER_PHOTOS !== "undefined" && REF_MEMBER_PHOTOS[id] ? `../${REF_MEMBER_PHOTOS[id]}` : "";
   }
+  // 一覧のカードの顔写真(小さい版)。本人がアプリで入れた写真(この端末に覚えた分)→ 運営が用意した写真 の順。なければ頭文字の丸
+  function faceHtml(m, cls) {
+    let src = "", full = "";
+    try { const c = JSON.parse(localStorage.getItem(`btex5-photo-${m.id}`) || "null"); if (c && c.data) src = full = c.data; } catch { /* noop */ }
+    if (!src && memberPhoto(m.id)) { full = memberPhoto(m.id); src = full.replace("assets/members/", "assets/members/thumbs/"); }
+    const initial = escapeHtml(String(m.name || "?").trim().charAt(0));
+    return src
+      ? `<span class="${cls} has-photo" aria-hidden="true"><img src="${escapeHtml(src)}" alt="" loading="lazy" decoding="async" onerror="if(this.src.indexOf('/thumbs/')>0){this.src='${escapeHtml(full)}'}else{this.parentNode.classList.remove('has-photo');this.remove()}"><i>${initial}</i></span>`
+      : `<span class="${cls}" aria-hidden="true"><i>${initial}</i></span>`;
+  }
   function detailHtml(m) {
     const links = m.links || [];
     const materials = links.filter((l) => linkType(l.type).kind === "material");
@@ -400,7 +411,7 @@
     const ps = RefPartners.findPartners(members, m, 3);
     if (!ps.length) return "";
     return `<section class="md-sec"><h3>この人と紹介し合えそうな人</h3><ul class="md-partners">${ps
-      .map((p) => `<li><button type="button" class="md-partner-name" data-detail="${p.m.id}">${escapeHtml(p.m.name)}</button><span>${escapeHtml(p.reasons[0])}</span></li>`)
+      .map((p) => `<li>${faceHtml(p.m, "pt-face")}<button type="button" class="md-partner-name" data-detail="${p.m.id}">${escapeHtml(p.m.name)}</button><span>${escapeHtml(p.reasons[0])}</span></li>`)
       .join("")}</ul></section>`;
   }
 
@@ -417,7 +428,7 @@
     $("#myPartnersList").innerHTML = ps
       .map((p) => `
         <li class="pt-item">
-          <button type="button" class="pt-name" data-detail="${p.m.id}">${escapeHtml(p.m.name)}</button>
+          <span class="pt-who">${faceHtml(p.m, "pt-face")}<button type="button" class="pt-name" data-detail="${p.m.id}">${escapeHtml(p.m.name)}</button></span>
           ${roleMark(p.m.id, true)}
           <span class="pt-company">${escapeHtml(p.m.company || p.m.category)}</span>
           ${line("あなたへ紹介してもらえそう", p.get)}${line("あなたから紹介できそう", p.give)}${line("共通のお客様", p.shared)}

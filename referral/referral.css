@@ -1548,3 +1548,19 @@ a.ref-btn { display: inline-flex; align-items: center; justify-content: center; 
 .ref-link-badges { min-height: 36px; align-items: center; padding: 4px 0; margin-top: 4px; }
 /* 名前のボタンも押せる高さを広げる(見た目はそのまま) */
 .ref-name-btn, .pt-name { min-height: 36px; }
+
+/* 一覧のカード・紹介し合えそうな人に顔写真(2026年11月15日)。写真がない人は頭文字の丸 */
+.ref-card-head { justify-content: flex-start; }
+.ref-card-who { flex: 1 1 auto; min-width: 0; }
+.ref-card-head .ref-card-side { margin-left: auto; }
+.ref-face, .pt-face { position: relative; flex: none; display: grid; place-items: center; overflow: hidden; border-radius: 50%; background: linear-gradient(135deg, #f6e3dc, #ecd2c4); color: #9a5a48; font-weight: 900; box-shadow: 0 0 0 2px #fff, 0 0 0 3px rgba(168, 129, 62, 0.25); }
+.ref-face { width: 64px; height: 64px; font-size: 24px; margin-top: 2px; }
+.pt-face { width: 40px; height: 40px; font-size: 16px; }
+.ref-face i, .pt-face i { font-style: normal; }
+.ref-face img, .pt-face img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 22%; }
+.ref-face.has-photo i, .pt-face.has-photo i { visibility: hidden; }
+.pt-who { display: flex; align-items: center; gap: 10px; }
+.md-partners li { grid-template-columns: auto minmax(0, 1fr); align-items: center; column-gap: 10px; }
+.md-partners li .pt-face { grid-row: span 2; }
+.md-partners li .md-partner-name { justify-self: start; }
+@media (max-width: 700px) { .ref-face { width: 54px; height: 54px; font-size: 20px; } }
