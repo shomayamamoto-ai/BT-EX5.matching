@@ -19,7 +19,8 @@
 
 - `audio.py` で合成(陽音階の鐘、きらめき、背景の和音、ライザーのあとの一瞬の無音、9.0 秒の低い響き)。`python audio.py opening.wav`(numpy が必要)
 - 波のようなノイズは入れない(2026年11月14日、運営の依頼)。ライザーは上がっていく音だけ
-- やわらかいデザインのムービー(`bt-ex5-opening-mascot*`)の音も、4.2〜6.5 秒の「ザーッ」という広い帯域のノイズを、音程のある音(和音・鐘)を残して取り除いた(映像はそのまま、音だけ入れかえ)
+- やわらかいデザインのムービー(`bt-ex5-opening-mascot*`)の BGM は `audio-mascot.py` で合成(2026年11月14日に作り直し。ニ長調の陽音階のパッド・ハープ・笛・鐘、13.3 秒のロゴで低い響き。ノイズは使わない)。`python3 audio-mascot.py mascot.wav` で作り、映像はそのまま音だけ入れかえる:
+  `ffmpeg -i bt-ex5-opening-mascot.mp4 -i mascot.wav -map 0:v -map 1:a -c:v copy -c:a aac -b:a 160k -shortest -movflags +faststart out.mp4`(720p は 128k、WebM は `-c:a libopus -b:a 128k`/112k `-ar 48000`)
 - 映像のできごとは音に合わせてある: 0 秒 光、3.0 秒 分かれる、4.4 秒〜 糸、5.9 秒〜 光が巡る、9.0 秒 ロゴが決まる、13 秒 おわり
 
 ## 動画にする(画質を落とさない設定)
