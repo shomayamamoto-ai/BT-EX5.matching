@@ -13,9 +13,9 @@
   // Chrome・Android は軽い WebM(VP9)を先に、Safari(iPhone・Mac)は確実に再生できる MP4 を先に
   // ムービーは2種類: やわらかいデザインはマスコットのムービー(SOFT)、元の黒×金は金の輪のムービー。
   // theme: 定例会のスライドではスライドのデザイン、ほかはサイトのデザインで選ぶ
-  const V = "3d4";
+  const V = "3d5"; // 2026年11月14日 波のような音を外した
   // やわらかいデザイン: 「ときめ」(本物に近いトキ)と「つなぐ」(上越新幹線 E7系)のムービー(16秒・3DCG。2026年11月)
-  const SOFT = { base: "bt-ex5-opening-mascot", v: "4" };
+  const SOFT = { base: "bt-ex5-opening-mascot", v: "5" };
   const BIG = Math.max(window.innerWidth, window.innerHeight) >= 1100 && Math.min(window.innerWidth, window.innerHeight) >= 600;
   const SAFARI = /^((?!chrome|chromium|android|crios|fxios).)*safari/i.test(navigator.userAgent);
   function movie(theme) {

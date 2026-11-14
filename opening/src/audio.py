@@ -73,7 +73,8 @@ for k, st in enumerate(np.arange(5.9, 8.0, 0.42)):
     x = bell([1174.7, 1318.5, 1480.0, 1760.0, 1975.5][k % 5], st, 0.035, decay=4)
     dry += x; wet_send += x
 
-# 6) ライザー(7.3〜8.85): 明るくなっていくノイズと、上がっていく音。8.85で切って一瞬の無音
+# 6) ライザー(7.3〜8.85): 上がっていく音。8.85で切って一瞬の無音
+#    (2026年11月14日、運営の依頼で、波のように聞こえるノイズ(riser)は鳴らさない。上がっていく音だけ)
 i0, i1 = at(7.3), at(8.85)
 L = i1 - i0
 u = np.linspace(0, 1, L)
@@ -81,7 +82,7 @@ noise = rng.standard_normal(L)
 riser = lowpass(noise, 0.01 + 0.35 * u ** 2) * (u ** 2.2)
 sweep_f = 180 * (2 ** (2.6 * u))
 sweep = np.sin(2 * np.pi * np.cumsum(sweep_f) / SR) * (u ** 2.5)
-seg = 0.33 * riser + 0.07 * sweep
+seg = 0.07 * sweep  # 前は 0.33 * riser も重ねていた
 dry[i0:i1] += seg
 wet_send[i0:i1] += seg * 0.5
 
