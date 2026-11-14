@@ -29,9 +29,23 @@
     if (cfg && typeof cfg === "object") Object.keys(cfg).forEach((path) => { try { setPath(d, path, clone(cfg[path])); } catch { /* noop */ } });
     return d;
   };
+  // 挙手のお願いの3枚は、2026年11月14日に「LINK内での実績紹介」をはじめにした。前の順番(1on1… → ありがとうマイル → LINK内…)で
+  // 保存した書きかえが、共有サーバーの更新の前に届いたときは、ここで新しい順番のページに付けかえる(共有サーバーでも同じ付けかえを一度だけ行う)
+  function fixRaiseOrder(cfg) {
+    if (!cfg || typeof cfg !== "object") return cfg;
+    const has = (k, re) => Array.isArray(cfg[k]) && cfg[k].some((x) => re.test(String(x)));
+    const old = has("raise.2.items", /LINK/) || has("raise.0.items", /1on1|リファーラル|ビジター/) || has("raise.1.items", /マイル/);
+    if (!old) return cfg;
+    const to = { 0: 1, 1: 2, 2: 0 }, out = {};
+    Object.keys(cfg).forEach((k) => {
+      const m = /^raise\.(\d)\.(items|note)$/.exec(k);
+      out[m && to[m[1]] !== undefined ? `raise.${to[m[1]]}.${m[2]}` : k] = cfg[k];
+    });
+    return out;
+  }
   App.loadDeckConfig = async function () {
     const r = await App.api("getDeckConfig", {}, { quiet: true });
-    return r ? { config: r.config || null, canEdit: !!r.canEdit } : { config: null, canEdit: false };
+    return r ? { config: fixRaiseOrder(r.config) || null, canEdit: !!r.canEdit } : { config: null, canEdit: false };
   };
 
   // ---------- 入力欄の形 ----------

@@ -958,7 +958,7 @@
       const next = (upcoming || []).filter((e) => !ev || (e.id !== ev.id && (e.date + (e.start || "")) > (ev.date + (ev.start || "")))).slice(0, 4);
       if (next.length) deck("schedule", { name: D.schedule.title, step, lead: "次回以降のスケジュール", rows: next.map((e) => [mdw(e.date), e.start ? `${e.start}-${e.end || ""}` : ""]) });
     };
-    // ⑥LINKのビジネス実績紹介: 入会申し込みフォーム → 挙手のお願い(1on1・リファーラル・招待ビジター → ありがとうマイル → LINK内での実績紹介)
+    // ⑥LINKのビジネス実績紹介: 入会申し込みフォーム → 挙手のお願い(LINK内での実績紹介 → 1on1・リファーラル・招待ビジター → ありがとうマイル)
     const raises = (label) => {
       raiseDone = true;
       (D.raise || []).forEach((r) => deck("raise", Object.assign({ step: label }, r, { name: r.title })));

@@ -3047,6 +3047,26 @@
           }
           changed = true;
         }
+        // 挙手のお願い(2026年11月14日): 3枚の順番を「LINK内での実績紹介 → 1on1・リファーラル・招待ビジター → ありがとうマイル」に(運営の依頼)。
+        // 前に保存した書きかえ(raise.0〜2 の items・note)は、ページの番号で覚えているので、新しい順番の番号に付けかえる(前の 1→2、2→3、3→1 ページ目)
+        if (db.cleanups.indexOf("deck-raise-link-first-1") === -1) {
+          db.cleanups.push("deck-raise-link-first-1");
+          var cfg11 = readCfg(db);
+          if (cfg11) {
+            var moveTo = { 0: 1, 1: 2, 2: 0 }, moved = {}, touched = false;
+            Object.keys(cfg11).forEach(function (k) {
+              var mm = /^raise\.(\d)\.(items|note)$/.exec(k);
+              if (!mm || moveTo[mm[1]] === undefined) return;
+              moved["raise." + moveTo[mm[1]] + "." + mm[2]] = cfg11[k];
+              delete cfg11[k];
+              touched = true;
+            });
+            Object.keys(moved).forEach(function (k) { cfg11[k] = moved[k]; });
+            if (Array.isArray(cfg11.raise) && cfg11.raise.length === 3) { cfg11.raise = [cfg11.raise[2], cfg11.raise[0], cfg11.raise[1]]; touched = true; }
+            if (touched) writeCfg(db, cfg11);
+          }
+          changed = true;
+        }
         // 用語説明(2026年11月10日): 「貢献（リファーラル）」を「貢献（紹介）」に(運営の依頼)。前に保存した用語説明が元の言葉のままなら書きかえる
         if (db.cleanups.indexOf("deck-glossary-referral-2") === -1) {
           db.cleanups.push("deck-glossary-referral-2");
