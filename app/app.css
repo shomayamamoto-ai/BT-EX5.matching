@@ -3677,3 +3677,35 @@ button.home-welcome-check:active { transform: scale(0.94); }
 .pd-photo-img { display: block; max-width: 100%; max-height: min(50svh, 780px); width: auto; height: auto; border-radius: clamp(14px, 1.6vw, 26px); box-shadow: 0 18px 50px rgba(40, 20, 12, 0.22); object-fit: contain; background: rgba(0, 0, 0, 0.04); }
 .pd-photo-fig figcaption { position: absolute; right: 12px; bottom: 12px; padding: 0.25em 0.9em; border-radius: 999px; background: rgba(20, 12, 8, 0.62); color: #fff; font-size: clamp(12px, min(1.2vw, 2.2svh), 18px); font-weight: 700; letter-spacing: 0.08em; font-variant-numeric: tabular-nums; }
 @media (max-width: 760px), (max-aspect-ratio: 1/1) { .pd-photo-img { max-height: none; } }
+
+/* LINKの良さ(まとめの1枚): 3枚のスライドを、3つのカードにして横に並べる(LINKとは?/集客がうまくいく人の流れ/コミュニティ集客のメリット)。
+   縦に積むと全体が縮んで小さくなるので、横に並べて文字を大きく保つ(2026年11月14日) */
+.pd-lk { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 0.92fr) minmax(0, 1.12fr); gap: clamp(10px, 1.3vw, 20px); align-items: stretch; font-size: clamp(13px, min(1.42vw, 2.6svh), 24px); }
+.pd-lk > .pd-card { display: grid; align-content: start; gap: clamp(6px, 1.3svh, 14px); padding: clamp(10px, 2svh, 24px) clamp(12px, 1.4vw, 24px); border-top: 3px solid var(--pd-gold); }
+.pd-lk-head { margin: 0; font-family: var(--pd-serif); font-size: 1.2em; font-weight: 700; color: var(--pd-gold); letter-spacing: 0.03em; white-space: nowrap; }
+.pd-lk-lead { margin: 0; font-size: 1em; font-weight: 700; line-height: 1.5; color: var(--pd-strong); }
+.pd-lk-lead .pd-line { display: block; white-space: nowrap; }
+.pd-lk-pillars { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.35em; }
+.pd-lk-pillars span { padding: 0.3em 0.2em; border-radius: 12px; border: 1px solid var(--pd-line); background: rgba(226, 184, 102, 0.12); text-align: center; font-weight: 800; color: var(--pd-strong); }
+.pd-lk-brand { margin: 0; display: grid; gap: 0; }
+.pd-lk-brand b { font-family: var(--pd-serif); font-size: 1.35em; line-height: 1.2; color: var(--pd-gold); letter-spacing: 0.06em; }
+.pd-lk-brand span { font-size: 0.86em; font-weight: 700; color: var(--pd-text); white-space: nowrap; }
+.pd-lk-note { margin: 0; font-size: 0.74em; line-height: 1.5; color: var(--pd-muted); }
+.pd-lk-steps { margin: 0; padding: 0; list-style: none; display: grid; gap: 1.05em; }
+.pd-lk-steps li { position: relative; display: flex; align-items: center; gap: 0.5em; padding: 0.42em 0.7em; border-radius: 14px; border: 1px solid var(--pd-line); background: var(--pd-card); font-weight: 800; color: var(--pd-strong); line-height: 1.3; white-space: nowrap; }
+.pd-lk-steps li i { font-style: normal; font-size: 1.35em; line-height: 1; color: var(--pd-gold); }
+.pd-lk-steps li + li::before { content: "▼"; position: absolute; left: 50%; top: -1.15em; transform: translateX(-50%); font-size: 0.7em; color: var(--pd-gold); }
+.pd-lk-steps li.is-hot { border-color: var(--pd-gold); background: rgba(226, 184, 102, 0.18); box-shadow: 0 0 0 2px var(--pd-gold-soft); }
+.pd-lk-merits { display: grid; gap: clamp(6px, 1.2svh, 12px); }
+.pd-lk-merits p { margin: 0; display: grid; gap: 0; padding: 0.45em 0.7em; border-radius: 14px; border: 1px solid var(--pd-line); background: var(--pd-card); font-weight: 700; line-height: 1.4; color: var(--pd-text); }
+.pd-lk-merits p > span:first-child { font-size: 0.78em; white-space: nowrap; }
+.pd-lk-merits p > span:last-child { display: inline; }
+.pd-lk-merits .pd-lk-key { display: block; }
+.pd-lk-merits em { font-style: normal; font-size: 1.22em; font-weight: 900; color: var(--pd-gold); }
+.pr-run.deck-soft .pd-lk-pillars span { background: #fdf4f1; }
+.pr-run.deck-soft .pd-lk-steps li.is-hot { background: var(--sf-coral-soft, #fbe9e5); }
+.pr-run.deck-soft .pd-lk-steps li, .pr-run.deck-soft .pd-lk-merits p { background: #fffaf8; }
+@media (max-width: 760px), (max-aspect-ratio: 1/1) {
+  .pd-lk { grid-template-columns: minmax(0, 1fr); font-size: 14.5px; }
+  .pd-lk-lead .pd-line, .pd-lk-brand span, .pd-lk-merits p > span:first-child, .pd-lk-head { white-space: normal; }
+}

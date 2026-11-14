@@ -943,6 +943,8 @@
       if (D.joinSteps) deck("joinsteps", { name: D.joinSteps.title, step: label, cards: D.joinSteps.steps || [], note: D.joinSteps.note || "", noteSpan: D.joinSteps.noteSpan || 2 });
       // LINKの良さ(プレゼン資料の写真): 入会への3ステップと出席コードのあいだに、1枚ずつ(2026年11月14日、運営の依頼)
       const LP = D.linkPitch && Array.isArray(D.linkPitch.pages) ? D.linkPitch.pages.filter(Boolean) : [];
+      // 最初のページ: LINKとは?・集客がうまくいく人の流れ・コミュニティ集客のメリット を1枚に
+      if (D.linkPitch && D.linkPitch.intro) deck("linkintro", { name: D.linkPitch.title || "LINKの良さ", step: label, intro: D.linkPitch.intro });
       LP.forEach((u, i) => deck("photo", { name: D.linkPitch.title || "LINKの良さ", step: label, src: `../${u}`, no: i + 1, of: LP.length }));
       if (D.attend) deck("attend", Object.assign({ step: label }, D.attend, { name: D.attend.title, msg: D.attend.lead, lead: "", code: more.code || "" }));
       // 出席コードのあとに、次回のスケジュール → アンケート(2026年11月、運営の依頼でこの順に)
@@ -2073,6 +2075,25 @@
               (() => { const v = h("video", { src: `../${p.video}`, poster: `../${String(p.video).replace(/\.mp4$/, ".jpg")}`, autoplay: true, muted: true, loop: true, playsinline: true, preload: "auto", "aria-label": "出席コードの入れ方の動画" }); v.muted = true; return v; })(),
               h("figcaption", null, "入れ方がわからない方はこちら(押すと大きくなります)")) : null));
       }
+      if (p.type === "linkintro") {
+        // LINKの良さ(まとめ): 上の段に「LINKとは?」と「集客がうまくいく人の流れ」、下の段に「コミュニティ集客のメリット」
+        const x = p.intro || {}, W = x.what || {}, F = x.flow || {}, M = x.merits || {};
+        const NUM = "①②③④⑤⑥";
+        return frame("pd-linkintro", h("div", { class: "pd-lk" },
+          h("section", { class: "pd-card pd-lk-what" },
+            h("h3", { class: "pd-lk-head" }, W.head),
+            h("p", { class: "pd-lk-lead" }, String(W.text || "").split("\n").map((t) => h("span", { class: "pd-line" }, t))),
+            h("div", { class: "pd-lk-pillars" }, (W.pillars || []).map((t) => h("span", null, t))),
+            h("p", { class: "pd-lk-brand" }, h("b", null, W.brand), h("span", null, W.motto)),
+            W.note ? h("p", { class: "pd-lk-note" }, W.note) : null),
+          h("section", { class: "pd-card pd-lk-flow" },
+            h("h3", { class: "pd-lk-head" }, F.head),
+            h("ol", { class: "pd-lk-steps" }, (F.steps || []).map((t, i) => h("li", { class: i === F.hot ? "is-hot" : "" }, h("i", { "aria-hidden": "true" }, NUM.charAt(i)), h("span", null, t)))),
+            F.note ? h("p", { class: "pd-lk-note" }, F.note) : null),
+          h("section", { class: "pd-card pd-lk-merit" },
+            h("h3", { class: "pd-lk-head" }, M.head),
+            h("div", { class: "pd-lk-merits" }, (M.items || []).map(([a, key, b]) => h("p", null, h("span", null, a), h("span", { class: "pd-lk-key" }, h("em", null, `「${key}」`), b)))))));
+      }
       if (p.type === "photo") {
         // 写真の資料: 題の下に、写真を大きく1枚(何枚目かを右下に小さく)
         return frame("pd-photo", h("figure", { class: "pd-photo-fig" },
@@ -2297,7 +2318,7 @@
       const nexts = people.slice(idx + 1).filter(isPerson).slice(0, 3);
       box.classList.toggle("is-deck", isDeck(p));
       box.classList.toggle("is-timer", p.kind === "timer");
-      ["movie", "cover", "agenda", "section", "leader", "about", "vision", "list", "feature", "checks", "strengths", "venn", "kpis", "rules", "schedule", "pickup", "photo", "raise", "closing", "glossary", "joinsteps", "survey", "attend", "staff"].forEach((t) => box.classList.toggle(`is-d-${t}`, isDeck(p) && p.type === t));
+      ["movie", "cover", "agenda", "section", "leader", "about", "vision", "list", "feature", "checks", "strengths", "venn", "kpis", "rules", "schedule", "pickup", "photo", "linkintro", "raise", "closing", "glossary", "joinsteps", "survey", "attend", "staff"].forEach((t) => box.classList.toggle(`is-d-${t}`, isDeck(p) && p.type === t));
       box.classList.remove("is-edu");
       // スライドとプレゼンで操作バーの幅が変わる(スライドでは「はじめる」の場所をつめる)ので、置き直す
       if (box.dataset.kindWas !== String(isDeck(p))) { box.dataset.kindWas = String(isDeck(p)); if (box.classList.contains("dock-home")) requestAnimationFrame(() => window.dispatchEvent(new Event("resize"))); }
