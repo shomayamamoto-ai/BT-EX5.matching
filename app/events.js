@@ -76,6 +76,10 @@
           }))
           : App.empty("予定されている定例会はまだありません。")));
 
+      // 新しく入ったメンバー(2026年11月15日): 顔と事業がわかるように。プロフィールへ・1on1 の予定へ(記録が使える方だけ)
+      const newBox = newMembersSection();
+      if (newBox) el.append(newBox);
+
       el.append(calPanel);
       if (!(open || venueSoon)) el.append(checkBox);
 
@@ -96,6 +100,32 @@
       if (params.has("invite")) App.go("invite");
     },
   };
+
+  // 新しく入ったメンバー(REF_NEW_MEMBERS。名簿の最新の情報で出す。自分は出さない)
+  function newMembersSection() {
+    if (typeof REF_NEW_MEMBERS === "undefined" || !Array.isArray(REF_NEW_MEMBERS)) return null;
+    const me = App.session && App.session.memberId;
+    const flat = (t) => String(t || "").replace(/\s+/g, "");
+    const list = REF_NEW_MEMBERS.slice().reverse()
+      .map((x) => App.memberById(x.id) || (App.members || []).find((m) => flat(m.name) === flat(x.name)) || x)
+      .filter((m) => m && m.id !== me).slice(0, 4);
+    if (!list.length) return null;
+    const canLog = App.canLog && App.canLog();
+    return App.section("新しく入ったメンバー",
+      h("p", { class: "ev-new-lead" }, "BT-EX5 に新しく入った方です。プロフィールを見て、1on1 でお互いの仕事を知っておきましょう。"),
+      h("div", { class: "ev-new-list" }, list.map((m) => h("article", { class: "ev-new-card" },
+        h("a", { class: "ev-new-who", href: App.profileHref(m.id, "events") },
+          App.avatar(m.name, "lg"),
+          h("span", { class: "ev-new-main" },
+            h("b", null, `${m.name}さん`),
+            m.kana ? h("small", { class: "ev-new-kana" }, m.kana) : null,
+            m.company ? h("small", { class: "ev-new-co" }, m.company) : null,
+            h("span", { class: "ev-new-tags" }, m.category ? h("span", null, m.category) : null, m.base && m.base !== "未設定" ? h("span", null, `${m.base}拠点`) : null))),
+        m.wants ? h("p", { class: "ev-new-wants" }, h("span", null, "求める紹介"), String(m.wants).replace(/\s+/g, " ").slice(0, 80) + (String(m.wants).length > 80 ? "…" : "")) : null,
+        h("div", { class: "app-btn-row" },
+          h("a", { class: "app-btn ghost small", href: App.profileHref(m.id, "events") }, "プロフィールを見る"),
+          canLog ? h("a", { class: "app-btn primary small", href: `#log/1on1?new&with=${encodeURIComponent(m.id)}` }, "1on1 を予定する") : null)))));
+  }
 
   // 欠席の人の名前(共有サーバーが古くて名前が来ないときは、その定例会の出欠一覧から取る)
   function absentLine(e) {
