@@ -79,9 +79,20 @@
     if (cfg.glossary && Array.isArray(cfg.glossary.items)) cfg.glossary.items = App.fixGlossary(cfg.glossary.items);
     return cfg;
   }
+  // オープニングムービーは、表紙のあと・「本日の流れ」の前に(2026年11月15日、運営の依頼。前はムービー → 表紙)。
+  // 「見たまま編集」で前に決めた並び(edits.order)に、前の順番(ムービーのすぐあとに表紙)が残っているときは、一度だけ入れかえる。
+  // 入れかえたしるし(ov: 2)は、次に編集で保存したときにいっしょに残る
+  function fixMovieOrder(cfg) {
+    const E = cfg && cfg.edits;
+    if (!E || !Array.isArray(E.order) || E.ov === 2) return cfg;
+    const i = E.order.findIndex((k) => /^d\|movie\|/.test(k));
+    if (i >= 0 && /^d\|cover\|/.test(E.order[i + 1] || "")) { const mv = E.order[i]; E.order[i] = E.order[i + 1]; E.order[i + 1] = mv; }
+    E.ov = 2;
+    return cfg;
+  }
   App.loadDeckConfig = async function () {
     const r = await App.api("getDeckConfig", {}, { quiet: true });
-    return r ? { config: fixGlossaryCfg(fixBenefitWord(fixRaiseOrder(r.config))) || null, canEdit: !!r.canEdit } : { config: null, canEdit: false };
+    return r ? { config: fixMovieOrder(fixGlossaryCfg(fixBenefitWord(fixRaiseOrder(r.config)))) || null, canEdit: !!r.canEdit } : { config: null, canEdit: false };
   };
 
   // ---------- 入力欄の形 ----------

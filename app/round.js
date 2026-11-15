@@ -563,7 +563,7 @@
       const odd = order.filter((k) => secOf(k) !== per).length;
       total.textContent = order.length ? `${order.length}名(${odd ? `${order.length - odd}名 × ${PER.find(([v]) => v === per)[1]} ほか` : `× ${PER.find(([v]) => v === per)[1]}`}) = 約${Math.floor(sec / 60)}分${sec % 60 ? `${sec % 60}秒` : ""}` : "";
       const deckOn = typeof withDeck !== "undefined" && withDeck;
-      goBtn.textContent = deckOn ? `定例会をはじめる(オープニングムービーから${order.length ? `・プレゼン ${order.length}名` : ""})` : order.length ? `プレゼンをはじめる(${order.length}名)` : "出る人を選んでください";
+      goBtn.textContent = deckOn ? `定例会をはじめる${order.length ? `(プレゼン ${order.length}名)` : ""}` : order.length ? `プレゼンをはじめる(${order.length}名)` : "出る人を選んでください";
       goBtn.disabled = !deckOn && !order.length;
     }
 
@@ -941,8 +941,10 @@
     const hasGloss = D.glossary && (D.glossary.items || []).length;
     let glossDone = false;
     const glossary = (label) => { glossDone = true; deck("glossary", { name: D.glossary.title, step: label, items: D.glossary.items }); };
-    deck("movie", { name: "オープニングムービー", step: "オープニング" });
+    // はじめは表紙(Zoom の名前のお願い)。次の「進む」でオープニングムービーを流し、終わると「本日の流れ」へ
+    // (2026年11月15日、運営の依頼。前はムービー → 表紙の順)
     deck("cover", { zoom: D.zoomName || null, name: (ev && ev.title) || "BT-EX5 定例会", step: "定例会", date: ev ? `${App.fmtDateLong ? App.fmtDateLong(ev.date) : ev.date}${ev.start ? ` ${ev.start}〜${ev.end || ""}` : ""}` : "", notes });
+    deck("movie", { name: "オープニングムービー", step: "定例会" });
     let pres = false, extra = false, raiseDone = false;
     // 「このような人のお役に立てます」「3つの強み」「それぞれの強み」は、商談(ブレイクアウトルーム)のタイマーのあとに
     const extras = (label) => {
@@ -1111,7 +1113,7 @@
     // 表紙のあとに「本日の流れ」。どのスライドにも、流れの何番目かと流れの一覧を持たせる
     // (左上の小見出し・区切りのスライドの一覧・下の進行バーに使う)
     const stepList = steps.map((st) => { const tm = TIME.exec(st.title); return { no: st.no, title: tm ? st.title.replace(TIME, "") : st.title, sub: subOf(st, tm) }; });
-    const coverAt = items.findIndex((x) => x.type === "cover");
+    const coverAt = items.findIndex((x) => x.type === "movie");
     if (stepList.length) items.splice(coverAt + 1, 0, { key: "d:agenda", kind: "deck", type: "agenda", name: "本日の流れ", step: "定例会", plan: eventPlan(ev, D.timeplan, D.timeplan90), start: (ev && ev.start) || "", end: (ev && ev.end) || "" });
     // 「本日の運営メンバー」(顔写真のスライド)は、「本日の流れ」のすぐあとに出す(2026年11月15日、運営の依頼。前は「はじめの挨拶」の中)
     const staffAt = items.findIndex((x) => x.kind === "deck" && x.type === "staff");
@@ -2383,8 +2385,20 @@
           const k = Math.max(0.55, (room / need) * 0.97);
           // 左はし(題と同じ位置)を動かさずに縮める(まん中を軸にすると、中身が右に寄って見えるため)。
           // まん中にそろえたスライド(挙手のお願いなど)は、縮めてもまん中の線がほかのスライドと同じになるよう、まん中を軸にする
-          body.style.transformOrigin = el.classList.contains("is-centered") ? "50% 0" : "0 0";
+          const centered = el.classList.contains("is-centered");
+          body.style.transformOrigin = centered ? "50% 0" : "0 0";
           body.style.transform = `scale(${k.toFixed(3)})`;
+          // 左はしを軸に縮めると、縮めた分だけ右があく。題と中身の左はしをそろえたまま、スライド全体を右へ送って、
+          // 中身が画面のまん中に来るようにする(2026年11月15日、運営の依頼。題が右へはみ出さないところまで)
+          if (!centered) {
+            // 縮めたあとの中身の左右のはし(中身が枠より広いスライドもあるので、実際の場所を測る)から、まん中までの差を出す
+            const rs = [...body.children].map((c) => c.getBoundingClientRect()).filter((r) => r.width > 0);
+            const want = rs.length ? (er.left + er.right) / 2 - (Math.min(...rs.map((r) => r.left)) + Math.max(...rs.map((r) => r.right))) / 2 : 0;
+            const head = el.querySelector(":scope > .pd-head .pd-title");
+            const roomR = head ? sr.right - 8 - head.getBoundingClientRect().right : want;
+            const dx = Math.max(0, Math.min(want, roomR));
+            if (dx > 0.5) el.style.transform = `translateX(${dx.toFixed(1)}px)`;
+          }
         }
         return;
       }
@@ -2396,7 +2410,8 @@
         const limit = sr.bottom - (parseFloat(getComputedStyle(slide).paddingBottom) || 0);
         if (deep > limit && limit > top) {
           const k = Math.max(0.55, ((limit - top) / (deep - top)) * 0.98);
-          el.style.transformOrigin = "0 0"; el.style.transform = `scale(${k.toFixed(3)})`;
+          // 上のまん中を軸に縮める(左上を軸にすると、縮めた分だけ右があいて、中心からずれて見えるため。2026年11月15日、運営の依頼)
+          el.style.transformOrigin = "50% 0"; el.style.transform = `scale(${k.toFixed(3)})`;
         }
         return;
       }
@@ -2812,7 +2827,9 @@
       // 資料を画面いっぱいに出すとき(エデュケーションコーナー)は、よけない(タイマー・操作バーは資料の上に重ねる)
       if (wide && !box.classList.contains("is-edu")) {
         const sr = slide.getBoundingClientRect();
-        [timing && timing.el, dock].forEach((el) => {
+        // よけるのは操作バーだけ。タイムマネジメントの小窓は、開いてもスライドの上に重ねるだけにする
+        // (小窓を開くたびにスライドが右へずれて、名前などの折り返しが変わっていたため。2026年11月15日、運営の依頼)
+        [dock].forEach((el) => {
           if (!el || !el.isConnected) return;
           const r = el.getBoundingClientRect();
           if (!r.width || r.bottom < sr.top + 12 || r.top > sr.bottom - 12) return;

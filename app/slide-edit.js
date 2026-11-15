@@ -192,6 +192,7 @@
       if (Eo.slides && !Object.keys(Eo.slides).length) delete Eo.slides;
       if (Eo.custom && !Eo.custom.length) delete Eo.custom;
       if (Eo.order && !Eo.order.length) delete Eo.order;
+      if (!Eo.order) delete Eo.ov;
     }
 
     // ---------- スライドに重ねる ----------
@@ -582,7 +583,7 @@
         const moved = JSON.stringify(order.map((x) => x.skey)) !== JSON.stringify(all.map((x) => x.skey));
         change((Eo) => {
           order.forEach((it) => { if (gone.has(it.skey)) dropCustom(Eo, it); });
-          if (moved || Eo.order) Eo.order = keys;
+          if (moved || Eo.order) { Eo.order = keys; Eo.ov = 2; } // ov: 並びの版(2 = ムービーは表紙のあと)
           keys.forEach((k) => {
             const r = slideRec(Eo, k, hidden.has(k));
             if (r) { if (hidden.has(k)) r.hide = true; else delete r.hide; }

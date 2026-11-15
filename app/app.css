@@ -2997,7 +2997,8 @@ button.home-welcome-check:active { transform: scale(0.94); }
 
 /* 出席コード: 題はほかと同じ位置(幅 1180px の左上)。中身(コードと動画)だけ広く使う */
 .pd.pd-attend { width: min(100%, 1180px); }
-.pd-attend > .pd-body { width: min(1400px, calc(100vw - 2 * clamp(16px, 4.5vw, 64px))); justify-self: center; }
+/* 中身は題の枠(1180px)より広い。枠の左右に同じだけはみ出させて、画面のまん中にそろえる(前は右にだけはみ出して、中心からずれていた) */
+.pd-attend > .pd-body { --aw: min(1400px, calc(100vw - 2 * clamp(16px, 4.5vw, 64px))); width: var(--aw); justify-self: start; margin-left: calc((100% - var(--aw)) / 2); }
 /* 代表の紹介: 題のあるスライドと同じく上にそろえる(小見出しの位置をそろえる) */
 @media (min-aspect-ratio: 1/1) and (min-width: 761px) {
   .pr-run.is-deck .pr-slide > .pd.pd-leader:not(.pd-frame) { align-self: start; margin-top: clamp(4px, 5svh, 64px); align-items: start; }
@@ -3689,7 +3690,9 @@ button.home-welcome-check:active { transform: scale(0.94); }
 @media (max-width: 520px) { .ops-sv-row { grid-template-columns: minmax(0, 1fr) auto; } .ops-sv-kind { grid-column: 1 / -1; } }
 
 /* 写真の資料(LINKの良さ): 題の下に、写真を大きく1枚。高さは画面に収まるところまで(2026年11月14日) */
-.pd-photo .pd-body { display: grid; justify-items: start; }
+/* 写真は枠のまん中に置く(写真の名前は、写真の左はしにそろえる) */
+.pd-photo .pd-body { display: grid; justify-items: start; width: fit-content; max-width: 100%; margin-inline: auto; }
+.pd-photo.is-multi > .pd-body { width: 100%; }
 .pd-photo-fig { position: relative; margin: 0; display: inline-grid; max-width: 100%; }
 .pd-photo-img { display: block; max-width: 100%; max-height: min(50svh, 780px); width: auto; height: auto; border-radius: clamp(14px, 1.6vw, 26px); box-shadow: 0 18px 50px rgba(40, 20, 12, 0.22); object-fit: contain; background: rgba(0, 0, 0, 0.04); }
 .pd-photo-fig figcaption { position: absolute; right: 12px; bottom: 12px; padding: 0.25em 0.9em; border-radius: 999px; background: rgba(20, 12, 8, 0.62); color: #fff; font-size: clamp(12px, min(1.2vw, 2.2svh), 18px); font-weight: 700; letter-spacing: 0.08em; font-variant-numeric: tabular-nums; }
