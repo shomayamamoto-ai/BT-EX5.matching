@@ -52,9 +52,30 @@
     });
     return cfg;
   }
+  // 用語説明(2026年11月15日、運営の依頼): 「ビジター」を外し、ユニットと1on1のあいだに「内部ビジター」「ゲスト」を入れ、
+  // 1on1 の説明を「お互いの事業や活動を紹介し合う」に。前に保存した用語説明が共有サーバーの更新の前に届いたときも、同じ形にして出す
+  App.fixGlossary = function (items) {
+    if (!Array.isArray(items)) return items;
+    const hd = (x) => String((x && x.head) || "").replace(/\s/g, "");
+    let out = items.filter((x) => hd(x) !== "ビジター");
+    const one = out.find((x) => hd(x) === "1on1");
+    if (one && /紹介してほしい人を[\s\S]*深く知る/.test(String(one.text || ""))) one.text = "メンバー同士が1対1で\nお互いの事業や活動を\n紹介し合うミーティング";
+    if (!out.some((x) => hd(x) === "内部ビジター") && !out.some((x) => hd(x) === "ゲスト")) {
+      const add = [{ head: "内部ビジター", text: "LINKのBT会員で\nBT-EXに入っていない方" }, { head: "ゲスト", text: "まだLINKの会員ではない方" }];
+      const at = out.findIndex((x) => hd(x) === "1on1");
+      out = at >= 0 ? [...out.slice(0, at), ...add, ...out.slice(at)] : out.concat(add);
+    }
+    return out;
+  };
+  function fixGlossaryCfg(cfg) {
+    if (!cfg || typeof cfg !== "object") return cfg;
+    if (Array.isArray(cfg["glossary.items"])) cfg["glossary.items"] = App.fixGlossary(cfg["glossary.items"]);
+    if (cfg.glossary && Array.isArray(cfg.glossary.items)) cfg.glossary.items = App.fixGlossary(cfg.glossary.items);
+    return cfg;
+  }
   App.loadDeckConfig = async function () {
     const r = await App.api("getDeckConfig", {}, { quiet: true });
-    return r ? { config: fixBenefitWord(fixRaiseOrder(r.config)) || null, canEdit: !!r.canEdit } : { config: null, canEdit: false };
+    return r ? { config: fixGlossaryCfg(fixBenefitWord(fixRaiseOrder(r.config))) || null, canEdit: !!r.canEdit } : { config: null, canEdit: false };
   };
 
   // ---------- 入力欄の形 ----------

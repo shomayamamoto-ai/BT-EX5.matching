@@ -1082,11 +1082,21 @@
     const stepList = steps.map((st) => { const tm = TIME.exec(st.title); return { no: st.no, title: tm ? st.title.replace(TIME, "") : st.title, sub: subOf(st, tm) }; });
     const coverAt = items.findIndex((x) => x.type === "cover");
     if (stepList.length) items.splice(coverAt + 1, 0, { key: "d:agenda", kind: "deck", type: "agenda", name: "本日の流れ", step: "定例会", plan: eventPlan(ev, D.timeplan, D.timeplan90), start: (ev && ev.start) || "", end: (ev && ev.end) || "" });
+    // 「本日の運営メンバー」(顔写真のスライド)は、「本日の流れ」のすぐあとに出す(2026年11月15日、運営の依頼。前は「はじめの挨拶」の中)
+    const staffAt = items.findIndex((x) => x.kind === "deck" && x.type === "staff");
+    const agendaAt = items.findIndex((x) => x.kind === "deck" && x.type === "agenda");
+    if (staffAt > -1 && agendaAt > -1 && staffAt !== agendaAt + 1) {
+      const [sf] = items.splice(staffAt, 1);
+      sf.step = "定例会";
+      items.splice(items.findIndex((x) => x.kind === "deck" && x.type === "agenda") + 1, 0, sf);
+    }
     let cur = 0;
     items.forEach((it) => {
       if (it.kind === "deck" && it.type === "section" && it.no) cur = it.no;
       it.stepNo = it.type === "closing" ? stepList.length + 1 : cur;
       if (it.kind === "deck") { it.steps = stepList; it.eyebrow = (stepList[cur - 1] || {}).title || ""; }
+      // 流れの前(区切りの番号がまだない所)の運営メンバーは、番号なしの小見出しに
+      if (it.kind === "deck" && it.type === "staff" && !cur) { it.eyebrow = "STAFF"; it.en = "Staff"; }
     });
     return items;
   }
@@ -1766,7 +1776,7 @@
       // どのスライドも、題は同じ位置(左上)・同じ大きさにそろえる(運営の依頼)。lead: 題の下の要点の一文(なければ出さない)
       const frameL = (cls, lead, ...body) => h("div", { class: `pd pd-frame ${cls}` },
         h("header", { class: "pd-head" },
-          p.eyebrow ? h("p", Object.assign({ class: "pd-eyebrow" }, enAttr(p.eyebrow)), h("span", { class: "pd-eyebrow-no" }, two(p.stepNo)), p.eyebrow) : null,
+          p.eyebrow ? h("p", Object.assign({ class: "pd-eyebrow" }, p.en ? { "data-en": p.en } : enAttr(p.eyebrow)), p.stepNo ? h("span", { class: "pd-eyebrow-no" }, two(p.stepNo)) : null, p.eyebrow) : null,
           h("h2", { class: `pd-title${String(p.name).length > 18 ? " is-long" : ""}` }, p.name),
           lead ? h("p", { class: "pd-lead" }, lead)
             // カードを1枚ずつ送るスライドは、要点の行がなくても同じ高さをあけて、カードの位置をそろえる

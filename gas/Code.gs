@@ -1167,10 +1167,12 @@ const BTEX_DECK = {
     items: [
       { head: "BT-EX", text: "LINK や BT の中の\n他のビジネス団体の強みを取り入れた\n事業者コミュニティ" },
       { head: "ユニット", text: "BT-EX1〜14 の\nそれぞれの定例会のグループ\n(BT-EX5 は新潟⇔東京)" },
-      { head: "1on1", text: "メンバー同士が1対1で\nお互いの事業や紹介してほしい人を\n深く知るミーティング" },
+      // 内部ビジター・ゲスト(2026年11月15日、運営の依頼で足した。「ビジター」は外した)
+      { head: "内部ビジター", text: "LINKのBT会員で\nBT-EXに入っていない方" },
+      { head: "ゲスト", text: "まだLINKの会員ではない方" },
+      { head: "1on1", text: "メンバー同士が1対1で\nお互いの事業や活動を\n紹介し合うミーティング" },
       { head: "貢献（紹介）", text: "メンバーへのお仕事の紹介" },
       { head: "ありがとうマイル", text: "紹介で仕事が決まったら\n紹介してくれた人へ\n成約金額を感謝として送る(1円＝1マイル)" },
-      { head: "ビジター", text: "見学で定例会に参加する方\n(同じ方の参加は2回まで)\n※BT-EXフェスは何度でも参加可能" },
     ],
   },
   // 時間の目安(分)。2時間の定例会のタイムマネジメントに使う(0: オープニング、1〜: 流れの番号)
@@ -2973,7 +2975,7 @@ const REF_SEED_ANNOUNCEMENTS = [
   {
     seedId: "2026-10-25-update-16",
     cat: "アップデート",
-    rev: 212,
+    rev: 213,
     at: Date.UTC(2026, 9, 25, 4, 0), // 2026/10/25 13:00(日本時間)
     title: "【アップデート】紹介診断に「相手がこう言っていたら」・アンケート・運営タブ など",
     body: [
@@ -3022,6 +3024,9 @@ const REF_SEED_ANNOUNCEMENTS = [
       "・スライドの「本日の流れ」を見やすくしました。上に「開始〜終了・合計」と時間の帯、下に2列の表(始まる時刻・番号・題・分)で、題は1行で大きく出します。",
       "・早見表のカードと「あなたと紹介し合えそうな人」に、顔写真を出すようにしました(写真のない方は頭文字の丸)。",
       "・予定の画面に「新しく入ったメンバー」を足しました。顔写真・会社・求める紹介と、プロフィール・1on1 の予定へのボタンが出ます。",
+      "・スライドの「BT-EX でよく使う言葉」から「ビジター」を外し、ユニットと 1on1 のあいだに「内部ビジター(LINKのBT会員でBT-EXに入っていない方)」「ゲスト(まだLINKの会員ではない方)」を足しました。1on1 の説明は「お互いの事業や活動を紹介し合うミーティング」にしました。",
+      "・スライドの「本日の運営メンバー」を、「本日の流れ」のすぐあとに出すようにしました。",
+      "・スライドの「LINKとは?」のカードで、文字と図が重なることがあったのを直しました。",
       "・【新しい機能】記録の「分析」に「あなたの活動バランス」を足しました。マイル・紹介・1on1・ビジター・出席を、メンバーの平均とくらべたレーダー図(くもの巣の図)で見える化し、「強み TOP3」「伸びしろ TOP3」と、伸びしろに合わせた「次の一手」(押すとその画面へ)を出します。アンケートの結果にも「ひと目でわかる」を足し、満足度のバランス(今回と前回のレーダー図)・良かったプログラム TOP3・もっと良くしたいところ TOP3 を出します。",
       "・BT-EX7 の矢口 健彦(ヤグチ タケヒコ)さん(Data Fusion Partners 代表/中小企業診断士/綺絆)の顔写真と、事業内容・対象のお客様・「こんな話が出たら」を入れました。プレゼンで選ぶと、写真とつながりたい人がスライドに出ます。",
       "・BT-EX1 の小松 茂子さん(ReVivre 代表/チーム無限)の事業内容(共済保険)・主なお客様・求める紹介・「こんな話が出たら」を入れました。プレゼンで選ぶと、求める紹介がスライドに出ます。",
@@ -7551,6 +7556,33 @@ var BtexServerCore = (function () {
               return v;
             };
             writeCfg(db, brk(cfg7));
+          }
+          changed = true;
+        }
+        // 用語説明(2026年11月15日、運営の依頼): 「ビジター」を外し、ユニットと1on1のあいだに「内部ビジター」「ゲスト」を入れ、
+        // 1on1 の説明を「お互いの事業や活動を紹介し合う」に。前に保存した用語説明があれば、同じように一度だけ書きかえる
+        if (db.cleanups.indexOf("deck-glossary-guest-1") === -1) {
+          db.cleanups.push("deck-glossary-guest-1");
+          var cfg15 = readCfg(db);
+          var fixG15 = function (items) {
+            if (!Array.isArray(items)) return items;
+            var hd = function (x) { return String((x && x.head) || "").replace(/\s/g, ""); };
+            var out = items.filter(function (x) { return hd(x) !== "ビジター"; });
+            out.forEach(function (x) { if (hd(x) === "1on1" && /紹介してほしい人を[\s\S]*深く知る/.test(String(x.text || ""))) x.text = "メンバー同士が1対1で\nお互いの事業や活動を\n紹介し合うミーティング"; });
+            var has = out.some(function (x) { return hd(x) === "内部ビジター" || hd(x) === "ゲスト"; });
+            if (!has) {
+              var add = [{ head: "内部ビジター", text: "LINKのBT会員で\nBT-EXに入っていない方" }, { head: "ゲスト", text: "まだLINKの会員ではない方" }];
+              var at = -1;
+              out.forEach(function (x, i) { if (at < 0 && hd(x) === "1on1") at = i; });
+              out = at >= 0 ? out.slice(0, at).concat(add, out.slice(at)) : out.concat(add);
+            }
+            return out;
+          };
+          if (cfg15) {
+            var hit15 = false;
+            if (Array.isArray(cfg15["glossary.items"])) { cfg15["glossary.items"] = fixG15(cfg15["glossary.items"]); hit15 = true; }
+            if (cfg15.glossary && Array.isArray(cfg15.glossary.items)) { cfg15.glossary.items = fixG15(cfg15.glossary.items); hit15 = true; }
+            if (hit15) writeCfg(db, cfg15);
           }
           changed = true;
         }

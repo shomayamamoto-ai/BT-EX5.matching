@@ -3080,6 +3080,33 @@
           }
           changed = true;
         }
+        // 用語説明(2026年11月15日、運営の依頼): 「ビジター」を外し、ユニットと1on1のあいだに「内部ビジター」「ゲスト」を入れ、
+        // 1on1 の説明を「お互いの事業や活動を紹介し合う」に。前に保存した用語説明があれば、同じように一度だけ書きかえる
+        if (db.cleanups.indexOf("deck-glossary-guest-1") === -1) {
+          db.cleanups.push("deck-glossary-guest-1");
+          var cfg15 = readCfg(db);
+          var fixG15 = function (items) {
+            if (!Array.isArray(items)) return items;
+            var hd = function (x) { return String((x && x.head) || "").replace(/\s/g, ""); };
+            var out = items.filter(function (x) { return hd(x) !== "ビジター"; });
+            out.forEach(function (x) { if (hd(x) === "1on1" && /紹介してほしい人を[\s\S]*深く知る/.test(String(x.text || ""))) x.text = "メンバー同士が1対1で\nお互いの事業や活動を\n紹介し合うミーティング"; });
+            var has = out.some(function (x) { return hd(x) === "内部ビジター" || hd(x) === "ゲスト"; });
+            if (!has) {
+              var add = [{ head: "内部ビジター", text: "LINKのBT会員で\nBT-EXに入っていない方" }, { head: "ゲスト", text: "まだLINKの会員ではない方" }];
+              var at = -1;
+              out.forEach(function (x, i) { if (at < 0 && hd(x) === "1on1") at = i; });
+              out = at >= 0 ? out.slice(0, at).concat(add, out.slice(at)) : out.concat(add);
+            }
+            return out;
+          };
+          if (cfg15) {
+            var hit15 = false;
+            if (Array.isArray(cfg15["glossary.items"])) { cfg15["glossary.items"] = fixG15(cfg15["glossary.items"]); hit15 = true; }
+            if (cfg15.glossary && Array.isArray(cfg15.glossary.items)) { cfg15.glossary.items = fixG15(cfg15.glossary.items); hit15 = true; }
+            if (hit15) writeCfg(db, cfg15);
+          }
+          changed = true;
+        }
         // 仕組みとベネフィット(2026年11月14日): 「コミットで加速」のカードの「リファーラル」を「紹介」に(運営の依頼)。
         // 前に保存したカードの文に「リファーラル」(「リファラル」)が残っていれば、そのカードだけ書きかえる
         if (db.cleanups.indexOf("deck-benefit-shokai-1") === -1) {
