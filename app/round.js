@@ -200,7 +200,7 @@
   // 1分プレゼンの話す順番で、いちばん前に固定する13名(この順番。2026年11月9日、運営の依頼で並べ直し)
   // 桜羽 李果・三村 隆・あまみや 七音・小林 末季(こばねぇ)・山本 捷真・大場 雅俊・大枝 篤志・加藤 寛之・床島 良夫・吉澤 美和子・吉原 優・栁橋 雅也・大小原 翔太
   const PITCH_FIRST = ["m16", "m14", "m02", "m22", "yamamoto", "m09", "m10", "m30", "m08", "m04", "m06", "m24", "m29"];
-  const STAFF_ROLES = [["facilitator", "ファシリテーター"], ["education", "エデュケーション"], ["system", "スライド進行"], ["breakout", "ブレイクアウトルーム"], ["builder", "本システム（スライド含む）制作", ["yamamoto"]]];
+  const STAFF_ROLES = [["facilitator", "ファシリテーター"], ["education", "エデュケーション"], ["system", "スライド進行"], ["breakout", "ブレイクアウトルーム＆タイマー"], ["builder", "本システム（スライド含む）制作", ["yamamoto"]]];
   const thumbOf = (url) => String(url).replace(/assets\/members\/([^/?#]+\.jpg)/, "assets/members/thumbs/$1");
   // ほかの BT-EX の場所(referral/data.js の BTEX_UNIT_AREAS。未定なら空)
   // スライドの「BT-EXn メンバー・場所」には、決まっている場所だけ出す(「未定」は出さない)

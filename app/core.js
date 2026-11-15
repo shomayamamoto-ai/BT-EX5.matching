@@ -416,7 +416,7 @@ const App = (function () {
     }
     const res = await call(action, payload);
     if (res.success) {
-      if (readOnly) cachePut(key, res.data);
+      if (readOnly) { if (action !== "getDeckImage") cachePut(key, res.data); } // スライドの写真は大きいので、端末には控えない
       else if (!/^(logout|heartbeat|ping)/.test(action)) cacheClear();
     }
     if (!res.success) {

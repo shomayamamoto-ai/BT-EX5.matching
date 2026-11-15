@@ -2812,8 +2812,9 @@
   //   getDeckConfig(だれでも読める)/ saveDeckConfig(進行役だけ。config を空にすると元に戻す)
   var DECK_OWNERS = ["yamamoto", "m22", "m02", "m16", "m08", "m14", "m09", "m10", "m24", "m04"]; // 山本 捷真・小林 末季(こばねぇ)・あまみや 七音・桜羽 李果・床島 良夫・三村 隆・大場 雅俊・大枝 篤志・栁橋 雅也・吉澤 美和子
   var DECK_MAX = 60000; // 文字数
+  var DIMG_MAX = 40, DIMG_SIZE = 600000, DIMG_CHUNK = 45000; // スライドに足す写真: 枚数・1枚の大きさ(文字数)・1セルに置く大きさ
   BtexServerCore.registerModule({
-    mutating: ["saveDeckConfig"],
+    mutating: ["saveDeckConfig", "saveDeckImage"],
     create: function (c) {
       function session(body) {
         var db = c.ensureDb();
@@ -3274,7 +3275,51 @@
         }
         return changed;
       }
-      return { migrate: migrate, actions: { getDeckConfig: getDeckConfig, saveDeckConfig: saveDeckConfig } };
+      // ---------- スライドに入れる写真(スライドの画面で「見たまま編集」するときに足す写真) ----------
+      //   getDeckImage(ログインした人)/ saveDeckImage(進行役だけ。写真1枚を置いて、その番号を返す)
+      //   写真は、スプレッドシートの1セルに収まる大きさに分けて置く。どのスライドにも使われていない古い写真は、枚数がいっぱいのときに消す
+      function ibget(db, k) { return c.blobs ? c.blobs.get(k) || "" : ((db.deckImgBlobs || {})[k] || ""); }
+      function ibset(db, k, v) {
+        if (c.blobs) { c.blobs.set(k, v); return; }
+        if (!db.deckImgBlobs) db.deckImgBlobs = {};
+        if (v) db.deckImgBlobs[k] = v; else delete db.deckImgBlobs[k];
+      }
+      function getDeckImage(body) {
+        var x = session(body);
+        if (!x) return c.fail("SESSION_INVALID");
+        var id = String(body.id || ""), m = (x.db.deckImages || {})[id];
+        if (!m) return c.fail("NOT_FOUND");
+        var data = "";
+        for (var k = 0; k < m.n; k++) data += ibget(x.db, "dimg:" + id + ":" + k);
+        return c.ok({ data: data });
+      }
+      function saveDeckImage(body) {
+        var x = session(body);
+        if (!x) return c.fail("SESSION_INVALID");
+        if (DECK_OWNERS.indexOf(x.a.user.memberId) === -1) return c.fail("FORBIDDEN_ADMIN");
+        var s = String(body.data || "");
+        if (s.length > DIMG_SIZE || !/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+\/=]+$/.test(s)) return c.fail("INVALID_REQUEST", "写真が大きすぎるか、形式が読めません。");
+        var db = x.db, now = c.nowMs();
+        if (!db.deckImages) db.deckImages = {};
+        if (Object.keys(db.deckImages).length >= DIMG_MAX) {
+          // いっぱいのとき: いまのスライドで使っていない写真(入れてから1日たったもの)を消す
+          var used = "";
+          try { used = JSON.stringify(readCfg(db) || {}); } catch (e) { used = ""; }
+          Object.keys(db.deckImages).forEach(function (id) {
+            var m = db.deckImages[id];
+            if (used.indexOf(id) !== -1 || now - (m.at || 0) < 86400000) return;
+            for (var k = 0; k < m.n; k++) ibset(db, "dimg:" + id + ":" + k, "");
+            delete db.deckImages[id];
+          });
+          if (Object.keys(db.deckImages).length >= DIMG_MAX) return c.fail("INVALID_REQUEST", "スライドに入れられる写真は" + DIMG_MAX + "枚までです。使っていない写真をスライドから消して、あとでもう一度お試しください。");
+        }
+        var id = "di_" + c.randomHex(6), n = Math.ceil(s.length / DIMG_CHUNK);
+        for (var k = 0; k < n; k++) ibset(db, "dimg:" + id + ":" + k, s.slice(k * DIMG_CHUNK, (k + 1) * DIMG_CHUNK));
+        db.deckImages[id] = { n: n, at: now, by: x.a.user.memberId };
+        c.saveDb(db);
+        return c.ok({ id: id });
+      }
+      return { migrate: migrate, actions: { getDeckConfig: getDeckConfig, saveDeckConfig: saveDeckConfig, getDeckImage: getDeckImage, saveDeckImage: saveDeckImage } };
     },
   });
   // ============================================
