@@ -1299,6 +1299,8 @@ const REF_TEXT_FIXES = [
   { id: "yamamoto", fields: ["business"], from: "AI事業者向けのシステム開発", to: "事業者向けのシステム改善" },
   { id: "yamamoto", fields: ["selfIntro"], from: "AI歴3年以上", to: "AI歴4年" },
   { id: "yamamoto", fields: ["selfIntro"], from: "・Webサイト・業務効率化ツールの開発（https://lumenium.net ）", to: "・AI歴4年のオタクによる事業者向けシステム改善（Webサイト・業務効率化ツールの開発 https://lumenium.net ）" },
+  // 2026年11月15日: 「事業者向けシステム改善」→「AI特化のシステム改善」(上の書きかえのあとに行う)
+  { id: "yamamoto", fields: ["company", "business", "selfIntro"], from: "AI歴4年のオタクによる事業者向けシステム改善", to: "AI歴4年のオタクによるAI特化のシステム改善" },
 ];
 function refFixTexts(list) {
   (Array.isArray(list) ? list : []).forEach((m) => {
