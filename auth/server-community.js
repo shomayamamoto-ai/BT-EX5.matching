@@ -3108,6 +3108,28 @@
           }
           changed = true;
         }
+        // 用語説明の内部ビジター・ゲストに注意書き「※参加は2回まで(BT-EXフェスは何度でも参加可能)」(2026年11月15日、運営の依頼)。
+        // 前に保存した用語説明で、説明が前のままのものにだけ、一度だけ足す
+        if (db.cleanups.indexOf("deck-glossary-guest-note-1") === -1) {
+          db.cleanups.push("deck-glossary-guest-note-1");
+          var cfg16 = readCfg(db);
+          var NOTE16 = "※参加は2回まで(BT-EXフェスは何度でも参加可能)";
+          var fixG16 = function (items) {
+            if (!Array.isArray(items)) return items;
+            items.forEach(function (x) {
+              var hd = String((x && x.head) || "").replace(/\s/g, ""), t = String((x && x.text) || "").replace(/\s/g, "");
+              if ((hd === "内部ビジター" && t === "LINKのBT会員でBT-EXに入っていない方") || (hd === "ゲスト" && t === "まだLINKの会員ではない方")) x.text = String(x.text).replace(/\s+$/, "") + "\n" + NOTE16;
+            });
+            return items;
+          };
+          if (cfg16) {
+            var hit16 = false;
+            if (Array.isArray(cfg16["glossary.items"])) { cfg16["glossary.items"] = fixG16(cfg16["glossary.items"]); hit16 = true; }
+            if (cfg16.glossary && Array.isArray(cfg16.glossary.items)) { cfg16.glossary.items = fixG16(cfg16.glossary.items); hit16 = true; }
+            if (hit16) writeCfg(db, cfg16);
+          }
+          changed = true;
+        }
         // 仕組みとベネフィット(2026年11月14日): 「コミットで加速」のカードの「リファーラル」を「紹介」に(運営の依頼)。
         // 前に保存したカードの文に「リファーラル」(「リファラル」)が残っていれば、そのカードだけ書きかえる
         if (db.cleanups.indexOf("deck-benefit-shokai-1") === -1) {

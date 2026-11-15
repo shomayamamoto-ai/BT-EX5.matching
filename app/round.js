@@ -2081,7 +2081,9 @@
         // 「進む」は、そのまま次のスライドへ進む(下の seq・pop は使わないが、戻したくなったときのために残してある)
         const cells = items.map((x, i) => h("div", Object.assign({ class: "pd-gloss-item is-plain" }, nth(i)),
           // 説明は1行で出す(運営の依頼。2026年11月14日)。行の区切りはつなぎ、入りきらないときは fitDeck がそろって小さくする
-          h("dt", null, x.head), h("dd", null, h("span", { class: "pd-line" }, oneLine(x.text)))));
+          // 「※」で始まる行は注意書き: 説明の下に、小さく1行ずつ出す(例: ※参加は2回まで)
+          h("dt", null, x.head), h("dd", null, h("span", { class: "pd-line" }, oneLine(String(x.text || "").split("\n").filter((t) => !/^\s*※/.test(t)).join("\n"))),
+            String(x.text || "").split("\n").map((t) => t.trim()).filter((t) => /^※/.test(t)).map((t) => h("span", { class: "pd-gl-note" }, t)))));
         // i: 0 = 閉じている / 1〜n = その番号の言葉を出している(カードの送りと同じ形で、進む・戻るから動かす)
         const seq = { n: items.length + 1, i: 0, show(k) {
           seq.i = Math.max(0, Math.min(items.length, k));

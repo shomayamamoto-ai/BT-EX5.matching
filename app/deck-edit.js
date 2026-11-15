@@ -54,6 +54,7 @@
   }
   // 用語説明(2026年11月15日、運営の依頼): 「ビジター」を外し、ユニットと1on1のあいだに「内部ビジター」「ゲスト」を入れ、
   // 1on1 の説明を「お互いの事業や活動を紹介し合う」に。前に保存した用語説明が共有サーバーの更新の前に届いたときも、同じ形にして出す
+  const GL_NOTE = "※参加は2回まで(BT-EXフェスは何度でも参加可能)";
   App.fixGlossary = function (items) {
     if (!Array.isArray(items)) return items;
     const hd = (x) => String((x && x.head) || "").replace(/\s/g, "");
@@ -61,10 +62,15 @@
     const one = out.find((x) => hd(x) === "1on1");
     if (one && /紹介してほしい人を[\s\S]*深く知る/.test(String(one.text || ""))) one.text = "メンバー同士が1対1で\nお互いの事業や活動を\n紹介し合うミーティング";
     if (!out.some((x) => hd(x) === "内部ビジター") && !out.some((x) => hd(x) === "ゲスト")) {
-      const add = [{ head: "内部ビジター", text: "LINKのBT会員で\nBT-EXに入っていない方" }, { head: "ゲスト", text: "まだLINKの会員ではない方" }];
+      const add = [{ head: "内部ビジター", text: "LINKのBT会員で\nBT-EXに入っていない方\n" + GL_NOTE }, { head: "ゲスト", text: "まだLINKの会員ではない方\n" + GL_NOTE }];
       const at = out.findIndex((x) => hd(x) === "1on1");
       out = at >= 0 ? [...out.slice(0, at), ...add, ...out.slice(at)] : out.concat(add);
     }
+    // 内部ビジター・ゲストの注意書き「※参加は2回まで…」(2026年11月15日、運営の依頼)。説明が前のままのときだけ足す(書きかえてあるものは変えない)
+    out.forEach((x) => {
+      const t = String((x && x.text) || "").replace(/\s/g, "");
+      if ((hd(x) === "内部ビジター" && t === "LINKのBT会員でBT-EXに入っていない方") || (hd(x) === "ゲスト" && t === "まだLINKの会員ではない方")) x.text = `${String(x.text).trim()}\n${GL_NOTE}`;
+    });
     return out;
   };
   function fixGlossaryCfg(cfg) {

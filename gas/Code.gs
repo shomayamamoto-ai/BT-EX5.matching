@@ -1175,8 +1175,9 @@ const BTEX_DECK = {
       { head: "BT-EX", text: "LINK や BT の中の\n他のビジネス団体の強みを取り入れた\n事業者コミュニティ" },
       { head: "ユニット", text: "BT-EX1〜14 の\nそれぞれの定例会のグループ\n(BT-EX5 は新潟⇔東京)" },
       // 内部ビジター・ゲスト(2026年11月15日、運営の依頼で足した。「ビジター」は外した)
-      { head: "内部ビジター", text: "LINKのBT会員で\nBT-EXに入っていない方" },
-      { head: "ゲスト", text: "まだLINKの会員ではない方" },
+      // 「※」で始まる行は、説明の下に小さく出す注意書き(2026年11月15日、運営の依頼で「参加は2回まで」を足した)
+      { head: "内部ビジター", text: "LINKのBT会員で\nBT-EXに入っていない方\n※参加は2回まで(BT-EXフェスは何度でも参加可能)" },
+      { head: "ゲスト", text: "まだLINKの会員ではない方\n※参加は2回まで(BT-EXフェスは何度でも参加可能)" },
       { head: "1on1", text: "メンバー同士が1対1で\nお互いの事業や活動を\n紹介し合うミーティング" },
       { head: "貢献（紹介）", text: "メンバーへのお仕事の紹介" },
       { head: "ありがとうマイル", text: "紹介で仕事が決まったら\n紹介してくれた人へ\n成約金額を感謝として送る(1円＝1マイル)" },
@@ -2988,7 +2989,7 @@ const REF_SEED_ANNOUNCEMENTS = [
   {
     seedId: "2026-10-25-update-16",
     cat: "アップデート",
-    rev: 217,
+    rev: 218,
     at: Date.UTC(2026, 9, 25, 4, 0), // 2026/10/25 13:00(日本時間)
     title: "【アップデート】紹介診断に「相手がこう言っていたら」・アンケート・運営タブ など",
     body: [
@@ -3045,6 +3046,7 @@ const REF_SEED_ANNOUNCEMENTS = [
       "・「本日の運営メンバー」の役の名前「ブレイクアウトルーム」を「ブレイクアウトルーム＆タイマー」にしました。",
       "・【進行役の方へ】スライドを、見たまま直せるようになりました。スライドの画面の右上の「編集」(または準備の画面の「スライドを見たまま編集する」)を押すと、文字を押して書きかえ・大きさや色の変更・つまんで移動・かくす、文字や写真を足す、ページを足す・かくす・並べかえる、ができます。直したところは自動で保存され、「取り消し」「元に戻す」で戻せます(写真を足す機能は、共有サーバーの更新のあとから使えます)。",
       "・スライドの表紙で、上の「Welcome」の文字や下のカードが切れることがあったのを直しました。",
+      "・スライドの用語説明の「内部ビジター」「ゲスト」に、「※参加は2回まで(BT-EXフェスは何度でも参加可能)」を足しました。",
       "・【新しい機能】記録の「分析」に「あなたの活動バランス」を足しました。マイル・紹介・1on1・ビジター・出席を、メンバーの平均とくらべたレーダー図(くもの巣の図)で見える化し、「強み TOP3」「伸びしろ TOP3」と、伸びしろに合わせた「次の一手」(押すとその画面へ)を出します。アンケートの結果にも「ひと目でわかる」を足し、満足度のバランス(今回と前回のレーダー図)・良かったプログラム TOP3・もっと良くしたいところ TOP3 を出します。",
       "・BT-EX7 の矢口 健彦(ヤグチ タケヒコ)さん(Data Fusion Partners 代表/中小企業診断士/綺絆)の顔写真と、事業内容・対象のお客様・「こんな話が出たら」を入れました。プレゼンで選ぶと、写真とつながりたい人がスライドに出ます。",
       "・BT-EX1 の小松 茂子さん(ReVivre 代表/チーム無限)の事業内容(共済保険)・主なお客様・求める紹介・「こんな話が出たら」を入れました。プレゼンで選ぶと、求める紹介がスライドに出ます。",
@@ -7602,6 +7604,28 @@ var BtexServerCore = (function () {
             if (Array.isArray(cfg15["glossary.items"])) { cfg15["glossary.items"] = fixG15(cfg15["glossary.items"]); hit15 = true; }
             if (cfg15.glossary && Array.isArray(cfg15.glossary.items)) { cfg15.glossary.items = fixG15(cfg15.glossary.items); hit15 = true; }
             if (hit15) writeCfg(db, cfg15);
+          }
+          changed = true;
+        }
+        // 用語説明の内部ビジター・ゲストに注意書き「※参加は2回まで(BT-EXフェスは何度でも参加可能)」(2026年11月15日、運営の依頼)。
+        // 前に保存した用語説明で、説明が前のままのものにだけ、一度だけ足す
+        if (db.cleanups.indexOf("deck-glossary-guest-note-1") === -1) {
+          db.cleanups.push("deck-glossary-guest-note-1");
+          var cfg16 = readCfg(db);
+          var NOTE16 = "※参加は2回まで(BT-EXフェスは何度でも参加可能)";
+          var fixG16 = function (items) {
+            if (!Array.isArray(items)) return items;
+            items.forEach(function (x) {
+              var hd = String((x && x.head) || "").replace(/\s/g, ""), t = String((x && x.text) || "").replace(/\s/g, "");
+              if ((hd === "内部ビジター" && t === "LINKのBT会員でBT-EXに入っていない方") || (hd === "ゲスト" && t === "まだLINKの会員ではない方")) x.text = String(x.text).replace(/\s+$/, "") + "\n" + NOTE16;
+            });
+            return items;
+          };
+          if (cfg16) {
+            var hit16 = false;
+            if (Array.isArray(cfg16["glossary.items"])) { cfg16["glossary.items"] = fixG16(cfg16["glossary.items"]); hit16 = true; }
+            if (cfg16.glossary && Array.isArray(cfg16.glossary.items)) { cfg16.glossary.items = fixG16(cfg16.glossary.items); hit16 = true; }
+            if (hit16) writeCfg(db, cfg16);
           }
           changed = true;
         }

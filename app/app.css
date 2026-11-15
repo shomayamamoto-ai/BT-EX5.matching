@@ -3671,6 +3671,9 @@ button.home-welcome-check:active { transform: scale(0.94); }
 .pr-run.deck-soft .pd-pick-tag { color: #fff; }
 .pr-run.deck-soft .pd-pick-meta > div { background: #fdf4f1; }
 /* 用語説明: ポップアップをやめたので、行は押せない見た目に */
+/* 用語説明の注意書き(「※参加は2回まで…」): 説明の下に小さく */
+.pd-gloss dd .pd-gl-note { display: block; margin-top: 0.12em; font-size: 0.7em; font-weight: 800; line-height: 1.35; color: var(--pd-gold); white-space: nowrap; }
+@media (max-width: 760px), (max-aspect-ratio: 1/1) { .pd-gloss dd .pd-gl-note { white-space: normal; font-size: 0.82em; } }
 .pd-gloss-item.is-plain { cursor: default; }
 .pd-gloss-item.is-plain:hover { border-color: var(--pd-line); background: var(--pd-card); }
 .pr-run.deck-soft .pd-gloss-item.is-plain:hover { background: #fff; border-color: var(--pd-line); }
