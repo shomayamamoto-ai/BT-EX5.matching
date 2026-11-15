@@ -1798,6 +1798,16 @@ button.home-welcome-check:active { transform: scale(0.94); }
 .pd-cover .pd-display { font-size: clamp(28px, min(5vw, 8svh), 78px); word-break: keep-all; overflow-wrap: normal; }
 .pd-date { margin: 0; font-size: clamp(15px, min(2vw, 3.2svh), 28px); font-weight: 800; color: var(--pd-gold); letter-spacing: 0.08em; }
 .pd-notes { list-style: none; margin: 0; padding: 0; color: var(--pd-text); font-size: clamp(12px, min(1.4vw, 2.2svh), 18px); }
+/* 表紙の「Zoomの名前の変更をお願いします」 */
+.pd-zoom { display: grid; justify-items: center; gap: clamp(6px, 1.3svh, 14px); width: min(100%, 860px); margin-top: clamp(2px, 1svh, 12px); padding: clamp(12px, 2.2svh, 24px) clamp(14px, 2.4vw, 36px); text-align: center; }
+.pd-zoom-title { margin: 0; font-weight: 800; font-size: clamp(15px, min(2vw, 3.3svh), 28px); line-height: 1.35; color: var(--pd-strong); }
+.pd-zoom-form { margin: 0; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 0.35em 0.5em; font-size: clamp(16px, min(2.5vw, 4.1svh), 36px); line-height: 1.2; }
+.pd-zoom-form b { padding: 0.18em 0.6em; border-radius: 0.5em; border: 1.5px solid var(--pd-gold); background: rgba(226, 184, 102, 0.14); color: var(--pd-strong); font-weight: 800; white-space: nowrap; }
+.pd-zoom-form i { font-style: normal; font-weight: 800; color: var(--pd-gold); }
+.pd-zoom-rows { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 0.4em 1.6em; font-size: clamp(13px, min(1.7vw, 2.8svh), 24px); color: var(--pd-text); }
+.pd-zoom-rows li { display: flex; align-items: baseline; gap: 0.5em; white-space: nowrap; }
+.pd-zoom-rows b { min-width: 1.6em; padding: 0.05em 0.5em; border-radius: 0.45em; background: var(--pd-gold); color: #1c1407; font-weight: 800; text-align: center; }
+.pd-zoom-ex { margin: 0; font-size: clamp(12px, min(1.45vw, 2.4svh), 20px); color: var(--pd-muted); }
 .pd-subsection .pd-display { font-size: clamp(26px, min(4.2vw, 7svh), 66px); }
 
 /* 本日の流れ・区切りのスライドの流れの一覧 */

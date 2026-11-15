@@ -238,3 +238,6 @@
 .pr-run.deck-soft .pr-next.is-card .pr-next-label { background: none; color: #c25d53 !important; }
 .pr-run.deck-soft .pr-next.is-card { box-shadow: none; }
 .pr-run.deck-soft .pr-next-name { color: var(--pd-text) !important; }
+/* 表紙の「Zoomの名前の変更をお願いします」 */
+.pr-run.deck-soft .pd-zoom-form b { background: var(--sf-coral-soft); border-color: var(--pd-gold-soft); }
+.pr-run.deck-soft .pd-zoom-rows b { background: var(--sf-coral); color: #fff; }

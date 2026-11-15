@@ -911,7 +911,7 @@
     let glossDone = false;
     const glossary = (label) => { glossDone = true; deck("glossary", { name: D.glossary.title, step: label, items: D.glossary.items }); };
     deck("movie", { name: "オープニングムービー", step: "オープニング" });
-    deck("cover", { name: (ev && ev.title) || "BT-EX5 定例会", step: "定例会", date: ev ? `${App.fmtDateLong ? App.fmtDateLong(ev.date) : ev.date}${ev.start ? ` ${ev.start}〜${ev.end || ""}` : ""}` : "", notes });
+    deck("cover", { zoom: D.zoomName || null, name: (ev && ev.title) || "BT-EX5 定例会", step: "定例会", date: ev ? `${App.fmtDateLong ? App.fmtDateLong(ev.date) : ev.date}${ev.start ? ` ${ev.start}〜${ev.end || ""}` : ""}` : "", notes });
     let pres = false, extra = false, raiseDone = false;
     // 「このような人のお役に立てます」「3つの強み」「それぞれの強み」は、商談(ブレイクアウトルーム)のタイマーのあとに
     const extras = (label) => {
@@ -1796,6 +1796,7 @@
           h("button", { type: "button", class: "round-btn is-main pd-play", onclick: playMovie }, "▶ もう一度流す"));
       }
       if (p.type === "cover") {
+        const Z = p.zoom;
         return h("div", { class: "pd pd-hero pd-cover", "data-en": "Welcome" },
           h("img", { class: "pd-mark", src: "../assets/bt-ex5-mark-3d-512.png", alt: "" }),
           h("p", { class: "pd-kicker" }, "BT-EX5 定例会"),
@@ -1803,7 +1804,13 @@
           // 「の」のあとでだけ折り返せるようにする(入りきらないときは「日本海側最大の/マーケット」と分かれる)
           h("h2", { class: "pd-display" }, ...String(p.name).trim().split(/[\s　]+/).flatMap((x, i) => [i ? h("br") : null, ...x.replace(/の/g, "の\u0000").split("\u0000").filter(Boolean).flatMap((t, j) => (j ? [h("wbr"), t] : [t]))]).filter(Boolean)),
           h("span", { class: "pd-rule", "aria-hidden": "true" }),
-          p.notes && p.notes.length ? h("ul", { class: "pd-notes" }, p.notes.map((x) => h("li", null, x))) : null);
+          p.notes && p.notes.length ? h("ul", { class: "pd-notes" }, p.notes.map((x) => h("li", null, x))) : null,
+          // Zoom の名前のお願い(入室して待っているあいだに見てもらう): 「ユニット番号/名前/職業・職種」の形と、ゲスト= G・ビジター= V
+          Z && Z.title ? h("section", { class: "pd-card pd-zoom", "aria-label": Z.title },
+            h("p", { class: "pd-zoom-title" }, Z.title),
+            h("p", { class: "pd-zoom-form" }, ...(Z.parts || []).flatMap((x, i) => [i ? h("i", { "aria-hidden": "true" }, "/") : null, h("b", null, x)]).filter(Boolean)),
+            (Z.rows || []).length ? h("ul", { class: "pd-zoom-rows" }, Z.rows.map((r) => h("li", null, h("span", null, r[0]), h("b", null, r[1])))) : null,
+            Z.example ? h("p", { class: "pd-zoom-ex" }, Z.example) : null) : null);
       }
       if (p.type === "agenda") {
         // 本日の流れ(2026年11月15日、運営の依頼で見やすく作り直し):
