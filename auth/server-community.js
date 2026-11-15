@@ -256,6 +256,22 @@
           });
           changed = true;
         }
+        // 2026年11月15日(運営の依頼): 「BT-EXの理念」を「用語説明」の前に。これからの定例会(11月15日以降)の流れで、
+        // 「用語説明」のすぐあとに「BT-EXの理念」があれば、入れかえる(番号はそのまま。一度だけ)
+        if (db.eventSeeds && db.eventSeeds.indexOf("deck-steps-phil-first-1") === -1) {
+          db.eventSeeds.push("deck-steps-phil-first-1");
+          var CIRC5 = "①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳";
+          db.events.forEach(function (ev) {
+            if (typeof ev.agenda !== "string" || !ev.agenda || !(String(ev.date || "") >= "2026-11-15")) return;
+            var lines = ev.agenda.split("\n"), steps = [];
+            lines.forEach(function (l, i) { if (CIRC5.indexOf(String(l).trim().charAt(0)) !== -1) steps.push(i); });
+            for (var k = 0; k + 1 < steps.length; k++) {
+              var a5 = String(lines[steps[k]]).trim(), b5 = String(lines[steps[k + 1]]).trim();
+              if (/用語/.test(a5) && /理念/.test(b5)) { lines[steps[k]] = a5.charAt(0) + b5.slice(1); lines[steps[k + 1]] = b5.charAt(0) + a5.slice(1); ev.agenda = lines.join("\n"); break; }
+            }
+          });
+          changed = true;
+        }
         // 入っていない値がつながって保存された「null」「nullnull」などの文字を、一度だけ消す
         // (ログイン・通知の登録・鍵などは触らない)
         if (!Array.isArray(db.cleanups)) { db.cleanups = []; changed = true; }
@@ -429,7 +445,7 @@
             return out;
           });
         return c.ok({
-          meeting90: true, meeting120: true, // 定例会を2時間に戻し済みの共有サーバー(アプリ側で時刻を直さなくてよい。meeting90 は前のアプリのために残す)
+          meeting90: true, meeting120: true, philFirst: true, // 定例会を2時間に戻し済みの共有サーバー(アプリ側で時刻を直さなくてよい。meeting90 は前のアプリのために残す)
           event: eventView(w, e), members: members, visitors: visitors, isAdmin: w.isAdmin,
           minutes: e.minutes ? { text: e.minutes.text, at: e.minutes.at, byName: nameOf(w.db, e.minutes.by), annId: e.minutes.annId || "" } : null,
         });
@@ -477,7 +493,7 @@
           .filter(function (e) { return e.date >= from; })
           .sort(function (a, b) { return (a.date + a.start).localeCompare(b.date + b.start); })
           .map(function (e) { return eventView(w, e); });
-        return c.ok({ events: events, today: today(), calendar: !!c.calendar, meeting90: true, meeting120: true });
+        return c.ok({ events: events, today: today(), calendar: !!c.calendar, meeting90: true, meeting120: true, philFirst: true });
       }
 
       function rsvpEvent(body) {
@@ -2389,7 +2405,7 @@
           .sort(function (a, b) { return (a.due || "9999").localeCompare(b.due || "9999") || a.at - b.at; })
           .map(function (tk) { return taskView(db, tk, w.id); });
         return c.ok({
-          meeting90: true, meeting120: true,
+          meeting90: true, meeting120: true, philFirst: true,
           tasks: myTasks,
           spotlight: spotlight,
           me: { id: w.id, name: w.me.name, team: w.me.team || "", isAdmin: w.isAdmin, hasPassword: !!w.user.pw, goals: w.user.goals || null },
@@ -3273,6 +3289,19 @@
             var a14 = t14[11] > 1 ? 1 : 0, b14 = t14[9] > 5 ? 1 : 0;
             cfg14.timeplan = t14.slice(0, 9).concat([t14[9] - b14, a14 + b14, t14[10], t14[11] - a14, t14[12]]);
             writeCfg(db, cfg14);
+          }
+          changed = true;
+        }
+        // 「BT-EXの理念」を「用語説明」の前にした(2026年11月15日)。前に保存した時間の目安(14)は、2番目(用語説明)と3番目(理念)の分を入れかえる。
+        // アプリの側で先に入れかえて保存したもの(tpv: 2 のしるし付き)は、そのまま
+        if (db.cleanups.indexOf("deck-timeplan-phil-first-1") === -1) {
+          db.cleanups.push("deck-timeplan-phil-first-1");
+          var cfg17 = readCfg(db);
+          if (cfg17 && Array.isArray(cfg17.timeplan) && cfg17.timeplan.length === 14 && cfg17.tpv !== 2) {
+            var t17 = cfg17.timeplan.slice(), x17 = t17[2];
+            t17[2] = t17[3]; t17[3] = x17;
+            cfg17.timeplan = t17; cfg17.tpv = 2;
+            writeCfg(db, cfg17);
           }
           changed = true;
         }

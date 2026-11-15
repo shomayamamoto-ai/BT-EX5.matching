@@ -90,9 +90,17 @@
     E.ov = 2;
     return cfg;
   }
+  // 「BT-EXの理念」を「用語説明」の前にした(2026年11月15日)。前に保存した時間の目安は、2番目(用語説明)と3番目(理念)の分を入れかえる。
+  // 入れかえたしるし(tpv: 2)をいっしょに持たせて、一度だけにする(共有サーバーでも同じ入れかえを一度だけ行う)
+  function fixPlanOrder(cfg) {
+    if (!cfg || !Array.isArray(cfg.timeplan) || cfg.tpv === 2) return cfg;
+    const t = App.fitDeckPlan ? App.fitDeckPlan(cfg.timeplan) : cfg.timeplan;
+    if (Array.isArray(t) && t.length === 14) { const out = t.slice(); out[2] = t[3]; out[3] = t[2]; cfg.timeplan = out; cfg.tpv = 2; }
+    return cfg;
+  }
   App.loadDeckConfig = async function () {
     const r = await App.api("getDeckConfig", {}, { quiet: true });
-    return r ? { config: fixMovieOrder(fixGlossaryCfg(fixBenefitWord(fixRaiseOrder(r.config)))) || null, canEdit: !!r.canEdit } : { config: null, canEdit: false };
+    return r ? { config: fixPlanOrder(fixMovieOrder(fixGlossaryCfg(fixBenefitWord(fixRaiseOrder(r.config))))) || null, canEdit: !!r.canEdit } : { config: null, canEdit: false };
   };
 
   // ---------- 入力欄の形 ----------
@@ -311,7 +319,7 @@
           if (JSON.stringify(v) !== JSON.stringify(clone(getPath(orig, f.path)))) out[f.path] = v;
         });
         const tp = minInputs.map((x) => Math.max(0, Math.min(180, Math.round(Number(x.value) || 0))));
-        if (JSON.stringify(tp) !== JSON.stringify(orig.timeplan || [])) out.timeplan = tp;
+        if (JSON.stringify(tp) !== JSON.stringify(orig.timeplan || [])) { out.timeplan = tp; out.tpv = 2; } // tpv: 時間の目安の並びの版(2 = 理念が用語説明の前)
         // スライドの画面の「見たまま編集」で直したところ(edits)は、この画面では変えないので、そのまま残す
         if (cfg && cfg.edits) out.edits = cfg.edits;
         const r = await App.api("saveDeckConfig", { config: Object.keys(out).length ? out : null });

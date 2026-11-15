@@ -1188,11 +1188,12 @@ const BTEX_DECK = {
   // オープニング1分・挨拶5分・用語説明2分・理念10分・仕組みとベネフィット8分・エデュケーション(5分+α1分)6分・1分プレゼン32分・商談(7分×4回+α5分)33分・BT-EXの強み3分・実績紹介15分・BT-EX5のご案内2分・BT-EXの規定2分・終わりの挨拶1分 = 120分
   // 2026年11月14日: 「出席規定」(2分)を実績紹介のあとに足した(実績紹介 15→14分、BT-EXの規定 2→1分)
   // …実績紹介14分・出席規定2分・BT-EX5のご案内2分・BT-EXの規定1分・終わりの挨拶1分 = 120分
-  timeplan: [1, 5, 2, 10, 8, 6, 32, 33, 3, 14, 2, 2, 1, 1],
+  // 2026年11月15日: 「BT-EXの理念」(10分)を「用語説明」(2分)の前にした(並びだけ。分は同じ)
+  timeplan: [1, 5, 10, 2, 8, 6, 32, 33, 3, 14, 2, 2, 1, 1],
   // 1時間半(90分)くらいまでの短い回のときの配分(ふだんの定例会は2時間。運営が短い回を作ったときだけ使う)
   // オープニング1分・挨拶4分・用語説明2分・理念7分・仕組みとベネフィット5分・エデュケーション6分・1分プレゼン24分・商談(7分×3回+α2分)23分・BT-EXの強み3分・実績紹介10分・BT-EX5のご案内2分・BT-EXの規定2分・終わりの挨拶1分
   // 商談のはじめの値は 7分×4回(breakout)
-  timeplan90: [1, 4, 2, 7, 5, 6, 24, 23, 3, 9, 2, 2, 1, 1], // …実績紹介9分・出席規定2分・ご案内2分・規定1分・終わりの挨拶1分 = 90分
+  timeplan90: [1, 4, 7, 2, 5, 6, 24, 23, 3, 9, 2, 2, 1, 1], // …実績紹介9分・出席規定2分・ご案内2分・規定1分・終わりの挨拶1分 = 90分
   // スケジュール(次回以降の日程は、予定に入っている定例会から出す)
   schedule: {
     title: "BT-EX5 スケジュール",
@@ -1451,7 +1452,8 @@ function refRoleOf(id) {
 // 「⑩BT-EX5のご案内」(入会・アンケート・出席コード・スケジュール。終わりの挨拶から分けた)・「⑪BT-EXの規定」を足した
 // 2026年11月14日: 「⑩出席規定」(出席規定のスライドだけ)を「BT-EX5のご案内」の前に足した(ご案内は⑪、BT-EXの規定は⑫、終わりの挨拶は⑬に)
 const REF_SEED_AGENDA = [
-  "①はじめの挨拶", "②用語説明", "③BT-EXの理念", "④仕組みとベネフィット", "⑤エデュケーションコーナー 5分", "⑥1分プレゼンテーション",
+  // 2026年11月15日(運営の依頼): 「BT-EXの理念」を「用語説明」の前に(前は ②用語説明 ③BT-EXの理念)
+  "①はじめの挨拶", "②BT-EXの理念", "③用語説明", "④仕組みとベネフィット", "⑤エデュケーションコーナー 5分", "⑥1分プレゼンテーション",
   "⑦ブレイクアウトルーム商談（テーブル商談） 7分×4", "⑧BT-EXの強み", "⑨LINKのビジネス実績紹介", "⑩出席規定", "⑪BT-EX5のご案内", "⑫BT-EXの規定", "⑬終わりの挨拶",
 ].join("\n");
 // 以前の流れ(運営が書きかえていない定例会だけ、上の流れに置きかえる)
@@ -2989,7 +2991,7 @@ const REF_SEED_ANNOUNCEMENTS = [
   {
     seedId: "2026-10-25-update-16",
     cat: "アップデート",
-    rev: 219,
+    rev: 220,
     at: Date.UTC(2026, 9, 25, 4, 0), // 2026/10/25 13:00(日本時間)
     title: "【アップデート】紹介診断に「相手がこう言っていたら」・アンケート・運営タブ など",
     body: [
@@ -3050,6 +3052,7 @@ const REF_SEED_ANNOUNCEMENTS = [
       "・スライドの左上のタイムマネジメントの小窓を開いても、スライドの位置・大きさが変わらないようにしました(小窓はスライドの上に重なります)。",
       "・スライドを画面の中心にそろえました(代表の紹介・写真・出席コードのスライドなどが、左に寄ったり右にはみ出したりしていたのを直しました)。",
       "・スライドの順番を「表紙(Zoomの名前のお願い)→ オープニングムービー →本日の流れ」にしました。「定例会をはじめる」で表紙が出て、「進む」でムービーが流れます。",
+      "・定例会の流れで、「BT-EXの理念」を「用語説明」の前にしました(①はじめの挨拶 → ②BT-EXの理念 → ③用語説明 → ④仕組みとベネフィット …)。スライド・時間の目安・役割早見表も同じ順番です。",
       "・【新しい機能】記録の「分析」に「あなたの活動バランス」を足しました。マイル・紹介・1on1・ビジター・出席を、メンバーの平均とくらべたレーダー図(くもの巣の図)で見える化し、「強み TOP3」「伸びしろ TOP3」と、伸びしろに合わせた「次の一手」(押すとその画面へ)を出します。アンケートの結果にも「ひと目でわかる」を足し、満足度のバランス(今回と前回のレーダー図)・良かったプログラム TOP3・もっと良くしたいところ TOP3 を出します。",
       "・BT-EX7 の矢口 健彦(ヤグチ タケヒコ)さん(Data Fusion Partners 代表/中小企業診断士/綺絆)の顔写真と、事業内容・対象のお客様・「こんな話が出たら」を入れました。プレゼンで選ぶと、写真とつながりたい人がスライドに出ます。",
       "・BT-EX1 の小松 茂子さん(ReVivre 代表/チーム無限)の事業内容(共済保険)・主なお客様・求める紹介・「こんな話が出たら」を入れました。プレゼンで選ぶと、求める紹介がスライドに出ます。",
@@ -4758,6 +4761,22 @@ var BtexServerCore = (function () {
           });
           changed = true;
         }
+        // 2026年11月15日(運営の依頼): 「BT-EXの理念」を「用語説明」の前に。これからの定例会(11月15日以降)の流れで、
+        // 「用語説明」のすぐあとに「BT-EXの理念」があれば、入れかえる(番号はそのまま。一度だけ)
+        if (db.eventSeeds && db.eventSeeds.indexOf("deck-steps-phil-first-1") === -1) {
+          db.eventSeeds.push("deck-steps-phil-first-1");
+          var CIRC5 = "①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳";
+          db.events.forEach(function (ev) {
+            if (typeof ev.agenda !== "string" || !ev.agenda || !(String(ev.date || "") >= "2026-11-15")) return;
+            var lines = ev.agenda.split("\n"), steps = [];
+            lines.forEach(function (l, i) { if (CIRC5.indexOf(String(l).trim().charAt(0)) !== -1) steps.push(i); });
+            for (var k = 0; k + 1 < steps.length; k++) {
+              var a5 = String(lines[steps[k]]).trim(), b5 = String(lines[steps[k + 1]]).trim();
+              if (/用語/.test(a5) && /理念/.test(b5)) { lines[steps[k]] = a5.charAt(0) + b5.slice(1); lines[steps[k + 1]] = b5.charAt(0) + a5.slice(1); ev.agenda = lines.join("\n"); break; }
+            }
+          });
+          changed = true;
+        }
         // 入っていない値がつながって保存された「null」「nullnull」などの文字を、一度だけ消す
         // (ログイン・通知の登録・鍵などは触らない)
         if (!Array.isArray(db.cleanups)) { db.cleanups = []; changed = true; }
@@ -4931,7 +4950,7 @@ var BtexServerCore = (function () {
             return out;
           });
         return c.ok({
-          meeting90: true, meeting120: true, // 定例会を2時間に戻し済みの共有サーバー(アプリ側で時刻を直さなくてよい。meeting90 は前のアプリのために残す)
+          meeting90: true, meeting120: true, philFirst: true, // 定例会を2時間に戻し済みの共有サーバー(アプリ側で時刻を直さなくてよい。meeting90 は前のアプリのために残す)
           event: eventView(w, e), members: members, visitors: visitors, isAdmin: w.isAdmin,
           minutes: e.minutes ? { text: e.minutes.text, at: e.minutes.at, byName: nameOf(w.db, e.minutes.by), annId: e.minutes.annId || "" } : null,
         });
@@ -4979,7 +4998,7 @@ var BtexServerCore = (function () {
           .filter(function (e) { return e.date >= from; })
           .sort(function (a, b) { return (a.date + a.start).localeCompare(b.date + b.start); })
           .map(function (e) { return eventView(w, e); });
-        return c.ok({ events: events, today: today(), calendar: !!c.calendar, meeting90: true, meeting120: true });
+        return c.ok({ events: events, today: today(), calendar: !!c.calendar, meeting90: true, meeting120: true, philFirst: true });
       }
 
       function rsvpEvent(body) {
@@ -6891,7 +6910,7 @@ var BtexServerCore = (function () {
           .sort(function (a, b) { return (a.due || "9999").localeCompare(b.due || "9999") || a.at - b.at; })
           .map(function (tk) { return taskView(db, tk, w.id); });
         return c.ok({
-          meeting90: true, meeting120: true,
+          meeting90: true, meeting120: true, philFirst: true,
           tasks: myTasks,
           spotlight: spotlight,
           me: { id: w.id, name: w.me.name, team: w.me.team || "", isAdmin: w.isAdmin, hasPassword: !!w.user.pw, goals: w.user.goals || null },
@@ -7775,6 +7794,19 @@ var BtexServerCore = (function () {
             var a14 = t14[11] > 1 ? 1 : 0, b14 = t14[9] > 5 ? 1 : 0;
             cfg14.timeplan = t14.slice(0, 9).concat([t14[9] - b14, a14 + b14, t14[10], t14[11] - a14, t14[12]]);
             writeCfg(db, cfg14);
+          }
+          changed = true;
+        }
+        // 「BT-EXの理念」を「用語説明」の前にした(2026年11月15日)。前に保存した時間の目安(14)は、2番目(用語説明)と3番目(理念)の分を入れかえる。
+        // アプリの側で先に入れかえて保存したもの(tpv: 2 のしるし付き)は、そのまま
+        if (db.cleanups.indexOf("deck-timeplan-phil-first-1") === -1) {
+          db.cleanups.push("deck-timeplan-phil-first-1");
+          var cfg17 = readCfg(db);
+          if (cfg17 && Array.isArray(cfg17.timeplan) && cfg17.timeplan.length === 14 && cfg17.tpv !== 2) {
+            var t17 = cfg17.timeplan.slice(), x17 = t17[2];
+            t17[2] = t17[3]; t17[3] = x17;
+            cfg17.timeplan = t17; cfg17.tpv = 2;
+            writeCfg(db, cfg17);
           }
           changed = true;
         }

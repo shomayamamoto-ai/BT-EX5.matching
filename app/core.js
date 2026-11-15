@@ -392,12 +392,29 @@ const App = (function () {
     e.end = `${String(Math.floor(n / 60)).padStart(2, "0")}:${String(n % 60).padStart(2, "0")}`;
     if (typeof e.agenda === "string") e.agenda = e.agenda.replace(/(ブレイクアウトルーム商談[^\n]*?)7\s*分\s*[×xX✕]\s*3/, "$17分×4");
   }
+  // 2026年11月15日(運営の依頼): 「BT-EXの理念」を「用語説明」の前に。共有サーバーがまだ書きかえる前(philFirst の印がない)は、
+  // これからの定例会の流れで「用語説明」のすぐあとに「BT-EXの理念」があれば、アプリの画面で入れかえて見せる(番号はそのまま振る)
+  const STEP_NUMS = "①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳";
+  function philFirstText(text) {
+    const lines = String(text || "").split("\n");
+    const steps = lines.map((l, i) => (STEP_NUMS.includes(l.trim().charAt(0)) ? i : -1)).filter((i) => i >= 0);
+    for (let k = 0; k + 1 < steps.length; k++) {
+      const a = lines[steps[k]].trim(), b = lines[steps[k + 1]].trim();
+      if (/用語/.test(a) && /理念/.test(b)) { lines[steps[k]] = a.charAt(0) + b.slice(1); lines[steps[k + 1]] = b.charAt(0) + a.slice(1); return lines.join("\n"); }
+    }
+    return text;
+  }
+  function asPhilFirst(e) {
+    if (!e || typeof e !== "object" || typeof e.date !== "string" || !(e.date >= "2026-11-15") || typeof e.agenda !== "string" || !("area" in e)) return;
+    e.agenda = philFirstText(e.agenda);
+  }
   function fix120(action, d) {
-    if (!d || d.meeting120 || !FIX120.test(action)) return d;
+    if (!d || !FIX120.test(action) || (d.meeting120 && d.philFirst)) return d;
+    const fixes = [d.meeting120 ? null : as120, d.philFirst ? null : asPhilFirst].filter(Boolean);
     const walk = (v, depth) => {
       if (!v || typeof v !== "object" || depth > 4) return;
       if (Array.isArray(v)) { v.forEach((x) => walk(x, depth + 1)); return; }
-      as120(v);
+      fixes.forEach((f) => f(v));
       Object.keys(v).forEach((k) => { if (v[k] && typeof v[k] === "object") walk(v[k], depth + 1); });
     };
     walk(d, 0);
