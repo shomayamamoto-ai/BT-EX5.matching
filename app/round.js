@@ -671,7 +671,8 @@
       }));
     }
     drawStaff();
-    goBtn.addEventListener("click", () => {
+    // editFirst: スライドを「見たまま編集」の状態で開く(オープニングムービーは流さない)
+    const startRun = (editFirst) => {
       const people = order.map((k) => {
         const p = personOf(k, photos);
         if (p) return p;
@@ -691,15 +692,44 @@
         if (own) base.photo = own;
         return base;
       }).filter(Boolean);
-      if (withDeck) {
-        const D = App.deckData ? App.deckData(deckInfo.config) : {};
-        App.roundRun(buildDeck(ev, people, photos, upcoming, deckInfo.config, { edu: eduInfo.info, bo: { min: Number(boMin.value) || 7, times: Number(boTimes.value) || BO0.times || 4 }, code: codeIn.value, staff }), per, auto ? gapSec : 0, ev ? ev.title : "BT-EX5 定例会",
-          { deck: true, timing: { plan: eventPlan(ev, D.timeplan, D.timeplan90), start: eventStartMs(ev), per, gap: auto ? gapSec : 0 } });
+      if (withDeck || editFirst) {
+        // startKey: このスライドから開く。st: 編集の途中(並びを変えたあとの開き直し。取り消しの控えなどを引きつぐ)
+        const launchDeck = (startKey, st) => {
+          const D = App.deckData ? App.deckData(deckInfo.config) : {};
+          const edit = {
+            canEdit: !!deckInfo.canEdit && !!App.slideEdits,
+            edits: (deckInfo.config && deckInfo.config.edits) || null,
+            state: st || null,
+            // 編集の途中の内容を、この画面の控えに入れる(開き直したときに使う)
+            setLocal: (E) => {
+              const cfg = Object.assign({}, deckInfo.config || {});
+              if (E && Object.keys(E).length) cfg.edits = E; else delete cfg.edits;
+              deckInfo.config = Object.keys(cfg).length ? cfg : null;
+            },
+            // 共有サーバーに保存する(スライドの内容の書きかえと同じ場所に入れる)
+            save: async (E) => {
+              edit.setLocal(E);
+              const cfg = deckInfo.config;
+              let raw = "";
+              try { raw = cfg ? JSON.stringify(cfg) : ""; } catch { return false; }
+              if (raw.length > 58000) { App.toast("変更が多すぎて保存できません。文字や足したものを少し減らしてください", "error"); return false; }
+              const r = await App.api("saveDeckConfig", { config: cfg ? JSON.parse(raw) : null }, { quiet: true });
+              if (!r) App.toast("スライドの変更を保存できませんでした。通信を確かめて、もう一度お試しください", "error");
+              return !!r;
+            },
+            relaunch: (key, st2) => launchDeck(key, st2),
+          };
+          if (App.slideEdits) App.slideEdits.preload(edit.edits);
+          App.roundRun(buildDeck(ev, people, photos, upcoming, deckInfo.config, { edu: eduInfo.info, bo: { min: Number(boMin.value) || 7, times: Number(boTimes.value) || BO0.times || 4 }, code: codeIn.value, staff }), per, auto ? gapSec : 0, ev ? ev.title : "BT-EX5 定例会",
+            { deck: true, timing: { plan: eventPlan(ev, D.timeplan, D.timeplan90), start: eventStartMs(ev), per, gap: auto ? gapSec : 0 }, edit, startKey: startKey || "", editing: !!st || editFirst, instant: !!st });
+        };
+        launchDeck("", null);
         return;
       }
       if (!people.length) return;
       App.roundRun(people, per, auto ? gapSec : 0, ev ? ev.title : "");
-    });
+    };
+    goBtn.addEventListener("click", () => startRun(false));
 
     const me = App.session && App.memberById(App.session.memberId);
     const myPhoto = me ? photos[me.id] : "";
@@ -762,6 +792,7 @@
           h("label", { class: "pr-deck-field" }, h("span", null, "出席コード(4桁)"), codeIn, h("small", null, "BT-EX5のご案内の「出席コード」のスライドに大きく出ます")),
           h("div", { class: "pr-deck-field is-staff" }, h("span", null, "本日の運営メンバー"), h("small", null, "はじめの挨拶のあとのスライドに出ます。役ごとに、担当の方を押して選んでください(もう一度押すと外します。複数選べます)"), staffBox)),
         h("div", { class: "app-btn-row pr-deck-edit" },
+          deckInfo.canEdit && App.slideEdits ? App.btn("スライドを見たまま編集する(文字・写真・順番)", () => startRun(true), "ghost small") : null,
           deckInfo.canEdit && App.deckEditor ? App.btn("スライドの内容・時間の目安を編集", () => App.deckEditor(deckInfo.config, deckSteps(ev), (cfg) => { deckInfo.config = cfg; }), "ghost small") : null,
           eduInfo.canEdit && App.eduEditor ? App.btn(`エデュケーションの資料を入れかえる(いま: ${(eduInfo.info && eduInfo.info.title) || ((App.deckData ? App.deckData(deckInfo.config) : {}).education || {}).title || "なし"})`, () => App.eduEditor(eduInfo.info, (info) => { eduInfo.info = info; App.route(); }), "ghost small") : null,
           // アンケートの結果は、いちばん目立つボタンに(グラフの絵・新しい回答の数つき)
@@ -1090,15 +1121,20 @@
       sf.step = "定例会";
       items.splice(items.findIndex((x) => x.kind === "deck" && x.type === "agenda") + 1, 0, sf);
     }
+    // 「見たまま編集」(app/slide-edit.js)で足したページ・並べかえ・かくしたページを反映する
+    const full = App.slideEdits ? App.slideEdits.apply(items, (cfg && cfg.edits) || null) : items;
     let cur = 0;
-    items.forEach((it) => {
+    full.forEach((it) => {
       if (it.kind === "deck" && it.type === "section" && it.no) cur = it.no;
       it.stepNo = it.type === "closing" ? stepList.length + 1 : cur;
       if (it.kind === "deck") { it.steps = stepList; it.eyebrow = (stepList[cur - 1] || {}).title || ""; }
       // 流れの前(区切りの番号がまだない所)の運営メンバーは、番号なしの小見出しに
       if (it.kind === "deck" && it.type === "staff" && !cur) { it.eyebrow = "STAFF"; it.en = "Staff"; }
     });
-    return items;
+    // かくしたページは出さない(編集の「ページ一覧」で戻せるように、全部の並びも持たせる)
+    const shown = full.filter((it) => !it.hidden);
+    shown.all = full;
+    return shown;
   }
 
   // ---------- 動かせるパネル(操作バー・タイムマネジメント) ----------
@@ -1116,6 +1152,7 @@
     again: { d: ["M4.75 12a7.25 7.25 0 1 0 2.2-5.2", "M4.6 4.4v3.9h3.9"] },
     end: { d: ["M7.6 6h8.8A1.6 1.6 0 0 1 18 7.6v8.8a1.6 1.6 0 0 1-1.6 1.6H7.6A1.6 1.6 0 0 1 6 16.4V7.6A1.6 1.6 0 0 1 7.6 6Z"], sec: ["M7.6 6h8.8A1.6 1.6 0 0 1 18 7.6v8.8a1.6 1.6 0 0 1-1.6 1.6H7.6A1.6 1.6 0 0 1 6 16.4V7.6A1.6 1.6 0 0 1 7.6 6Z"] },
     close: { d: ["M6.5 6.5l11 11", "M17.5 6.5l-11 11"] },
+    pen: { d: ["M5 19l.9-4 9.6-9.6a1.9 1.9 0 0 1 2.7 0l.4.4a1.9 1.9 0 0 1 0 2.7L9 18.1 5 19Z", "M14 6.9l3.1 3.1"] },
     check: { d: ["M7.9 12.3l2.75 2.75 5.45-5.6"], ring: true },
     ok: { d: ["M7.9 12.3l2.75 2.75 5.45-5.6"], ring: true },
     late: { d: ["M12 7.6v5.1", "M12 16.3v.1"], ring: true },
@@ -1541,6 +1578,7 @@
     const isDeck = (p) => p && p.kind === "deck";
     const isPerson = (p) => p && p.kind !== "deck" && p.kind !== "timer";
     const persons = people.filter(isPerson);
+    let editor = null; // スライドの「見たまま編集」(下で作る)
     // 定例会のスライドは時間を計らない(0)
     const durOf = (p) => (isDeck(p) ? 0 : (p && p.sec) || per0);
     let per = durOf(people[0]) || per0;
@@ -1631,7 +1669,7 @@
     const endBtn = dockBtn("end", "終了", "is-end", () => finish(true));
     // スライドの見た目(やわらかいデザイン ⇔ 元の黒×金)。assets/deck-soft.css は .deck-soft のときだけ効く
     const deckSoft = typeof BtexTheme === "undefined" || BtexTheme.deck() !== "classic";
-    const box = h("div", { class: `pr-run is-entering${solo ? " is-solo" : ""}${deckSoft ? " deck-soft" : ""}`, role: "dialog", "aria-label": solo ? "タイマー" : "プレゼンの進行" },
+    const box = h("div", { class: `pr-run${opts.instant ? "" : " is-entering"}${solo ? " is-solo" : ""}${deckSoft ? " deck-soft" : ""}`, role: "dialog", "aria-label": solo ? "タイマー" : "プレゼンの進行" },
       h("div", { class: "pr-top" }, h("p", { class: "pr-title" }, title || `${(PER.find(([v]) => v === per) || [0, ""])[1]}プレゼン`), jump, count),
       slide,
       progress,
@@ -1789,6 +1827,12 @@
           h("span", { class: "pd-agenda-no" }, two(st.no)),
           h("span", { class: "pd-agenda-title" }, ...stepWords(st.title)),
           st.sub ? h("span", { class: "pd-agenda-sub" }, st.sub) : null)));
+      // 「見たまま編集」で足したページ: 題と文だけ(文字・写真は編集の画面で足せる)
+      if (p.type === "custom") {
+        const el = frame("pd-custom", h("p", { class: "pd-custom-body", "data-se-field": "body" }, ...String(p.body || "").split("\n").flatMap((x, i) => (i ? [h("br"), ...rich(x)] : rich(x)))));
+        const tt = el.querySelector(".pd-title"); if (tt) tt.dataset.seField = "title";
+        return el;
+      }
       if (p.type === "movie") {
         return h("div", { class: "pd pd-hero pd-movie" },
           h("p", { class: "pd-kicker" }, "BT-EX5"),
@@ -2366,6 +2410,8 @@
       }
     }
     window.addEventListener("resize", fitDeck);
+    // 文字の形(フォント)が読みこめたあとにも、もう一度合わせる(筆記体などで高さが変わる)
+    try { if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { if (!closed && isDeck(people[idx])) fitDeck(); }); } catch { /* noop */ }
     try { if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitDeck); } catch { /* noop */ }
     // 「こんな話が出たら」は、スライドの下(メーター)に重ならない範囲で、入るだけ出す(入らない分は後ろから省く)
     function fitTags() {
@@ -2407,12 +2453,21 @@
       const nexts = people.slice(idx + 1).filter(isPerson).slice(0, 3);
       box.classList.toggle("is-deck", isDeck(p));
       box.classList.toggle("is-timer", p.kind === "timer");
-      ["movie", "cover", "agenda", "section", "leader", "about", "vision", "list", "feature", "checks", "strengths", "venn", "kpis", "rules", "schedule", "pickup", "photo", "linkintro", "raise", "closing", "glossary", "joinsteps", "survey", "attend", "staff"].forEach((t) => box.classList.toggle(`is-d-${t}`, isDeck(p) && p.type === t));
+      ["movie", "cover", "agenda", "section", "leader", "about", "vision", "list", "feature", "checks", "strengths", "venn", "kpis", "rules", "schedule", "pickup", "photo", "linkintro", "raise", "closing", "glossary", "joinsteps", "survey", "attend", "staff", "custom"].forEach((t) => box.classList.toggle(`is-d-${t}`, isDeck(p) && p.type === t));
       box.classList.remove("is-edu");
       // スライドとプレゼンで操作バーの幅が変わる(スライドでは「はじめる」の場所をつめる)ので、置き直す
       if (box.dataset.kindWas !== String(isDeck(p))) { box.dataset.kindWas = String(isDeck(p)); if (box.classList.contains("dock-home")) requestAnimationFrame(() => window.dispatchEvent(new Event("resize"))); }
       drawProgress();
-      if (isDeck(p)) { App.fill(slide, deckSlide(p)); fitDeck(); return; }
+      if (isDeck(p)) {
+        App.fill(slide, deckSlide(p));
+        if (editor) editor.paint();
+        // 絵・写真があとから読みこまれると高さが変わるので、読みこめたときにもう一度大きさを合わせる
+        // (表紙のマークがあとから出て、上の「Welcome」と下のカードが切れていたため)
+        slide.querySelectorAll("img").forEach((im) => { if (!im.complete) im.addEventListener("load", fitDeck, { once: true }); });
+        fitDeck();
+        return;
+      }
+      if (editor) editor.paint();
       // スライドの間は残り時間の欄が隠れていて幅を測れないので、出たときに測りなおす
       if (!sec.style.width || parseFloat(sec.style.width) < 20) fixSecWidth();
       // 自分だけのタイマー: まん中に大きく「集中」「休憩」などと、次にくるもの
@@ -2560,8 +2615,9 @@
       if (autoStart) start(); else draw();
       const p = people[idx];
       // 先へ進んで来たとき: オープニングムービーは流す。商談の区切りでは「休憩しませんか?」
-      if (idx > from && isDeck(p) && p.type === "movie" && from >= 0) playMovie();
-      if (idx > from && isDeck(p) && p.breakAsk && !breakAsked) { breakAsked = true; askBreak(); }
+      const editingNow = !!(editor && editor.editing());
+      if (idx > from && isDeck(p) && p.type === "movie" && from >= 0 && !editingNow) playMovie();
+      if (idx > from && isDeck(p) && p.breakAsk && !breakAsked && !editingNow) { breakAsked = true; askBreak(); }
     }
     // ---------- 休憩のおさそい(商談の区切りのスライドに入ったとき) ----------
     // 「休む」を押すと3分の休憩の画面。「進む」(または画面のボタン)ですぐに終えられる
@@ -2695,14 +2751,17 @@
     }
     // 閉じる: ふわっと消してから、この画面を外す(下のプレゼンの準備の画面がそのまま見える)
     let closed = false;
-    function closeRun() {
+    // fast === true: 編集で並びを変えたとき(すぐ次の画面に入れかえるので、ふわっと消さない・元の画面にも戻さない)
+    function closeRun(fast) {
       if (closed) return;
       closed = true;
       window.removeEventListener("resize", fixSecWidth);
       if (timing) timing.stop();
       document.removeEventListener("keydown", onKey);
       halt();
+      if (editor) editor.destroy();
       try { if (wake) wake.release(); } catch { /* noop */ }
+      if (fast === true) { box.remove(); return; }
       box.classList.add("is-closing");
       setTimeout(() => {
         box.remove();
@@ -2720,10 +2779,28 @@
       else if (e.key === "Escape") { if (breakLayer) closeBreak(); else if (done) closeRun(); else if (asking) asking(); else finish(true); }
     }
     document.addEventListener("keydown", onKey);
+    // 「見たまま編集」(app/slide-edit.js): 書きかえた文字・足した文字や写真をスライドに重ねる。進行役は上の「編集」から直せる
+    if (opts.deck && opts.edit && App.slideEdits) {
+      editor = App.slideEdits.attach({
+        box, slide, people, edit: opts.edit, idx: () => idx, go: (i) => go(i), fit: fitDeck,
+        redraw: () => { const c0 = carNow(); const ci = c0 ? c0.i : 0; drawSlide(); draw(); const c1 = carNow(); if (c1 && ci) c1.show(ci, true); },
+        relaunch: (key, st) => { opts.edit.relaunch(key, st); closeRun(true); },
+      });
+      if (opts.edit.canEdit) {
+        const eb = h("button", { type: "button", class: "se-open", onclick: () => editor.start() }, lineIcon("pen"), h("span", null, "編集"));
+        if (jump) jump.after(eb); else box.querySelector(".pr-top").append(eb);
+      }
+    }
+    // 編集で並びを変えたあと: 同じスライドから開き直す
+    if (opts.startKey) {
+      const at = people.findIndex((x) => x.skey === opts.startKey);
+      if (at > 0) { idx = at; per = durOf(people[idx]) || per; left0 = per; buildMeter(); }
+    }
     drawSlide();
     draw();
     pauseBtn.focus({ preventScroll: true });
-    if (isDeck(people[0]) && people[0].type === "movie") { nextBtn.focus({ preventScroll: true }); playMovie(); }
+    if (!idx && !opts.editing && isDeck(people[0]) && people[0].type === "movie") { nextBtn.focus({ preventScroll: true }); playMovie(); }
+    if (opts.editing && editor) editor.start();
     // タイムマネジメント・操作バーが、スライドの文字に重ならないように(広い画面で左右のはしにあるとき、スライドの中身をよける)
     const avoidTimer = opts.deck ? setInterval(avoidFloaters, 800) : 0;
     function avoidFloaters() {

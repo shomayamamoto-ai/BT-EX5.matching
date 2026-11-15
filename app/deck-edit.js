@@ -281,8 +281,10 @@
         sum);
       const reset = App.btn("元の内容に戻す", async () => {
         if (!(await App.confirm("書きかえた内容をすべて消して、元の内容に戻しますか?", { ok: "元に戻す", danger: true }))) return;
-        const r = await App.api("saveDeckConfig", { config: null });
-        if (r) { App.toast("元の内容に戻しました"); close(); if (onSaved) onSaved(null); }
+        // 「見たまま編集」で直したところ(edits)は残す(そちらは、スライドの画面の「ページ」→「すべて元に戻す」で戻せる)
+        const keep = cfg && cfg.edits ? { edits: cfg.edits } : null;
+        const r = await App.api("saveDeckConfig", { config: keep });
+        if (r) { App.toast("元の内容に戻しました"); close(); if (onSaved) onSaved(r.config || null); }
       }, "ghost small");
       const save = App.btn("保存する", async () => {
         const out = {};
@@ -293,6 +295,8 @@
         });
         const tp = minInputs.map((x) => Math.max(0, Math.min(180, Math.round(Number(x.value) || 0))));
         if (JSON.stringify(tp) !== JSON.stringify(orig.timeplan || [])) out.timeplan = tp;
+        // スライドの画面の「見たまま編集」で直したところ(edits)は、この画面では変えないので、そのまま残す
+        if (cfg && cfg.edits) out.edits = cfg.edits;
         const r = await App.api("saveDeckConfig", { config: Object.keys(out).length ? out : null });
         if (r) { App.toast("スライドの内容を保存しました"); close(); if (onSaved) onSaved(r.config || null); }
       }, "primary wide");

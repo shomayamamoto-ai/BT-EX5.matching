@@ -44,7 +44,8 @@
   content: attr(data-en); display: block; font-family: var(--sf-script); font-weight: 400; line-height: 1;
   font-size: clamp(34px, min(5vw, 8svh), 84px); color: var(--sf-coral); letter-spacing: 0.01em;
 }
-.pr-run.deck-soft .pd-hero[data-en]::before { margin-bottom: clamp(-6px, -1svh, 0px); }
+/* 筆記体は文字の上のはねが行の高さより上に出るので、上に余白を取る(表紙が画面いっぱいのときに「Welcome」の上が切れないように) */
+.pr-run.deck-soft .pd-hero[data-en]::before { margin-bottom: clamp(-6px, -1svh, 0px); padding-top: 0.34em; }
 
 /* ---------- 上の帯・文字 ---------- */
 .pr-run.deck-soft .pr-title, .pr-run.deck-soft .pr-count { color: var(--pd-muted); }
