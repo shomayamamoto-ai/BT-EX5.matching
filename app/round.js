@@ -2105,8 +2105,9 @@
             h("div", { class: "pd-lk-what-l" },
               h("p", { class: "pd-lk-lead" }, String(W.text || "").split("\n").map((t) => h("span", { class: "pd-line" }, t))),
               W.note ? h("p", { class: "pd-lk-note" }, W.note) : null),
+            // 4つの言葉を左右に2つずつ、まん中の列に LINK の丸(重ならないように、丸は真ん中の列に置く)
             h("div", { class: "pd-lk-quad" },
-              (W.pillars || []).map((t) => h("span", { class: "pd-lk-q" }, t)),
+              (W.pillars || []).slice(0, 4).map((t, i) => h("span", { class: `pd-lk-q is-q${i + 1}` }, t)),
               h("span", { class: "pd-lk-ring" }, h("b", null, W.brand), h("small", null, W.motto)))));
         const card2 = h("article", { class: "pd-card pd-big-card pd-lk-card" }, top("growth", 2),
           h("p", { class: "pd-big-head" }, F.head),
@@ -2291,6 +2292,15 @@
               const k = c.clientHeight / Math.max(1, c.scrollHeight);
               if (k >= 1) break;
               fonts.forEach((f) => { f.style.fontSize = `${(parseFloat(getComputedStyle(f).fontSize) * Math.max(0.6, k) * 0.95).toFixed(2)}px`; });
+            }
+            // 横にはみ出す行(1行で出す文)があれば、その中身の文字を小さくする(LINKの良さのカード: となりと重ならないように)
+            for (let pass = 0; pass < 6; pass++) {
+              const over = [...c.querySelectorAll(".pd-lk-lead .pd-line, .pd-lk-steps li span, .pd-lk-m-key em, .pd-lk-q")]
+                .reduce((m, ln) => { const box = ln.closest(".pd-lk-what-l, .pd-lk-steps li, .pd-lk-merits p, .pd-lk-q") || ln.parentElement; const room = box === ln ? ln.clientWidth : box.clientWidth; const need = ln.scrollWidth; return room > 0 && need > room + 1 ? Math.min(m, room / need) : m; }, 1);
+              if (over >= 1) break;
+              const body = c.querySelector(".pd-lk-body");
+              if (!body) break;
+              body.style.fontSize = `${(parseFloat(getComputedStyle(body).fontSize) * Math.max(0.6, over) * 0.97).toFixed(2)}px`;
             }
           });
         }

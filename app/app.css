@@ -3701,16 +3701,18 @@ button.home-welcome-check:active { transform: scale(0.94); }
 .pd-lk-body { display: grid; gap: clamp(10px, 2svh, 22px); font-size: clamp(16px, min(2vw, 3.6svh), 32px); font-weight: 700; color: var(--pd-text); }
 .pd-lk-note { margin: 0; font-size: 0.72em; line-height: 1.6; color: var(--pd-muted); font-weight: 700; }
 /* 1枚目: 左に説明、右に「集客・学び・節約・交流」と、まん中の LINK の丸 */
-.pd-lk-what { grid-template-columns: minmax(0, 1fr) minmax(0, 0.95fr); align-items: center; gap: clamp(16px, 3vw, 48px); }
+.pd-lk-what { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); align-items: center; gap: clamp(16px, 3vw, 48px); }
+.pd-lk-what-l { min-width: 0; }
 .pd-lk-what-l { display: grid; gap: clamp(10px, 2svh, 22px); }
 .pd-lk-lead { margin: 0; font-size: 1.12em; line-height: 1.6; color: var(--pd-strong); }
 .pd-lk-lead .pd-line { display: block; white-space: nowrap; }
-.pd-lk-quad { position: relative; display: grid; grid-template-columns: 1fr 1fr; gap: 0.35em; font-size: 1.05em; }
-.pd-lk-q { display: grid; place-items: center; min-height: 2.6em; border-radius: 16px; border: 1px solid var(--pd-line); background: rgba(226, 184, 102, 0.12); color: var(--pd-strong); font-weight: 800; letter-spacing: 0.1em; }
-.pd-lk-q:nth-child(1), .pd-lk-q:nth-child(3) { padding-right: 2.6em; } .pd-lk-q:nth-child(2), .pd-lk-q:nth-child(4) { padding-left: 2.6em; }
-.pd-lk-ring { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); display: grid; place-items: center; align-content: center; width: 5.2em; height: 5.2em; border-radius: 50%; background: var(--pd-card, #fff); border: 2px solid var(--pd-gold); box-shadow: 0 8px 22px rgba(40, 20, 12, 0.14); text-align: center; }
-.pd-lk-ring b { font-family: var(--pd-serif); font-size: 1.05em; line-height: 1.1; color: var(--pd-gold); letter-spacing: 0.06em; }
-.pd-lk-ring small { font-size: 0.4em; line-height: 1.35; color: var(--pd-text); font-weight: 700; padding: 0 0.6em; }
+.pd-lk-quad { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); grid-template-rows: auto auto; gap: 0.4em 0.5em; align-items: stretch; font-size: 1.05em; min-width: 0; }
+.pd-lk-q { display: grid; place-items: center; min-height: 2.3em; padding: 0 0.4em; border-radius: 16px; border: 1px solid var(--pd-line); background: rgba(226, 184, 102, 0.12); color: var(--pd-strong); font-weight: 800; letter-spacing: 0.08em; white-space: nowrap; }
+.pd-lk-q.is-q1 { grid-column: 1; grid-row: 1; } .pd-lk-q.is-q2 { grid-column: 3; grid-row: 1; }
+.pd-lk-q.is-q3 { grid-column: 1; grid-row: 2; } .pd-lk-q.is-q4 { grid-column: 3; grid-row: 2; }
+.pd-lk-ring { grid-column: 2; grid-row: 1 / span 2; align-self: center; display: grid; place-items: center; align-content: center; width: 4.6em; height: 4.6em; border-radius: 50%; background: var(--pd-card, #fff); border: 2px solid var(--pd-gold); box-shadow: 0 8px 22px rgba(40, 20, 12, 0.14); text-align: center; }
+.pd-lk-ring b { font-family: var(--pd-serif); font-size: 0.95em; line-height: 1.1; color: var(--pd-gold); letter-spacing: 0.06em; }
+.pd-lk-ring small { font-size: 0.36em; line-height: 1.35; color: var(--pd-text); font-weight: 700; padding: 0 0.7em; }
 /* 2枚目: 4つの段階を横に、矢印でつなぐ。②は元のスライドと同じく強調 */
 .pd-lk-steps { margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1.4em; }
 .pd-lk-steps li { position: relative; display: grid; justify-items: center; align-content: center; gap: 0.25em; min-height: 3.6em; padding: 0.6em 0.3em; border-radius: 18px; border: 1px solid var(--pd-line); background: rgba(226, 184, 102, 0.08); text-align: center; font-weight: 800; color: var(--pd-strong); line-height: 1.3; }
