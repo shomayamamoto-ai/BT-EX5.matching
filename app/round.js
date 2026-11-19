@@ -805,7 +805,7 @@
             b.querySelector(".pr-survey-ic").innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16"/><path d="M7 16v-5"/><path d="M12 16V6"/><path d="M17 16v-8"/></svg>';
             return b;
           })() : null),
-        h("p", { class: "app-field-hint" }, "残り10秒で小さな音、0秒で鐘の音が鳴ります。キーボードでは スペース=止める・つづける、→=次へ、←=前へ、Esc=終わる。会場のスクリーンで画面いっぱいに映すときは、ブラウザの全画面(Mac は control+command+F、Windows は F11)を使ってください。"),
+        h("p", { class: "app-field-hint" }, "残り10秒で小さな音、0秒で鐘の音が鳴ります。キーボードでは スペース=止める・つづける、→=次へ、←=前へ、F=全画面、Esc=終わる。会場のスクリーンで画面いっぱいに映すときは、ブラウザの全画面(Mac は control+command+F、Windows は F11)を使ってください。"),
         h("div", { class: "pr-go-bar" }, goBtn)),
       // ---------- 2. 自分で使うタイマー ----------
       h("section", { class: "app-section pr-block is-solo", id: "present-timer" },
@@ -1160,6 +1160,7 @@
     late: { d: ["M12 7.6v5.1", "M12 16.3v.1"], ring: true },
     early: { d: ["M4.5 16.5l5-5 3.2 3.2 6.3-6.3", "M14.4 8.4h4.6V13"] },
     collapse: { d: ["M7 14.5 12 9.5l5 5"] },
+    shrink: { d: ["M9.25 4.75v4.5h-4.5", "M14.75 4.75v4.5h4.5", "M9.25 19.25v-4.5h-4.5", "M14.75 19.25v-4.5h4.5"] },
     // スライドのカードの絵(インフォグラフィック用)
     growth: { d: ["M4.75 19.25h14.5", "M6.25 15.5l4-4 3 3 5.25-5.75", "M14.75 8.75h3.75v3.75"] },
     link: { d: ["M10.25 13.75a3.5 3.5 0 0 0 5 0l3-3a3.54 3.54 0 0 0-5-5l-1 1", "M13.75 10.25a3.5 3.5 0 0 0-5 0l-3 3a3.54 3.54 0 0 0 5 5l1-1"] },
@@ -1740,9 +1741,40 @@
     box.addEventListener("wheel", stopScroll, { passive: false });
     box.addEventListener("touchmove", stopScroll, { passive: false });
     try { if ("wakeLock" in navigator) navigator.wakeLock.request("screen").then((w) => { wake = w; }).catch(() => {}); } catch { /* noop */ }
-    // ブラウザの「全画面」には切りかえない(切りかえのあいだに画面の大きさが変わって上下にブレる・
+    // ブラウザの「全画面」には、自動では切りかえない(切りかえのあいだに画面の大きさが変わって上下にブレる・
     // 閉じたあとに Safari で真っ白になる、の原因になるため)。この画面はブラウザの窓いっぱいに出し、ふわっと表示する。
-    // プロジェクターなどで本当の全画面にしたいときは、ブラウザの全画面(Mac は control+command+F)を使う
+    // 全画面にしたいときは、上の「全画面」ボタン(キーボードは F)で切りかえる(2026年11月19日、運営の依頼で足した)。
+    // 画面ごと(<html>)を全画面にするので、オープニングムービーや休憩の画面もそのまま出る。閉じるときは、先に全画面をやめる
+    const fsNow = () => document.fullscreenElement || document.webkitFullscreenElement || null;
+    const fsReq = document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen;
+    const fsBtn = fsReq ? h("button", { type: "button", class: "pr-fs", onclick: () => toggleFs() }) : null;
+    let fsLeftAt = 0; // 全画面をやめた時刻(Esc でやめたときに、「進行を終わりますか?」を出さないため)
+    function drawFs() {
+      if (!fsBtn) return;
+      const on = !!fsNow();
+      fsBtn.replaceChildren(lineIcon(on ? "shrink" : "widen"), h("span", null, on ? "全画面をやめる" : "全画面"));
+      fsBtn.setAttribute("aria-pressed", on ? "true" : "false");
+      fsBtn.title = on ? "全画面をやめる(Esc・F)" : "全画面で表示する(F)";
+      box.classList.toggle("is-fs", on);
+    }
+    function toggleFs() {
+      if (!fsReq) return;
+      try {
+        if (fsNow()) { const ex = document.exitFullscreen || document.webkitExitFullscreen; const pr = ex && ex.call(document); if (pr && pr.catch) pr.catch(() => {}); }
+        else { const pr = fsReq.call(document.documentElement); if (pr && pr.catch) pr.catch(() => { App.toast("この端末・ブラウザでは全画面にできませんでした", "error"); }); }
+      } catch { /* 全画面にできない端末では、何もしない */ }
+    }
+    const onFsChange = () => {
+      if (!fsNow()) fsLeftAt = Date.now();
+      drawFs();
+      // 画面の大きさが変わるので、スライドの大きさ・操作バーの場所を合わせ直す
+      requestAnimationFrame(() => window.dispatchEvent(new Event("resize")));
+    };
+    if (fsBtn) {
+      box.querySelector(".pr-top").insertBefore(fsBtn, count);
+      document.addEventListener("fullscreenchange", onFsChange); document.addEventListener("webkitfullscreenchange", onFsChange);
+      drawFs();
+    }
     requestAnimationFrame(() => requestAnimationFrame(() => { fixSecWidth(); box.classList.remove("is-entering"); }));
     // 写真は先に読みこんでおく(切りかえたときにすぐ出るように)
     people.forEach((p) => { if (p.photo) { const im = new Image(); im.src = p.photo; } });
@@ -2250,7 +2282,8 @@
         }
       } else {
         set(false);
-        if (fsEl) { const ex = document.exitFullscreen || document.webkitExitFullscreen; try { const pr = ex.call(document); if (pr && pr.catch) pr.catch(() => {}); } catch { /* noop */ } }
+        // 動画だけを全画面にしていたときだけ、全画面をやめる(上の「全画面」ボタンで画面ごと全画面にしているときは、そのまま)
+        if (fsEl && fsEl === f) { const ex = document.exitFullscreen || document.webkitExitFullscreen; try { const pr = ex.call(document); if (pr && pr.catch) pr.catch(() => {}); } catch { /* noop */ } }
       }
     }
     // 横長の画面では、スライドが枠に収まらないときだけ全体を縮めて収める(スマホなどの縦長は下へ送れる)
@@ -2778,7 +2811,10 @@
       halt();
       if (editor) editor.destroy();
       try { if (wake) wake.release(); } catch { /* noop */ }
+      document.removeEventListener("fullscreenchange", onFsChange); document.removeEventListener("webkitfullscreenchange", onFsChange);
       if (fast === true) { box.remove(); return; }
+      // 全画面のまま閉じると Safari で真っ白になることがあるので、先に全画面をやめる
+      if (fsNow() === document.documentElement) { try { const ex = document.exitFullscreen || document.webkitExitFullscreen; const pr = ex && ex.call(document); if (pr && pr.catch) pr.catch(() => {}); } catch { /* noop */ } }
       box.classList.add("is-closing");
       setTimeout(() => {
         box.remove();
@@ -2793,7 +2829,12 @@
       else if (e.key === "ArrowRight" && !done) forward();
       else if (e.key === "ArrowLeft" && done) reopen();
       else if (e.key === "ArrowLeft" && !done) backward();
-      else if (e.key === "Escape") { if (breakLayer) closeBreak(); else if (done) closeRun(); else if (asking) asking(); else finish(true); }
+      else if ((e.key === "f" || e.key === "F") && !e.metaKey && !e.ctrlKey && !e.altKey && fsBtn) { e.preventDefault(); toggleFs(); }
+      else if (e.key === "Escape") {
+        // 全画面のときの Esc は「全画面をやめる」だけ(ブラウザがやめる)。「進行を終わりますか?」は出さない
+        if (fsNow() || Date.now() - fsLeftAt < 500) return;
+        if (breakLayer) closeBreak(); else if (done) closeRun(); else if (asking) asking(); else finish(true);
+      }
     }
     document.addEventListener("keydown", onKey);
     // 「見たまま編集」(app/slide-edit.js): 書きかえた文字・足した文字や写真をスライドに重ねる。進行役は上の「編集」から直せる

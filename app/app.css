@@ -3819,6 +3819,13 @@ button.home-welcome-check:active { transform: scale(0.94); }
 /* 上の「編集」ボタン(進行役だけ) */
 .se-open { display: inline-flex; align-items: center; gap: 6px; flex: none; padding: 6px 14px 6px 10px; border-radius: 999px; border: 1px solid var(--pd-gold-soft); background: rgba(255, 255, 255, 0.06); color: #f3dfb3; font: inherit; font-size: clamp(12px, 1.2vw, 15px); font-weight: 800; cursor: pointer; }
 .se-open .pr-icon { width: 18px; height: 18px; }
+/* 上の「全画面」ボタン(プレゼン・スライド・タイマーのどの画面にも出す。全画面にできない端末では出さない) */
+.pr-fs { display: inline-flex; align-items: center; gap: 6px; flex: none; padding: 6px 14px 6px 10px; border-radius: 999px; border: 1px solid rgba(226, 184, 102, 0.55); background: rgba(255, 255, 255, 0.06); color: #f3dfb3; font: inherit; font-size: clamp(12px, 1.2vw, 15px); font-weight: 800; cursor: pointer; white-space: nowrap; }
+.pr-fs .pr-icon { width: 18px; height: 18px; }
+.pr-fs:hover { background: rgba(255, 255, 255, 0.12); }
+.pr-run.deck-soft .pr-fs { background: #fff; border-color: var(--pd-gold-soft); color: var(--pd-gold); }
+.pr-run.is-editing .pr-fs, .pr-run.is-done .pr-fs { display: none; }
+@media (max-width: 760px) { .pr-fs span { display: none; } .pr-fs { padding: 6px 9px; } }
 .pr-run.deck-soft .se-open { background: #fff; color: var(--pd-gold); }
 .pr-run:not(.is-deck) .se-open, .pr-run.is-editing .se-open { display: none; }
 /* 編集のあいだ */
