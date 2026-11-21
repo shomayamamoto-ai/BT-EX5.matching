@@ -365,10 +365,10 @@
         </div>
         ${genreTags(m, scores && scores[m.id], 0)}
       </header>
-      ${materials.length ? section("資料", materials.map((l) => `
-        <a class="md-material" href="${escapeHtml(linkHref(l.url))}" target="_blank" rel="noopener noreferrer">
+      ${materials.length ? section("資料", materials.map((l, i) => `
+        <a class="md-material" href="${escapeHtml(linkHref(l.url))}" target="_blank" rel="noopener noreferrer"${viewKind(l.url) ? ` data-view="${escapeHtml(m.id)}" data-view-at="${i}"` : ""}>
           ${l.cover ? `<img src="${escapeHtml(linkHref(l.cover))}" alt="" loading="lazy" width="960" height="540">` : ""}
-          <span class="md-material-bar"><span>${escapeHtml(l.label || linkType(l.type).label)}</span><span class="md-material-open">開く ↗</span></span>
+          <span class="md-material-bar"><span>${escapeHtml(l.label || linkType(l.type).label)}</span><span class="md-material-open">${viewKind(l.url) ? "大きく見る ⤢" : "開く ↗"}</span></span>
         </a>`).join("")) : ""}
       ${webs.length || contacts.length ? section("SNS・リンク", `<div class="md-sns-row">${[...webs.filter((l) => l.type === "website"), ...contacts, ...webs.filter((l) => l.type !== "website")].map(snsPill).join("")}</div>`) : ""}
       ${m.id === myMemberId ? `<p class="md-self-edit"><a class="ref-btn is-main" href="../profile/">自分の情報を編集する</a><a class="ref-btn ghost" href="../profile/#pfLinks">ホームページ・SNS を追加・変更</a>${links.length ? "" : `<small>資料・リンクはまだ登録されていません。</small>`}</p>` : ""}
@@ -521,6 +521,213 @@
     const label = (BACK_LABELS.find(([re]) => re.test(detailBack)) || [null, "前の画面に戻る"])[1];
     return `<a class="md-back" href="../app/#${escapeHtml(detailBack)}">← ${escapeHtml(label)}</a>`;
   }
+  // ---------- 資料を大きく見る(画面いっぱい・全画面) ----------
+  // 写真の資料(jpg・png・webp)と、サイトの中の PDF は、この画面の上に大きく出す(全画面・前後の資料へ・押すと拡大)。
+  // PDF は pdf.js で1ページずつ画像にして、上から順に並べる(スマホでも全部のページが見られる。読みこめないときはパソコンではブラウザの表示で、
+  // スマホでは「新しいタブで開く」で)。ホームページなど、ほかのリンクは今までどおり新しいタブで開く
+  const IMG_RE = /\.(jpe?g|png|webp|gif)(\?|#|$)/i, PDF_RE = /\.pdf(\?|#|$)/i;
+  const canHover = () => window.matchMedia && window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+  function viewKind(url) {
+    const u = String(url || "");
+    if (IMG_RE.test(u)) return "img";
+    if (PDF_RE.test(u) && !/^https?:/i.test(u)) return "pdf"; // サイトの中の PDF だけ(ほかのサイトの PDF は読みこめないことがある)
+    return "";
+  }
+  const fsEl = () => document.fullscreenElement || document.webkitFullscreenElement || null;
+  function fsCan(el) {
+    if (!(el.requestFullscreen || el.webkitRequestFullscreen)) return false;
+    const en = document.fullscreenEnabled !== undefined ? document.fullscreenEnabled : document.webkitFullscreenEnabled;
+    return en !== false;
+  }
+  // pdf.js(エデュケーションの資料の取りこみと同じもの)
+  const PDFJS = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/";
+  let pdfjsP = null;
+  function loadPdfjs() {
+    if (window.pdfjsLib) return Promise.resolve(window.pdfjsLib);
+    if (!pdfjsP) {
+      pdfjsP = new Promise((ok, ng) => {
+        const el = document.createElement("script");
+        el.src = PDFJS + "pdf.min.js";
+        el.onload = () => { if (window.pdfjsLib) { window.pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS + "pdf.worker.min.js"; ok(window.pdfjsLib); } else ng(new Error("pdfjs")); };
+        el.onerror = () => { pdfjsP = null; ng(new Error("pdfjs")); };
+        document.head.append(el);
+      });
+    }
+    return pdfjsP;
+  }
+  // PDF を1ページずつ描く。job.stop が true になったら(ほかの資料に移った・とじた)途中でやめる
+  async function renderPdf(href, box, job, onInfo) {
+    const lib = await loadPdfjs();
+    const doc = await lib.getDocument({ url: href }).promise;
+    job.doc = doc;
+    onInfo(doc.numPages);
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    const cssW = Math.max(280, Math.min(1100, box.clientWidth - 8));
+    for (let n = 1; n <= doc.numPages && !job.stop; n++) {
+      const page = await doc.getPage(n);
+      if (job.stop) return;
+      const v1 = page.getViewport({ scale: 1 });
+      const vp = page.getViewport({ scale: (cssW * dpr) / v1.width });
+      const cv = document.createElement("canvas");
+      cv.className = "mv-page";
+      cv.width = Math.round(vp.width); cv.height = Math.round(vp.height);
+      cv.style.aspectRatio = `${vp.width} / ${vp.height}`;
+      cv.setAttribute("role", "img");
+      cv.setAttribute("aria-label", `${n}ページ目`);
+      box.append(cv);
+      await page.render({ canvasContext: cv.getContext("2d"), viewport: vp }).promise;
+    }
+  }
+  let viewer = null;
+  function openViewer(memberId, at) {
+    const m = members.find((x) => x.id === memberId);
+    if (!m) return false;
+    const list = (m.links || []).filter((l) => linkType(l.type).kind === "material");
+    const items = list.map((l, i) => ({ l, i, kind: viewKind(l.url) })).filter((x) => x.kind);
+    let cur = Math.max(0, items.findIndex((x) => x.i === at));
+    let job = { stop: true };
+    if (!items.length) return false;
+    closeViewer();
+    const wrap = document.createElement("div");
+    wrap.className = "mv";
+    wrap.setAttribute("role", "dialog");
+    wrap.setAttribute("aria-modal", "true");
+    wrap.setAttribute("aria-label", `${m.name}さんの資料`);
+    wrap.innerHTML = `
+      <div class="mv-bar">
+        <p class="mv-title"><b></b><span class="mv-count"></span></p>
+        <div class="mv-tools">
+          <a class="mv-btn mv-open" target="_blank" rel="noopener noreferrer">新しいタブで開く ↗</a>
+          ${fsCan(document.documentElement) ? `<button type="button" class="mv-btn mv-fs" aria-pressed="false">全画面</button>` : ""}
+          <button type="button" class="mv-btn mv-close" aria-label="とじる">✕</button>
+        </div>
+      </div>
+      <div class="mv-stage"></div>
+      ${items.length > 1 ? `<button type="button" class="mv-nav is-prev" aria-label="前の資料">‹</button><button type="button" class="mv-nav is-next" aria-label="次の資料">›</button>` : ""}
+      <p class="mv-hint"></p>`;
+    const stage = wrap.querySelector(".mv-stage");
+    const show = (k) => {
+      job.stop = true; if (job.doc) { try { job.doc.destroy(); } catch { /* noop */ } }
+      cur = (k + items.length) % items.length;
+      const it = items[cur], href = linkHref(it.l.url);
+      wrap.querySelector(".mv-title b").textContent = it.l.label || linkType(it.l.type).label;
+      wrap.querySelector(".mv-count").textContent = items.length > 1 ? `${cur + 1} / ${items.length}` : "";
+      wrap.querySelector(".mv-open").href = href;
+      wrap.classList.remove("is-zoom");
+      stage.scrollTop = 0; stage.scrollLeft = 0;
+      if (it.kind === "img") {
+        const img = document.createElement("img");
+        img.className = "mv-img";
+        img.alt = it.l.label || "";
+        img.decoding = "async";
+        img.src = href;
+        stage.replaceChildren(img);
+        wrap.querySelector(".mv-hint").textContent = canHover() ? "画像を押すと拡大・もう一度押すと元に戻ります。← → で前後の資料、Esc でとじる" : "画像を押すと拡大します。左右になぞると前後の資料へ";
+      } else {
+        const pages = document.createElement("div");
+        pages.className = "mv-pages";
+        const state = document.createElement("p");
+        state.className = "mv-state";
+        state.textContent = "資料を読みこんでいます…";
+        stage.replaceChildren(state, pages);
+        const hint = wrap.querySelector(".mv-hint");
+        hint.textContent = "上下にスクロールしてページを送れます。ページを押すと拡大します";
+        const my = job = { stop: false };
+        renderPdf(href, pages, my, (n) => {
+          if (my.stop) return;
+          state.remove();
+          wrap.querySelector(".mv-count").textContent = `${items.length > 1 ? `${cur + 1} / ${items.length} ・ ` : ""}${n}ページ`;
+        }).catch(() => {
+          if (my.stop) return;
+          // pdf.js が読みこめないとき: パソコンはブラウザの PDF の表示で、スマホは新しいタブで開いてもらう
+          if (canHover()) {
+            const fr = document.createElement("iframe");
+            fr.className = "mv-pdf";
+            fr.title = it.l.label || "資料";
+            fr.src = href;
+            stage.replaceChildren(fr);
+            hint.textContent = "PDF のページは、資料の中でスクロールして送れます。Esc でとじる";
+          } else {
+            state.textContent = "この画面では資料を表示できませんでした。右上の「新しいタブで開く」から開いてください";
+            wrap.querySelector(".mv-open").style.display = "inline-flex";
+          }
+        });
+      }
+    };
+    // 画像を押すと拡大(押したところを中心に)・もう一度で元に戻る
+    stage.addEventListener("click", (e) => {
+      const img = e.target.closest(".mv-img, .mv-page");
+      if (!img) { if (e.target === stage) closeViewer(); return; }
+      const r = img.getBoundingClientRect();
+      const fx = (e.clientX - r.left) / Math.max(1, r.width), fy = (e.clientY - r.top) / Math.max(1, r.height);
+      const on = !wrap.classList.contains("is-zoom");
+      wrap.classList.toggle("is-zoom", on);
+      if (on) requestAnimationFrame(() => {
+        stage.scrollLeft = Math.max(0, fx * stage.scrollWidth - stage.clientWidth / 2);
+        stage.scrollTop = Math.max(0, fy * stage.scrollHeight - stage.clientHeight / 2);
+      });
+    });
+    // 指で左右になぞると前後の資料へ(拡大していないときだけ)
+    let sx = null, sy = 0;
+    stage.addEventListener("touchstart", (e) => { if (e.touches.length === 1 && !wrap.classList.contains("is-zoom")) { sx = e.touches[0].clientX; sy = e.touches[0].clientY; } else sx = null; }, { passive: true });
+    stage.addEventListener("touchend", (e) => {
+      if (sx === null || items.length < 2) return;
+      const t = e.changedTouches[0], dx = t.clientX - sx, dy = t.clientY - sy;
+      sx = null;
+      if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) show(cur + (dx < 0 ? 1 : -1));
+    });
+    wrap.querySelector(".mv-close").addEventListener("click", closeViewer);
+    const prev = wrap.querySelector(".mv-nav.is-prev"), next = wrap.querySelector(".mv-nav.is-next");
+    if (prev) prev.addEventListener("click", () => show(cur - 1));
+    if (next) next.addEventListener("click", () => show(cur + 1));
+    const fsBtn = wrap.querySelector(".mv-fs");
+    const drawFs = () => {
+      if (!fsBtn) return;
+      const on = fsEl() === wrap;
+      fsBtn.textContent = on ? "全画面をやめる" : "全画面";
+      fsBtn.setAttribute("aria-pressed", on ? "true" : "false");
+      wrap.classList.toggle("is-fs", on);
+    };
+    if (fsBtn) fsBtn.addEventListener("click", () => {
+      try {
+        if (fsEl()) { const ex = document.exitFullscreen || document.webkitExitFullscreen; const pr = ex && ex.call(document); if (pr && pr.catch) pr.catch(() => {}); }
+        else { const req = wrap.requestFullscreen || wrap.webkitRequestFullscreen; const pr = req.call(wrap); if (pr && pr.catch) pr.catch(() => toast("この端末・ブラウザでは全画面にできませんでした")); }
+      } catch { /* 全画面にできない端末では何もしない */ }
+    });
+    let fsLeftAt = 0;
+    const onFs = () => { if (fsEl() !== wrap) fsLeftAt = Date.now(); drawFs(); };
+    const onKey = (e) => {
+      if (e.isComposing) return;
+      if (e.key === "Escape") {
+        e.stopPropagation(); e.preventDefault();
+        // 全画面のときの Esc は、全画面をやめるだけ(資料はとじない)
+        if (fsEl() === wrap || Date.now() - fsLeftAt < 600) return;
+        closeViewer();
+      } else if (e.key === "ArrowRight" && items.length > 1) { e.preventDefault(); show(cur + 1); }
+      else if (e.key === "ArrowLeft" && items.length > 1) { e.preventDefault(); show(cur - 1); }
+      else if ((e.key === "f" || e.key === "F") && fsBtn && !e.metaKey && !e.ctrlKey && !e.altKey) { e.preventDefault(); fsBtn.click(); }
+    };
+    document.addEventListener("keydown", onKey, true);
+    document.addEventListener("fullscreenchange", onFs); document.addEventListener("webkitfullscreenchange", onFs);
+    document.body.append(wrap);
+    const back = document.activeElement;
+    viewer = {
+      el: wrap,
+      close() {
+        document.removeEventListener("keydown", onKey, true);
+        document.removeEventListener("fullscreenchange", onFs); document.removeEventListener("webkitfullscreenchange", onFs);
+        job.stop = true; if (job.doc) { try { job.doc.destroy(); } catch { /* noop */ } }
+        if (fsEl() === wrap) { try { const ex = document.exitFullscreen || document.webkitExitFullscreen; const pr = ex && ex.call(document); if (pr && pr.catch) pr.catch(() => {}); } catch { /* noop */ } }
+        wrap.remove();
+        if (back && back.focus) back.focus({ preventScroll: true });
+      },
+    };
+    show(cur);
+    wrap.querySelector(".mv-close").focus({ preventScroll: true });
+    return true;
+  }
+  function closeViewer() { if (viewer) { const v = viewer; viewer = null; v.close(); } }
+
   function openDetail(id) {
     const m = members.find((x) => x.id === id);
     if (!m) return;
@@ -1233,6 +1440,12 @@
       renderList();
       toast(favs.has(id) ? "お気に入りに追加しました" : "お気に入りから外しました");
       return;
+    }
+
+    // 資料を大きく見る(写真・PDF)。ほかの資料・リンクは今までどおり新しいタブで開く
+    const viewLink = t.closest("[data-view]");
+    if (viewLink && !(e.metaKey || e.ctrlKey || e.shiftKey || e.button === 1)) {
+      if (openViewer(viewLink.dataset.view, Number(viewLink.dataset.viewAt))) { e.preventDefault(); return; }
     }
 
     const detailBtn = t.closest("[data-detail]");

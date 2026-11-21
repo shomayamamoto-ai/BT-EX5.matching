@@ -1564,3 +1564,41 @@ a.ref-btn { display: inline-flex; align-items: center; justify-content: center; 
 .md-partners li .pt-face { grid-row: span 2; }
 .md-partners li .md-partner-name { justify-self: start; }
 @media (max-width: 700px) { .ref-face { width: 54px; height: 54px; font-size: 20px; } }
+
+/* ---------- 資料を大きく見る(画面いっぱい・全画面) ---------- */
+.md-material[data-view] .md-material-open { font-weight: 800; }
+.mv { position: fixed; inset: 0; z-index: 300; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; grid-template-columns: minmax(0, 1fr); background: rgba(18, 14, 12, 0.94); color: #fff; animation: mv-in 0.2s ease; }
+@keyframes mv-in { from { opacity: 0; } to { opacity: 1; } }
+.mv-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: calc(10px + env(safe-area-inset-top)) 14px 10px; }
+.mv-title { margin: 0; flex: 1 1 auto; min-width: 0; overflow: hidden; display: flex; align-items: baseline; gap: 10px; font-size: 14px; }
+.mv-title b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mv-count { flex: none; color: #d8cfc4; font-variant-numeric: tabular-nums; font-size: 13px; }
+.mv-tools { display: flex; gap: 6px; flex: none; }
+.mv-btn { display: inline-flex; align-items: center; min-height: 38px; padding: 0 14px; border-radius: 999px; border: 1px solid rgba(255, 255, 255, 0.35); background: rgba(255, 255, 255, 0.1); color: #fff; font: inherit; font-size: 13px; font-weight: 700; text-decoration: none; cursor: pointer; white-space: nowrap; }
+.mv-btn:hover { background: rgba(255, 255, 255, 0.2); }
+.mv-btn:focus-visible, .mv-nav:focus-visible { outline: 2px solid #ffd27a; outline-offset: 2px; }
+.mv-close { width: 38px; justify-content: center; padding: 0; font-size: 16px; }
+.mv-stage { position: relative; overflow: auto; display: grid; place-items: center; padding: 0 12px; overscroll-behavior: contain; }
+.mv-img { display: block; max-width: 100%; max-height: 100%; width: auto; height: auto; object-fit: contain; border-radius: 6px; background: #fff; cursor: zoom-in; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5); }
+.mv.is-zoom .mv-stage { place-items: start; }
+.mv.is-zoom .mv-img { max-width: none; max-height: none; width: min(2200px, 220%); cursor: zoom-out; }
+.mv-pdf { width: min(100%, 1200px); height: 100%; border: 0; border-radius: 6px; background: #fff; }
+.mv-pages { display: grid; gap: 12px; justify-items: center; width: min(100%, 1100px); padding: 4px 0 16px; align-self: start; }
+.mv-page { display: block; width: 100%; height: auto; background: #fff; border-radius: 4px; box-shadow: 0 8px 30px rgba(0, 0, 0, 0.45); cursor: zoom-in; }
+.mv.is-zoom .mv-pages { width: min(2200px, 200%); }
+.mv.is-zoom .mv-page { cursor: zoom-out; }
+.mv-state { margin: 0; padding: 30px 16px; text-align: center; color: #e8e0d6; font-size: 14px; }
+.mv-stage:has(.mv-pages) { place-items: start center; }
+.mv-nav { position: absolute; top: 50%; width: 48px; height: 64px; margin-top: -32px; border: 1px solid rgba(255, 255, 255, 0.35); border-radius: 12px; background: rgba(20, 16, 14, 0.62); color: #fff; font-size: 36px; line-height: 1; cursor: pointer; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35); } /* 白い資料の上でも見えるように、濃い下地 */
+.mv-nav:hover { background: rgba(20, 16, 14, 0.82); }
+.mv-nav.is-prev { left: 10px; }
+.mv-nav.is-next { right: 10px; }
+.mv-hint { margin: 0; padding: 8px 14px calc(10px + env(safe-area-inset-bottom)); text-align: center; font-size: 12px; color: #cfc6bb; }
+.mv.is-fs .mv-hint { display: none; }
+@media (max-width: 640px) {
+  .mv-open { display: none; }
+  .mv.is-zoom .mv-pages { width: 220%; }
+  .mv-nav { width: 38px; height: 54px; margin-top: -27px; font-size: 30px; }
+  .mv.is-zoom .mv-img { width: 260%; }
+}
+@media (prefers-reduced-motion: reduce) { .mv { animation: none; } }
