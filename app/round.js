@@ -619,6 +619,10 @@
       GAPS.map((v) => h("option", { value: String(v) }, `${v}秒`)));
     gapSel.value = String(gapSec);
 
+    // はじめるときに全画面にするか(この端末に覚える。はじめは「する」。全画面にできない端末では出さない)
+    let startFs = store.get("fs", "1") === "1";
+    const fsBox = h("input", { type: "checkbox", onchange: () => { startFs = fsBox.checked; store.set("fs", startFs ? "1" : "0"); } });
+    fsBox.checked = startFs;
     // 定例会のスライド(オープニングムービー → 進行表の順)を前後に入れるか
     let withDeck = store.get("deck", "1") === "1";
     const deckBox = h("input", { type: "checkbox", onchange: () => { withDeck = deckBox.checked; store.set("deck", withDeck ? "1" : "0"); draw(); } });
@@ -673,6 +677,8 @@
     drawStaff();
     // editFirst: スライドを「見たまま編集」の状態で開く(オープニングムービーは流さない)
     const startRun = (editFirst) => {
+      // 全画面は、押した操作の中でしか切りかえられないので、画面を作る前に頼む(見たまま編集で開くときは切りかえない)
+      if (!editFirst && startFs && fsCan()) fsEnter();
       const people = order.map((k) => {
         const p = personOf(k, photos);
         if (p) return p;
@@ -776,6 +782,7 @@
         h("p", { class: "round-label" }, "1人の時間"), perRow,
         h("div", { class: "pr-auto" },
           h("label", { class: "pitch-sound" }, autoBox, h("span", null, "0秒になったら、自動で次の人へ")),
+          fsCan() ? h("label", { class: "pitch-sound" }, fsBox, h("span", null, "全画面ではじめる(画面いっぱいに映す。Esc で戻る)")) : null,
           h("label", { class: "pr-gap-row" }, h("span", null, "次の人までの間"), gapSel)),
         h("label", { class: "pitch-sound pr-deck-opt" }, deckBox, h("span", null, h("b", null, "定例会のスライドも入れる"), h("small", null, "オープニングムービー → はじめの挨拶 → BT-EXの理念 → … → 終わりの挨拶(定例会の進行表の順)。プレゼンは「1分プレゼンテーション」のところに入ります"))),
         typeof BtexTheme !== "undefined" ? h("div", { class: "pr-deck-theme" }, h("span", null, "スライドのデザイン"),
@@ -1198,6 +1205,29 @@
       wave: ["M19.4 3.3a4.6 4.6 0 0 1 2.1 3.3", "M18.1 1.2a7.2 7.2 0 0 1 3.3 1.7"],
     },
   };
+  // ---------- 全画面(プレゼン・スライドの画面) ----------
+  // 画面ごと(<html>)を全画面にする。iPhone の Safari などは対応していない(fsCan() が false)
+  const fsEl = () => document.fullscreenElement || document.webkitFullscreenElement || null;
+  const fsCan = () => {
+    const d = document.documentElement;
+    if (!(d.requestFullscreen || d.webkitRequestFullscreen)) return false;
+    const en = document.fullscreenEnabled !== undefined ? document.fullscreenEnabled : document.webkitFullscreenEnabled;
+    return en !== false; // iframe などで全画面が止められているときは false
+  };
+  function fsEnter(onFail) {
+    const d = document.documentElement, req = d.requestFullscreen || d.webkitRequestFullscreen;
+    if (!req || fsEl()) return;
+    try {
+      // Android の Chrome では、ブラウザの帯(アドレスバーなど)も隠す
+      const pr = d.requestFullscreen ? req.call(d, { navigationUI: "hide" }) : req.call(d);
+      if (pr && pr.catch) pr.catch(() => { if (onFail) onFail(); });
+    } catch { if (onFail) onFail(); }
+  }
+  function fsExit() {
+    if (!fsEl()) return;
+    try { const ex = document.exitFullscreen || document.webkitExitFullscreen; const pr = ex && ex.call(document); if (pr && pr.catch) pr.catch(() => {}); } catch { /* noop */ }
+  }
+
   function lineIcon(name, cls) {
     const def = LINE_ICONS[name] || LINE_ICONS.next;
     const svg = document.createElementNS(NS_SVG, "svg");
@@ -1740,42 +1770,67 @@
     };
     box.addEventListener("wheel", stopScroll, { passive: false });
     box.addEventListener("touchmove", stopScroll, { passive: false });
-    try { if ("wakeLock" in navigator) navigator.wakeLock.request("screen").then((w) => { wake = w; }).catch(() => {}); } catch { /* noop */ }
+    // 画面のスリープを止める(下の wakeOn。別のタブから戻ったときにも、かけ直す)
     // ブラウザの「全画面」には、自動では切りかえない(切りかえのあいだに画面の大きさが変わって上下にブレる・
     // 閉じたあとに Safari で真っ白になる、の原因になるため)。この画面はブラウザの窓いっぱいに出し、ふわっと表示する。
     // 全画面にしたいときは、上の「全画面」ボタン(キーボードは F)で切りかえる(2026年11月19日、運営の依頼で足した)。
     // 画面ごと(<html>)を全画面にするので、オープニングムービーや休憩の画面もそのまま出る。閉じるときは、先に全画面をやめる
-    const fsNow = () => document.fullscreenElement || document.webkitFullscreenElement || null;
-    const fsReq = document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen;
-    const fsBtn = fsReq ? h("button", { type: "button", class: "pr-fs", onclick: () => toggleFs() }) : null;
+    const fsBtn = fsCan() ? h("button", { type: "button", class: "pr-fs", onclick: () => toggleFs() }) : null;
     let fsLeftAt = 0; // 全画面をやめた時刻(Esc でやめたときに、「進行を終わりますか?」を出さないため)
+    let fsDrawn = null;
     function drawFs() {
-      if (!fsBtn) return;
-      const on = !!fsNow();
+      const on = !!fsEl();
+      box.classList.toggle("is-fs", on);
+      if (!fsBtn || fsDrawn === on) return;
+      fsDrawn = on;
       fsBtn.replaceChildren(lineIcon(on ? "shrink" : "widen"), h("span", null, on ? "全画面をやめる" : "全画面"));
       fsBtn.setAttribute("aria-pressed", on ? "true" : "false");
+      fsBtn.setAttribute("aria-label", on ? "全画面をやめる" : "全画面で表示する");
       fsBtn.title = on ? "全画面をやめる(Esc・F)" : "全画面で表示する(F)";
-      box.classList.toggle("is-fs", on);
     }
     function toggleFs() {
-      if (!fsReq) return;
-      try {
-        if (fsNow()) { const ex = document.exitFullscreen || document.webkitExitFullscreen; const pr = ex && ex.call(document); if (pr && pr.catch) pr.catch(() => {}); }
-        else { const pr = fsReq.call(document.documentElement); if (pr && pr.catch) pr.catch(() => { App.toast("この端末・ブラウザでは全画面にできませんでした", "error"); }); }
-      } catch { /* 全画面にできない端末では、何もしない */ }
+      if (fsEl()) fsExit();
+      else fsEnter(() => App.toast("この端末・ブラウザでは全画面にできませんでした", "error"));
     }
     const onFsChange = () => {
-      if (!fsNow()) fsLeftAt = Date.now();
+      if (!fsEl()) fsLeftAt = Date.now();
       drawFs();
-      // 画面の大きさが変わるので、スライドの大きさ・操作バーの場所を合わせ直す
+      wakeOn(); // 全画面の切りかえで画面のスリープ止めが外れる端末があるので、かけ直す
+      idleKick();
+      // 画面の大きさが変わるので、スライドの大きさ・操作バーの場所を合わせ直す(大きさが落ち着くまで2回)
       requestAnimationFrame(() => window.dispatchEvent(new Event("resize")));
+      setTimeout(() => { if (!closed) window.dispatchEvent(new Event("resize")); }, 350);
     };
-    if (fsBtn) {
-      box.querySelector(".pr-top").insertBefore(fsBtn, count);
-      document.addEventListener("fullscreenchange", onFsChange); document.addEventListener("webkitfullscreenchange", onFsChange);
-      drawFs();
+    document.addEventListener("fullscreenchange", onFsChange); document.addEventListener("webkitfullscreenchange", onFsChange);
+    if (fsBtn) box.querySelector(".pr-top").insertBefore(fsBtn, count);
+    drawFs();
+    // 全画面のときは、マウスを3秒動かさないと、操作のボタン(上の選択・全画面・編集、下の操作バー)とマウスの矢印を隠す
+    // (映している画面をすっきりさせる。マウスを動かすとすぐ出る。指で操作する端末・休憩や確認の画面のあいだは隠さない)
+    let idleTimer = 0;
+    function idleKick(e) {
+      if (e && e.pointerType && e.pointerType !== "mouse") return;
+      clearTimeout(idleTimer);
+      box.classList.remove("is-idle");
+      if (!fsEl() || closed) return;
+      idleTimer = setTimeout(() => {
+        if (closed || !fsEl() || breakLayer || asking || done || box.classList.contains("is-editing")) return;
+        const hot = box.querySelector(".pr-top :hover, .pr-dock :hover, .pr-top :focus-visible, .pr-dock :focus-visible, .pr-jump:focus");
+        if (hot) { idleKick(); return; }
+        box.classList.add("is-idle");
+      }, 3000);
     }
-    requestAnimationFrame(() => requestAnimationFrame(() => { fixSecWidth(); box.classList.remove("is-entering"); }));
+    box.addEventListener("pointermove", idleKick);
+    box.addEventListener("pointerdown", idleKick);
+    // 画面のスリープ止め: 別のタブ・アプリから戻ったときや全画面の切りかえで外れるので、そのたびにかけ直す
+    function wakeOn() {
+      if (closed || !("wakeLock" in navigator) || document.visibilityState !== "visible") return;
+      if (wake && !wake.released) return;
+      try { navigator.wakeLock.request("screen").then((w) => { if (closed) { w.release(); return; } wake = w; }).catch(() => {}); } catch { /* noop */ }
+    }
+    const onVisible = () => { if (document.visibilityState === "visible") wakeOn(); };
+    document.addEventListener("visibilitychange", onVisible);
+    // (wakeOn は closed などを使うので、この関数の最後まで読みこんだあと(次の描画)で呼ぶ)
+    requestAnimationFrame(() => requestAnimationFrame(() => { fixSecWidth(); box.classList.remove("is-entering"); wakeOn(); }));
     // 写真は先に読みこんでおく(切りかえたときにすぐ出るように)
     people.forEach((p) => { if (p.photo) { const im = new Image(); im.src = p.photo; } });
 
@@ -2812,9 +2867,12 @@
       if (editor) editor.destroy();
       try { if (wake) wake.release(); } catch { /* noop */ }
       document.removeEventListener("fullscreenchange", onFsChange); document.removeEventListener("webkitfullscreenchange", onFsChange);
+      document.removeEventListener("visibilitychange", onVisible);
+      clearTimeout(idleTimer);
       if (fast === true) { box.remove(); return; }
-      // 全画面のまま閉じると Safari で真っ白になることがあるので、先に全画面をやめる
-      if (fsNow() === document.documentElement) { try { const ex = document.exitFullscreen || document.webkitExitFullscreen; const pr = ex && ex.call(document); if (pr && pr.catch) pr.catch(() => {}); } catch { /* noop */ } }
+      // 全画面のまま閉じると Safari で真っ白になることがあるので、先に全画面をやめる(出席コードの動画だけを全画面にしているときも)
+      const fe = fsEl();
+      if (fe && (fe === document.documentElement || box.contains(fe))) fsExit();
       box.classList.add("is-closing");
       setTimeout(() => {
         box.remove();
@@ -2823,16 +2881,18 @@
       }, 300);
     }
     function onKey(e) {
-      if (e.target.closest && e.target.closest("input, textarea, select")) return;
+      if (e.isComposing || e.keyCode === 229) return; // 日本語の入力の途中
+      if (e.target.closest && e.target.closest("input, textarea, select, [contenteditable]")) return;
+      if (!e.repeat) idleKick();
       if (document.querySelector(".op-intro")) return; // オープニングムービーを流しているあいだはムービーの操作
       if (e.key === " ") { e.preventDefault(); if (!done) { if (isDeck(people[idx]) || breakLayer) forward(); else pauseBtn.click(); } }
       else if (e.key === "ArrowRight" && !done) forward();
       else if (e.key === "ArrowLeft" && done) reopen();
       else if (e.key === "ArrowLeft" && !done) backward();
-      else if ((e.key === "f" || e.key === "F") && !e.metaKey && !e.ctrlKey && !e.altKey && fsBtn) { e.preventDefault(); toggleFs(); }
+      else if ((e.key === "f" || e.key === "F") && !e.metaKey && !e.ctrlKey && !e.altKey && !e.repeat && fsBtn) { e.preventDefault(); toggleFs(); }
       else if (e.key === "Escape") {
         // 全画面のときの Esc は「全画面をやめる」だけ(ブラウザがやめる)。「進行を終わりますか?」は出さない
-        if (fsNow() || Date.now() - fsLeftAt < 500) return;
+        if (fsEl() || Date.now() - fsLeftAt < 600) return;
         if (breakLayer) closeBreak(); else if (done) closeRun(); else if (asking) asking(); else finish(true);
       }
     }

@@ -3826,6 +3826,11 @@ button.home-welcome-check:active { transform: scale(0.94); }
 .pr-run.deck-soft .pr-fs { background: #fff; border-color: var(--pd-gold-soft); color: var(--pd-gold); }
 .pr-run.is-editing .pr-fs, .pr-run.is-done .pr-fs { display: none; }
 @media (max-width: 760px) { .pr-fs span { display: none; } .pr-fs { padding: 6px 9px; } }
+/* 全画面でマウスを動かさないとき: 操作のボタンとマウスの矢印を隠す(動かすとすぐ出る) */
+.pr-run .pr-top > :not(.pr-title):not(.pr-count), .pr-run .pr-dock { transition: opacity 0.35s ease; }
+.pr-run.is-fs.is-idle { cursor: none; }
+.pr-run.is-fs.is-idle .pr-top > .pr-jump, .pr-run.is-fs.is-idle .pr-top > .pr-fs, .pr-run.is-fs.is-idle .pr-top > .se-open, .pr-run.is-fs.is-idle .pr-dock { opacity: 0; pointer-events: none; }
+@media (prefers-reduced-motion: reduce) { .pr-run .pr-top > *, .pr-run .pr-dock { transition: none; } }
 .pr-run.deck-soft .se-open { background: #fff; color: var(--pd-gold); }
 .pr-run:not(.is-deck) .se-open, .pr-run.is-editing .se-open { display: none; }
 /* 編集のあいだ */
